@@ -19,9 +19,9 @@ const navSections: NavSection[] = [
   {
     label: "OPERATION", icon: <Plane size={18} />, collapsible: true,
     children: [
-      { label: "Airlines", path: "#" },
-      { label: "Aircrafts", path: "#" },
-      { label: "Flight Schedule", path: "#" },
+      { label: "Airlines", path: "/airlines" },
+      { label: "Aircrafts", path: "/aircrafts" },
+      { label: "Flight Schedule", path: "/flight-schedule" },
       { label: "Overfly Schedule", path: "#" },
       { label: "Delay Codes", path: "#" },
       { label: "Lost & Found", path: "#" },
