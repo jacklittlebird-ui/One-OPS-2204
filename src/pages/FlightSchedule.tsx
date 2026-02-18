@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search, Plus, Trash2, Upload, Download, PlaneTakeoff, Clock,
-  Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Calendar
+  Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Calendar, Link2
 } from "lucide-react";
 import { FlightSchedule, sampleFlights } from "@/data/flightScheduleData";
 import * as XLSX from "xlsx";
@@ -16,6 +17,7 @@ const statusBadge = (s: string) => {
 };
 
 export default function FlightSchedulePage() {
+  const navigate = useNavigate();
   const [data, setData] = useState<FlightSchedule[]>(sampleFlights);
   const [search, setSearch] = useState("");
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
@@ -84,7 +86,15 @@ export default function FlightSchedulePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground">Flight Schedule</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold text-foreground">Flight Schedule</h1>
+        <button
+          onClick={() => navigate("/services")}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-primary border-primary/40 hover:bg-primary/10 transition-colors"
+        >
+          <Link2 size={14} /> Chart of Services Cost
+        </button>
+      </div>
       <p className="text-muted-foreground text-sm mt-1 mb-6">Scheduled flights, arrivals, and departures</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

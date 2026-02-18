@@ -9,6 +9,7 @@ import AppLayout from "./components/layout/AppLayout";
 import AirlinesPage from "./pages/Airlines";
 import AircraftsPage from "./pages/Aircrafts";
 import FlightSchedulePage from "./pages/FlightSchedule";
+import ServicesPage from "./pages/Services";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/airlines" element={<AppLayout><AirlinesPage /></AppLayout>} />
           <Route path="/aircrafts" element={<AppLayout><AircraftsPage /></AppLayout>} />
           <Route path="/flight-schedule" element={<AppLayout><FlightSchedulePage /></AppLayout>} />
+          <Route path="/services" element={<AppLayout><ServicesPage /></AppLayout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

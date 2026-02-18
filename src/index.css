@@ -109,7 +109,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-family: 'Baloo Bhaijaan 2', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  input, select, textarea, button, th, td, label {
+    font-family: 'Baloo Bhaijaan 2', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 }
 

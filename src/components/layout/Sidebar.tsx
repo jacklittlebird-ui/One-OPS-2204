@@ -41,11 +41,12 @@ const navSections: NavSection[] = [
     label: "PRICES", icon: <DollarSign size={18} />, collapsible: true,
     children: [
       { label: "Tube", path: "#" },
-      { label: "Airport Charges", path: "/airport-charges", active: true },
+      { label: "Airport Charges", path: "/airport-charges" },
       { label: "Airport Tax", path: "#" },
       { label: "Basic Ramp", path: "#" },
       { label: "Vendor Equipment", path: "#" },
       { label: "Hall & VVIP", path: "#" },
+      { label: "Chart of Services", path: "/services" },
     ],
   },
   { label: "T2 (TRAFFIC RIGHTS)", icon: <Shield size={18} />, path: "#" },
