@@ -1,21 +1,25 @@
+import { useLocation, Link } from "react-router-dom";
 import { useState } from "react";
 import {
   LayoutDashboard, Plane, Calculator, FileText, Utensils, DollarSign,
-  Cylinder, Building2, Receipt, Wrench, Award, Crown, Shield, AlertTriangle,
-  BookOpen, FileCheck, MoreHorizontal, Type, PlaneTakeoff, ChevronDown, ChevronRight
+  Shield, AlertTriangle, MoreHorizontal, ChevronDown, ChevronRight, FileBarChart2
 } from "lucide-react";
+
+interface NavChild {
+  label: string;
+  path: string;
+}
 
 interface NavSection {
   label: string;
   icon: React.ReactNode;
-  children?: { label: string; path: string; active?: boolean }[];
+  children?: NavChild[];
   path?: string;
-  active?: boolean;
   collapsible?: boolean;
 }
 
 const navSections: NavSection[] = [
-  { label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/", active: false },
+  { label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/" },
   {
     label: "OPERATION", icon: <Plane size={18} />, collapsible: true,
     children: [
@@ -49,6 +53,7 @@ const navSections: NavSection[] = [
       { label: "Chart of Services", path: "/services" },
     ],
   },
+  { label: "SERVICE REPORT", icon: <FileBarChart2 size={18} />, path: "/service-report" },
   { label: "T2 (TRAFFIC RIGHTS)", icon: <Shield size={18} />, path: "#" },
   {
     label: "QUALITY & SAFETY", icon: <AlertTriangle size={18} />, collapsible: true,
@@ -68,13 +73,25 @@ const navSections: NavSection[] = [
 ];
 
 export default function Sidebar() {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({
-    PRICES: true,
-    "QUALITY & SAFETY": true,
-    "MISC.": true,
-  });
+  const location = useLocation();
+  const currentPath = location.pathname;
 
+  const isChildActive = (children: NavChild[]) =>
+    children.some(c => c.path !== "#" && currentPath === c.path);
+
+  const defaultExpanded: Record<string, boolean> = {};
+  navSections.forEach(s => {
+    if (s.collapsible && s.children && isChildActive(s.children)) {
+      defaultExpanded[s.label] = true;
+    }
+  });
+  defaultExpanded["PRICES"] = defaultExpanded["PRICES"] ?? true;
+  defaultExpanded["OPERATION"] = defaultExpanded["OPERATION"] ?? true;
+
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(defaultExpanded);
   const toggle = (label: string) => setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
+
+  const isActive = (path: string) => path !== "#" && currentPath === path;
 
   return (
     <aside className="w-56 min-h-screen bg-sidebar flex flex-col shrink-0">
@@ -90,7 +107,9 @@ export default function Sidebar() {
               <>
                 <button
                   onClick={() => toggle(section.label)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sidebar-foreground hover:bg-sidebar-accent transition-colors ${
+                    section.children && isChildActive(section.children) ? "bg-sidebar-accent/60" : ""
+                  }`}
                 >
                   {section.icon}
                   <span className="flex-1 text-left font-medium text-xs uppercase tracking-wider">
@@ -101,33 +120,51 @@ export default function Sidebar() {
                 {expanded[section.label] && section.children && (
                   <div className="ml-4 space-y-0.5">
                     {section.children.map((child) => (
-                      <a
-                        key={child.label}
-                        href={child.path}
-                        className={`block px-3 py-1.5 rounded text-sm transition-colors ${
-                          child.active
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent"
-                        }`}
-                      >
-                        {child.label}
-                      </a>
+                      child.path === "#" ? (
+                        <span
+                          key={child.label}
+                          className="block px-3 py-1.5 rounded text-sm text-sidebar-muted cursor-default"
+                        >
+                          {child.label}
+                        </span>
+                      ) : (
+                        <Link
+                          key={child.label}
+                          to={child.path}
+                          className={`block px-3 py-1.5 rounded text-sm transition-colors ${
+                            isActive(child.path)
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent"
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      )
                     ))}
                   </div>
                 )}
               </>
             ) : (
-              <a
-                href={section.path || "#"}
-                className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
-                  section.active
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent"
-                }`}
-              >
-                {section.icon}
-                <span className="text-xs uppercase tracking-wider font-medium">{section.label}</span>
-              </a>
+              section.path === "#" ? (
+                <span
+                  className="flex items-center gap-2 px-3 py-2 rounded text-sidebar-muted cursor-default"
+                >
+                  {section.icon}
+                  <span className="text-xs uppercase tracking-wider font-medium">{section.label}</span>
+                </span>
+              ) : (
+                <Link
+                  to={section.path || "/"}
+                  className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                    isActive(section.path || "/")
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }`}
+                >
+                  {section.icon}
+                  <span className="text-xs uppercase tracking-wider font-medium">{section.label}</span>
+                </Link>
+              )
             )}
           </div>
         ))}

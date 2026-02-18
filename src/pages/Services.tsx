@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link2, DollarSign, Plane, UtensilsCrossed, Fuel, BedDouble, Shield, Crown, Map } from "lucide-react";
+import { Link2, DollarSign, Plane, UtensilsCrossed, Fuel, BedDouble, Shield, Crown, Map, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type ServiceTab =
@@ -23,14 +23,31 @@ const tabs: { key: ServiceTab; icon: React.ReactNode; color: string }[] = [
   { key: "Overflying & Permits", icon: <Map size={15} />,              color: "hsl(var(--muted-foreground))" },
 ];
 
-// --- Civil Aviation data (Egyptian Airports landing fee per ton) ---
-const civilAviationData = Array.from({ length: 30 }, (_, i) => {
-  const ton = i + 1;
+// --- Civil Aviation data — Egyptian Airports (المصرية للمطارات) real pricing from Master Data Sheet ---
+// Rate tiers: ton 1-18: 1.817/ton/day, 2.18/ton/night; ton 19-25: incremental +1.82/+2.27 per ton;
+// ton 26-100: incremental +2.783/+3.479 per ton; ton 101+: incremental +3.761/+4.640 per ton
+function calcEgyptianAirports(ton: number) {
   let dayFee: number, nightFee: number;
-  if (ton <= 18) { dayFee = 1.817 * ton; nightFee = 2.18 * ton; }
-  else if (ton <= 25) { dayFee = 1.817 * 18 + (ton - 18) * 1.82; nightFee = 2.18 * 18 + (ton - 18) * 2.27; }
-  else { dayFee = 1.817 * 18 + 7 * 1.82 + (ton - 25) * 2.78; nightFee = 2.18 * 18 + 7 * 2.27 + (ton - 25) * 3.48; }
-  return { id: String(ton), ton, dayFee: +dayFee.toFixed(3), nightFee: +nightFee.toFixed(3), currency: "USD", airports: "HRG, SSH, LXR, ASW" };
+  if (ton <= 18) {
+    dayFee = 1.817 * ton;
+    nightFee = 2.18 * ton;
+  } else if (ton <= 25) {
+    dayFee = 1.817 * 18 + (ton - 18) * 1.82;
+    nightFee = 2.18 * 18 + (ton - 18) * 2.27;
+  } else if (ton <= 100) {
+    dayFee = 1.817 * 18 + 7 * 1.82 + (ton - 25) * 2.783;
+    nightFee = 2.18 * 18 + 7 * 2.27 + (ton - 25) * 3.479;
+  } else {
+    dayFee = 1.817 * 18 + 7 * 1.82 + 75 * 2.783 + (ton - 100) * 3.761;
+    nightFee = 2.18 * 18 + 7 * 2.27 + 75 * 3.479 + (ton - 100) * 4.640;
+  }
+  return { dayFee: +dayFee.toFixed(3), nightFee: +nightFee.toFixed(3) };
+}
+
+const civilAviationData = Array.from({ length: 200 }, (_, i) => {
+  const ton = i + 1;
+  const { dayFee, nightFee } = calcEgyptianAirports(ton);
+  return { id: String(ton), ton, dayFee, nightFee, currency: "USD", airports: "HRG, SSH, LXR, ASW" };
 });
 
 // --- Handling services structure ---
@@ -130,31 +147,61 @@ const overflyItems = [
   { permit: "Traffic Rights (T2)", unit: "Per Season", price: "TBD", validity: "IATA Season" },
 ];
 
+const CA_PAGE_SIZE = 25;
 function CivilAviationTab() {
+  const [caPage, setCaPage] = useState(1);
+  const totalCaPages = Math.max(1, Math.ceil(civilAviationData.length / CA_PAGE_SIZE));
+  const pageData = civilAviationData.slice((caPage - 1) * CA_PAGE_SIZE, caPage * CA_PAGE_SIZE);
+
   return (
     <div>
-      <p className="text-sm text-muted-foreground mb-4">Egyptian Airports – Civil Aviation / Landing Fees. Linked from: <span className="font-semibold text-primary">Link Egypt Chart of Services Cost.xlsx → Civil Aviation</span></p>
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
+        <div>
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-primary">المصرية للمطارات (Egyptian Airports)</span> – Civil Aviation / Landing Fees
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Source: <span className="font-semibold">master_data_sheet_Odoo · Link Egypt Chart of Services Cost.xlsx → Civil Aviation</span>
+          </p>
+          <p className="text-xs text-muted-foreground">Airports: HRG, SSH, LXR, ASW · Currency: USD</p>
+        </div>
+        <div className="text-xs text-muted-foreground">{civilAviationData.length} TON records</div>
+      </div>
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead>
             <tr>
-              {["TON", "Day Fee (USD)", "Night Fee (USD)", "Currency", "Airports"].map(h => (
+              {["TON", "Rate/Ton (Day)", "Day Fee (USD)", "Rate/Ton (Night)", "Night Fee (USD)", "Currency", "Airports"].map(h => (
                 <th key={h} className="data-table-header px-4 py-3 text-left whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {civilAviationData.map(r => (
-              <tr key={r.id} className="data-table-row">
-                <td className="px-4 py-2.5 font-semibold text-foreground">{r.ton}</td>
-                <td className="px-4 py-2.5 text-foreground">{r.dayFee.toFixed(3)}</td>
-                <td className="px-4 py-2.5 text-foreground">{r.nightFee.toFixed(3)}</td>
-                <td className="px-4 py-2.5 text-foreground">{r.currency}</td>
-                <td className="px-4 py-2.5 text-muted-foreground text-xs">{r.airports}</td>
-              </tr>
-            ))}
+            {pageData.map(r => {
+              const rateDay = r.ton <= 18 ? 1.817 : r.ton <= 25 ? 1.820 : r.ton <= 100 ? 2.783 : 3.761;
+              const rateNight = r.ton <= 18 ? 2.18 : r.ton <= 25 ? 2.27 : r.ton <= 100 ? 3.479 : 4.640;
+              return (
+                <tr key={r.id} className="data-table-row">
+                  <td className="px-4 py-2.5 font-semibold text-foreground">{r.ton}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground text-xs">{rateDay.toFixed(3)}</td>
+                  <td className="px-4 py-2.5 font-semibold text-foreground">{r.dayFee.toFixed(3)}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground text-xs">{rateNight.toFixed(3)}</td>
+                  <td className="px-4 py-2.5 font-semibold text-foreground">{r.nightFee.toFixed(3)}</td>
+                  <td className="px-4 py-2.5 text-foreground">{r.currency}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground text-xs">{r.airports}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+      </div>
+      <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+        <span>Showing {(caPage - 1) * CA_PAGE_SIZE + 1}–{Math.min(caPage * CA_PAGE_SIZE, civilAviationData.length)} of {civilAviationData.length} records</span>
+        <div className="flex items-center gap-2">
+          <button disabled={caPage <= 1} onClick={() => setCaPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
+          <span className="text-foreground font-medium">Page {caPage} of {totalCaPages}</span>
+          <button disabled={caPage >= totalCaPages} onClick={() => setCaPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
+        </div>
       </div>
     </div>
   );
