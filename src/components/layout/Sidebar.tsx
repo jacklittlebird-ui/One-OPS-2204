@@ -2,7 +2,8 @@ import { useLocation, Link } from "react-router-dom";
 import { useState } from "react";
 import {
   LayoutDashboard, Plane, Calculator, FileText, Utensils, DollarSign,
-  Shield, AlertTriangle, MoreHorizontal, ChevronDown, ChevronRight, FileBarChart2
+  Shield, AlertTriangle, MoreHorizontal, ChevronDown, ChevronRight, FileBarChart2,
+  Globe, Clock, Package, Users, Receipt
 } from "lucide-react";
 
 interface NavChild {
@@ -26,15 +27,15 @@ const navSections: NavSection[] = [
       { label: "Airlines", path: "/airlines" },
       { label: "Aircrafts", path: "/aircrafts" },
       { label: "Flight Schedule", path: "/flight-schedule" },
-      { label: "Overfly Schedule", path: "#" },
-      { label: "Delay Codes", path: "#" },
-      { label: "Lost & Found", path: "#" },
-      { label: "Staff Roster", path: "#" },
+      { label: "Overfly Schedule", path: "/overfly-schedule" },
+      { label: "Delay Codes", path: "/delay-codes" },
+      { label: "Lost & Found", path: "/lost-found" },
+      { label: "Staff Roster", path: "/staff-roster" },
     ],
   },
   {
     label: "ACCOUNTANT", icon: <Calculator size={18} />, collapsible: true,
-    children: [{ label: "Invoices", path: "#" }],
+    children: [{ label: "Invoices", path: "/invoices" }],
   },
   {
     label: "CONTRACT", icon: <FileText size={18} />, collapsible: true,

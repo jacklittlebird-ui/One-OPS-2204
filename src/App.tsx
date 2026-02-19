@@ -12,6 +12,11 @@ import ServicesPage from "./pages/Services";
 import AirportChargesPage from "./pages/AirportCharges";
 import DashboardPage from "./pages/Dashboard";
 import ServiceReportPage from "./pages/ServiceReport";
+import InvoicesPage from "./pages/Invoices";
+import OverflySchedulePage from "./pages/OverflySchedule";
+import DelayCodesPage from "./pages/DelayCodes";
+import LostFoundPage from "./pages/LostFound";
+import StaffRosterPage from "./pages/StaffRoster";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +34,11 @@ const App = () => (
           <Route path="/flight-schedule" element={<AppLayout><FlightSchedulePage /></AppLayout>} />
           <Route path="/services" element={<AppLayout><ServicesPage /></AppLayout>} />
           <Route path="/service-report" element={<AppLayout><ServiceReportPage /></AppLayout>} />
+          <Route path="/invoices" element={<AppLayout><InvoicesPage /></AppLayout>} />
+          <Route path="/overfly-schedule" element={<AppLayout><OverflySchedulePage /></AppLayout>} />
+          <Route path="/delay-codes" element={<AppLayout><DelayCodesPage /></AppLayout>} />
+          <Route path="/lost-found" element={<AppLayout><LostFoundPage /></AppLayout>} />
+          <Route path="/staff-roster" element={<AppLayout><StaffRosterPage /></AppLayout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -38,3 +48,4 @@ const App = () => (
 );
 
 export default App;
+
