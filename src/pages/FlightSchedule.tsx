@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search, Plus, Trash2, Upload, Download, PlaneTakeoff, Clock,
-  Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Calendar, Link2
+  Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Calendar, Link2, FileBarChart2
 } from "lucide-react";
 import { FlightSchedule, sampleFlights } from "@/data/flightScheduleData";
 import * as XLSX from "xlsx";
@@ -206,6 +206,23 @@ export default function FlightSchedulePage() {
                       <td className="px-4 py-2.5 flex gap-2">
                         <button onClick={() => startEdit(row)} className="text-info hover:text-info/80"><Pencil size={14} /></button>
                         <button onClick={() => deleteRow(row.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button>
+                        <button
+                          title="Create Service Report from this flight"
+                          onClick={() => {
+                            const params = new URLSearchParams({
+                              flightNo: row.flightNo,
+                              operator: row.airline,
+                              aircraftType: row.aircraft,
+                              route: `${row.origin}/${row.destination}`,
+                              sta: row.departure,
+                              std: row.arrival,
+                            });
+                            navigate(`/service-report?${params.toString()}`);
+                          }}
+                          className="text-success hover:text-success/80"
+                        >
+                          <FileBarChart2 size={14} />
+                        </button>
                       </td>
                     </>
                   )}

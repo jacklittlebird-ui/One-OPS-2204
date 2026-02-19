@@ -1,9 +1,9 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
   DollarSign, Users, X, ChevronLeft, ChevronRight, Eye, Pencil, Trash2, Link2
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import {
   ServiceReport, HandlingType, handlingTypes, sampleReports
@@ -181,6 +181,7 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
 
 export default function ServiceReportPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [reports, setReports] = useState<ServiceReport[]>(sampleReports);
   const [search, setSearch] = useState("");
   const [handlingFilter, setHandlingFilter] = useState("All Types");
@@ -193,6 +194,24 @@ export default function ServiceReportPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<ServiceReport>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-fill from FlightSchedule query params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const flightNo = params.get("flightNo");
+    if (flightNo) {
+      setNewReport(prev => ({
+        ...prev,
+        flightNo: flightNo || "",
+        operator: params.get("operator") || "",
+        aircraftType: params.get("aircraftType") || "",
+        route: params.get("route") || "",
+        sta: params.get("sta") || "",
+        std: params.get("std") || "",
+      }));
+      setShowAdd(true);
+    }
+  }, [location.search]);
 
   const allStations = useMemo(() => [...new Set(reports.map(r => r.station))], [reports]);
   const allHandlingTypes = useMemo(() => [...new Set(reports.map(r => r.handlingType))], [reports]);
