@@ -1,10 +1,12 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileText, DollarSign,
   Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle,
-  Clock, XCircle, AlertCircle, Eye
+  Clock, XCircle, AlertCircle, Eye, Printer
 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
+import InvoicePrintView from "@/components/InvoicePrintView";
 
 export type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
 export type InvoiceCurrency = "USD" | "EUR" | "EGP";
@@ -197,6 +199,7 @@ function InvoiceForm({ data, onChange, onSave, onCancel, title }: InvoiceFormPro
 const PAGE_SIZE = 15;
 
 export default function InvoicesPage() {
+  const location = useLocation();
   const [invoices, setInvoices] = useState<Invoice[]>(sampleInvoices);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -205,7 +208,31 @@ export default function InvoicesPage() {
   const [newInvoice, setNewInvoice] = useState<Partial<Invoice>>(emptyInvoice());
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Invoice>>({});
+  const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-fill from Service Report query params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const operator = params.get("operator");
+    if (operator) {
+      const prefilled: Partial<Invoice> = {
+        ...emptyInvoice(),
+        operator,
+        airlineIATA: params.get("airlineIATA") || "",
+        flightRef: params.get("flightRef") || "",
+        description: params.get("description") || "",
+        civilAviation: Number(params.get("civilAviation") || 0),
+        handling: Number(params.get("handling") || 0),
+        airportCharges: Number(params.get("airportCharges") || 0),
+      };
+      const sub = (prefilled.civilAviation || 0) + (prefilled.handling || 0) + (prefilled.airportCharges || 0);
+      prefilled.subtotal = sub;
+      prefilled.total = sub;
+      setNewInvoice(prefilled);
+      setShowAdd(true);
+    }
+  }, [location.search]);
 
   const filtered = useMemo(() => {
     let r = invoices;
@@ -351,6 +378,7 @@ export default function InvoicesPage() {
                   <td className="px-3 py-2.5"><StatusBadge s={inv.status} /></td>
                   <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">
+                      <button onClick={() => setPrintInvoice(inv)} className="text-primary hover:text-primary/80" title="Print"><Printer size={13} /></button>
                       <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
                       <button onClick={() => deleteInvoice(inv.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
                     </div>
@@ -375,6 +403,7 @@ export default function InvoicesPage() {
 
       {showAdd && <InvoiceForm title="New Invoice" data={newInvoice} onChange={setNewInvoice} onSave={saveNew} onCancel={() => setShowAdd(false)} />}
       {editId && <InvoiceForm title="Edit Invoice" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} />}
+      {printInvoice && <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />}
     </div>
   );
 }

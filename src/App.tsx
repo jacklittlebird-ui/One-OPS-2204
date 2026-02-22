@@ -17,6 +17,7 @@ import OverflySchedulePage from "./pages/OverflySchedule";
 import DelayCodesPage from "./pages/DelayCodes";
 import LostFoundPage from "./pages/LostFound";
 import StaffRosterPage from "./pages/StaffRoster";
+import ContractsPage from "./pages/Contracts";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/delay-codes" element={<AppLayout><DelayCodesPage /></AppLayout>} />
           <Route path="/lost-found" element={<AppLayout><LostFoundPage /></AppLayout>} />
           <Route path="/staff-roster" element={<AppLayout><StaffRosterPage /></AppLayout>} />
+          <Route path="/contracts" element={<AppLayout><ContractsPage /></AppLayout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
