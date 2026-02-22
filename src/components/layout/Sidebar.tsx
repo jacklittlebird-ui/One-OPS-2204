@@ -39,7 +39,7 @@ const navSections: NavSection[] = [
   },
   {
     label: "CONTRACT", icon: <FileText size={18} />, collapsible: true,
-    children: [{ label: "Contracts", path: "#" }],
+    children: [{ label: "Contracts", path: "/contracts" }],
   },
   { label: "CATERING", icon: <Utensils size={18} />, path: "#" },
   {

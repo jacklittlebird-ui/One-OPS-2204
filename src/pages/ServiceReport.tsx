@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
-  DollarSign, Users, X, ChevronLeft, ChevronRight, Eye, Pencil, Trash2, Link2
+  DollarSign, Users, X, ChevronLeft, ChevronRight, Eye, Pencil, Trash2, Link2, Receipt
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -468,6 +468,15 @@ export default function ServiceReportPage() {
                   <td className="px-3 py-2.5 font-semibold text-success">{r.totalCost.toLocaleString()}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">
+                      <button onClick={() => {
+                        const params = new URLSearchParams({
+                          operator: r.operator, airlineIATA: r.airlineIATA, flightRef: r.flightNo,
+                          description: `${r.handlingType} – ${r.route}`,
+                          civilAviation: String(r.civilAviationFee), handling: String(r.handlingFee),
+                          airportCharges: String(r.airportCharge),
+                        });
+                        navigate(`/invoices?${params.toString()}`);
+                      }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
                       <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
                       <button onClick={() => deleteReport(r.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
                     </div>
