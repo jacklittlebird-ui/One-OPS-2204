@@ -5,6 +5,7 @@ import {
   Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Layers, Plane, Building2
 } from "lucide-react";
 import { Aircraft, sampleAircrafts } from "@/data/aircraftsData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 25;
@@ -17,7 +18,7 @@ const statusBadge = (s: string) => {
 
 export default function AircraftsPage() {
   const navigate = useNavigate();
-  const [data, setData] = useState<Aircraft[]>(sampleAircrafts);
+  const [data, setData] = useLocalStorage<Aircraft[]>("link_aircrafts", sampleAircrafts);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All Types");
   const [statusFilter, setStatusFilter] = useState("All Status");

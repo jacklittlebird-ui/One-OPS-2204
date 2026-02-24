@@ -9,12 +9,13 @@ import {
   getUniqueVendors,
   getUniqueMTOW,
 } from "@/data/airportChargesData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 25;
 
 export default function AirportChargesPage() {
-  const [data, setData] = useState<AirportCharge[]>(() => generateAllCharges());
+  const [data, setData] = useLocalStorage<AirportCharge[]>("link_airport_charges", () => generateAllCharges());
   const [search, setSearch] = useState("");
   const [vendorFilter, setVendorFilter] = useState("All Vendors");
   const [mtowFilter, setMtowFilter] = useState("All MTOW");

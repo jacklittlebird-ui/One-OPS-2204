@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import InvoicePrintView from "@/components/InvoicePrintView";
 
 export type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
@@ -200,7 +201,7 @@ const PAGE_SIZE = 15;
 
 export default function InvoicesPage() {
   const location = useLocation();
-  const [invoices, setInvoices] = useState<Invoice[]>(sampleInvoices);
+  const [invoices, setInvoices] = useLocalStorage<Invoice[]>("link_invoices", sampleInvoices);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [page, setPage] = useState(1);

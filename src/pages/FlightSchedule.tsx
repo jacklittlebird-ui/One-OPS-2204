@@ -5,6 +5,7 @@ import {
   Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Calendar, Link2, FileBarChart2
 } from "lucide-react";
 import { FlightSchedule, sampleFlights } from "@/data/flightScheduleData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 25;
@@ -18,7 +19,7 @@ const statusBadge = (s: string) => {
 
 export default function FlightSchedulePage() {
   const navigate = useNavigate();
-  const [data, setData] = useState<FlightSchedule[]>(sampleFlights);
+  const [data, setData] = useLocalStorage<FlightSchedule[]>("link_flights", sampleFlights);
   const [search, setSearch] = useState("");
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [statusFilter, setStatusFilter] = useState("All Status");

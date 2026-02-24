@@ -5,6 +5,7 @@ import {
   Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Plane, FileText
 } from "lucide-react";
 import { Airline, sampleAirlines } from "@/data/airlinesData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 25;
@@ -17,7 +18,7 @@ const statusIcon = (s: string) => {
 
 export default function AirlinesPage() {
   const navigate = useNavigate();
-  const [data, setData] = useState<Airline[]>(sampleAirlines);
+  const [data, setData] = useLocalStorage<Airline[]>("link_airlines", sampleAirlines);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [page, setPage] = useState(1);

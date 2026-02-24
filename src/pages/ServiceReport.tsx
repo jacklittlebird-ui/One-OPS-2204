@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import {
   ServiceReport, HandlingType, handlingTypes, sampleReports
 } from "@/data/serviceReportData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const PAGE_SIZE = 15;
 
@@ -182,7 +183,7 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
 export default function ServiceReportPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [reports, setReports] = useState<ServiceReport[]>(sampleReports);
+  const [reports, setReports] = useLocalStorage<ServiceReport[]>("link_service_reports", sampleReports);
   const [search, setSearch] = useState("");
   const [handlingFilter, setHandlingFilter] = useState("All Types");
   const [stationFilter, setStationFilter] = useState("All Stations");
