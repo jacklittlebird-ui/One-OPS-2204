@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Bell, Settings, LogOut, ChevronDown, Monitor, Code2, Server, TestTube } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, Settings, LogOut, ChevronDown, Monitor, Code2, Server, TestTube, Moon, Sun } from "lucide-react";
 
 type Role = "UI/UX" | "Front-End" | "Back-End" | "Tester";
 
@@ -13,12 +13,30 @@ const roleConfig: Record<Role, { icon: React.ReactNode; color: string }> = {
 export default function Header() {
   const [role, setRole] = useState<Role>("UI/UX");
   const [open, setOpen] = useState(false);
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [dark]);
 
   return (
     <header
       className="h-14 border-b flex items-center justify-end px-6 gap-3 bg-card"
       style={{ borderColor: "hsl(var(--header-border))" }}
     >
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={() => setDark(d => !d)}
+        className="p-2 rounded-full hover:bg-muted transition-colors"
+        title={dark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+      >
+        {dark ? <Sun size={18} className="text-warning" /> : <Moon size={18} className="text-muted-foreground" />}
+      </button>
+
       {/* Role Switcher */}
       <div className="relative mr-2">
         <button

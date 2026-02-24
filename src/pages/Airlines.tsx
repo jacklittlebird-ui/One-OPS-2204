@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search, Plus, Trash2, Upload, Download, Building2, Globe, Users,
-  Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle
+  Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Plane, FileText
 } from "lucide-react";
 import { Airline, sampleAirlines } from "@/data/airlinesData";
 import * as XLSX from "xlsx";
@@ -15,6 +16,7 @@ const statusIcon = (s: string) => {
 };
 
 export default function AirlinesPage() {
+  const navigate = useNavigate();
   const [data, setData] = useState<Airline[]>(sampleAirlines);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -77,7 +79,17 @@ export default function AirlinesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground">Airlines</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold text-foreground">Airlines</h1>
+        <div className="flex gap-2">
+          <button onClick={() => navigate("/flight-schedule")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-primary border-primary/40 hover:bg-primary/10 transition-colors">
+            <Plane size={14} /> Flights
+          </button>
+          <button onClick={() => navigate("/contracts")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-info border-info/40 hover:bg-info/10 transition-colors">
+            <FileText size={14} /> Contracts
+          </button>
+        </div>
+      </div>
       <p className="text-muted-foreground text-sm mt-1 mb-6">Manage airline partners and their contact information</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -178,6 +190,7 @@ export default function AirlinesPage() {
                       <td className="px-4 py-2.5 flex gap-2">
                         <button onClick={() => startEdit(row)} className="text-info hover:text-info/80"><Pencil size={14} /></button>
                         <button onClick={() => deleteRow(row.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button>
+                        <button onClick={() => navigate(`/flight-schedule`)} className="text-success hover:text-success/80" title="View Flights"><Plane size={14} /></button>
                       </td>
                     </>
                   )}

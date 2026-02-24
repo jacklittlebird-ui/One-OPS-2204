@@ -2,17 +2,21 @@ import { useNavigate } from "react-router-dom";
 import {
   Plane, Building2, Clock, AlertTriangle, TrendingUp, DollarSign,
   FileBarChart2, CalendarDays, Users, Fuel, Shield, Crown,
-  ArrowRight, CheckCircle2, XCircle, Timer
+  ArrowRight, CheckCircle2, XCircle, Timer, FileText, Globe
 } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend,
+} from "recharts";
 
 // Sample summary data
 const stats = [
-  { label: "Total Flights Today", value: "24", sub: "+3 from yesterday", icon: <Plane size={20} />, color: "bg-primary" },
-  { label: "Active Airlines", value: "8", sub: "4 scheduled today", icon: <Building2 size={20} />, color: "bg-info" },
-  { label: "On-Time Departures", value: "18", sub: "75% on-time rate", icon: <CheckCircle2 size={20} />, color: "bg-success" },
-  { label: "Delayed Flights", value: "4", sub: "2 critical delays", icon: <Timer size={20} />, color: "bg-warning" },
-  { label: "Cancellations", value: "2", sub: "WX + OPS reasons", icon: <XCircle size={20} />, color: "bg-destructive" },
-  { label: "Revenue (Today)", value: "$142K", sub: "Airport charges + services", icon: <DollarSign size={20} />, color: "bg-accent" },
+  { label: "Total Flights Today", value: "24", sub: "+3 from yesterday", icon: <Plane size={20} />, color: "bg-primary", link: "/flight-schedule" },
+  { label: "Active Airlines", value: "8", sub: "4 scheduled today", icon: <Building2 size={20} />, color: "bg-info", link: "/airlines" },
+  { label: "On-Time Departures", value: "18", sub: "75% on-time rate", icon: <CheckCircle2 size={20} />, color: "bg-success", link: "/flight-schedule" },
+  { label: "Delayed Flights", value: "4", sub: "2 critical delays", icon: <Timer size={20} />, color: "bg-warning", link: "/delay-codes" },
+  { label: "Cancellations", value: "2", sub: "WX + OPS reasons", icon: <XCircle size={20} />, color: "bg-destructive", link: "/flight-schedule" },
+  { label: "Revenue (Today)", value: "$142K", sub: "Airport charges + services", icon: <DollarSign size={20} />, color: "bg-accent", link: "/invoices" },
 ];
 
 const recentFlights = [
@@ -42,13 +46,41 @@ const revenueByService = [
   { service: "VIP Services", amount: 4000, icon: <Crown size={14} />, color: "bg-destructive" },
 ];
 
+// Chart data
+const weeklyFlights = [
+  { day: "Mon", flights: 22, onTime: 18 },
+  { day: "Tue", flights: 19, onTime: 16 },
+  { day: "Wed", flights: 25, onTime: 21 },
+  { day: "Thu", flights: 20, onTime: 17 },
+  { day: "Fri", flights: 28, onTime: 24 },
+  { day: "Sat", flights: 31, onTime: 27 },
+  { day: "Sun", flights: 24, onTime: 18 },
+];
+
+const flightStatusData = [
+  { name: "On Time", value: 18, fill: "hsl(152, 60%, 45%)" },
+  { name: "Delayed", value: 4, fill: "hsl(38, 92%, 50%)" },
+  { name: "Cancelled", value: 2, fill: "hsl(0, 84%, 60%)" },
+];
+
+const monthlyRevenue = [
+  { month: "Sep", revenue: 98000 },
+  { month: "Oct", revenue: 115000 },
+  { month: "Nov", revenue: 132000 },
+  { month: "Dec", revenue: 145000 },
+  { month: "Jan", revenue: 142000 },
+  { month: "Feb", revenue: 158000 },
+];
+
 const quickLinks = [
-  { label: "Add Flight", icon: <Plane size={16} />, path: "/flight-schedule", color: "bg-primary" },
-  { label: "Airport Charges", icon: <Building2 size={16} />, path: "/airport-charges", color: "bg-info" },
+  { label: "Flight Schedule", icon: <Plane size={16} />, path: "/flight-schedule", color: "bg-primary" },
   { label: "Service Report", icon: <FileBarChart2 size={16} />, path: "/service-report", color: "bg-success" },
+  { label: "Invoices", icon: <FileText size={16} />, path: "/invoices", color: "bg-info" },
   { label: "Airlines", icon: <Users size={16} />, path: "/airlines", color: "bg-warning" },
-  { label: "Aircrafts", icon: <Plane size={16} />, path: "/aircrafts", color: "bg-accent" },
-  { label: "Chart of Services", icon: <DollarSign size={16} />, path: "/services", color: "bg-destructive" },
+  { label: "Contracts", icon: <FileText size={16} />, path: "/contracts", color: "bg-accent" },
+  { label: "Services Cost", icon: <DollarSign size={16} />, path: "/services", color: "bg-destructive" },
+  { label: "Airport Charges", icon: <Building2 size={16} />, path: "/airport-charges", color: "bg-primary" },
+  { label: "Overfly Schedule", icon: <Globe size={16} />, path: "/overfly-schedule", color: "bg-info" },
 ];
 
 const statusColor: Record<string, string> = {
@@ -73,18 +105,73 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Stat Cards */}
+      {/* Stat Cards — clickable */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {stats.map(s => (
-          <div key={s.label} className="stat-card flex-col items-start gap-3">
+          <button
+            key={s.label}
+            onClick={() => navigate(s.link)}
+            className="stat-card flex-col items-start gap-3 text-left hover:shadow-md transition-shadow cursor-pointer"
+          >
             <div className={`stat-card-icon ${s.color}`}>{s.icon}</div>
             <div>
               <div className="text-2xl font-bold text-foreground">{s.value}</div>
               <div className="text-xs font-semibold text-foreground mt-0.5">{s.label}</div>
               <div className="text-[11px] text-muted-foreground mt-0.5">{s.sub}</div>
             </div>
-          </div>
+          </button>
         ))}
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Weekly Flights Bar Chart */}
+        <div className="bg-card rounded-lg border p-4">
+          <h3 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
+            <Plane size={14} className="text-primary" /> Weekly Flights
+          </h3>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={weeklyFlights}>
+              <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+              <Bar dataKey="flights" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Total" />
+              <Bar dataKey="onTime" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} name="On Time" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Flight Status Pie */}
+        <div className="bg-card rounded-lg border p-4">
+          <h3 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
+            <Timer size={14} className="text-warning" /> Flight Status (Today)
+          </h3>
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie data={flightStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={35} strokeWidth={2} stroke="hsl(var(--card))">
+                {flightStatusData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+              </Pie>
+              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+              <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Monthly Revenue Line */}
+        <div className="bg-card rounded-lg border p-4">
+          <h3 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
+            <TrendingUp size={14} className="text-accent" /> Monthly Revenue
+          </h3>
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={monthlyRevenue}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}K`} />
+              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`$${v.toLocaleString()}`, "Revenue"]} />
+              <Line type="monotone" dataKey="revenue" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ fill: "hsl(var(--accent))", r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Main grid: Recent Flights + Airline Activity */}
@@ -108,7 +195,7 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {recentFlights.map(f => (
-                  <tr key={f.flight} className="data-table-row">
+                  <tr key={f.flight} className="data-table-row cursor-pointer" onClick={() => navigate("/flight-schedule")}>
                     <td className="px-4 py-2.5 font-semibold text-foreground">{f.flight}</td>
                     <td className="px-4 py-2.5 text-foreground">{f.operator}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{f.route}</td>
@@ -137,16 +224,16 @@ export default function DashboardPage() {
           </div>
           <div className="divide-y">
             {airlineActivity.map(a => (
-              <div key={a.name} className="px-4 py-3 flex items-center justify-between">
+              <button key={a.name} onClick={() => navigate("/airlines")} className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{a.iata}</div>
-                  <div>
+                  <div className="text-left">
                     <div className="text-sm font-semibold text-foreground">{a.name}</div>
                     <div className="text-xs text-muted-foreground">{a.flights} flights · {a.pax.toLocaleString()} pax</div>
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-success/15 text-success">{a.status}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
