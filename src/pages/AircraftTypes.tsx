@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { Search, Plane } from "lucide-react";
+import { Search, Plane, Download } from "lucide-react";
 import { aircraftTypesRef } from "@/data/servicesData";
+import { exportToExcel } from "@/lib/exportExcel";
 
 const catCfg: Record<string, string> = {
   NB: "bg-info/15 text-info",
@@ -23,11 +24,21 @@ export default function AircraftTypesPage() {
     return r;
   }, [search, catFilter]);
 
+  const handleExport = () => exportToExcel(
+    filtered.map(a => ({ ICAO: a.icao, IATA: a.iata, Name: a.name, Category: `${a.category} — ${catLabel[a.category]}`, "MTOW (ton)": a.mtow, Seats: a.seats })),
+    "Aircraft Types", "Link_Aircraft_Types.xlsx"
+  );
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Plane size={22} className="text-primary" /> Aircraft Types Reference</h1>
-        <p className="text-muted-foreground text-sm mt-1">ICAO/IATA codes, MTOW, and category reference for common aircraft</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Plane size={22} className="text-primary" /> Aircraft Types Reference</h1>
+          <p className="text-muted-foreground text-sm mt-1">ICAO/IATA codes, MTOW, and category reference for common aircraft</p>
+        </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold hover:bg-muted transition-colors text-primary border-primary/30">
+          <Download size={14} /> Export Excel
+        </button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {Object.entries(catLabel).map(([k, v]) => (

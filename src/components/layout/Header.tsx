@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Bell, Settings, LogOut, ChevronDown, Monitor, Code2, Server, TestTube, Moon, Sun } from "lucide-react";
-
+import GlobalSearch from "@/components/GlobalSearch";
 type Role = "UI/UX" | "Front-End" | "Back-End" | "Tester";
 
 const roleConfig: Record<Role, { icon: React.ReactNode; color: string }> = {
@@ -28,6 +28,9 @@ export default function Header() {
       className="h-14 border-b flex items-center justify-end px-6 gap-3 bg-card"
       style={{ borderColor: "hsl(var(--header-border))" }}
     >
+      {/* Global Search */}
+      <GlobalSearch />
+
       {/* Dark Mode Toggle */}
       <button
         onClick={() => setDark(d => !d)}

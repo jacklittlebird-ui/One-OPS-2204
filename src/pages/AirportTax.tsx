@@ -1,12 +1,23 @@
 import { airportTaxItems } from "@/data/servicesData";
-import { Receipt } from "lucide-react";
+import { Receipt, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportExcel";
 
 export default function AirportTaxPage() {
+  const handleExport = () => exportToExcel(
+    airportTaxItems.map(r => ({ "Tax/Fee": r.tax, Unit: r.unit, "Amount (USD)": r.amount, Applicability: r.applicability })),
+    "Airport Tax", "Link_Airport_Tax.xlsx"
+  );
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Receipt size={22} className="text-primary" /> Airport Tax</h1>
-        <p className="text-muted-foreground text-sm mt-1">Egyptian airport taxes, levies, and government fees</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Receipt size={22} className="text-primary" /> Airport Tax</h1>
+          <p className="text-muted-foreground text-sm mt-1">Egyptian airport taxes, levies, and government fees</p>
+        </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold hover:bg-muted transition-colors text-primary border-primary/30">
+          <Download size={14} /> Export Excel
+        </button>
       </div>
       <div className="bg-card rounded-lg border overflow-hidden">
         <div className="overflow-x-auto">

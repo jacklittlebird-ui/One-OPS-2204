@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { Search, FileText, CheckCircle, Clock, AlertCircle, XCircle } from "lucide-react";
+import { Search, FileText, CheckCircle, Clock, AlertCircle, XCircle, Download } from "lucide-react";
 import { sampleBulletins, Bulletin } from "@/data/servicesData";
+import { exportToExcel } from "@/lib/exportExcel";
 
 const statusCfg: Record<string, string> = {
   Active: "bg-success/15 text-success",
@@ -28,11 +29,21 @@ export default function BulletinsPage() {
     return r;
   }, [search, typeFilter, statusFilter]);
 
+  const handleExport = () => exportToExcel(
+    filtered.map(b => ({ ID: b.id, Title: b.title, Type: b.type, Issued: b.issuedDate, Effective: b.effectiveDate, Expiry: b.expiryDate, "Issued By": b.issuedBy, Priority: b.priority, Status: b.status })),
+    "Bulletins", "Link_Bulletins.xlsx"
+  );
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Bulletins</h1>
-        <p className="text-muted-foreground text-sm mt-1">Safety, security, and operational bulletins</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Bulletins</h1>
+          <p className="text-muted-foreground text-sm mt-1">Safety, security, and operational bulletins</p>
+        </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold hover:bg-muted transition-colors text-primary border-primary/30">
+          <Download size={14} /> Export Excel
+        </button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card"><div className="stat-card-icon bg-primary"><FileText size={20} /></div><div><div className="text-2xl font-bold text-foreground">{sampleBulletins.length}</div><div className="text-xs text-muted-foreground">Total Bulletins</div></div></div>

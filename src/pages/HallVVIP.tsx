@@ -1,12 +1,23 @@
 import { hallVvipItems } from "@/data/servicesData";
-import { Crown } from "lucide-react";
+import { Crown, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportExcel";
 
 export default function HallVVIPPage() {
+  const handleExport = () => exportToExcel(
+    hallVvipItems.map(r => ({ Service: r.service, Unit: r.unit, "Price (USD)": r.price, Terminal: r.terminal })),
+    "Hall VVIP", "Link_Hall_VVIP.xlsx"
+  );
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Crown size={22} className="text-primary" /> Hall & VVIP Services</h1>
-        <p className="text-muted-foreground text-sm mt-1">Lounge, VVIP pavilion, and premium terminal services</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Crown size={22} className="text-primary" /> Hall & VVIP Services</h1>
+          <p className="text-muted-foreground text-sm mt-1">Lounge, VVIP pavilion, and premium terminal services</p>
+        </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold hover:bg-muted transition-colors text-primary border-primary/30">
+          <Download size={14} /> Export Excel
+        </button>
       </div>
       <div className="bg-card rounded-lg border overflow-hidden">
         <div className="overflow-x-auto">

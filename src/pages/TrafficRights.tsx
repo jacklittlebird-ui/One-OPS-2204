@@ -1,5 +1,6 @@
 import { trafficRightsData } from "@/data/servicesData";
-import { Shield, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { Shield, CheckCircle, XCircle, Clock, AlertCircle, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportExcel";
 
 const statusCfg: Record<string, string> = {
   Automatic: "bg-success/15 text-success",
@@ -11,11 +12,21 @@ const statusCfg: Record<string, string> = {
 };
 
 export default function TrafficRightsPage() {
+  const handleExport = () => exportToExcel(
+    trafficRightsData.map(r => ({ Freedom: r.right, Description: r.description, Status: r.status, Notes: r.notes })),
+    "Traffic Rights", "Link_Traffic_Rights.xlsx"
+  );
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Shield size={22} className="text-primary" /> T2 — Traffic Rights</h1>
-        <p className="text-muted-foreground text-sm mt-1">Freedoms of the air and bilateral air service agreements</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Shield size={22} className="text-primary" /> T2 — Traffic Rights</h1>
+          <p className="text-muted-foreground text-sm mt-1">Freedoms of the air and bilateral air service agreements</p>
+        </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold hover:bg-muted transition-colors text-primary border-primary/30">
+          <Download size={14} /> Export Excel
+        </button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card"><div className="stat-card-icon bg-primary"><Shield size={20} /></div><div><div className="text-2xl font-bold text-foreground">9</div><div className="text-xs text-muted-foreground">Freedoms of Air</div></div></div>

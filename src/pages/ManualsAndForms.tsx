@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { Search, BookOpen, CheckCircle, Clock, Archive } from "lucide-react";
+import { Search, BookOpen, CheckCircle, Clock, Archive, Download } from "lucide-react";
 import { sampleManualsAndForms, ManualForm } from "@/data/servicesData";
+import { exportToExcel } from "@/lib/exportExcel";
 
 const statusCfg: Record<string, string> = {
   Current: "bg-success/15 text-success",
@@ -26,11 +27,21 @@ export default function ManualsAndFormsPage() {
     return r;
   }, [search, catFilter]);
 
+  const handleExport = () => exportToExcel(
+    filtered.map(m => ({ ID: m.id, Title: m.title, Category: m.category, Version: m.version, "Last Updated": m.lastUpdated, Department: m.department, Status: m.status })),
+    "Manuals & Forms", "Link_Manuals_Forms.xlsx"
+  );
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><BookOpen size={22} className="text-primary" /> Manuals & Forms</h1>
-        <p className="text-muted-foreground text-sm mt-1">Company manuals, forms, checklists, and standard operating procedures</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><BookOpen size={22} className="text-primary" /> Manuals & Forms</h1>
+          <p className="text-muted-foreground text-sm mt-1">Company manuals, forms, checklists, and standard operating procedures</p>
+        </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold hover:bg-muted transition-colors text-primary border-primary/30">
+          <Download size={14} /> Export Excel
+        </button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card"><div className="stat-card-icon bg-primary"><BookOpen size={20} /></div><div><div className="text-2xl font-bold text-foreground">{sampleManualsAndForms.length}</div><div className="text-xs text-muted-foreground">Total Documents</div></div></div>

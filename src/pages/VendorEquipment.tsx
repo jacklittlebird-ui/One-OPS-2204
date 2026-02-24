@@ -1,5 +1,6 @@
 import { vendorEquipmentItems } from "@/data/servicesData";
-import { Truck, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Truck, CheckCircle, Clock, AlertCircle, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportExcel";
 
 const statusCfg: Record<string, string> = {
   Available: "bg-success/15 text-success",
@@ -9,11 +10,21 @@ const statusCfg: Record<string, string> = {
 };
 
 export default function VendorEquipmentPage() {
+  const handleExport = () => exportToExcel(
+    vendorEquipmentItems.map(r => ({ Equipment: r.equipment, Vendor: r.vendor, Rate: r.rate, Status: r.status })),
+    "Vendor Equipment", "Link_Vendor_Equipment.xlsx"
+  );
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Truck size={22} className="text-primary" /> Vendor Equipment</h1>
-        <p className="text-muted-foreground text-sm mt-1">Third-party GSE equipment rates and availability</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Truck size={22} className="text-primary" /> Vendor Equipment</h1>
+          <p className="text-muted-foreground text-sm mt-1">Third-party GSE equipment rates and availability</p>
+        </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold hover:bg-muted transition-colors text-primary border-primary/30">
+          <Download size={14} /> Export Excel
+        </button>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card"><div className="stat-card-icon bg-primary"><Truck size={20} /></div><div><div className="text-2xl font-bold text-foreground">{vendorEquipmentItems.length}</div><div className="text-xs text-muted-foreground">Equipment Types</div></div></div>
