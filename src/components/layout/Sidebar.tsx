@@ -1,9 +1,9 @@
 import { useLocation, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   LayoutDashboard, Plane, Calculator, FileText, Utensils, DollarSign,
   Shield, AlertTriangle, MoreHorizontal, ChevronDown, ChevronRight, FileBarChart2,
-  Globe, Clock, Package, Users, Receipt
+  Globe, Clock, Package, Users, Receipt, Download, Upload
 } from "lucide-react";
 
 interface NavChild {
@@ -74,9 +74,15 @@ const navSections: NavSection[] = [
   },
 ];
 
+const STORAGE_KEYS = [
+  "link_airlines", "link_aircrafts", "link_flights",
+  "link_airport_charges", "link_service_reports", "link_invoices",
+];
+
 export default function Sidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isChildActive = (children: NavChild[]) =>
     children.some(c => currentPath === c.path);
@@ -94,6 +100,45 @@ export default function Sidebar() {
   const toggle = (label: string) => setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
 
   const isActive = (path: string) => currentPath === path;
+
+  const handleBackup = () => {
+    const backup: Record<string, any> = {};
+    STORAGE_KEYS.forEach(key => {
+      const val = localStorage.getItem(key);
+      if (val) backup[key] = JSON.parse(val);
+    });
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `LinkAero_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = JSON.parse(evt.target?.result as string);
+        let count = 0;
+        STORAGE_KEYS.forEach(key => {
+          if (data[key]) {
+            localStorage.setItem(key, JSON.stringify(data[key]));
+            count++;
+          }
+        });
+        alert(`Restored ${count} modules. Reloading…`);
+        window.location.reload();
+      } catch {
+        alert("Invalid backup file.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   return (
     <aside className="w-56 min-h-screen bg-sidebar flex flex-col shrink-0">
@@ -153,6 +198,23 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Backup / Restore */}
+      <div className="px-3 py-3 border-t border-sidebar-accent space-y-1.5">
+        <button
+          onClick={handleBackup}
+          className="w-full flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+        >
+          <Download size={14} /> Backup All Data
+        </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+        >
+          <Upload size={14} /> Restore Backup
+        </button>
+        <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleRestore} />
+      </div>
     </aside>
   );
 }
