@@ -26,7 +26,7 @@ export default function AircraftsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRow, setEditRow] = useState<Partial<Aircraft>>({});
   const [showAdd, setShowAdd] = useState(false);
-  const [newRow, setNewRow] = useState<Partial<Aircraft>>({ registration: "", type: "", airline: "", model: "", mtow: 0, seats: 0, yearBuilt: 2024, status: "Operational" });
+  const [newRow, setNewRow] = useState<Partial<Aircraft>>({ registration: "", type: "", airline: "", model: "", mtow: 0, seats: 0, certificateNo: "", issueDate: "", status: "Operational" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const types = useMemo(() => [...new Set(data.map(d => d.type))], [data]);
@@ -55,7 +55,7 @@ export default function AircraftsPage() {
     if (!newRow.registration || !newRow.model) return;
     setData(prev => [...prev, { ...newRow, id: String(Date.now()) } as Aircraft]);
     setShowAdd(false);
-    setNewRow({ registration: "", type: "", airline: "", model: "", mtow: 0, seats: 0, yearBuilt: 2024, status: "Operational" });
+    setNewRow({ registration: "", type: "", airline: "", model: "", mtow: 0, seats: 0, certificateNo: "", issueDate: "", status: "Operational" });
   };
 
   const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,8 +67,9 @@ export default function AircraftsPage() {
       setData(json.map((row: any, i: number) => ({
         id: String(Date.now() + i), registration: row["Registration"] || row.registration || "",
         type: row["Type"] || row.type || "", airline: row["Airline"] || row.airline || "",
-        model: row["Model"] || row.model || "", mtow: Number(row["MTOW"] || row.mtow || 0),
-        seats: Number(row["Seats"] || row.seats || 0), yearBuilt: Number(row["Year Built"] || row.yearBuilt || 2020),
+        model: row["Model"] || row.model || "", mtow: Number(row["MTOW (T)"] || row.mtow || 0),
+        seats: Number(row["Seats"] || row.seats || 0), certificateNo: row["Certificate No."] || row.certificateNo || "",
+        issueDate: row["Issue Date"] || row.issueDate || "",
         status: row["Status"] || row.status || "Operational",
       })));
       setPage(1);
@@ -77,11 +78,11 @@ export default function AircraftsPage() {
   }, []);
 
   const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ Registration: r.registration, Type: r.type, Airline: r.airline, Model: r.model, MTOW: r.mtow, Seats: r.seats, "Year Built": r.yearBuilt, Status: r.status })));
+    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ Registration: r.registration, Type: r.type, Airline: r.airline, Model: r.model, "MTOW (T)": r.mtow, Seats: r.seats, "Certificate No.": r.certificateNo, "Issue Date": r.issueDate, Status: r.status })));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Aircrafts"); XLSX.writeFile(wb, "aircrafts.xlsx");
   };
 
-  const columns = ["REGISTRATION", "TYPE", "AIRLINE", "MODEL", "MTOW (KG)", "SEATS", "YEAR", "STATUS", "ACTIONS"];
+  const columns = ["REGISTRATION", "TYPE", "AIRLINE", "MODEL", "MTOW (T)", "SEATS", "CERTIFICATE NO.", "ISSUE DATE", "STATUS", "ACTIONS"];
 
   return (
     <div>
@@ -139,14 +140,15 @@ export default function AircraftsPage() {
 
         {showAdd && (
           <div className="p-4 border-b bg-muted">
-            <div className="grid grid-cols-9 gap-2 items-end">
+            <div className="grid grid-cols-10 gap-2 items-end">
               <input placeholder="Registration" value={newRow.registration} onChange={e => setNewRow(p => ({ ...p, registration: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Type" value={newRow.type} onChange={e => setNewRow(p => ({ ...p, type: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Airline" value={newRow.airline} onChange={e => setNewRow(p => ({ ...p, airline: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Model" value={newRow.model} onChange={e => setNewRow(p => ({ ...p, model: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
-              <input placeholder="MTOW" type="number" value={newRow.mtow || 0} onChange={e => setNewRow(p => ({ ...p, mtow: +e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              <input placeholder="MTOW (T)" type="number" step="0.1" value={newRow.mtow || 0} onChange={e => setNewRow(p => ({ ...p, mtow: +e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Seats" type="number" value={newRow.seats || 0} onChange={e => setNewRow(p => ({ ...p, seats: +e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
-              <input placeholder="Year" type="number" value={newRow.yearBuilt || 2024} onChange={e => setNewRow(p => ({ ...p, yearBuilt: +e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              <input placeholder="Certificate No." value={newRow.certificateNo} onChange={e => setNewRow(p => ({ ...p, certificateNo: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              <input placeholder="Issue Date" type="date" value={newRow.issueDate} onChange={e => setNewRow(p => ({ ...p, issueDate: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <select value={newRow.status} onChange={e => setNewRow(p => ({ ...p, status: e.target.value as Aircraft["status"] }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
                 <option>Operational</option><option>Maintenance</option><option>Grounded</option>
               </select>
@@ -163,7 +165,7 @@ export default function AircraftsPage() {
             <thead><tr>{columns.map(col => <th key={col} className="data-table-header px-4 py-3 text-left whitespace-nowrap">{col}</th>)}</tr></thead>
             <tbody>
               {pageData.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-16">
+                <tr><td colSpan={10} className="text-center py-16">
                   <Database size={40} className="mx-auto text-muted-foreground/40 mb-3" />
                   <p className="font-semibold text-foreground">No Aircraft Found</p>
                 </td></tr>
@@ -175,9 +177,10 @@ export default function AircraftsPage() {
                       <td className="px-4 py-2"><input value={editRow.type || ""} onChange={e => setEditRow(p => ({ ...p, type: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-24 bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input value={editRow.airline || ""} onChange={e => setEditRow(p => ({ ...p, airline: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input value={editRow.model || ""} onChange={e => setEditRow(p => ({ ...p, model: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
-                      <td className="px-4 py-2"><input type="number" value={editRow.mtow || 0} onChange={e => setEditRow(p => ({ ...p, mtow: +e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-24 bg-card text-foreground" /></td>
+                      <td className="px-4 py-2"><input type="number" step="0.1" value={editRow.mtow || 0} onChange={e => setEditRow(p => ({ ...p, mtow: +e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-24 bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input type="number" value={editRow.seats || 0} onChange={e => setEditRow(p => ({ ...p, seats: +e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-16 bg-card text-foreground" /></td>
-                      <td className="px-4 py-2"><input type="number" value={editRow.yearBuilt || 2024} onChange={e => setEditRow(p => ({ ...p, yearBuilt: +e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-20 bg-card text-foreground" /></td>
+                      <td className="px-4 py-2"><input value={editRow.certificateNo || ""} onChange={e => setEditRow(p => ({ ...p, certificateNo: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-28 bg-card text-foreground" /></td>
+                      <td className="px-4 py-2"><input type="date" value={editRow.issueDate || ""} onChange={e => setEditRow(p => ({ ...p, issueDate: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-32 bg-card text-foreground" /></td>
                       <td className="px-4 py-2">
                         <select value={editRow.status} onChange={e => setEditRow(p => ({ ...p, status: e.target.value as Aircraft["status"] }))} className="text-sm border rounded px-1.5 py-0.5 bg-card text-foreground">
                           <option>Operational</option><option>Maintenance</option><option>Grounded</option>
@@ -194,9 +197,10 @@ export default function AircraftsPage() {
                       <td className="px-4 py-2.5 text-foreground">{row.type}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.airline}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.model}</td>
-                      <td className="px-4 py-2.5 text-foreground">{row.mtow.toLocaleString()}</td>
+                      <td className="px-4 py-2.5 text-foreground">{row.mtow}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.seats}</td>
-                      <td className="px-4 py-2.5 text-foreground">{row.yearBuilt}</td>
+                      <td className="px-4 py-2.5 text-foreground font-mono">{row.certificateNo}</td>
+                      <td className="px-4 py-2.5 text-foreground">{row.issueDate}</td>
                       <td className="px-4 py-2.5">{statusBadge(row.status)}</td>
                       <td className="px-4 py-2.5 flex gap-2">
                         <button onClick={() => startEdit(row)} className="text-info hover:text-info/80"><Pencil size={14} /></button>
