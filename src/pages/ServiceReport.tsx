@@ -1,13 +1,15 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
-  DollarSign, Users, X, ChevronLeft, ChevronRight, Eye, Pencil, Trash2, Link2, Receipt
+  DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, Receipt
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import {
-  ServiceReport, HandlingType, handlingTypes, sampleReports
+  ServiceReport, HandlingType, handlingTypes, sampleReports, DelayEntry
 } from "@/data/serviceReportData";
+import { sampleDelayCodes } from "@/data/delayCodesData";
+import { generateAllCharges } from "@/data/airportChargesData";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const PAGE_SIZE = 15;
@@ -26,22 +28,51 @@ const statusColor: Record<string, string> = {
 const dayNightOptions = ["D", "N", "D/N"] as const;
 const currencyOptions = ["USD", "EUR", "EGP"] as const;
 const stationOptions = [
-  { name: "Cairo", iata: "CAI", icao: "HECA" },
-  { name: "Hurghada", iata: "HRG", icao: "HEHR" },
-  { name: "Sharm El Sheikh", iata: "SSH", icao: "HESH" },
-  { name: "Luxor", iata: "LXR", icao: "HELX" },
-  { name: "Aswan", iata: "ASW", icao: "HEAS" },
+  { name: "Cairo", vendor: "Cairo Airport Company" },
+  { name: "Hurghada", vendor: "Egyptian Airports" },
+  { name: "Sharm El Sheikh", vendor: "Egyptian Airports" },
+  { name: "Luxor", vendor: "Egyptian Airports" },
+  { name: "Aswan", vendor: "Egyptian Airports" },
 ];
+
+// Precompute airport charges lookup
+const allCharges = generateAllCharges();
+function getChargeForMtow(station: string, mtowStr: string, dayNight: string) {
+  const tonMatch = mtowStr.match(/(\d+)/);
+  if (!tonMatch) return { landing: 0, parking: 0 };
+  const ton = parseInt(tonMatch[1]);
+  const vendor = stationOptions.find(s => s.name === station)?.vendor || "Egyptian Airports";
+  const charge = allCharges.find(c => c.vendorName === vendor && c.mtow === `${ton} TON`);
+  if (!charge) return { landing: 0, parking: 0 };
+  const isNight = dayNight === "N";
+  return {
+    landing: isNight ? charge.landingNight : charge.landingDay,
+    parking: isNight ? charge.parkingNight : charge.parkingDay,
+  };
+}
+
+function calcGroundTime(co: string, ob: string): string {
+  if (!co || !ob) return "";
+  const [ch, cm] = co.split(":").map(Number);
+  const [oh, om] = ob.split(":").map(Number);
+  if (isNaN(ch) || isNaN(cm) || isNaN(oh) || isNaN(om)) return "";
+  let diff = (oh * 60 + om) - (ch * 60 + cm);
+  if (diff < 0) diff += 24 * 60;
+  const h = Math.floor(diff / 60);
+  const m = diff % 60;
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
 
 const emptyReport = (): Partial<ServiceReport> => ({
   operator: "", handlingType: "Turn Around",
-  station: "Cairo", stationIATA: "CAI", stationICAO: "HECA",
+  station: "Cairo",
   aircraftType: "", registration: "", flightNo: "",
-  airlineIATA: "", airlineICAO: "", mtow: "", route: "",
+  mtow: "", route: "",
   arrivalDate: "", departureDate: "", dayNight: "D",
-  sta: "", std: "", ata: "", atd: "", groundTime: "", landingTime: "",
-  dly: "", dlyExplanation: "",
-  paxIn: 0, paxOut: 0, paxTransit: 0,
+  sta: "", std: "", td: "", co: "", ob: "", to: "",
+  groundTime: "",
+  delays: [],
+  paxInAdultI: 0, paxInInfI: 0, paxInAdultD: 0, paxInInfD: 0, paxTransit: 0,
   projectTags: "", checkInSystem: "", performedBy: "Link Egypt",
   civilAviationFee: 0, handlingFee: 0, airportCharge: 0, totalCost: 0, currency: "USD",
 });
@@ -67,11 +98,50 @@ interface ReportFormProps {
 }
 
 function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps) {
-  const set = (key: keyof ServiceReport, val: any) => onChange({ ...data, [key]: val });
+  const set = (key: keyof ServiceReport, val: any) => {
+    const updated = { ...data, [key]: val };
+    // Auto-calc ground time when co or ob change
+    if (key === "co" || key === "ob") {
+      updated.groundTime = calcGroundTime(
+        key === "co" ? val : (data.co || ""),
+        key === "ob" ? val : (data.ob || "")
+      );
+    }
+    // Auto-calc financials when mtow, station, or dayNight change
+    if (key === "mtow" || key === "station" || key === "dayNight") {
+      const charges = getChargeForMtow(
+        key === "station" ? val : (data.station || "Cairo"),
+        key === "mtow" ? val : (data.mtow || ""),
+        key === "dayNight" ? val : (data.dayNight || "D")
+      );
+      updated.airportCharge = +charges.landing.toFixed(2);
+      updated.civilAviationFee = +charges.parking.toFixed(2);
+      updated.totalCost = +(updated.civilAviationFee + (updated.handlingFee || 0) + updated.airportCharge).toFixed(2);
+    }
+    if (key === "handlingFee") {
+      updated.totalCost = +((updated.civilAviationFee || 0) + val + (updated.airportCharge || 0)).toFixed(2);
+    }
+    onChange(updated);
+  };
 
-  const handleStationChange = (name: string) => {
-    const s = stationOptions.find(o => o.name === name);
-    if (s) onChange({ ...data, station: s.name, stationIATA: s.iata, stationICAO: s.icao });
+  const delays = data.delays || [];
+  const setDelay = (index: number, field: keyof DelayEntry, val: any) => {
+    const newDelays = [...delays];
+    newDelays[index] = { ...newDelays[index], [field]: val };
+    // Auto-fill explanation from delay codes
+    if (field === "code") {
+      const found = sampleDelayCodes.find(dc => dc.code === val);
+      newDelays[index].explanation = found?.description || "";
+    }
+    onChange({ ...data, delays: newDelays });
+  };
+  const addDelay = () => {
+    if (delays.length < 4) {
+      onChange({ ...data, delays: [...delays, { code: "", timing: 0, explanation: "" }] });
+    }
+  };
+  const removeDelay = (i: number) => {
+    onChange({ ...data, delays: delays.filter((_, idx) => idx !== i) });
   };
 
   return (
@@ -88,19 +158,15 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <FormField label="Operator"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="Air Cairo" /></FormField>
               <FormField label="Flight No."><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="SM123/124" /></FormField>
-              <FormField label="Airline IATA"><input className={inputCls} value={data.airlineIATA || ""} onChange={e => set("airlineIATA", e.target.value)} placeholder="SM" /></FormField>
-              <FormField label="Airline ICAO"><input className={inputCls} value={data.airlineICAO || ""} onChange={e => set("airlineICAO", e.target.value)} placeholder="MSC" /></FormField>
               <FormField label="Aircraft Type"><input className={inputCls} value={data.aircraftType || ""} onChange={e => set("aircraftType", e.target.value)} placeholder="A320/200" /></FormField>
               <FormField label="Registration"><input className={inputCls} value={data.registration || ""} onChange={e => set("registration", e.target.value)} placeholder="SU-CAI" /></FormField>
               <FormField label="MTOW"><input className={inputCls} value={data.mtow || ""} onChange={e => set("mtow", e.target.value)} placeholder="77 TON" /></FormField>
               <FormField label="Route"><input className={inputCls} value={data.route || ""} onChange={e => set("route", e.target.value)} placeholder="AMS/CAI/AMS" /></FormField>
               <FormField label="Station">
-                <select className={selectCls} value={data.station || "Cairo"} onChange={e => handleStationChange(e.target.value)}>
+                <select className={selectCls} value={data.station || "Cairo"} onChange={e => set("station", e.target.value)}>
                   {stationOptions.map(s => <option key={s.name}>{s.name}</option>)}
                 </select>
               </FormField>
-              <FormField label="Station IATA"><input className={inputCls} value={data.stationIATA || ""} readOnly /></FormField>
-              <FormField label="Station ICAO"><input className={inputCls} value={data.stationICAO || ""} readOnly /></FormField>
               <FormField label="Handling Type">
                 <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value as HandlingType)}>
                   {handlingTypes.map(h => <option key={h}>{h}</option>)}
@@ -120,26 +186,56 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
                   {dayNightOptions.map(o => <option key={o}>{o}</option>)}
                 </select>
               </FormField>
-              <FormField label="Ground Time"><input className={inputCls} value={data.groundTime || ""} onChange={e => set("groundTime", e.target.value)} placeholder="1:15" /></FormField>
+              <FormField label="Ground Time (auto)">
+                <input className={inputCls + " bg-muted"} value={data.groundTime || ""} readOnly placeholder="Auto" />
+              </FormField>
               <FormField label="STA"><input type="time" className={inputCls} value={data.sta || ""} onChange={e => set("sta", e.target.value)} /></FormField>
               <FormField label="STD"><input type="time" className={inputCls} value={data.std || ""} onChange={e => set("std", e.target.value)} /></FormField>
-              <FormField label="ATA"><input type="time" className={inputCls} value={data.ata || ""} onChange={e => set("ata", e.target.value)} /></FormField>
-              <FormField label="ATD"><input type="time" className={inputCls} value={data.atd || ""} onChange={e => set("atd", e.target.value)} /></FormField>
-              <FormField label="Landing Time"><input className={inputCls} value={data.landingTime || ""} onChange={e => set("landingTime", e.target.value)} placeholder="2:05" /></FormField>
-              <FormField label="DLY Code"><input className={inputCls} value={data.dly || ""} onChange={e => set("dly", e.target.value)} placeholder="93/89" /></FormField>
-              <div className="col-span-2 md:col-span-2">
-                <FormField label="DLY Explanation"><input className={inputCls + " w-full"} value={data.dlyExplanation || ""} onChange={e => set("dlyExplanation", e.target.value)} placeholder="Reason for delay…" /></FormField>
-              </div>
+              <FormField label="T/D (Touchdown)"><input type="time" className={inputCls} value={data.td || ""} onChange={e => set("td", e.target.value)} /></FormField>
+              <FormField label="C/O (Chocks On)"><input type="time" className={inputCls} value={data.co || ""} onChange={e => set("co", e.target.value)} /></FormField>
+              <FormField label="O/B (Off Blocks)"><input type="time" className={inputCls} value={data.ob || ""} onChange={e => set("ob", e.target.value)} /></FormField>
+              <FormField label="T/O (Takeoff)"><input type="time" className={inputCls} value={data.to || ""} onChange={e => set("to", e.target.value)} /></FormField>
             </div>
+          </div>
+
+          {/* Delay Codes */}
+          <div>
+            <h3 className="text-sm font-bold text-destructive uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Building2 size={14} />Delay Codes (up to 4)
+            </h3>
+            {delays.map((d, i) => (
+              <div key={i} className="grid grid-cols-[1fr_80px_2fr_auto] gap-2 mb-2 items-end">
+                <FormField label={`DLY Code ${i + 1}`}>
+                  <select className={selectCls} value={d.code} onChange={e => setDelay(i, "code", e.target.value)}>
+                    <option value="">— Select —</option>
+                    {sampleDelayCodes.map(dc => (
+                      <option key={dc.id} value={dc.code}>{dc.code} – {dc.description.slice(0, 40)}</option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Timing (min)">
+                  <input type="number" className={inputCls} value={d.timing || 0} onChange={e => setDelay(i, "timing", +e.target.value)} />
+                </FormField>
+                <FormField label="Explanation (auto)">
+                  <input className={inputCls + " bg-muted"} value={d.explanation} readOnly />
+                </FormField>
+                <button onClick={() => removeDelay(i)} className="p-1.5 text-destructive hover:text-destructive/80 mb-0.5"><X size={14} /></button>
+              </div>
+            ))}
+            {delays.length < 4 && (
+              <button onClick={addDelay} className="toolbar-btn-outline text-xs mt-1"><Plus size={12} /> Add Delay</button>
+            )}
           </div>
 
           {/* PAX + Services */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-3 flex items-center gap-2"><Users size={14} />Passengers</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <FormField label="PAX In"><input type="number" className={inputCls} value={data.paxIn || 0} onChange={e => set("paxIn", +e.target.value)} /></FormField>
-                <FormField label="PAX Out"><input type="number" className={inputCls} value={data.paxOut || 0} onChange={e => set("paxOut", +e.target.value)} /></FormField>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="PAX IN Adult /I"><input type="number" className={inputCls} value={data.paxInAdultI || 0} onChange={e => set("paxInAdultI", +e.target.value)} /></FormField>
+                <FormField label="PAX IN INF /I"><input type="number" className={inputCls} value={data.paxInInfI || 0} onChange={e => set("paxInInfI", +e.target.value)} /></FormField>
+                <FormField label="PAX IN Adult /D"><input type="number" className={inputCls} value={data.paxInAdultD || 0} onChange={e => set("paxInAdultD", +e.target.value)} /></FormField>
+                <FormField label="PAX IN INF /D"><input type="number" className={inputCls} value={data.paxInInfD || 0} onChange={e => set("paxInInfD", +e.target.value)} /></FormField>
                 <FormField label="PAX Transit"><input type="number" className={inputCls} value={data.paxTransit || 0} onChange={e => set("paxTransit", +e.target.value)} /></FormField>
               </div>
             </div>
@@ -157,12 +253,12 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
 
           {/* Financials */}
           <div>
-            <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-2"><DollarSign size={14} />Financials</h3>
+            <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-2"><DollarSign size={14} />Financials (auto-calculated from MTOW)</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <FormField label="Civil Aviation ($)"><input type="number" className={inputCls} value={data.civilAviationFee || 0} onChange={e => set("civilAviationFee", +e.target.value)} /></FormField>
+              <FormField label="Civil Aviation ($)"><input type="number" className={inputCls + " bg-muted"} value={data.civilAviationFee || 0} readOnly /></FormField>
               <FormField label="Handling Fee ($)"><input type="number" className={inputCls} value={data.handlingFee || 0} onChange={e => set("handlingFee", +e.target.value)} /></FormField>
-              <FormField label="Airport Charge ($)"><input type="number" className={inputCls} value={data.airportCharge || 0} onChange={e => set("airportCharge", +e.target.value)} /></FormField>
-              <FormField label="Total Cost ($)"><input type="number" className={inputCls} value={data.totalCost || 0} onChange={e => set("totalCost", +e.target.value)} /></FormField>
+              <FormField label="Airport Charge ($)"><input type="number" className={inputCls + " bg-muted"} value={data.airportCharge || 0} readOnly /></FormField>
+              <FormField label="Total Cost ($)"><input type="number" className={inputCls + " bg-muted"} value={data.totalCost || 0} readOnly /></FormField>
               <FormField label="Currency">
                 <select className={selectCls} value={data.currency} onChange={e => set("currency", e.target.value as "USD"|"EUR"|"EGP")}>
                   {currencyOptions.map(c => <option key={c}>{c}</option>)}
@@ -228,8 +324,7 @@ export default function ServiceReportPage() {
       r = r.filter(x =>
         x.operator.toLowerCase().includes(s) ||
         x.flightNo.toLowerCase().includes(s) ||
-        x.route.toLowerCase().includes(s) ||
-        x.airlineIATA.toLowerCase().includes(s)
+        x.route.toLowerCase().includes(s)
       );
     }
     return r;
@@ -238,9 +333,8 @@ export default function ServiceReportPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Summary stats
   const totalFlights = filtered.length;
-  const totalPax = filtered.reduce((s, r) => s + r.paxIn + r.paxOut, 0);
+  const totalPax = filtered.reduce((s, r) => s + r.paxInAdultI + r.paxInInfI + r.paxInAdultD + r.paxInInfD, 0);
   const totalRevenue = filtered.reduce((s, r) => s + r.totalCost, 0);
   const totalHandlingFees = filtered.reduce((s, r) => s + r.handlingFee, 0);
 
@@ -265,13 +359,9 @@ export default function ServiceReportPage() {
       "Operator": r.operator,
       "Type of Service": r.handlingType,
       "Station": r.station,
-      "Station IATA code": r.stationIATA,
-      "Station ICAO code": r.stationICAO,
       "Aircraft Type": r.aircraftType,
       "Registration": r.registration,
       "Flight No.": r.flightNo,
-      "AIRLINE IATA": r.airlineIATA,
-      "AIRLINE ICAO": r.airlineICAO,
       "MTOW": r.mtow,
       "ROUTE": r.route,
       "ARRIVAL Date": r.arrivalDate,
@@ -279,14 +369,27 @@ export default function ServiceReportPage() {
       "DAY/NIGHT": r.dayNight,
       "STA": r.sta,
       "STD": r.std,
-      "ATA": r.ata,
-      "ATD": r.atd,
+      "T/D": r.td,
+      "C/O": r.co,
+      "O/B": r.ob,
+      "T/O": r.to,
       "GROUND TIME": r.groundTime,
-      "LANDING TIME": r.landingTime,
-      "DLY": r.dly,
-      "DLY EXPLANATION": r.dlyExplanation,
-      "PAX IN": r.paxIn,
-      "PAX OUT": r.paxOut,
+      "DLY1 Code": r.delays?.[0]?.code || "",
+      "DLY1 Timing": r.delays?.[0]?.timing || "",
+      "DLY1 Explanation": r.delays?.[0]?.explanation || "",
+      "DLY2 Code": r.delays?.[1]?.code || "",
+      "DLY2 Timing": r.delays?.[1]?.timing || "",
+      "DLY2 Explanation": r.delays?.[1]?.explanation || "",
+      "DLY3 Code": r.delays?.[2]?.code || "",
+      "DLY3 Timing": r.delays?.[2]?.timing || "",
+      "DLY3 Explanation": r.delays?.[2]?.explanation || "",
+      "DLY4 Code": r.delays?.[3]?.code || "",
+      "DLY4 Timing": r.delays?.[3]?.timing || "",
+      "DLY4 Explanation": r.delays?.[3]?.explanation || "",
+      "PAX IN Adult /I": r.paxInAdultI,
+      "PAX IN INF /I": r.paxInInfI,
+      "PAX IN Adult /D": r.paxInAdultD,
+      "PAX IN INF /D": r.paxInInfD,
       "PAX TRANSIT": r.paxTransit,
       "Project Tags": r.projectTags,
       "CHECK IN SYSTEM": r.checkInSystem,
@@ -315,13 +418,9 @@ export default function ServiceReportPage() {
         operator: row["Operator"] || "",
         handlingType: row["Type of Service"] || "Turn Around",
         station: row["Station"] || "",
-        stationIATA: row["Station IATA code"] || "",
-        stationICAO: row["Station ICAO code"] || "",
         aircraftType: row["Aircraft Type"] || "",
         registration: row["Registration"] || "",
         flightNo: row["Flight No."] || "",
-        airlineIATA: row["AIRLINE IATA"] || "",
-        airlineICAO: row["AIRLINE ICAO"] || "",
         mtow: row["MTOW"] || "",
         route: row["ROUTE"] || "",
         arrivalDate: row["ARRIVAL Date"] || "",
@@ -329,14 +428,21 @@ export default function ServiceReportPage() {
         dayNight: row["DAY/NIGHT"] || "D",
         sta: row["STA"] || "",
         std: row["STD"] || "",
-        ata: row["ATA"] || "",
-        atd: row["ATD"] || "",
+        td: row["T/D"] || "",
+        co: row["C/O"] || "",
+        ob: row["O/B"] || "",
+        to: row["T/O"] || "",
         groundTime: row["GROUND TIME"] || "",
-        landingTime: row["LANDING TIME"] || "",
-        dly: row["DLY"] || "",
-        dlyExplanation: row["DLY EXPLANATION"] || "",
-        paxIn: Number(row["PAX IN"] || 0),
-        paxOut: Number(row["PAX OUT"] || 0),
+        delays: [
+          row["DLY1 Code"] ? { code: row["DLY1 Code"], timing: Number(row["DLY1 Timing"] || 0), explanation: row["DLY1 Explanation"] || "" } : null,
+          row["DLY2 Code"] ? { code: row["DLY2 Code"], timing: Number(row["DLY2 Timing"] || 0), explanation: row["DLY2 Explanation"] || "" } : null,
+          row["DLY3 Code"] ? { code: row["DLY3 Code"], timing: Number(row["DLY3 Timing"] || 0), explanation: row["DLY3 Explanation"] || "" } : null,
+          row["DLY4 Code"] ? { code: row["DLY4 Code"], timing: Number(row["DLY4 Timing"] || 0), explanation: row["DLY4 Explanation"] || "" } : null,
+        ].filter(Boolean) as DelayEntry[],
+        paxInAdultI: Number(row["PAX IN Adult /I"] || 0),
+        paxInInfI: Number(row["PAX IN INF /I"] || 0),
+        paxInAdultD: Number(row["PAX IN Adult /D"] || 0),
+        paxInInfD: Number(row["PAX IN INF /D"] || 0),
         paxTransit: Number(row["PAX TRANSIT"] || 0),
         projectTags: row["Project Tags"] || "",
         checkInSystem: row["CHECK IN SYSTEM"] || "",
@@ -396,7 +502,6 @@ export default function ServiceReportPage() {
 
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">
-        {/* Toolbar */}
         <div className="p-4 border-b flex flex-wrap items-center gap-3">
           <h2 className="text-base font-semibold text-foreground mr-auto">Flight Service Records</h2>
           <div className="relative">
@@ -423,12 +528,11 @@ export default function ServiceReportPage() {
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["#", "OPERATOR", "FLIGHT", "TYPE", "STATION", "ROUTE", "ARR DATE", "A/C TYPE", "MTOW", "D/N", "STA", "ATD", "PAX IN", "PAX OUT", "TOTAL ($)", "ACTIONS"].map(h => (
+                {["#", "OPERATOR", "FLIGHT", "TYPE", "STATION", "ROUTE", "ARR DATE", "A/C TYPE", "MTOW", "D/N", "STA", "C/O", "O/B", "GND TIME", "PAX IN", "DLY", "TOTAL ($)", "ACTIONS"].map(h => (
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -436,7 +540,7 @@ export default function ServiceReportPage() {
             <tbody>
               {pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="text-center py-16">
+                  <td colSpan={18} className="text-center py-16">
                     <FileBarChart2 size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                     <p className="font-semibold text-foreground">No Service Reports Found</p>
                     <p className="text-muted-foreground text-sm mt-1">Add a new report or upload an Excel file</p>
@@ -452,7 +556,7 @@ export default function ServiceReportPage() {
                       {r.handlingType}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 text-foreground">{r.stationIATA}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.station}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.route}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.arrivalDate}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.aircraftType}</td>
@@ -463,15 +567,21 @@ export default function ServiceReportPage() {
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-foreground">{r.sta}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.atd || "—"}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.paxIn}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.paxOut}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.co || "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.ob || "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.groundTime || "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.paxInAdultI + r.paxInInfI + r.paxInAdultD + r.paxInInfD}</td>
+                  <td className="px-3 py-2.5 text-foreground">
+                    {r.delays && r.delays.length > 0
+                      ? r.delays.map(d => d.code).join("/")
+                      : "—"}
+                  </td>
                   <td className="px-3 py-2.5 font-semibold text-success">{r.totalCost.toLocaleString()}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">
                       <button onClick={() => {
                         const params = new URLSearchParams({
-                          operator: r.operator, airlineIATA: r.airlineIATA, flightRef: r.flightNo,
+                          operator: r.operator, flightRef: r.flightNo,
                           description: `${r.handlingType} – ${r.route}`,
                           civilAviation: String(r.civilAviationFee), handling: String(r.handlingFee),
                           airportCharges: String(r.airportCharge),
@@ -488,7 +598,6 @@ export default function ServiceReportPage() {
           </table>
         </div>
 
-        {/* Pagination */}
         {filtered.length > 0 && (
           <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
             <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span>
@@ -501,7 +610,6 @@ export default function ServiceReportPage() {
         )}
       </div>
 
-      {/* Add/Edit Modals */}
       {showAdd && (
         <ReportForm
           title="New Service Report"
