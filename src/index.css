@@ -166,3 +166,8 @@
     background: hsl(var(--card));
   }
 }
+
+/* Force 24-hour time format on all time inputs */
+input[type="time"] {
+  font-variant-numeric: tabular-nums;
+}
