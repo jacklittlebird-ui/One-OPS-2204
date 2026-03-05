@@ -37,18 +37,79 @@ const stationOptions = [
 
 // Precompute airport charges lookup
 const allCharges = generateAllCharges();
-function getChargeForMtow(station: string, mtowStr: string, dayNight: string) {
+
+function isNightTime(timeStr: string, dateStr: string): boolean {
+  if (!timeStr || !dateStr) return false;
+  const [h] = timeStr.split(":").map(Number);
+  if (isNaN(h)) return false;
+  const month = new Date(dateStr).getMonth() + 1; // 1-12
+  // Apr-Oct: night = 17:00-03:00; Nov-Mar: night = 16:00-04:00
+  if (month >= 4 && month <= 10) {
+    return h >= 17 || h < 3;
+  } else {
+    return h >= 16 || h < 4;
+  }
+}
+
+function timeDiffMinutes(t1: string, t2: string): number {
+  if (!t1 || !t2) return 0;
+  const [h1, m1] = t1.split(":").map(Number);
+  const [h2, m2] = t2.split(":").map(Number);
+  if ([h1, m1, h2, m2].some(isNaN)) return 0;
+  let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+  if (diff < 0) diff += 24 * 60;
+  return diff;
+}
+
+function calcCivilAviation(data: Partial<ServiceReport>): number {
+  const mtowStr = data.mtow || "";
   const tonMatch = mtowStr.match(/(\d+)/);
-  if (!tonMatch) return { landing: 0, parking: 0 };
+  if (!tonMatch) return 0;
   const ton = parseInt(tonMatch[1]);
+  const station = data.station || "Cairo";
   const vendor = stationOptions.find(s => s.name === station)?.vendor || "Egyptian Airports";
   const charge = allCharges.find(c => c.vendorName === vendor && c.mtow === `${ton} TON`);
-  if (!charge) return { landing: 0, parking: 0 };
-  const isNight = dayNight === "N";
-  return {
-    landing: isNight ? charge.landingNight : charge.landingDay,
-    parking: isNight ? charge.parkingNight : charge.parkingDay,
-  };
+  if (!charge) return 0;
+
+  // Determine day/night from touchdown time and arrival date
+  const dayNight = data.dayNight || "D";
+  const isNight = dayNight === "N" || (dayNight === "D/N" && isNightTime(data.td || "", data.arrivalDate || ""));
+
+  // Landing fee
+  const landingFee = isNight ? charge.landingNight : charge.landingDay;
+
+  // Ground time in minutes (C/O to O/B)
+  const groundMin = timeDiffMinutes(data.co || "", data.ob || "");
+
+  // Total turnaround time T/D to T/O
+  const turnaroundMin = timeDiffMinutes(data.td || "", data.to || "");
+
+  let total = landingFee;
+
+  if (groundMin > 10 * 60) {
+    // More than 10 hours: housing per day
+    const days = Math.ceil(groundMin / (24 * 60));
+    total += charge.housing * days;
+  } else if (groundMin > 2 * 60) {
+    // 2-10 hours: add parking day
+    total += charge.parkingDay;
+  }
+  // ≤ 2 hours: just landing fee
+
+  return +total.toFixed(2);
+}
+
+function getAirportCharge(data: Partial<ServiceReport>): number {
+  const mtowStr = data.mtow || "";
+  const tonMatch = mtowStr.match(/(\d+)/);
+  if (!tonMatch) return 0;
+  const ton = parseInt(tonMatch[1]);
+  const station = data.station || "Cairo";
+  const vendor = stationOptions.find(s => s.name === station)?.vendor || "Egyptian Airports";
+  const charge = allCharges.find(c => c.vendorName === vendor && c.mtow === `${ton} TON`);
+  if (!charge) return 0;
+  const isNight = (data.dayNight || "D") === "N";
+  return isNight ? charge.landingNight : charge.landingDay;
 }
 
 function calcGroundTime(co: string, ob: string): string {
@@ -98,6 +159,12 @@ interface ReportFormProps {
 }
 
 function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps) {
+  const recalcFinancials = (d: Partial<ServiceReport>) => {
+    d.civilAviationFee = calcCivilAviation(d);
+    d.airportCharge = getAirportCharge(d);
+    d.totalCost = +((d.civilAviationFee || 0) + (d.handlingFee || 0) + (d.airportCharge || 0)).toFixed(2);
+  };
+
   const set = (key: keyof ServiceReport, val: any) => {
     const updated = { ...data, [key]: val };
     // Auto-calc ground time when co or ob change
@@ -107,19 +174,10 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
         key === "ob" ? val : (data.ob || "")
       );
     }
-    // Auto-calc financials when mtow, station, or dayNight change
-    if (key === "mtow" || key === "station" || key === "dayNight") {
-      const charges = getChargeForMtow(
-        key === "station" ? val : (data.station || "Cairo"),
-        key === "mtow" ? val : (data.mtow || ""),
-        key === "dayNight" ? val : (data.dayNight || "D")
-      );
-      updated.airportCharge = +charges.landing.toFixed(2);
-      updated.civilAviationFee = +charges.parking.toFixed(2);
-      updated.totalCost = +(updated.civilAviationFee + (updated.handlingFee || 0) + updated.airportCharge).toFixed(2);
-    }
-    if (key === "handlingFee") {
-      updated.totalCost = +((updated.civilAviationFee || 0) + val + (updated.airportCharge || 0)).toFixed(2);
+    // Recalc financials when any relevant field changes
+    const financialTriggers: (keyof ServiceReport)[] = ["mtow", "station", "dayNight", "td", "co", "ob", "to", "arrivalDate"];
+    if (financialTriggers.includes(key) || key === "handlingFee") {
+      recalcFinancials(updated);
     }
     onChange(updated);
   };
