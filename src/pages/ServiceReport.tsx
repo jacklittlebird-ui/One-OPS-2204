@@ -25,8 +25,12 @@ const statusColor: Record<string, string> = {
   "Overflying":            "bg-muted text-muted-foreground",
 };
 
-const dayNightOptions = ["D", "N", "D/N"] as const;
 const currencyOptions = ["USD", "EUR", "EGP"] as const;
+
+function autoDayNight(td: string, arrivalDate: string): "D" | "N" {
+  if (!td || !arrivalDate) return "D";
+  return isNightTime(td, arrivalDate) ? "N" : "D";
+}
 const stationOptions = [
   { name: "Cairo", vendor: "Cairo Airport Company" },
   { name: "Hurghada", vendor: "Egyptian Airports" },
@@ -71,9 +75,8 @@ function calcCivilAviation(data: Partial<ServiceReport>): number {
   const charge = allCharges.find(c => c.vendorName === vendor && c.mtow === `${ton} TON`);
   if (!charge) return 0;
 
-  // Determine day/night from touchdown time and arrival date
-  const dayNight = data.dayNight || "D";
-  const isNight = dayNight === "N" || (dayNight === "D/N" && isNightTime(data.td || "", data.arrivalDate || ""));
+  // Auto-determine day/night from touchdown time and arrival date
+  const isNight = isNightTime(data.td || "", data.arrivalDate || "");
 
   // Landing fee
   const landingFee = isNight ? charge.landingNight : charge.landingDay;
@@ -108,7 +111,7 @@ function getAirportCharge(data: Partial<ServiceReport>): number {
   const vendor = stationOptions.find(s => s.name === station)?.vendor || "Egyptian Airports";
   const charge = allCharges.find(c => c.vendorName === vendor && c.mtow === `${ton} TON`);
   if (!charge) return 0;
-  const isNight = (data.dayNight || "D") === "N";
+  const isNight = isNightTime(data.td || "", data.arrivalDate || "");
   return isNight ? charge.landingNight : charge.landingDay;
 }
 
@@ -129,7 +132,7 @@ const emptyReport = (): Partial<ServiceReport> => ({
   station: "Cairo",
   aircraftType: "", registration: "", flightNo: "",
   mtow: "", route: "",
-  arrivalDate: "", departureDate: "", dayNight: "D",
+  arrivalDate: "", departureDate: "",
   sta: "", std: "", td: "", co: "", ob: "", to: "",
   groundTime: "",
   delays: [],
@@ -175,7 +178,7 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
       );
     }
     // Recalc financials when any relevant field changes
-    const financialTriggers: (keyof ServiceReport)[] = ["mtow", "station", "dayNight", "td", "co", "ob", "to", "arrivalDate"];
+    const financialTriggers: (keyof ServiceReport)[] = ["mtow", "station", "td", "co", "ob", "to", "arrivalDate"];
     if (financialTriggers.includes(key) || key === "handlingFee") {
       recalcFinancials(updated);
     }
@@ -239,10 +242,8 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <FormField label="Arrival Date"><input type="date" className={inputCls} value={data.arrivalDate || ""} onChange={e => set("arrivalDate", e.target.value)} /></FormField>
               <FormField label="Departure Date"><input type="date" className={inputCls} value={data.departureDate || ""} onChange={e => set("departureDate", e.target.value)} /></FormField>
-              <FormField label="Day / Night">
-                <select className={selectCls} value={data.dayNight} onChange={e => set("dayNight", e.target.value as "D"|"N"|"D/N")}>
-                  {dayNightOptions.map(o => <option key={o}>{o}</option>)}
-                </select>
+              <FormField label="Day / Night (auto)">
+                <input className={inputCls + " bg-muted"} value={autoDayNight(data.td || "", data.arrivalDate || "")} readOnly />
               </FormField>
               <FormField label="Ground Time (auto)">
                 <input className={inputCls + " bg-muted"} value={data.groundTime || ""} readOnly placeholder="Auto" />
@@ -424,7 +425,7 @@ export default function ServiceReportPage() {
       "ROUTE": r.route,
       "ARRIVAL Date": r.arrivalDate,
       "DEPARTURE Date": r.departureDate,
-      "DAY/NIGHT": r.dayNight,
+      "DAY/NIGHT": autoDayNight(r.td, r.arrivalDate),
       "STA": r.sta,
       "STD": r.std,
       "T/D": r.td,
@@ -483,7 +484,7 @@ export default function ServiceReportPage() {
         route: row["ROUTE"] || "",
         arrivalDate: row["ARRIVAL Date"] || "",
         departureDate: row["DEPARTURE Date"] || "",
-        dayNight: row["DAY/NIGHT"] || "D",
+        dayNight: row["DAY/NIGHT"] || "D", // kept for backward compat
         sta: row["STA"] || "",
         std: row["STD"] || "",
         td: row["T/D"] || "",
@@ -620,9 +621,11 @@ export default function ServiceReportPage() {
                   <td className="px-3 py-2.5 text-foreground">{r.aircraftType}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.mtow}</td>
                   <td className="px-3 py-2.5 text-center">
-                    <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${r.dayNight === "N" ? "bg-info/15 text-info" : "bg-warning/15 text-warning"}`}>
-                      {r.dayNight}
-                    </span>
+                    {(() => { const dn = autoDayNight(r.td, r.arrivalDate); return (
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${dn === "N" ? "bg-info/15 text-info" : "bg-warning/15 text-warning"}`}>
+                        {dn}
+                      </span>
+                    ); })()}
                   </td>
                   <td className="px-3 py-2.5 text-foreground">{r.sta}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.co || "—"}</td>
