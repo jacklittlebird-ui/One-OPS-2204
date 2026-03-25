@@ -88,6 +88,12 @@ function AppRoutes() {
       <Route path="/service-providers" element={<ProtectedRoute><AppLayout><ServiceProvidersPage /></AppLayout></ProtectedRoute>} />
       <Route path="/clearances" element={<ProtectedRoute><AppLayout><ClearancesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/services-catalog" element={<ProtectedRoute><AppLayout><ServicesCatalogPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/chart-of-accounts" element={<ProtectedRoute><AppLayout><ChartOfAccountsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/journal-entries" element={<ProtectedRoute><AppLayout><JournalEntriesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/financial-reports" element={<ProtectedRoute><AppLayout><FinancialReportsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/airline-incentives" element={<ProtectedRoute><AppLayout><AirlineIncentivesPage /></AppLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
