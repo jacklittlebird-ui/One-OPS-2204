@@ -94,7 +94,7 @@ export default function ChartOfAccountsPage() {
         <TableCell className={account.is_group ? "font-semibold" : ""}>{account.name}</TableCell>
         <TableCell className="text-muted-foreground text-sm">{account.name_ar}</TableCell>
         <TableCell><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[account.account_type] || ""}`}>{account.account_type}</span></TableCell>
-        <TableCell className="text-right font-mono text-sm">{account.is_group ? "" : account.current_balance.toLocaleString()}</TableCell>
+        <TableCell className="text-right font-mono text-sm">{account.is_group ? "" : (account.current_balance ?? 0).toLocaleString()}</TableCell>
         <TableCell>
           <div className="flex gap-1">
             <Button size="icon" variant="ghost" onClick={() => openEdit(account)}><Pencil size={14} /></Button>
