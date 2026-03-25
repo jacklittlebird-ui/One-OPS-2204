@@ -176,7 +176,59 @@ export default function InvoicesPage() {
     setEditId(null);
   };
 
-  const handleExport = () => {
+  // Finalize: convert Preliminary → Final and auto-create journal entry
+  const handleFinalize = async (inv: InvoiceRow) => {
+    if (!confirm(`Finalize invoice ${inv.invoice_no}? This will create a journal entry.`)) return;
+    try {
+      // 1. Fetch receivable & revenue accounts
+      const { data: accounts } = await supabase.from("chart_of_accounts").select("id,code,name").in("code", ["1210", "4100", "4200", "4300", "4400"]);
+      const acctMap: Record<string, string> = {};
+      (accounts || []).forEach((a: any) => { acctMap[a.code] = a.id; });
+      const receivableId = acctMap["1210"];
+      if (!receivableId) { toast({ title: "Error", description: "Receivable account (1210) not found in Chart of Accounts", variant: "destructive" }); return; }
+
+      // 2. Create journal entry
+      const entryNo = `JE-INV-${inv.invoice_no}`;
+      const { data: je, error: jeErr } = await supabase.from("journal_entries").insert({
+        entry_no: entryNo, entry_date: inv.date, description: `Invoice ${inv.invoice_no} - ${inv.operator}`,
+        reference: inv.invoice_no, reference_type: "Invoice", reference_id: inv.id,
+        status: "Posted", total_debit: inv.total, total_credit: inv.total, created_by: "System",
+        posted_at: new Date().toISOString(),
+      } as any).select().single();
+      if (jeErr) throw jeErr;
+      const entryId = (je as any).id;
+
+      // 3. Create journal lines - debit receivable, credit revenue accounts
+      const lines: any[] = [];
+      lines.push({ entry_id: entryId, account_id: receivableId, debit: inv.total, credit: 0, description: `A/R - ${inv.operator}`, sort_order: 0 });
+      let sortOrder = 1;
+      if (inv.civil_aviation > 0 && acctMap["4200"]) { lines.push({ entry_id: entryId, account_id: acctMap["4200"], debit: 0, credit: inv.civil_aviation, description: "Civil Aviation Revenue", sort_order: sortOrder++ }); }
+      if (inv.handling > 0 && acctMap["4100"]) { lines.push({ entry_id: entryId, account_id: acctMap["4100"], debit: 0, credit: inv.handling, description: "Handling Revenue", sort_order: sortOrder++ }); }
+      if (inv.airport_charges > 0 && acctMap["4300"]) { lines.push({ entry_id: entryId, account_id: acctMap["4300"], debit: 0, credit: inv.airport_charges, description: "Airport Charges Revenue", sort_order: sortOrder++ }); }
+      if (inv.catering > 0 && acctMap["4400"]) { lines.push({ entry_id: entryId, account_id: acctMap["4400"], debit: 0, credit: inv.catering, description: "Catering Revenue", sort_order: sortOrder++ }); }
+      // Remaining amount to first revenue account
+      const creditTotal = lines.filter(l => l.credit > 0).reduce((s: number, l: any) => s + l.credit, 0);
+      const remaining = inv.total - creditTotal;
+      if (remaining > 0) {
+        const fallbackAcct = acctMap["4100"] || Object.values(acctMap).find(id => id !== receivableId);
+        if (fallbackAcct) lines.push({ entry_id: entryId, account_id: fallbackAcct, debit: 0, credit: remaining, description: "Other Revenue", sort_order: sortOrder++ });
+      }
+      await supabase.from("journal_entry_lines").insert(lines as any);
+
+      // 4. Update invoice to Final
+      await supabase.from("invoices").update({
+        invoice_type: "Final", finalized_at: new Date().toISOString(), finalized_by: "System",
+        journal_entry_id: entryId, status: "Sent",
+      } as any).eq("id", inv.id);
+
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["journal_entries"] });
+      toast({ title: "✅ Invoice Finalized", description: `Journal entry ${entryNo} created and posted.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
     const ws = XLSX.utils.json_to_sheet(filtered.map(i => ({
       "Invoice No": i.invoice_no, Date: i.date, "Due Date": i.due_date,
       Operator: i.operator, IATA: i.airline_iata, "Flight Ref": i.flight_ref,
