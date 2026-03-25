@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 import AirlinesPage from "./pages/Airlines";
@@ -29,8 +30,52 @@ import BulletinsPage from "./pages/Bulletins";
 import ManualsAndFormsPage from "./pages/ManualsAndForms";
 import AbbreviationsPage from "./pages/Abbreviations";
 import AircraftTypesPage from "./pages/AircraftTypes";
+import LoginPage from "./pages/Login";
 
 const queryClient = new QueryClient();
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+
+  return (
+    <Routes>
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/airport-charges" element={<ProtectedRoute><AppLayout><AirportChargesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/airlines" element={<ProtectedRoute><AppLayout><AirlinesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/aircrafts" element={<ProtectedRoute><AppLayout><AircraftsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/flight-schedule" element={<ProtectedRoute><AppLayout><FlightSchedulePage /></AppLayout></ProtectedRoute>} />
+      <Route path="/services" element={<ProtectedRoute><AppLayout><ServicesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/service-report" element={<ProtectedRoute><AppLayout><ServiceReportPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/invoices" element={<ProtectedRoute><AppLayout><InvoicesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/overfly-schedule" element={<ProtectedRoute><AppLayout><OverflySchedulePage /></AppLayout></ProtectedRoute>} />
+      <Route path="/delay-codes" element={<ProtectedRoute><AppLayout><DelayCodesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/lost-found" element={<ProtectedRoute><AppLayout><LostFoundPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/staff-roster" element={<ProtectedRoute><AppLayout><StaffRosterPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/contracts" element={<ProtectedRoute><AppLayout><ContractsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/tube" element={<ProtectedRoute><AppLayout><TubePage /></AppLayout></ProtectedRoute>} />
+      <Route path="/airport-tax" element={<ProtectedRoute><AppLayout><AirportTaxPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/basic-ramp" element={<ProtectedRoute><AppLayout><BasicRampPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/vendor-equipment" element={<ProtectedRoute><AppLayout><VendorEquipmentPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/hall-vvip" element={<ProtectedRoute><AppLayout><HallVVIPPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/catering" element={<ProtectedRoute><AppLayout><CateringPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/traffic-rights" element={<ProtectedRoute><AppLayout><TrafficRightsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/bulletins" element={<ProtectedRoute><AppLayout><BulletinsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/manuals-forms" element={<ProtectedRoute><AppLayout><ManualsAndFormsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/abbreviations" element={<ProtectedRoute><AppLayout><AbbreviationsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/aircraft-types" element={<ProtectedRoute><AppLayout><AircraftTypesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -38,34 +83,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppLayout><DashboardPage /></AppLayout>} />
-          <Route path="/airport-charges" element={<AppLayout><AirportChargesPage /></AppLayout>} />
-          <Route path="/airlines" element={<AppLayout><AirlinesPage /></AppLayout>} />
-          <Route path="/aircrafts" element={<AppLayout><AircraftsPage /></AppLayout>} />
-          <Route path="/flight-schedule" element={<AppLayout><FlightSchedulePage /></AppLayout>} />
-          <Route path="/services" element={<AppLayout><ServicesPage /></AppLayout>} />
-          <Route path="/service-report" element={<AppLayout><ServiceReportPage /></AppLayout>} />
-          <Route path="/invoices" element={<AppLayout><InvoicesPage /></AppLayout>} />
-          <Route path="/overfly-schedule" element={<AppLayout><OverflySchedulePage /></AppLayout>} />
-          <Route path="/delay-codes" element={<AppLayout><DelayCodesPage /></AppLayout>} />
-          <Route path="/lost-found" element={<AppLayout><LostFoundPage /></AppLayout>} />
-          <Route path="/staff-roster" element={<AppLayout><StaffRosterPage /></AppLayout>} />
-          <Route path="/contracts" element={<AppLayout><ContractsPage /></AppLayout>} />
-          <Route path="/tube" element={<AppLayout><TubePage /></AppLayout>} />
-          <Route path="/airport-tax" element={<AppLayout><AirportTaxPage /></AppLayout>} />
-          <Route path="/basic-ramp" element={<AppLayout><BasicRampPage /></AppLayout>} />
-          <Route path="/vendor-equipment" element={<AppLayout><VendorEquipmentPage /></AppLayout>} />
-          <Route path="/hall-vvip" element={<AppLayout><HallVVIPPage /></AppLayout>} />
-          <Route path="/catering" element={<AppLayout><CateringPage /></AppLayout>} />
-          <Route path="/traffic-rights" element={<AppLayout><TrafficRightsPage /></AppLayout>} />
-          <Route path="/bulletins" element={<AppLayout><BulletinsPage /></AppLayout>} />
-          <Route path="/manuals-forms" element={<AppLayout><ManualsAndFormsPage /></AppLayout>} />
-          <Route path="/abbreviations" element={<AppLayout><AbbreviationsPage /></AppLayout>} />
-          <Route path="/aircraft-types" element={<AppLayout><AircraftTypesPage /></AppLayout>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
