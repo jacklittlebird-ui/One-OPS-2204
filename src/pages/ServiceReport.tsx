@@ -5,32 +5,74 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
-import {
-  ServiceReport, HandlingType, handlingTypes, sampleReports, DelayEntry
-} from "@/data/serviceReportData";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sampleDelayCodes } from "@/data/delayCodesData";
 import { generateAllCharges } from "@/data/airportChargesData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { toast } from "@/hooks/use-toast";
+import { Constants } from "@/integrations/supabase/types";
 
 const PAGE_SIZE = 15;
 
+const handlingTypes = Constants.public.Enums.handling_type;
+type HandlingType = typeof handlingTypes[number];
+
+interface DelayEntry {
+  code: string;
+  timing: number;
+  explanation: string;
+}
+
+// Internal form type using camelCase
+interface ReportFormData {
+  id?: string;
+  operator: string;
+  handlingType: HandlingType;
+  station: string;
+  aircraftType: string;
+  registration: string;
+  flightNo: string;
+  mtow: string;
+  route: string;
+  arrivalDate: string;
+  departureDate: string;
+  dayNight: string;
+  sta: string;
+  std: string;
+  td: string;
+  co: string;
+  ob: string;
+  to: string;
+  groundTime: string;
+  delays: DelayEntry[];
+  paxInAdultI: number;
+  paxInInfI: number;
+  paxInAdultD: number;
+  paxInInfD: number;
+  paxTransit: number;
+  projectTags: string;
+  checkInSystem: string;
+  performedBy: string;
+  civilAviationFee: number;
+  handlingFee: number;
+  airportCharge: number;
+  totalCost: number;
+  currency: "USD" | "EUR" | "EGP";
+}
+
 const statusColor: Record<string, string> = {
-  "Turn Around":           "bg-primary/10 text-primary",
-  "Night Stop":            "bg-info/10 text-info",
-  "Transit":               "bg-success/10 text-success",
-  "Technical":             "bg-warning/10 text-warning",
-  "Ferry In":              "bg-accent/10 text-accent",
-  "Ferry Out":             "bg-accent/10 text-accent",
-  "VIP Hall":              "bg-destructive/10 text-destructive",
-  "Overflying":            "bg-muted text-muted-foreground",
+  "Turn Around": "bg-primary/10 text-primary",
+  "Night Stop": "bg-info/10 text-info",
+  "Transit": "bg-success/10 text-success",
+  "Technical": "bg-warning/10 text-warning",
+  "Ferry In": "bg-accent/10 text-accent",
+  "Ferry Out": "bg-accent/10 text-accent",
+  "VIP Hall": "bg-destructive/10 text-destructive",
+  "Overflying": "bg-muted text-muted-foreground",
 };
 
 const currencyOptions = ["USD", "EUR", "EGP"] as const;
 
-function autoDayNight(td: string, arrivalDate: string): "D" | "N" {
-  if (!td || !arrivalDate) return "D";
-  return isNightTime(td, arrivalDate) ? "N" : "D";
-}
 const stationOptions = [
   { name: "Cairo", vendor: "Cairo Airport Company" },
   { name: "Hurghada", vendor: "Egyptian Airports" },
@@ -39,20 +81,23 @@ const stationOptions = [
   { name: "Aswan", vendor: "Egyptian Airports" },
 ];
 
-// Precompute airport charges lookup
 const allCharges = generateAllCharges();
 
 function isNightTime(timeStr: string, dateStr: string): boolean {
   if (!timeStr || !dateStr) return false;
   const [h] = timeStr.split(":").map(Number);
   if (isNaN(h)) return false;
-  const month = new Date(dateStr).getMonth() + 1; // 1-12
-  // Apr-Oct: night = 17:00-03:00; Nov-Mar: night = 16:00-04:00
+  const month = new Date(dateStr).getMonth() + 1;
   if (month >= 4 && month <= 10) {
     return h >= 17 || h < 3;
   } else {
     return h >= 16 || h < 4;
   }
+}
+
+function autoDayNight(td: string, arrivalDate: string): "D" | "N" {
+  if (!td || !arrivalDate) return "D";
+  return isNightTime(td, arrivalDate) ? "N" : "D";
 }
 
 function timeDiffMinutes(t1: string, t2: string): number {
@@ -65,7 +110,7 @@ function timeDiffMinutes(t1: string, t2: string): number {
   return diff;
 }
 
-function calcCivilAviation(data: Partial<ServiceReport>): number {
+function calcCivilAviation(data: Partial<ReportFormData>): number {
   const mtowStr = data.mtow || "";
   const tonMatch = mtowStr.match(/(\d+)/);
   if (!tonMatch) return 0;
@@ -74,35 +119,20 @@ function calcCivilAviation(data: Partial<ServiceReport>): number {
   const vendor = stationOptions.find(s => s.name === station)?.vendor || "Egyptian Airports";
   const charge = allCharges.find(c => c.vendorName === vendor && c.mtow === `${ton} TON`);
   if (!charge) return 0;
-
-  // Auto-determine day/night from touchdown time and arrival date
   const isNight = isNightTime(data.td || "", data.arrivalDate || "");
-
-  // Landing fee
   const landingFee = isNight ? charge.landingNight : charge.landingDay;
-
-  // Ground time in minutes (C/O to O/B)
   const groundMin = timeDiffMinutes(data.co || "", data.ob || "");
-
-  // Total turnaround time T/D to T/O
-  const turnaroundMin = timeDiffMinutes(data.td || "", data.to || "");
-
   let total = landingFee;
-
   if (groundMin > 10 * 60) {
-    // More than 10 hours: housing per day
     const days = Math.ceil(groundMin / (24 * 60));
     total += charge.housing * days;
   } else if (groundMin > 2 * 60) {
-    // 2-10 hours: add parking day
     total += charge.parkingDay;
   }
-  // ≤ 2 hours: just landing fee
-
   return +total.toFixed(2);
 }
 
-function getAirportCharge(data: Partial<ServiceReport>): number {
+function getAirportCharge(data: Partial<ReportFormData>): number {
   const mtowStr = data.mtow || "";
   const tonMatch = mtowStr.match(/(\d+)/);
   if (!tonMatch) return 0;
@@ -127,12 +157,12 @@ function calcGroundTime(co: string, ob: string): string {
   return `${h}:${String(m).padStart(2, "0")}`;
 }
 
-const emptyReport = (): Partial<ServiceReport> => ({
+const emptyReport = (): Partial<ReportFormData> => ({
   operator: "", handlingType: "Turn Around",
   station: "Cairo",
   aircraftType: "", registration: "", flightNo: "",
   mtow: "", route: "",
-  arrivalDate: "", departureDate: "",
+  arrivalDate: "", departureDate: "", dayNight: "D",
   sta: "", std: "", td: "", co: "", ob: "", to: "",
   groundTime: "",
   delays: [],
@@ -140,6 +170,84 @@ const emptyReport = (): Partial<ServiceReport> => ({
   projectTags: "", checkInSystem: "", performedBy: "Link Egypt",
   civilAviationFee: 0, handlingFee: 0, airportCharge: 0, totalCost: 0, currency: "USD",
 });
+
+// Convert DB row to form data
+function dbToForm(row: any, delays: any[]): ReportFormData {
+  return {
+    id: row.id,
+    operator: row.operator,
+    handlingType: row.handling_type,
+    station: row.station,
+    aircraftType: row.aircraft_type,
+    registration: row.registration,
+    flightNo: row.flight_no,
+    mtow: row.mtow,
+    route: row.route,
+    arrivalDate: row.arrival_date || "",
+    departureDate: row.departure_date || "",
+    dayNight: row.day_night,
+    sta: row.sta || "",
+    std: row.std || "",
+    td: row.td || "",
+    co: row.co || "",
+    ob: row.ob || "",
+    to: row.to || "",
+    groundTime: row.ground_time || "",
+    delays: delays
+      .filter(d => d.report_id === row.id)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(d => ({ code: d.code, timing: d.timing, explanation: d.explanation })),
+    paxInAdultI: row.pax_in_adult_i,
+    paxInInfI: row.pax_in_inf_i,
+    paxInAdultD: row.pax_in_adult_d,
+    paxInInfD: row.pax_in_inf_d,
+    paxTransit: row.pax_transit,
+    projectTags: row.project_tags || "",
+    checkInSystem: row.check_in_system || "",
+    performedBy: row.performed_by || "Link Egypt",
+    civilAviationFee: Number(row.civil_aviation_fee),
+    handlingFee: Number(row.handling_fee),
+    airportCharge: Number(row.airport_charge),
+    totalCost: Number(row.total_cost),
+    currency: row.currency,
+  };
+}
+
+function formToDb(data: Partial<ReportFormData>) {
+  return {
+    operator: data.operator || "",
+    handling_type: data.handlingType || "Turn Around",
+    station: data.station || "Cairo",
+    aircraft_type: data.aircraftType || "",
+    registration: data.registration || "",
+    flight_no: data.flightNo || "",
+    mtow: data.mtow || "",
+    route: data.route || "",
+    arrival_date: data.arrivalDate || null,
+    departure_date: data.departureDate || null,
+    day_night: autoDayNight(data.td || "", data.arrivalDate || ""),
+    sta: data.sta || "",
+    std: data.std || "",
+    td: data.td || "",
+    co: data.co || "",
+    ob: data.ob || "",
+    to: data.to || "",
+    ground_time: data.groundTime || "",
+    pax_in_adult_i: data.paxInAdultI || 0,
+    pax_in_inf_i: data.paxInInfI || 0,
+    pax_in_adult_d: data.paxInAdultD || 0,
+    pax_in_inf_d: data.paxInInfD || 0,
+    pax_transit: data.paxTransit || 0,
+    project_tags: data.projectTags || "",
+    check_in_system: data.checkInSystem || "",
+    performed_by: data.performedBy || "Link Egypt",
+    civil_aviation_fee: data.civilAviationFee || 0,
+    handling_fee: data.handlingFee || 0,
+    airport_charge: data.airportCharge || 0,
+    total_cost: data.totalCost || 0,
+    currency: data.currency || "USD",
+  };
+}
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -154,31 +262,29 @@ const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground foc
 const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 
 interface ReportFormProps {
-  data: Partial<ServiceReport>;
-  onChange: (d: Partial<ServiceReport>) => void;
+  data: Partial<ReportFormData>;
+  onChange: (d: Partial<ReportFormData>) => void;
   onSave: () => void;
   onCancel: () => void;
   title: string;
 }
 
 function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps) {
-  const recalcFinancials = (d: Partial<ServiceReport>) => {
+  const recalcFinancials = (d: Partial<ReportFormData>) => {
     d.civilAviationFee = calcCivilAviation(d);
     d.airportCharge = getAirportCharge(d);
     d.totalCost = +((d.civilAviationFee || 0) + (d.handlingFee || 0) + (d.airportCharge || 0)).toFixed(2);
   };
 
-  const set = (key: keyof ServiceReport, val: any) => {
+  const set = (key: keyof ReportFormData, val: any) => {
     const updated = { ...data, [key]: val };
-    // Auto-calc ground time when co or ob change
     if (key === "co" || key === "ob") {
       updated.groundTime = calcGroundTime(
         key === "co" ? val : (data.co || ""),
         key === "ob" ? val : (data.ob || "")
       );
     }
-    // Recalc financials when any relevant field changes
-    const financialTriggers: (keyof ServiceReport)[] = ["mtow", "station", "td", "co", "ob", "to", "arrivalDate"];
+    const financialTriggers: (keyof ReportFormData)[] = ["mtow", "station", "td", "co", "ob", "to", "arrivalDate"];
     if (financialTriggers.includes(key) || key === "handlingFee") {
       recalcFinancials(updated);
     }
@@ -189,7 +295,6 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
   const setDelay = (index: number, field: keyof DelayEntry, val: any) => {
     const newDelays = [...delays];
     newDelays[index] = { ...newDelays[index], [field]: val };
-    // Auto-fill explanation from delay codes
     if (field === "code") {
       const found = sampleDelayCodes.find(dc => dc.code === val);
       newDelays[index].explanation = found?.description || "";
@@ -338,7 +443,8 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
 export default function ServiceReportPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [reports, setReports] = useLocalStorage<ServiceReport[]>("link_service_reports", sampleReports);
+  const queryClient = useQueryClient();
+
   const [search, setSearch] = useState("");
   const [handlingFilter, setHandlingFilter] = useState("All Types");
   const [stationFilter, setStationFilter] = useState("All Stations");
@@ -346,10 +452,107 @@ export default function ServiceReportPage() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
-  const [newReport, setNewReport] = useState<Partial<ServiceReport>>(emptyReport());
+  const [newReport, setNewReport] = useState<Partial<ReportFormData>>(emptyReport());
   const [editId, setEditId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<Partial<ServiceReport>>({});
+  const [editData, setEditData] = useState<Partial<ReportFormData>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch reports + delays
+  const { data: dbReports = [], isLoading } = useQuery({
+    queryKey: ["service_reports"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_reports").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: dbDelays = [] } = useQuery({
+    queryKey: ["service_report_delays"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_report_delays").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const reports: ReportFormData[] = useMemo(
+    () => dbReports.map(r => dbToForm(r, dbDelays)),
+    [dbReports, dbDelays]
+  );
+
+  // Save new report
+  const addMutation = useMutation({
+    mutationFn: async (data: Partial<ReportFormData>) => {
+      const delays = data.delays || [];
+      const dbData = formToDb(data);
+      const { data: inserted, error } = await supabase.from("service_reports").insert(dbData as any).select().single();
+      if (error) throw error;
+      if (delays.length > 0) {
+        const delayRows = delays.map((d, i) => ({
+          report_id: inserted.id,
+          code: d.code,
+          timing: d.timing,
+          explanation: d.explanation,
+          sort_order: i,
+        }));
+        const { error: dErr } = await supabase.from("service_report_delays").insert(delayRows);
+        if (dErr) throw dErr;
+      }
+      return inserted;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
+      toast({ title: "Saved", description: "Service report added." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Update report
+  const updateMutation = useMutation({
+    mutationFn: async (data: Partial<ReportFormData> & { id: string }) => {
+      const { id } = data;
+      const delays = data.delays || [];
+      const dbData = formToDb(data);
+      const { error } = await supabase.from("service_reports").update(dbData as any).eq("id", id);
+      if (error) throw error;
+      // Replace delays: delete old, insert new
+      await supabase.from("service_report_delays").delete().eq("report_id", id);
+      if (delays.length > 0) {
+        const delayRows = delays.map((d, i) => ({
+          report_id: id,
+          code: d.code,
+          timing: d.timing,
+          explanation: d.explanation,
+          sort_order: i,
+        }));
+        const { error: dErr } = await supabase.from("service_report_delays").insert(delayRows);
+        if (dErr) throw dErr;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
+      toast({ title: "Updated", description: "Service report updated." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Delete report
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("service_report_delays").delete().eq("report_id", id);
+      const { error } = await supabase.from("service_reports").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
+      toast({ title: "Deleted", description: "Report removed." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
 
   // Auto-fill from FlightSchedule query params
   useEffect(() => {
@@ -399,22 +602,21 @@ export default function ServiceReportPage() {
 
   const saveNew = () => {
     if (!newReport.flightNo || !newReport.operator) return;
-    setReports(prev => [...prev, { ...newReport, id: `SR${String(Date.now()).slice(-4)}` } as ServiceReport]);
+    addMutation.mutate(newReport);
     setShowAdd(false);
     setNewReport(emptyReport());
   };
 
-  const startEdit = (r: ServiceReport) => { setEditId(r.id); setEditData({ ...r }); };
+  const startEdit = (r: ReportFormData) => { setEditId(r.id!); setEditData({ ...r }); };
   const saveEdit = () => {
     if (!editId) return;
-    setReports(prev => prev.map(r => r.id === editId ? { ...r, ...editData } as ServiceReport : r));
+    updateMutation.mutate({ ...editData, id: editId } as any);
     setEditId(null);
   };
-  const deleteReport = (id: string) => setReports(prev => prev.filter(r => r.id !== id));
+  const deleteReport = (id: string) => deleteMutation.mutate(id);
 
   const handleExport = () => {
     const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({
-      "ID": r.id,
       "Operator": r.operator,
       "Type of Service": r.handlingType,
       "Station": r.station,
@@ -426,29 +628,15 @@ export default function ServiceReportPage() {
       "ARRIVAL Date": r.arrivalDate,
       "DEPARTURE Date": r.departureDate,
       "DAY/NIGHT": autoDayNight(r.td, r.arrivalDate),
-      "STA": r.sta,
-      "STD": r.std,
-      "T/D": r.td,
-      "C/O": r.co,
-      "O/B": r.ob,
-      "T/O": r.to,
+      "STA": r.sta, "STD": r.std,
+      "T/D": r.td, "C/O": r.co, "O/B": r.ob, "T/O": r.to,
       "GROUND TIME": r.groundTime,
-      "DLY1 Code": r.delays?.[0]?.code || "",
-      "DLY1 Timing": r.delays?.[0]?.timing || "",
-      "DLY1 Explanation": r.delays?.[0]?.explanation || "",
-      "DLY2 Code": r.delays?.[1]?.code || "",
-      "DLY2 Timing": r.delays?.[1]?.timing || "",
-      "DLY2 Explanation": r.delays?.[1]?.explanation || "",
-      "DLY3 Code": r.delays?.[2]?.code || "",
-      "DLY3 Timing": r.delays?.[2]?.timing || "",
-      "DLY3 Explanation": r.delays?.[2]?.explanation || "",
-      "DLY4 Code": r.delays?.[3]?.code || "",
-      "DLY4 Timing": r.delays?.[3]?.timing || "",
-      "DLY4 Explanation": r.delays?.[3]?.explanation || "",
-      "PAX IN Adult /I": r.paxInAdultI,
-      "PAX IN INF /I": r.paxInInfI,
-      "PAX IN Adult /D": r.paxInAdultD,
-      "PAX IN INF /D": r.paxInInfD,
+      "DLY1 Code": r.delays?.[0]?.code || "", "DLY1 Timing": r.delays?.[0]?.timing || "",
+      "DLY2 Code": r.delays?.[1]?.code || "", "DLY2 Timing": r.delays?.[1]?.timing || "",
+      "DLY3 Code": r.delays?.[2]?.code || "", "DLY3 Timing": r.delays?.[2]?.timing || "",
+      "DLY4 Code": r.delays?.[3]?.code || "", "DLY4 Timing": r.delays?.[3]?.timing || "",
+      "PAX IN Adult /I": r.paxInAdultI, "PAX IN INF /I": r.paxInInfI,
+      "PAX IN Adult /D": r.paxInAdultD, "PAX IN INF /D": r.paxInInfD,
       "PAX TRANSIT": r.paxTransit,
       "Project Tags": r.projectTags,
       "CHECK IN SYSTEM": r.checkInSystem,
@@ -468,56 +656,53 @@ export default function ServiceReportPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const wb = XLSX.read(evt.target?.result, { type: "binary" });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json<any>(ws);
-      const imported: ServiceReport[] = json.map((row: any, i: number) => ({
-        id: row["ID"] || `SR${Date.now()}${i}`,
-        operator: row["Operator"] || "",
-        handlingType: row["Type of Service"] || "Turn Around",
-        station: row["Station"] || "",
-        aircraftType: row["Aircraft Type"] || "",
-        registration: row["Registration"] || "",
-        flightNo: row["Flight No."] || "",
-        mtow: row["MTOW"] || "",
-        route: row["ROUTE"] || "",
-        arrivalDate: row["ARRIVAL Date"] || "",
-        departureDate: row["DEPARTURE Date"] || "",
-        dayNight: row["DAY/NIGHT"] || "D", // kept for backward compat
-        sta: row["STA"] || "",
-        std: row["STD"] || "",
-        td: row["T/D"] || "",
-        co: row["C/O"] || "",
-        ob: row["O/B"] || "",
-        to: row["T/O"] || "",
-        groundTime: row["GROUND TIME"] || "",
-        delays: [
-          row["DLY1 Code"] ? { code: row["DLY1 Code"], timing: Number(row["DLY1 Timing"] || 0), explanation: row["DLY1 Explanation"] || "" } : null,
-          row["DLY2 Code"] ? { code: row["DLY2 Code"], timing: Number(row["DLY2 Timing"] || 0), explanation: row["DLY2 Explanation"] || "" } : null,
-          row["DLY3 Code"] ? { code: row["DLY3 Code"], timing: Number(row["DLY3 Timing"] || 0), explanation: row["DLY3 Explanation"] || "" } : null,
-          row["DLY4 Code"] ? { code: row["DLY4 Code"], timing: Number(row["DLY4 Timing"] || 0), explanation: row["DLY4 Explanation"] || "" } : null,
-        ].filter(Boolean) as DelayEntry[],
-        paxInAdultI: Number(row["PAX IN Adult /I"] || 0),
-        paxInInfI: Number(row["PAX IN INF /I"] || 0),
-        paxInAdultD: Number(row["PAX IN Adult /D"] || 0),
-        paxInInfD: Number(row["PAX IN INF /D"] || 0),
-        paxTransit: Number(row["PAX TRANSIT"] || 0),
-        projectTags: row["Project Tags"] || "",
-        checkInSystem: row["CHECK IN SYSTEM"] || "",
-        performedBy: row["PERFORMED BY"] || "Link Egypt",
-        civilAviationFee: Number(row["Civil Aviation Fee"] || 0),
-        handlingFee: Number(row["Handling Fee"] || 0),
-        airportCharge: Number(row["Airport Charge"] || 0),
-        totalCost: Number(row["Total Cost"] || 0),
-        currency: row["Currency"] || "USD",
-      }));
-      setReports(imported);
-      setPage(1);
+      for (const row of json) {
+        const data: Partial<ReportFormData> = {
+          operator: row["Operator"] || "",
+          handlingType: row["Type of Service"] || "Turn Around",
+          station: row["Station"] || "Cairo",
+          aircraftType: row["Aircraft Type"] || "",
+          registration: row["Registration"] || "",
+          flightNo: row["Flight No."] || "",
+          mtow: row["MTOW"] || "",
+          route: row["ROUTE"] || "",
+          arrivalDate: row["ARRIVAL Date"] || "",
+          departureDate: row["DEPARTURE Date"] || "",
+          sta: row["STA"] || "", std: row["STD"] || "",
+          td: row["T/D"] || "", co: row["C/O"] || "",
+          ob: row["O/B"] || "", to: row["T/O"] || "",
+          groundTime: row["GROUND TIME"] || "",
+          delays: [
+            row["DLY1 Code"] ? { code: row["DLY1 Code"], timing: Number(row["DLY1 Timing"] || 0), explanation: "" } : null,
+            row["DLY2 Code"] ? { code: row["DLY2 Code"], timing: Number(row["DLY2 Timing"] || 0), explanation: "" } : null,
+            row["DLY3 Code"] ? { code: row["DLY3 Code"], timing: Number(row["DLY3 Timing"] || 0), explanation: "" } : null,
+            row["DLY4 Code"] ? { code: row["DLY4 Code"], timing: Number(row["DLY4 Timing"] || 0), explanation: "" } : null,
+          ].filter(Boolean) as DelayEntry[],
+          paxInAdultI: Number(row["PAX IN Adult /I"] || 0),
+          paxInInfI: Number(row["PAX IN INF /I"] || 0),
+          paxInAdultD: Number(row["PAX IN Adult /D"] || 0),
+          paxInInfD: Number(row["PAX IN INF /D"] || 0),
+          paxTransit: Number(row["PAX TRANSIT"] || 0),
+          projectTags: row["Project Tags"] || "",
+          checkInSystem: row["CHECK IN SYSTEM"] || "",
+          performedBy: row["PERFORMED BY"] || "Link Egypt",
+          civilAviationFee: Number(row["Civil Aviation Fee"] || 0),
+          handlingFee: Number(row["Handling Fee"] || 0),
+          airportCharge: Number(row["Airport Charge"] || 0),
+          totalCost: Number(row["Total Cost"] || 0),
+          currency: row["Currency"] || "USD",
+        };
+        await addMutation.mutateAsync(data);
+      }
+      toast({ title: "Imported", description: `${json.length} records imported.` });
     };
     reader.readAsBinaryString(file);
     e.target.value = "";
-  }, []);
+  }, [addMutation]);
 
   return (
     <div className="space-y-5">
@@ -597,7 +782,9 @@ export default function ServiceReportPage() {
               </tr>
             </thead>
             <tbody>
-              {pageData.length === 0 ? (
+              {isLoading ? (
+                <tr><td colSpan={18} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+              ) : pageData.length === 0 ? (
                 <tr>
                   <td colSpan={18} className="text-center py-16">
                     <FileBarChart2 size={40} className="mx-auto text-muted-foreground/30 mb-3" />
@@ -633,9 +820,7 @@ export default function ServiceReportPage() {
                   <td className="px-3 py-2.5 text-foreground">{r.groundTime || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.paxInAdultI + r.paxInInfI + r.paxInAdultD + r.paxInInfD}</td>
                   <td className="px-3 py-2.5 text-foreground">
-                    {r.delays && r.delays.length > 0
-                      ? r.delays.map(d => d.code).join("/")
-                      : "—"}
+                    {r.delays && r.delays.length > 0 ? r.delays.map(d => d.code).join("/") : "—"}
                   </td>
                   <td className="px-3 py-2.5 font-semibold text-success">{r.totalCost.toLocaleString()}</td>
                   <td className="px-3 py-2.5">
@@ -650,7 +835,7 @@ export default function ServiceReportPage() {
                         navigate(`/invoices?${params.toString()}`);
                       }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
                       <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
-                      <button onClick={() => deleteReport(r.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
+                      <button onClick={() => deleteReport(r.id!)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
                     </div>
                   </td>
                 </tr>

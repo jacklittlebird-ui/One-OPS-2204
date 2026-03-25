@@ -1,8 +1,28 @@
-import { Invoice } from "@/pages/Invoices";
 import { X } from "lucide-react";
 
+export interface PrintableInvoice {
+  invoiceNo: string;
+  date: string;
+  dueDate: string;
+  operator: string;
+  airlineIATA: string;
+  flightRef: string;
+  description: string;
+  civilAviation: number;
+  handling: number;
+  airportCharges: number;
+  catering: number;
+  other: number;
+  subtotal: number;
+  vat: number;
+  total: number;
+  currency: string;
+  status: string;
+  notes: string;
+}
+
 interface InvoicePrintViewProps {
-  invoice: Invoice;
+  invoice: PrintableInvoice;
   onClose: () => void;
 }
 
