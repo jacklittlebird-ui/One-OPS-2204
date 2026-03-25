@@ -187,6 +187,65 @@ export type Database = {
           },
         ]
       }
+      airline_incentives: {
+        Row: {
+          airline_id: string
+          created_at: string
+          currency: string
+          description: string
+          end_date: string | null
+          id: string
+          incentive_type: Database["public"]["Enums"]["incentive_type"]
+          max_amount: number
+          period: Database["public"]["Enums"]["incentive_period"]
+          rate: number
+          start_date: string
+          status: string
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          airline_id: string
+          created_at?: string
+          currency?: string
+          description?: string
+          end_date?: string | null
+          id?: string
+          incentive_type?: Database["public"]["Enums"]["incentive_type"]
+          max_amount?: number
+          period?: Database["public"]["Enums"]["incentive_period"]
+          rate?: number
+          start_date?: string
+          status?: string
+          threshold?: number
+          updated_at?: string
+        }
+        Update: {
+          airline_id?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          end_date?: string | null
+          id?: string
+          incentive_type?: Database["public"]["Enums"]["incentive_type"]
+          max_amount?: number
+          period?: Database["public"]["Enums"]["incentive_period"]
+          rate?: number
+          start_date?: string
+          status?: string
+          threshold?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airline_incentives_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       airlines: {
         Row: {
           code: string
@@ -395,6 +454,68 @@ export type Database = {
           unit?: string
         }
         Relationships: []
+      }
+      chart_of_accounts: {
+        Row: {
+          account_type: Database["public"]["Enums"]["account_type"]
+          code: string
+          created_at: string
+          currency: string
+          current_balance: number
+          description: string
+          id: string
+          is_group: boolean
+          level: number
+          name: string
+          name_ar: string
+          opening_balance: number
+          parent_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_type: Database["public"]["Enums"]["account_type"]
+          code: string
+          created_at?: string
+          currency?: string
+          current_balance?: number
+          description?: string
+          id?: string
+          is_group?: boolean
+          level?: number
+          name: string
+          name_ar?: string
+          opening_balance?: number
+          parent_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_type?: Database["public"]["Enums"]["account_type"]
+          code?: string
+          created_at?: string
+          currency?: string
+          current_balance?: number
+          description?: string
+          id?: string
+          is_group?: boolean
+          level?: number
+          name?: string
+          name_ar?: string
+          opening_balance?: number
+          parent_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clearances: {
         Row: {
@@ -680,13 +801,19 @@ export type Database = {
           date: string
           description: string | null
           due_date: string
+          finalized_at: string | null
+          finalized_by: string | null
           flight_ref: string | null
           handling: number
           id: string
           invoice_no: string
+          invoice_type: string
+          journal_entry_id: string | null
           notes: string | null
           operator: string
           other: number
+          sent_at: string | null
+          sent_to: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           total: number
@@ -703,13 +830,19 @@ export type Database = {
           date?: string
           description?: string | null
           due_date?: string
+          finalized_at?: string | null
+          finalized_by?: string | null
           flight_ref?: string | null
           handling?: number
           id?: string
           invoice_no: string
+          invoice_type?: string
+          journal_entry_id?: string | null
           notes?: string | null
           operator: string
           other?: number
+          sent_at?: string | null
+          sent_to?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           total?: number
@@ -726,20 +859,130 @@ export type Database = {
           date?: string
           description?: string | null
           due_date?: string
+          finalized_at?: string | null
+          finalized_by?: string | null
           flight_ref?: string | null
           handling?: number
           id?: string
           invoice_no?: string
+          invoice_type?: string
+          journal_entry_id?: string | null
           notes?: string | null
           operator?: string
           other?: number
+          sent_at?: string | null
+          sent_to?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           total?: number
           updated_at?: string
           vat?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          entry_date: string
+          entry_no: string
+          id: string
+          posted_at: string | null
+          reference: string
+          reference_id: string | null
+          reference_type: string
+          status: Database["public"]["Enums"]["journal_status"]
+          total_credit: number
+          total_debit: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          entry_date?: string
+          entry_no: string
+          id?: string
+          posted_at?: string | null
+          reference?: string
+          reference_id?: string | null
+          reference_type?: string
+          status?: Database["public"]["Enums"]["journal_status"]
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          entry_date?: string
+          entry_no?: string
+          id?: string
+          posted_at?: string | null
+          reference?: string
+          reference_id?: string | null
+          reference_type?: string
+          status?: Database["public"]["Enums"]["journal_status"]
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+        }
         Relationships: []
+      }
+      journal_entry_lines: {
+        Row: {
+          account_id: string
+          credit: number
+          debit: number
+          description: string
+          entry_id: string
+          id: string
+          sort_order: number
+        }
+        Insert: {
+          account_id: string
+          credit?: number
+          debit?: number
+          description?: string
+          entry_id: string
+          id?: string
+          sort_order?: number
+        }
+        Update: {
+          account_id?: string
+          credit?: number
+          debit?: number
+          description?: string
+          entry_id?: string
+          id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lost_found: {
         Row: {
@@ -1337,6 +1580,85 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_invoices: {
+        Row: {
+          amount: number
+          client_invoice_id: string | null
+          created_at: string
+          currency: string
+          date: string
+          due_date: string
+          id: string
+          invoice_no: string
+          notes: string
+          service_report_id: string | null
+          status: string
+          total: number
+          updated_at: string
+          vat: number
+          vendor_id: string | null
+          vendor_name: string
+        }
+        Insert: {
+          amount?: number
+          client_invoice_id?: string | null
+          created_at?: string
+          currency?: string
+          date?: string
+          due_date?: string
+          id?: string
+          invoice_no: string
+          notes?: string
+          service_report_id?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+          vat?: number
+          vendor_id?: string | null
+          vendor_name?: string
+        }
+        Update: {
+          amount?: number
+          client_invoice_id?: string | null
+          created_at?: string
+          currency?: string
+          date?: string
+          due_date?: string
+          id?: string
+          invoice_no?: string
+          notes?: string
+          service_report_id?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+          vat?: number
+          vendor_id?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invoices_client_invoice_id_fkey"
+            columns: ["client_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
+            referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1352,6 +1674,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      account_type: "Asset" | "Liability" | "Equity" | "Revenue" | "Expense"
       app_role: "admin" | "station_manager" | "station_ops" | "employee"
       clearance_status:
         | "Pending"
@@ -1378,7 +1701,16 @@ export type Database = {
         | "AVSEC Only"
         | "Full Handling"
         | "Ramp Only"
+      incentive_period: "Monthly" | "Quarterly" | "Semi-Annual" | "Annual"
+      incentive_type:
+        | "Volume"
+        | "Revenue"
+        | "Growth"
+        | "Loyalty"
+        | "Performance"
       invoice_status: "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled"
+      invoice_type: "Preliminary" | "Final"
+      journal_status: "Draft" | "Posted" | "Void"
       lost_found_status:
         | "Reported"
         | "In Storage"
@@ -1525,6 +1857,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["Asset", "Liability", "Equity", "Revenue", "Expense"],
       app_role: ["admin", "station_manager", "station_ops", "employee"],
       clearance_status: [
         "Pending",
@@ -1553,7 +1886,11 @@ export const Constants = {
         "Full Handling",
         "Ramp Only",
       ],
+      incentive_period: ["Monthly", "Quarterly", "Semi-Annual", "Annual"],
+      incentive_type: ["Volume", "Revenue", "Growth", "Loyalty", "Performance"],
       invoice_status: ["Draft", "Sent", "Paid", "Overdue", "Cancelled"],
+      invoice_type: ["Preliminary", "Final"],
+      journal_status: ["Draft", "Posted", "Void"],
       lost_found_status: [
         "Reported",
         "In Storage",

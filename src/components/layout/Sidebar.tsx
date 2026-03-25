@@ -45,7 +45,15 @@ const navSections: NavSection[] = [
   },
   {
     label: "ACCOUNTANT", icon: <Calculator size={18} />, collapsible: true,
-    children: [{ label: "Invoices", path: "/invoices" }],
+    children: [
+      { label: "Chart of Accounts", path: "/chart-of-accounts" },
+      { label: "Journal Entries", path: "/journal-entries" },
+      { label: "Client Invoices", path: "/invoices" },
+      { label: "Vendor Invoices", path: "/vendor-invoices" },
+      { label: "Aging Reports", path: "/aging-reports" },
+      { label: "Financial Reports", path: "/financial-reports" },
+      { label: "Airline Incentives", path: "/airline-incentives" },
+    ],
   },
   {
     label: "CONTRACT", icon: <FileText size={18} />, collapsible: true,
