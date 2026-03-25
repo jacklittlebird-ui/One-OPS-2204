@@ -4,7 +4,10 @@ import { toast } from "@/hooks/use-toast";
 
 type TableName = 
   | "flight_schedules" | "service_reports" | "service_report_delays"
-  | "invoices" | "contracts" | "lost_found" | "staff_roster" | "overfly_schedules";
+  | "invoices" | "contracts" | "lost_found" | "staff_roster" | "overfly_schedules"
+  | "airlines" | "aircrafts" | "delay_codes" | "abbreviations" | "aircraft_types_ref"
+  | "traffic_rights" | "bulletins" | "manuals_forms" | "catering_items" | "tube_charges"
+  | "airport_tax" | "basic_ramp" | "vendor_equipment" | "hall_vvip";
 
 export function useSupabaseTable<T extends Record<string, any>>(
   table: TableName,
