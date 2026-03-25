@@ -7,7 +7,9 @@ type TableName =
   | "invoices" | "contracts" | "lost_found" | "staff_roster" | "overfly_schedules"
   | "airlines" | "aircrafts" | "delay_codes" | "abbreviations" | "aircraft_types_ref"
   | "traffic_rights" | "bulletins" | "manuals_forms" | "catering_items" | "tube_charges"
-  | "airport_tax" | "basic_ramp" | "vendor_equipment" | "hall_vvip";
+  | "airport_tax" | "basic_ramp" | "vendor_equipment" | "hall_vvip"
+  | "countries" | "airports" | "services_catalog" | "service_providers"
+  | "airline_airport_services" | "clearances";
 
 export function useSupabaseTable<T extends Record<string, any>>(
   table: TableName,

@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import {
   LayoutDashboard, Plane, Calculator, FileText, Utensils, DollarSign,
   Shield, AlertTriangle, MoreHorizontal, ChevronDown, ChevronRight, FileBarChart2,
-  Globe, Clock, Package, Users, Receipt, Download, Upload
+  Globe, Clock, Package, Users, Receipt, Download, Upload, ShieldCheck, Building2, Truck, Wrench
 } from "lucide-react";
 
 interface NavChild {
@@ -22,12 +22,22 @@ interface NavSection {
 const navSections: NavSection[] = [
   { label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/" },
   {
-    label: "OPERATION", icon: <Plane size={18} />, collapsible: true,
+    label: "CLEARANCE", icon: <ShieldCheck size={18} />, collapsible: true,
     children: [
-      { label: "Airlines", path: "/airlines" },
-      { label: "Aircrafts", path: "/aircrafts" },
+      { label: "Clearances", path: "/clearances" },
       { label: "Flight Schedule", path: "/flight-schedule" },
       { label: "Overfly Schedule", path: "/overfly-schedule" },
+    ],
+  },
+  {
+    label: "OPERATION", icon: <Plane size={18} />, collapsible: true,
+    children: [
+      { label: "Countries", path: "/countries" },
+      { label: "Airports", path: "/airports" },
+      { label: "Airlines", path: "/airlines" },
+      { label: "Aircrafts", path: "/aircrafts" },
+      { label: "Services Catalog", path: "/services-catalog" },
+      { label: "Service Providers", path: "/service-providers" },
       { label: "Delay Codes", path: "/delay-codes" },
       { label: "Lost & Found", path: "/lost-found" },
       { label: "Staff Roster", path: "/staff-roster" },
@@ -95,6 +105,7 @@ export default function Sidebar() {
   });
   defaultExpanded["PRICES"] = defaultExpanded["PRICES"] ?? true;
   defaultExpanded["OPERATION"] = defaultExpanded["OPERATION"] ?? true;
+  defaultExpanded["CLEARANCE"] = defaultExpanded["CLEARANCE"] ?? true;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(defaultExpanded);
   const toggle = (label: string) => setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
