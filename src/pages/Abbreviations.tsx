@@ -1,15 +1,18 @@
 import { useState, useMemo } from "react";
 import { Search, BookOpen } from "lucide-react";
-import { abbreviationsList } from "@/data/servicesData";
+import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+
+type AbbrRow = { id: string; abbr: string; full_text: string };
 
 export default function AbbreviationsPage() {
+  const { data, isLoading } = useSupabaseTable<AbbrRow>("abbreviations", { orderBy: "abbr", ascending: true });
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
-    if (!search) return abbreviationsList;
+    if (!search) return data;
     const s = search.toLowerCase();
-    return abbreviationsList.filter(a => a.abbr.toLowerCase().includes(s) || a.full.toLowerCase().includes(s));
-  }, [search]);
+    return data.filter(a => a.abbr.toLowerCase().includes(s) || a.full_text.toLowerCase().includes(s));
+  }, [data, search]);
 
   return (
     <div className="space-y-5">
@@ -29,10 +32,12 @@ export default function AbbreviationsPage() {
           <table className="w-full text-sm">
             <thead><tr><th className="data-table-header px-4 py-3 text-left w-32">ABBREVIATION</th><th className="data-table-header px-4 py-3 text-left">FULL FORM</th></tr></thead>
             <tbody>
-              {filtered.map(a => (
-                <tr key={a.abbr} className="data-table-row">
+              {isLoading ? (
+                <tr><td colSpan={2} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+              ) : filtered.map(a => (
+                <tr key={a.id} className="data-table-row">
                   <td className="px-4 py-2.5 font-bold font-mono text-primary">{a.abbr}</td>
-                  <td className="px-4 py-2.5 text-foreground">{a.full}</td>
+                  <td className="px-4 py-2.5 text-foreground">{a.full_text}</td>
                 </tr>
               ))}
             </tbody>

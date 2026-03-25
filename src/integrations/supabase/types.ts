@@ -14,6 +14,270 @@ export type Database = {
   }
   public: {
     Tables: {
+      abbreviations: {
+        Row: {
+          abbr: string
+          created_at: string
+          full_text: string
+          id: string
+        }
+        Insert: {
+          abbr?: string
+          created_at?: string
+          full_text?: string
+          id?: string
+        }
+        Update: {
+          abbr?: string
+          created_at?: string
+          full_text?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      aircraft_types_ref: {
+        Row: {
+          category: string
+          created_at: string
+          iata: string
+          icao: string
+          id: string
+          mtow: number
+          name: string
+          seats: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          iata?: string
+          icao?: string
+          id?: string
+          mtow?: number
+          name?: string
+          seats?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          iata?: string
+          icao?: string
+          id?: string
+          mtow?: number
+          name?: string
+          seats?: string
+        }
+        Relationships: []
+      }
+      aircrafts: {
+        Row: {
+          airline: string
+          certificate_no: string
+          created_at: string
+          id: string
+          issue_date: string | null
+          model: string
+          mtow: number
+          registration: string
+          seats: number
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          airline?: string
+          certificate_no?: string
+          created_at?: string
+          id?: string
+          issue_date?: string | null
+          model?: string
+          mtow?: number
+          registration?: string
+          seats?: number
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          airline?: string
+          certificate_no?: string
+          created_at?: string
+          id?: string
+          issue_date?: string | null
+          model?: string
+          mtow?: number
+          registration?: string
+          seats?: number
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      airlines: {
+        Row: {
+          code: string
+          contact_person: string
+          country: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string
+          contact_person?: string
+          country?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name: string
+          phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          contact_person?: string
+          country?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      airport_tax: {
+        Row: {
+          amount: string
+          applicability: string
+          created_at: string
+          id: string
+          tax: string
+          unit: string
+        }
+        Insert: {
+          amount?: string
+          applicability?: string
+          created_at?: string
+          id?: string
+          tax?: string
+          unit?: string
+        }
+        Update: {
+          amount?: string
+          applicability?: string
+          created_at?: string
+          id?: string
+          tax?: string
+          unit?: string
+        }
+        Relationships: []
+      }
+      basic_ramp: {
+        Row: {
+          created_at: string
+          id: string
+          price: string
+          service: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          price?: string
+          service?: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          price?: string
+          service?: string
+          unit?: string
+        }
+        Relationships: []
+      }
+      bulletins: {
+        Row: {
+          bulletin_id: string
+          created_at: string
+          description: string
+          effective_date: string | null
+          expiry_date: string | null
+          id: string
+          issued_by: string
+          issued_date: string | null
+          priority: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          bulletin_id?: string
+          created_at?: string
+          description?: string
+          effective_date?: string | null
+          expiry_date?: string | null
+          id?: string
+          issued_by?: string
+          issued_date?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          bulletin_id?: string
+          created_at?: string
+          description?: string
+          effective_date?: string | null
+          expiry_date?: string | null
+          id?: string
+          issued_by?: string
+          issued_date?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catering_items: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          item: string
+          price: string
+          unit: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          item?: string
+          price?: string
+          unit?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          item?: string
+          price?: string
+          unit?: string
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           airline: string
@@ -68,6 +332,45 @@ export type Database = {
         }
         Relationships: []
       }
+      delay_codes: {
+        Row: {
+          active: boolean
+          avg_minutes: number
+          category: string
+          code: string
+          created_at: string
+          description: string
+          id: string
+          impact_level: string
+          responsible: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          avg_minutes?: number
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          impact_level?: string
+          responsible?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          avg_minutes?: number
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          impact_level?: string
+          responsible?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flight_schedules: {
         Row: {
           aircraft: string
@@ -113,6 +416,33 @@ export type Database = {
           status?: Database["public"]["Enums"]["flight_status"]
           terminal?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      hall_vvip: {
+        Row: {
+          created_at: string
+          id: string
+          price: string
+          service: string
+          terminal: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          price?: string
+          service?: string
+          terminal?: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          price?: string
+          service?: string
+          terminal?: string
+          unit?: string
         }
         Relationships: []
       }
@@ -245,6 +575,45 @@ export type Database = {
           status?: Database["public"]["Enums"]["lost_found_status"]
           storage_location?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      manuals_forms: {
+        Row: {
+          category: string
+          created_at: string
+          department: string
+          doc_id: string
+          id: string
+          last_updated: string | null
+          status: string
+          title: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          department?: string
+          doc_id?: string
+          id?: string
+          last_updated?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          department?: string
+          doc_id?: string
+          id?: string
+          last_updated?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: string
         }
         Relationships: []
       }
@@ -550,6 +919,60 @@ export type Database = {
         }
         Relationships: []
       }
+      traffic_rights: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          notes: string
+          right_name: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          notes?: string
+          right_name?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          notes?: string
+          right_name?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      tube_charges: {
+        Row: {
+          airport: string
+          created_at: string
+          id: string
+          price: string
+          service: string
+          unit: string
+        }
+        Insert: {
+          airport?: string
+          created_at?: string
+          id?: string
+          price?: string
+          service?: string
+          unit?: string
+        }
+        Update: {
+          airport?: string
+          created_at?: string
+          id?: string
+          price?: string
+          service?: string
+          unit?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -565,6 +988,33 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vendor_equipment: {
+        Row: {
+          created_at: string
+          equipment: string
+          id: string
+          rate: string
+          status: string
+          vendor: string
+        }
+        Insert: {
+          created_at?: string
+          equipment?: string
+          id?: string
+          rate?: string
+          status?: string
+          vendor?: string
+        }
+        Update: {
+          created_at?: string
+          equipment?: string
+          id?: string
+          rate?: string
+          status?: string
+          vendor?: string
         }
         Relationships: []
       }

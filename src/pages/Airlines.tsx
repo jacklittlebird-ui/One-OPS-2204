@@ -4,8 +4,7 @@ import {
   Search, Plus, Trash2, Upload, Download, Building2, Globe, Users,
   Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Plane, FileText
 } from "lucide-react";
-import { Airline, sampleAirlines } from "@/data/airlinesData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 25;
@@ -16,16 +15,18 @@ const statusIcon = (s: string) => {
   return <AlertCircle size={14} className="text-warning inline mr-1" />;
 };
 
+type AirlineRow = { id: string; code: string; name: string; country: string; contact_person: string; email: string; phone: string; status: string };
+
 export default function AirlinesPage() {
   const navigate = useNavigate();
-  const [data, setData] = useLocalStorage<Airline[]>("link_airlines", sampleAirlines);
+  const { data, isLoading, add, update, remove } = useSupabaseTable<AirlineRow>("airlines", { orderBy: "name", ascending: true });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editRow, setEditRow] = useState<Partial<Airline>>({});
+  const [editRow, setEditRow] = useState<Partial<AirlineRow>>({});
   const [showAdd, setShowAdd] = useState(false);
-  const [newRow, setNewRow] = useState<Partial<Airline>>({ code: "", name: "", country: "", contactPerson: "", email: "", phone: "", status: "Active" });
+  const [newRow, setNewRow] = useState<Partial<AirlineRow>>({ code: "", name: "", country: "", contact_person: "", email: "", phone: "", status: "Active" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
@@ -40,39 +41,38 @@ export default function AirlinesPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
   const activeCount = data.filter(d => d.status === "Active").length;
   const countriesCount = new Set(data.map(d => d.country)).size;
 
-  const startEdit = (row: Airline) => { setEditingId(row.id); setEditRow({ ...row }); };
-  const saveEdit = () => { if (!editingId) return; setData(prev => prev.map(r => r.id === editingId ? { ...r, ...editRow } as Airline : r)); setEditingId(null); };
-  const deleteRow = (id: string) => setData(prev => prev.filter(r => r.id !== id));
-  const addRow = () => {
+  const startEdit = (row: AirlineRow) => { setEditingId(row.id); setEditRow({ ...row }); };
+  const saveEdit = async () => { if (!editingId) return; await update({ id: editingId, ...editRow } as any); setEditingId(null); };
+  const deleteRow = (id: string) => remove(id);
+  const addRow = async () => {
     if (!newRow.code || !newRow.name) return;
-    setData(prev => [...prev, { ...newRow, id: String(Date.now()) } as Airline]);
+    await add(newRow);
     setShowAdd(false);
-    setNewRow({ code: "", name: "", country: "", contactPerson: "", email: "", phone: "", status: "Active" });
+    setNewRow({ code: "", name: "", country: "", contact_person: "", email: "", phone: "", status: "Active" });
   };
 
-  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const wb = XLSX.read(evt.target?.result, { type: "binary" });
       const json = XLSX.utils.sheet_to_json<any>(wb.Sheets[wb.SheetNames[0]]);
-      setData(json.map((row: any, i: number) => ({
-        id: String(Date.now() + i), code: row["Code"] || row.code || "", name: row["Name"] || row.name || "",
-        country: row["Country"] || row.country || "", contactPerson: row["Contact Person"] || row.contactPerson || "",
-        email: row["Email"] || row.email || "", phone: row["Phone"] || row.phone || "",
-        status: row["Status"] || row.status || "Active",
-      })));
-      setPage(1);
+      for (const row of json) {
+        await add({
+          code: row["Code"] || "", name: row["Name"] || "", country: row["Country"] || "",
+          contact_person: row["Contact Person"] || "", email: row["Email"] || "",
+          phone: row["Phone"] || "", status: row["Status"] || "Active",
+        });
+      }
     };
     reader.readAsBinaryString(file); e.target.value = "";
-  }, []);
+  }, [add]);
 
   const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ Code: r.code, Name: r.name, Country: r.country, "Contact Person": r.contactPerson, Email: r.email, Phone: r.phone, Status: r.status })));
+    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ Code: r.code, Name: r.name, Country: r.country, "Contact Person": r.contact_person, Email: r.email, Phone: r.phone, Status: r.status })));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Airlines"); XLSX.writeFile(wb, "airlines.xlsx");
   };
 
@@ -83,33 +83,17 @@ export default function AirlinesPage() {
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-bold text-foreground">Airlines</h1>
         <div className="flex gap-2">
-          <button onClick={() => navigate("/flight-schedule")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-primary border-primary/40 hover:bg-primary/10 transition-colors">
-            <Plane size={14} /> Flights
-          </button>
-          <button onClick={() => navigate("/contracts")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-info border-info/40 hover:bg-info/10 transition-colors">
-            <FileText size={14} /> Contracts
-          </button>
+          <button onClick={() => navigate("/flight-schedule")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-primary border-primary/40 hover:bg-primary/10 transition-colors"><Plane size={14} /> Flights</button>
+          <button onClick={() => navigate("/contracts")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-info border-info/40 hover:bg-info/10 transition-colors"><FileText size={14} /> Contracts</button>
         </div>
       </div>
       <p className="text-muted-foreground text-sm mt-1 mb-6">Manage airline partners and their contact information</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="stat-card">
-          <div className="stat-card-icon bg-primary"><Building2 size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Airlines</div></div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-icon bg-success"><CheckCircle size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{activeCount}</div><div className="text-xs text-muted-foreground">Active Airlines</div></div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-icon bg-info"><Globe size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{countriesCount}</div><div className="text-xs text-muted-foreground">Countries</div></div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-icon bg-accent"><Users size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Contacts</div></div>
-        </div>
+        <div className="stat-card"><div className="stat-card-icon bg-primary"><Building2 size={20} /></div><div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Airlines</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{activeCount}</div><div className="text-xs text-muted-foreground">Active Airlines</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-info"><Globe size={20} /></div><div><div className="text-2xl font-bold text-foreground">{countriesCount}</div><div className="text-xs text-muted-foreground">Countries</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-accent"><Users size={20} /></div><div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Contacts</div></div></div>
       </div>
 
       <div className="bg-card rounded-lg border overflow-hidden">
@@ -135,10 +119,10 @@ export default function AirlinesPage() {
               <input placeholder="Code" value={newRow.code} onChange={e => setNewRow(p => ({ ...p, code: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Airline Name" value={newRow.name} onChange={e => setNewRow(p => ({ ...p, name: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Country" value={newRow.country} onChange={e => setNewRow(p => ({ ...p, country: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
-              <input placeholder="Contact Person" value={newRow.contactPerson} onChange={e => setNewRow(p => ({ ...p, contactPerson: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              <input placeholder="Contact Person" value={newRow.contact_person} onChange={e => setNewRow(p => ({ ...p, contact_person: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Email" value={newRow.email} onChange={e => setNewRow(p => ({ ...p, email: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Phone" value={newRow.phone} onChange={e => setNewRow(p => ({ ...p, phone: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
-              <select value={newRow.status} onChange={e => setNewRow(p => ({ ...p, status: e.target.value as Airline["status"] }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+              <select value={newRow.status} onChange={e => setNewRow(p => ({ ...p, status: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
                 <option>Active</option><option>Inactive</option><option>Suspended</option>
               </select>
               <div className="flex gap-1">
@@ -153,11 +137,12 @@ export default function AirlinesPage() {
           <table className="w-full text-sm">
             <thead><tr>{columns.map(col => <th key={col} className="data-table-header px-4 py-3 text-left whitespace-nowrap">{col}</th>)}</tr></thead>
             <tbody>
-              {pageData.length === 0 ? (
+              {isLoading ? (
+                <tr><td colSpan={8} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+              ) : pageData.length === 0 ? (
                 <tr><td colSpan={8} className="text-center py-16">
                   <Database size={40} className="mx-auto text-muted-foreground/40 mb-3" />
                   <p className="font-semibold text-foreground">No Airlines Found</p>
-                  <p className="text-muted-foreground text-sm mt-1">Add airlines or upload from Excel</p>
                 </td></tr>
               ) : pageData.map(row => (
                 <tr key={row.id} className="data-table-row">
@@ -166,11 +151,11 @@ export default function AirlinesPage() {
                       <td className="px-4 py-2"><input value={editRow.code || ""} onChange={e => setEditRow(p => ({ ...p, code: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-16 bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input value={editRow.name || ""} onChange={e => setEditRow(p => ({ ...p, name: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input value={editRow.country || ""} onChange={e => setEditRow(p => ({ ...p, country: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
-                      <td className="px-4 py-2"><input value={editRow.contactPerson || ""} onChange={e => setEditRow(p => ({ ...p, contactPerson: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
+                      <td className="px-4 py-2"><input value={editRow.contact_person || ""} onChange={e => setEditRow(p => ({ ...p, contact_person: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input value={editRow.email || ""} onChange={e => setEditRow(p => ({ ...p, email: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input value={editRow.phone || ""} onChange={e => setEditRow(p => ({ ...p, phone: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
                       <td className="px-4 py-2">
-                        <select value={editRow.status} onChange={e => setEditRow(p => ({ ...p, status: e.target.value as Airline["status"] }))} className="text-sm border rounded px-1.5 py-0.5 bg-card text-foreground">
+                        <select value={editRow.status} onChange={e => setEditRow(p => ({ ...p, status: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 bg-card text-foreground">
                           <option>Active</option><option>Inactive</option><option>Suspended</option>
                         </select>
                       </td>
@@ -184,7 +169,7 @@ export default function AirlinesPage() {
                       <td className="px-4 py-2.5 text-foreground font-mono font-semibold">{row.code}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.name}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.country}</td>
-                      <td className="px-4 py-2.5 text-foreground">{row.contactPerson}</td>
+                      <td className="px-4 py-2.5 text-foreground">{row.contact_person}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.email}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.phone}</td>
                       <td className="px-4 py-2.5">{statusIcon(row.status)}<span className="text-foreground">{row.status}</span></td>

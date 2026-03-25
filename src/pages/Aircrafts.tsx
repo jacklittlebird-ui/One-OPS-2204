@@ -2,10 +2,9 @@ import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search, Plus, Trash2, Upload, Download, PlaneTakeoff, Wrench,
-  Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, Layers, Plane, Building2
+  Pencil, X, Database, ChevronLeft, ChevronRight, CheckCircle, XCircle, Layers, Plane, Building2
 } from "lucide-react";
-import { Aircraft, sampleAircrafts } from "@/data/aircraftsData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 25;
@@ -16,17 +15,19 @@ const statusBadge = (s: string) => {
   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/15 text-destructive"><XCircle size={12} />{s}</span>;
 };
 
+type AircraftRow = { id: string; registration: string; type: string; airline: string; model: string; mtow: number; seats: number; certificate_no: string; issue_date: string; status: string };
+
 export default function AircraftsPage() {
   const navigate = useNavigate();
-  const [data, setData] = useLocalStorage<Aircraft[]>("link_aircrafts", sampleAircrafts);
+  const { data, isLoading, add, update, remove } = useSupabaseTable<AircraftRow>("aircrafts", { orderBy: "registration", ascending: true });
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All Types");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editRow, setEditRow] = useState<Partial<Aircraft>>({});
+  const [editRow, setEditRow] = useState<Partial<AircraftRow>>({});
   const [showAdd, setShowAdd] = useState(false);
-  const [newRow, setNewRow] = useState<Partial<Aircraft>>({ registration: "", type: "", airline: "", model: "", mtow: 0, seats: 0, certificateNo: "", issueDate: "", status: "Operational" });
+  const [newRow, setNewRow] = useState<Partial<AircraftRow>>({ registration: "", type: "", airline: "", model: "", mtow: 0, seats: 0, certificate_no: "", issue_date: "", status: "Operational" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const types = useMemo(() => [...new Set(data.map(d => d.type))], [data]);
@@ -44,41 +45,39 @@ export default function AircraftsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
   const operationalCount = data.filter(d => d.status === "Operational").length;
   const airlinesCount = new Set(data.map(d => d.airline)).size;
 
-  const startEdit = (row: Aircraft) => { setEditingId(row.id); setEditRow({ ...row }); };
-  const saveEdit = () => { if (!editingId) return; setData(prev => prev.map(r => r.id === editingId ? { ...r, ...editRow } as Aircraft : r)); setEditingId(null); };
-  const deleteRow = (id: string) => setData(prev => prev.filter(r => r.id !== id));
-  const addRow = () => {
+  const startEdit = (row: AircraftRow) => { setEditingId(row.id); setEditRow({ ...row }); };
+  const saveEdit = async () => { if (!editingId) return; await update({ id: editingId, ...editRow } as any); setEditingId(null); };
+  const deleteRow = (id: string) => remove(id);
+  const addRow = async () => {
     if (!newRow.registration || !newRow.model) return;
-    setData(prev => [...prev, { ...newRow, id: String(Date.now()) } as Aircraft]);
+    await add(newRow);
     setShowAdd(false);
-    setNewRow({ registration: "", type: "", airline: "", model: "", mtow: 0, seats: 0, certificateNo: "", issueDate: "", status: "Operational" });
+    setNewRow({ registration: "", type: "", airline: "", model: "", mtow: 0, seats: 0, certificate_no: "", issue_date: "", status: "Operational" });
   };
 
-  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const wb = XLSX.read(evt.target?.result, { type: "binary" });
       const json = XLSX.utils.sheet_to_json<any>(wb.Sheets[wb.SheetNames[0]]);
-      setData(json.map((row: any, i: number) => ({
-        id: String(Date.now() + i), registration: row["Registration"] || row.registration || "",
-        type: row["Type"] || row.type || "", airline: row["Airline"] || row.airline || "",
-        model: row["Model"] || row.model || "", mtow: Number(row["MTOW (T)"] || row.mtow || 0),
-        seats: Number(row["Seats"] || row.seats || 0), certificateNo: row["Certificate No."] || row.certificateNo || "",
-        issueDate: row["Issue Date"] || row.issueDate || "",
-        status: row["Status"] || row.status || "Operational",
-      })));
-      setPage(1);
+      for (const row of json) {
+        await add({
+          registration: row["Registration"] || "", type: row["Type"] || "", airline: row["Airline"] || "",
+          model: row["Model"] || "", mtow: Number(row["MTOW (T)"] || 0), seats: Number(row["Seats"] || 0),
+          certificate_no: row["Certificate No."] || "", issue_date: row["Issue Date"] || null,
+          status: row["Status"] || "Operational",
+        });
+      }
     };
     reader.readAsBinaryString(file); e.target.value = "";
-  }, []);
+  }, [add]);
 
   const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ Registration: r.registration, Type: r.type, Airline: r.airline, Model: r.model, "MTOW (T)": r.mtow, Seats: r.seats, "Certificate No.": r.certificateNo, "Issue Date": r.issueDate, Status: r.status })));
+    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ Registration: r.registration, Type: r.type, Airline: r.airline, Model: r.model, "MTOW (T)": r.mtow, Seats: r.seats, "Certificate No.": r.certificate_no, "Issue Date": r.issue_date, Status: r.status })));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Aircrafts"); XLSX.writeFile(wb, "aircrafts.xlsx");
   };
 
@@ -89,33 +88,17 @@ export default function AircraftsPage() {
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-bold text-foreground">Aircrafts</h1>
         <div className="flex gap-2">
-          <button onClick={() => navigate("/flight-schedule")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-primary border-primary/40 hover:bg-primary/10 transition-colors">
-            <Plane size={14} /> Flights
-          </button>
-          <button onClick={() => navigate("/airlines")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-info border-info/40 hover:bg-info/10 transition-colors">
-            <Building2 size={14} /> Airlines
-          </button>
+          <button onClick={() => navigate("/flight-schedule")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-primary border-primary/40 hover:bg-primary/10 transition-colors"><Plane size={14} /> Flights</button>
+          <button onClick={() => navigate("/airlines")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-info border-info/40 hover:bg-info/10 transition-colors"><Building2 size={14} /> Airlines</button>
         </div>
       </div>
       <p className="text-muted-foreground text-sm mt-1 mb-6">Aircraft fleet registry and specifications</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="stat-card">
-          <div className="stat-card-icon bg-primary"><PlaneTakeoff size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Aircraft</div></div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-icon bg-success"><CheckCircle size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{operationalCount}</div><div className="text-xs text-muted-foreground">Operational</div></div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-icon bg-info"><Layers size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{types.length}</div><div className="text-xs text-muted-foreground">Aircraft Types</div></div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-icon bg-accent"><PlaneTakeoff size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{airlinesCount}</div><div className="text-xs text-muted-foreground">Airlines</div></div>
-        </div>
+        <div className="stat-card"><div className="stat-card-icon bg-primary"><PlaneTakeoff size={20} /></div><div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Aircraft</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{operationalCount}</div><div className="text-xs text-muted-foreground">Operational</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-info"><Layers size={20} /></div><div><div className="text-2xl font-bold text-foreground">{types.length}</div><div className="text-xs text-muted-foreground">Aircraft Types</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-accent"><PlaneTakeoff size={20} /></div><div><div className="text-2xl font-bold text-foreground">{airlinesCount}</div><div className="text-xs text-muted-foreground">Airlines</div></div></div>
       </div>
 
       <div className="bg-card rounded-lg border overflow-hidden">
@@ -147,9 +130,9 @@ export default function AircraftsPage() {
               <input placeholder="Model" value={newRow.model} onChange={e => setNewRow(p => ({ ...p, model: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="MTOW (T)" type="number" step="0.1" value={newRow.mtow || 0} onChange={e => setNewRow(p => ({ ...p, mtow: +e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               <input placeholder="Seats" type="number" value={newRow.seats || 0} onChange={e => setNewRow(p => ({ ...p, seats: +e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
-              <input placeholder="Certificate No." value={newRow.certificateNo} onChange={e => setNewRow(p => ({ ...p, certificateNo: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
-              <input placeholder="Issue Date" type="date" value={newRow.issueDate} onChange={e => setNewRow(p => ({ ...p, issueDate: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
-              <select value={newRow.status} onChange={e => setNewRow(p => ({ ...p, status: e.target.value as Aircraft["status"] }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+              <input placeholder="Certificate No." value={newRow.certificate_no} onChange={e => setNewRow(p => ({ ...p, certificate_no: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              <input placeholder="Issue Date" type="date" value={newRow.issue_date} onChange={e => setNewRow(p => ({ ...p, issue_date: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              <select value={newRow.status} onChange={e => setNewRow(p => ({ ...p, status: e.target.value }))} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
                 <option>Operational</option><option>Maintenance</option><option>Grounded</option>
               </select>
               <div className="flex gap-1">
@@ -164,11 +147,10 @@ export default function AircraftsPage() {
           <table className="w-full text-sm">
             <thead><tr>{columns.map(col => <th key={col} className="data-table-header px-4 py-3 text-left whitespace-nowrap">{col}</th>)}</tr></thead>
             <tbody>
-              {pageData.length === 0 ? (
-                <tr><td colSpan={10} className="text-center py-16">
-                  <Database size={40} className="mx-auto text-muted-foreground/40 mb-3" />
-                  <p className="font-semibold text-foreground">No Aircraft Found</p>
-                </td></tr>
+              {isLoading ? (
+                <tr><td colSpan={10} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+              ) : pageData.length === 0 ? (
+                <tr><td colSpan={10} className="text-center py-16"><Database size={40} className="mx-auto text-muted-foreground/40 mb-3" /><p className="font-semibold text-foreground">No Aircraft Found</p></td></tr>
               ) : pageData.map(row => (
                 <tr key={row.id} className="data-table-row">
                   {editingId === row.id ? (
@@ -179,10 +161,10 @@ export default function AircraftsPage() {
                       <td className="px-4 py-2"><input value={editRow.model || ""} onChange={e => setEditRow(p => ({ ...p, model: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-full bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input type="number" step="0.1" value={editRow.mtow || 0} onChange={e => setEditRow(p => ({ ...p, mtow: +e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-24 bg-card text-foreground" /></td>
                       <td className="px-4 py-2"><input type="number" value={editRow.seats || 0} onChange={e => setEditRow(p => ({ ...p, seats: +e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-16 bg-card text-foreground" /></td>
-                      <td className="px-4 py-2"><input value={editRow.certificateNo || ""} onChange={e => setEditRow(p => ({ ...p, certificateNo: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-28 bg-card text-foreground" /></td>
-                      <td className="px-4 py-2"><input type="date" value={editRow.issueDate || ""} onChange={e => setEditRow(p => ({ ...p, issueDate: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-32 bg-card text-foreground" /></td>
+                      <td className="px-4 py-2"><input value={editRow.certificate_no || ""} onChange={e => setEditRow(p => ({ ...p, certificate_no: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-28 bg-card text-foreground" /></td>
+                      <td className="px-4 py-2"><input type="date" value={editRow.issue_date || ""} onChange={e => setEditRow(p => ({ ...p, issue_date: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 w-32 bg-card text-foreground" /></td>
                       <td className="px-4 py-2">
-                        <select value={editRow.status} onChange={e => setEditRow(p => ({ ...p, status: e.target.value as Aircraft["status"] }))} className="text-sm border rounded px-1.5 py-0.5 bg-card text-foreground">
+                        <select value={editRow.status} onChange={e => setEditRow(p => ({ ...p, status: e.target.value }))} className="text-sm border rounded px-1.5 py-0.5 bg-card text-foreground">
                           <option>Operational</option><option>Maintenance</option><option>Grounded</option>
                         </select>
                       </td>
@@ -199,8 +181,8 @@ export default function AircraftsPage() {
                       <td className="px-4 py-2.5 text-foreground">{row.model}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.mtow}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.seats}</td>
-                      <td className="px-4 py-2.5 text-foreground font-mono">{row.certificateNo}</td>
-                      <td className="px-4 py-2.5 text-foreground">{row.issueDate}</td>
+                      <td className="px-4 py-2.5 text-foreground font-mono">{row.certificate_no}</td>
+                      <td className="px-4 py-2.5 text-foreground">{row.issue_date}</td>
                       <td className="px-4 py-2.5">{statusBadge(row.status)}</td>
                       <td className="px-4 py-2.5 flex gap-2">
                         <button onClick={() => startEdit(row)} className="text-info hover:text-info/80"><Pencil size={14} /></button>
