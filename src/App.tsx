@@ -31,6 +31,11 @@ import ManualsAndFormsPage from "./pages/ManualsAndForms";
 import AbbreviationsPage from "./pages/Abbreviations";
 import AircraftTypesPage from "./pages/AircraftTypes";
 import LoginPage from "./pages/Login";
+import CountriesPage from "./pages/Countries";
+import AirportsPage from "./pages/Airports";
+import ServiceProvidersPage from "./pages/ServiceProviders";
+import ClearancesPage from "./pages/Clearances";
+import ServicesCatalogPage from "./pages/ServicesCatalog";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +77,11 @@ function AppRoutes() {
       <Route path="/manuals-forms" element={<ProtectedRoute><AppLayout><ManualsAndFormsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/abbreviations" element={<ProtectedRoute><AppLayout><AbbreviationsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aircraft-types" element={<ProtectedRoute><AppLayout><AircraftTypesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/countries" element={<ProtectedRoute><AppLayout><CountriesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/airports" element={<ProtectedRoute><AppLayout><AirportsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/service-providers" element={<ProtectedRoute><AppLayout><ServiceProvidersPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/clearances" element={<ProtectedRoute><AppLayout><ClearancesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/services-catalog" element={<ProtectedRoute><AppLayout><ServicesCatalogPage /></AppLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
