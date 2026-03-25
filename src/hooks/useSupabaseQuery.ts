@@ -22,7 +22,7 @@ export function useSupabaseTable<T extends Record<string, any>>(
         .select("*")
         .order(orderCol, { ascending: asc });
       if (error) throw error;
-      return data as T[];
+      return (data as unknown) as T[];
     },
   });
 
