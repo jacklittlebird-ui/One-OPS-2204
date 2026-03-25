@@ -113,6 +113,80 @@ export type Database = {
         }
         Relationships: []
       }
+      airline_airport_services: {
+        Row: {
+          airline_id: string
+          airport_id: string
+          buy_price: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string
+          provider_id: string | null
+          sell_price: number
+          service_id: string
+          status: string
+          unit: string
+        }
+        Insert: {
+          airline_id: string
+          airport_id: string
+          buy_price?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string
+          provider_id?: string | null
+          sell_price?: number
+          service_id: string
+          status?: string
+          unit?: string
+        }
+        Update: {
+          airline_id?: string
+          airport_id?: string
+          buy_price?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string
+          provider_id?: string | null
+          sell_price?: number
+          service_id?: string
+          status?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airline_airport_services_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "airline_airport_services_airport_id_fkey"
+            columns: ["airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "airline_airport_services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "airline_airport_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       airlines: {
         Row: {
           code: string
@@ -178,6 +252,50 @@ export type Database = {
           unit?: string
         }
         Relationships: []
+      }
+      airports: {
+        Row: {
+          city: string
+          country_id: string
+          created_at: string
+          iata_code: string
+          icao_code: string
+          id: string
+          name: string
+          status: string
+          terminal_count: number
+        }
+        Insert: {
+          city?: string
+          country_id: string
+          created_at?: string
+          iata_code?: string
+          icao_code?: string
+          id?: string
+          name: string
+          status?: string
+          terminal_count?: number
+        }
+        Update: {
+          city?: string
+          country_id?: string
+          created_at?: string
+          iata_code?: string
+          icao_code?: string
+          id?: string
+          name?: string
+          status?: string
+          terminal_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airports_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       basic_ramp: {
         Row: {
@@ -278,6 +396,81 @@ export type Database = {
         }
         Relationships: []
       }
+      clearances: {
+        Row: {
+          aircraft_type: string
+          airline_id: string | null
+          authority: string
+          clearance_type: string
+          created_at: string
+          flight_no: string
+          flight_schedule_id: string | null
+          id: string
+          permit_no: string
+          registration: string
+          remarks: string
+          requested_date: string | null
+          route: string
+          status: Database["public"]["Enums"]["clearance_status"]
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          aircraft_type?: string
+          airline_id?: string | null
+          authority?: string
+          clearance_type?: string
+          created_at?: string
+          flight_no?: string
+          flight_schedule_id?: string | null
+          id?: string
+          permit_no?: string
+          registration?: string
+          remarks?: string
+          requested_date?: string | null
+          route?: string
+          status?: Database["public"]["Enums"]["clearance_status"]
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          aircraft_type?: string
+          airline_id?: string | null
+          authority?: string
+          clearance_type?: string
+          created_at?: string
+          flight_no?: string
+          flight_schedule_id?: string | null
+          id?: string
+          permit_no?: string
+          registration?: string
+          remarks?: string
+          requested_date?: string | null
+          route?: string
+          status?: Database["public"]["Enums"]["clearance_status"]
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clearances_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clearances_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "flight_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           airline: string
@@ -329,6 +522,36 @@ export type Database = {
           stations?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      countries: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          name_ar: string
+          region: string
+          status: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          id?: string
+          name: string
+          name_ar?: string
+          region?: string
+          status?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          name_ar?: string
+          region?: string
+          status?: string
         }
         Relationships: []
       }
@@ -716,6 +939,66 @@ export type Database = {
         }
         Relationships: []
       }
+      service_providers: {
+        Row: {
+          airport_id: string | null
+          contact_person: string
+          contract_ref: string
+          country_id: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          service_category: Database["public"]["Enums"]["service_category"]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          airport_id?: string | null
+          contact_person?: string
+          contract_ref?: string
+          country_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name: string
+          phone?: string
+          service_category?: Database["public"]["Enums"]["service_category"]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          airport_id?: string | null
+          contact_person?: string
+          contract_ref?: string
+          country_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+          service_category?: Database["public"]["Enums"]["service_category"]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_providers_airport_id_fkey"
+            columns: ["airport_id"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_providers_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_report_delays: {
         Row: {
           code: string
@@ -859,6 +1142,42 @@ export type Database = {
           to?: string | null
           total_cost?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      services_catalog: {
+        Row: {
+          category: Database["public"]["Enums"]["service_category"]
+          created_at: string
+          description: string
+          id: string
+          name: string
+          related_documents: string
+          related_reports: string
+          report_template: string
+          status: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["service_category"]
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          related_documents?: string
+          related_reports?: string
+          report_template?: string
+          status?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["service_category"]
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          related_documents?: string
+          related_reports?: string
+          report_template?: string
+          status?: string
         }
         Relationships: []
       }
@@ -1034,6 +1353,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "station_manager" | "station_ops" | "employee"
+      clearance_status:
+        | "Pending"
+        | "Approved"
+        | "Rejected"
+        | "Expired"
+        | "Cancelled"
       contract_status: "Active" | "Expired" | "Pending" | "Terminated"
       currency_type: "USD" | "EUR" | "EGP"
       flight_status: "Scheduled" | "Delayed" | "Cancelled" | "Completed"
@@ -1061,6 +1386,16 @@ export type Database = {
         | "Forwarded"
         | "Disposed"
       overfly_status: "Approved" | "Pending" | "Rejected" | "Expired"
+      service_category:
+        | "Civil Aviation"
+        | "Ground Handling"
+        | "Catering"
+        | "Hotac"
+        | "Fuel"
+        | "Security"
+        | "Special Services"
+        | "Transport"
+        | "VIP"
       shift_type: "Morning" | "Afternoon" | "Night" | "Split" | "Off"
       staff_status: "Active" | "On Leave" | "Training" | "Suspended"
     }
@@ -1191,6 +1526,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "station_manager", "station_ops", "employee"],
+      clearance_status: [
+        "Pending",
+        "Approved",
+        "Rejected",
+        "Expired",
+        "Cancelled",
+      ],
       contract_status: ["Active", "Expired", "Pending", "Terminated"],
       currency_type: ["USD", "EUR", "EGP"],
       flight_status: ["Scheduled", "Delayed", "Cancelled", "Completed"],
@@ -1220,6 +1562,17 @@ export const Constants = {
         "Disposed",
       ],
       overfly_status: ["Approved", "Pending", "Rejected", "Expired"],
+      service_category: [
+        "Civil Aviation",
+        "Ground Handling",
+        "Catering",
+        "Hotac",
+        "Fuel",
+        "Security",
+        "Special Services",
+        "Transport",
+        "VIP",
+      ],
       shift_type: ["Morning", "Afternoon", "Night", "Split", "Off"],
       staff_status: ["Active", "On Leave", "Training", "Suspended"],
     },
