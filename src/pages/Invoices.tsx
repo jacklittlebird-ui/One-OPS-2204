@@ -95,10 +95,13 @@ function InvoiceForm({ data, onChange, onSave, onCancel, title }: { data: Partia
             <div className="text-center"><div className="text-xs text-muted-foreground uppercase font-semibold">VAT</div><div className="text-lg font-bold text-foreground">${(data.vat || 0).toFixed(2)}</div></div>
             <div className="text-center border-l"><div className="text-xs text-primary uppercase font-bold">Total</div><div className="text-2xl font-bold text-primary">${(data.total || 0).toFixed(2)}</div></div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <FormField label="Status"><select className={selectCls} value={data.status || "Draft"} onChange={e => set("status", e.target.value)}>{(["Draft","Sent","Paid","Overdue","Cancelled"] as InvoiceStatus[]).map(s => <option key={s}>{s}</option>)}</select></FormField>
             <FormField label="Currency"><select className={selectCls} value={data.currency || "USD"} onChange={e => set("currency", e.target.value)}>{(["USD","EUR","EGP"] as InvoiceCurrency[]).map(c => <option key={c}>{c}</option>)}</select></FormField>
-            <div className="col-span-2"><FormField label="Notes"><textarea className={inputCls + " resize-none"} rows={2} value={data.notes || ""} onChange={e => set("notes", e.target.value)} /></FormField></div>
+            <FormField label="Invoice Type"><select className={selectCls} value={data.invoice_type || "Preliminary"} onChange={e => set("invoice_type", e.target.value)}>{(["Preliminary","Final"] as InvoiceType[]).map(t => <option key={t}>{t}</option>)}</select></FormField>
+          </div>
+          <div>
+            <FormField label="Notes"><textarea className={inputCls + " resize-none"} rows={2} value={data.notes || ""} onChange={e => set("notes", e.target.value)} /></FormField>
           </div>
         </div>
         <div className="sticky bottom-0 bg-card border-t px-6 py-4 flex gap-3 justify-end rounded-b-xl">
