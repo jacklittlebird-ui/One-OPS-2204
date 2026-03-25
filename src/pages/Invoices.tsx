@@ -11,6 +11,7 @@ import InvoicePrintView from "@/components/InvoicePrintView";
 
 type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
 type InvoiceCurrency = "USD" | "EUR" | "EGP";
+type InvoiceType = "Preliminary" | "Final";
 
 type InvoiceRow = {
   id: string; invoice_no: string; date: string; due_date: string;
@@ -18,6 +19,8 @@ type InvoiceRow = {
   civil_aviation: number; handling: number; airport_charges: number;
   catering: number; other: number; subtotal: number; vat: number; total: number;
   currency: InvoiceCurrency; status: InvoiceStatus; notes: string;
+  invoice_type: InvoiceType; finalized_at: string | null; finalized_by: string | null;
+  journal_entry_id: string | null; sent_at: string | null; sent_to: string | null;
 };
 
 const statusConfig: Record<InvoiceStatus, { icon: React.ReactNode; cls: string }> = {
@@ -48,6 +51,7 @@ const emptyInvoice = (): Partial<InvoiceRow> => ({
   operator: "", airline_iata: "", flight_ref: "", description: "",
   civil_aviation: 0, handling: 0, airport_charges: 0, catering: 0, other: 0,
   subtotal: 0, vat: 0, total: 0, currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus, notes: "",
+  invoice_type: "Preliminary" as InvoiceType,
 });
 
 function InvoiceForm({ data, onChange, onSave, onCancel, title }: { data: Partial<InvoiceRow>; onChange: (d: Partial<InvoiceRow>) => void; onSave: () => void; onCancel: () => void; title: string; }) {
