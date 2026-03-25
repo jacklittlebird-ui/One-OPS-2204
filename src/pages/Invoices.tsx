@@ -119,7 +119,7 @@ function InvoiceForm({ data, onChange, onSave, onCancel, title }: { data: Partia
 const PAGE_SIZE = 15;
 
 export default function InvoicesPage() {
-  const location = useLocation();
+  const queryClient = useQueryClient();
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
