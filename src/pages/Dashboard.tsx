@@ -1,17 +1,26 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plane, DollarSign } from "lucide-react";
+import { Plane, DollarSign, Shield, FileBarChart2 } from "lucide-react";
 import OperationsDashboard from "./OperationsDashboard";
 import AccountantDashboard from "./AccountantDashboard";
 
 export default function DashboardPage() {
+  const today = new Date();
+  const greeting = today.getHours() < 12 ? "Good Morning" : today.getHours() < 17 ? "Good Afternoon" : "Good Evening";
+
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Operations overview · {new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{greeting} 👋</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {today.toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Shield size={14} className="text-success" />
+          <span>System Online</span>
+        </div>
       </div>
 
       <Tabs defaultValue="operations" className="w-full">
