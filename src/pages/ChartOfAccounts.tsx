@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Trash2, ChevronRight, ChevronDown, FolderTree } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ChevronRight, ChevronDown, FolderTree, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportExcel";
 import { toast } from "@/hooks/use-toast";
 
 type AccountRow = {
@@ -126,6 +127,13 @@ export default function ChartOfAccountsPage() {
           <p className="text-muted-foreground text-sm">شجرة الحسابات · {data.length} accounts</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => {
+            exportToExcel(data.filter(a => !a.is_group).map(a => ({
+              Code: a.code, Name: a.name, "Name AR": a.name_ar, Type: a.account_type,
+              Balance: a.current_balance, "Opening Balance": a.opening_balance, Currency: a.currency, Status: a.status,
+            })), "Chart of Accounts", "chart_of_accounts.xlsx");
+            toast({ title: "Exported", description: "Chart of accounts exported." });
+          }}><Download size={14} className="mr-1" /> Export</Button>
           <Button variant="outline" onClick={() => setExpanded(new Set(data.filter(a => a.is_group).map(a => a.id)))}>Expand All</Button>
           <Button variant="outline" onClick={() => setExpanded(new Set())}>Collapse All</Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
