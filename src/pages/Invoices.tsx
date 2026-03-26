@@ -57,6 +57,7 @@ const emptyInvoice = (): Partial<InvoiceRow> => ({
   civil_aviation: 0, handling: 0, airport_charges: 0, catering: 0, other: 0,
   subtotal: 0, vat: 0, total: 0, currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus, notes: "",
   invoice_type: "Preliminary" as InvoiceType,
+  payment_date: null, payment_ref: "", billing_period: "", credit_note_ref: "", station: "CAI",
 });
 
 function InvoiceForm({ data, onChange, onSave, onCancel, title }: { data: Partial<InvoiceRow>; onChange: (d: Partial<InvoiceRow>) => void; onSave: () => void; onCancel: () => void; title: string; }) {
