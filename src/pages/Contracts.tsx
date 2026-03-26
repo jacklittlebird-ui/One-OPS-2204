@@ -177,9 +177,7 @@ export default function ContractsPage() {
       setPage(1);
     };
     reader.readAsBinaryString(file); e.target.value = "";
-  }, []);
-
-  const { bulkInsert } = useSupabaseTable<ContractRow>("contracts");
+  }, [bulkInsert]);
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
