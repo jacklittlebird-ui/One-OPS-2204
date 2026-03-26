@@ -248,11 +248,16 @@ export type Database = {
       }
       airlines: {
         Row: {
+          alliance: string
+          billing_currency: string
           code: string
           contact_person: string
           country: string
           created_at: string
+          credit_terms: string
           email: string
+          iata_code: string
+          icao_code: string
           id: string
           name: string
           phone: string
@@ -260,11 +265,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alliance?: string
+          billing_currency?: string
           code?: string
           contact_person?: string
           country?: string
           created_at?: string
+          credit_terms?: string
           email?: string
+          iata_code?: string
+          icao_code?: string
           id?: string
           name: string
           phone?: string
@@ -272,11 +282,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alliance?: string
+          billing_currency?: string
           code?: string
           contact_person?: string
           country?: string
           created_at?: string
+          credit_terms?: string
           email?: string
+          iata_code?: string
+          icao_code?: string
           id?: string
           name?: string
           phone?: string
@@ -382,7 +397,9 @@ export type Database = {
       }
       bulletins: {
         Row: {
+          acknowledged_by: string
           bulletin_id: string
+          category_code: string
           created_at: string
           description: string
           effective_date: string | null
@@ -391,13 +408,16 @@ export type Database = {
           issued_by: string
           issued_date: string | null
           priority: string
+          recipients: string
           status: string
           title: string
           type: string
           updated_at: string
         }
         Insert: {
+          acknowledged_by?: string
           bulletin_id?: string
+          category_code?: string
           created_at?: string
           description?: string
           effective_date?: string | null
@@ -406,13 +426,16 @@ export type Database = {
           issued_by?: string
           issued_date?: string | null
           priority?: string
+          recipients?: string
           status?: string
           title?: string
           type?: string
           updated_at?: string
         }
         Update: {
+          acknowledged_by?: string
           bulletin_id?: string
+          category_code?: string
           created_at?: string
           description?: string
           effective_date?: string | null
@@ -421,6 +444,7 @@ export type Database = {
           issued_by?: string
           issued_date?: string | null
           priority?: string
+          recipients?: string
           status?: string
           title?: string
           type?: string
@@ -522,12 +546,16 @@ export type Database = {
           aircraft_type: string
           airline_id: string | null
           authority: string
+          cargo_kg: number
           clearance_type: string
           created_at: string
           flight_no: string
           flight_schedule_id: string | null
+          handling_agent: string
           id: string
+          passengers: number
           permit_no: string
+          purpose: string
           registration: string
           remarks: string
           requested_date: string | null
@@ -541,12 +569,16 @@ export type Database = {
           aircraft_type?: string
           airline_id?: string | null
           authority?: string
+          cargo_kg?: number
           clearance_type?: string
           created_at?: string
           flight_no?: string
           flight_schedule_id?: string | null
+          handling_agent?: string
           id?: string
+          passengers?: number
           permit_no?: string
+          purpose?: string
           registration?: string
           remarks?: string
           requested_date?: string | null
@@ -560,12 +592,16 @@ export type Database = {
           aircraft_type?: string
           airline_id?: string | null
           authority?: string
+          cargo_kg?: number
           clearance_type?: string
           created_at?: string
           flight_no?: string
           flight_schedule_id?: string | null
+          handling_agent?: string
           id?: string
+          passengers?: number
           permit_no?: string
+          purpose?: string
           registration?: string
           remarks?: string
           requested_date?: string | null
@@ -738,13 +774,20 @@ export type Database = {
           aircraft: string
           airline: string
           arrival: string
+          codeshare: string
           created_at: string
           days: string
           departure: string
           destination: string
+          effective_from: string | null
+          effective_to: string | null
           flight_no: string
+          flight_type: string
+          frequency: string
+          handling_agent: string
           id: string
           origin: string
+          season: string
           status: Database["public"]["Enums"]["flight_status"]
           terminal: string
           updated_at: string
@@ -753,13 +796,20 @@ export type Database = {
           aircraft?: string
           airline: string
           arrival: string
+          codeshare?: string
           created_at?: string
           days?: string
           departure: string
           destination: string
+          effective_from?: string | null
+          effective_to?: string | null
           flight_no: string
+          flight_type?: string
+          frequency?: string
+          handling_agent?: string
           id?: string
           origin: string
+          season?: string
           status?: Database["public"]["Enums"]["flight_status"]
           terminal?: string
           updated_at?: string
@@ -768,13 +818,20 @@ export type Database = {
           aircraft?: string
           airline?: string
           arrival?: string
+          codeshare?: string
           created_at?: string
           days?: string
           departure?: string
           destination?: string
+          effective_from?: string | null
+          effective_to?: string | null
           flight_no?: string
+          flight_type?: string
+          frequency?: string
+          handling_agent?: string
           id?: string
           origin?: string
+          season?: string
           status?: Database["public"]["Enums"]["flight_status"]
           terminal?: string
           updated_at?: string
@@ -812,9 +869,11 @@ export type Database = {
         Row: {
           airline_iata: string | null
           airport_charges: number
+          billing_period: string
           catering: number
           civil_aviation: number
           created_at: string
+          credit_note_ref: string
           currency: Database["public"]["Enums"]["currency_type"]
           date: string
           description: string | null
@@ -830,8 +889,11 @@ export type Database = {
           notes: string | null
           operator: string
           other: number
+          payment_date: string | null
+          payment_ref: string
           sent_at: string | null
           sent_to: string | null
+          station: string
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           total: number
@@ -841,9 +903,11 @@ export type Database = {
         Insert: {
           airline_iata?: string | null
           airport_charges?: number
+          billing_period?: string
           catering?: number
           civil_aviation?: number
           created_at?: string
+          credit_note_ref?: string
           currency?: Database["public"]["Enums"]["currency_type"]
           date?: string
           description?: string | null
@@ -859,8 +923,11 @@ export type Database = {
           notes?: string | null
           operator: string
           other?: number
+          payment_date?: string | null
+          payment_ref?: string
           sent_at?: string | null
           sent_to?: string | null
+          station?: string
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           total?: number
@@ -870,9 +937,11 @@ export type Database = {
         Update: {
           airline_iata?: string | null
           airport_charges?: number
+          billing_period?: string
           catering?: number
           civil_aviation?: number
           created_at?: string
+          credit_note_ref?: string
           currency?: Database["public"]["Enums"]["currency_type"]
           date?: string
           description?: string | null
@@ -888,8 +957,11 @@ export type Database = {
           notes?: string | null
           operator?: string
           other?: number
+          payment_date?: string | null
+          payment_ref?: string
           sent_at?: string | null
           sent_to?: string | null
+          station?: string
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           total?: number
@@ -1012,7 +1084,9 @@ export type Database = {
           created_at: string
           description: string
           flight_no: string
+          found_by: string
           id: string
+          item_id: string
           notes: string | null
           owner_contact: string | null
           owner_name: string | null
@@ -1020,7 +1094,9 @@ export type Database = {
           station: string
           status: Database["public"]["Enums"]["lost_found_status"]
           storage_location: string | null
+          terminal: string
           updated_at: string
+          weight: string
         }
         Insert: {
           airline?: string
@@ -1031,7 +1107,9 @@ export type Database = {
           created_at?: string
           description?: string
           flight_no?: string
+          found_by?: string
           id?: string
+          item_id?: string
           notes?: string | null
           owner_contact?: string | null
           owner_name?: string | null
@@ -1039,7 +1117,9 @@ export type Database = {
           station?: string
           status?: Database["public"]["Enums"]["lost_found_status"]
           storage_location?: string | null
+          terminal?: string
           updated_at?: string
+          weight?: string
         }
         Update: {
           airline?: string
@@ -1050,7 +1130,9 @@ export type Database = {
           created_at?: string
           description?: string
           flight_no?: string
+          found_by?: string
           id?: string
+          item_id?: string
           notes?: string | null
           owner_contact?: string | null
           owner_name?: string | null
@@ -1058,7 +1140,9 @@ export type Database = {
           station?: string
           status?: Database["public"]["Enums"]["lost_found_status"]
           storage_location?: string | null
+          terminal?: string
           updated_at?: string
+          weight?: string
         }
         Relationships: []
       }
@@ -1107,11 +1191,13 @@ export type Database = {
           altitude: string | null
           created_at: string
           currency: string
+          distance_nm: number
           entry_point: string | null
           entry_time: string | null
           exit_point: string | null
           exit_time: string | null
           fee: number
+          fir_zones: string
           flight_no: string
           id: string
           mtow: string | null
@@ -1129,11 +1215,13 @@ export type Database = {
           altitude?: string | null
           created_at?: string
           currency?: string
+          distance_nm?: number
           entry_point?: string | null
           entry_time?: string | null
           exit_point?: string | null
           exit_time?: string | null
           fee?: number
+          fir_zones?: string
           flight_no: string
           id?: string
           mtow?: string | null
@@ -1151,11 +1239,13 @@ export type Database = {
           altitude?: string | null
           created_at?: string
           currency?: string
+          distance_nm?: number
           entry_point?: string | null
           entry_time?: string | null
           exit_point?: string | null
           exit_time?: string | null
           fee?: number
+          fir_zones?: string
           flight_no?: string
           id?: string
           mtow?: string | null
@@ -1448,17 +1538,21 @@ export type Database = {
           created_at: string
           department: string
           email: string | null
+          emergency_contact: string
           employee_id: string
           id: string
           join_date: string | null
+          license_no: string
           name: string
           phone: string | null
+          qualification: string
           role: string
           shift: Database["public"]["Enums"]["shift_type"]
           shift_end: string | null
           shift_start: string | null
           station: string
           status: Database["public"]["Enums"]["staff_status"]
+          training_status: string
           updated_at: string
         }
         Insert: {
@@ -1466,17 +1560,21 @@ export type Database = {
           created_at?: string
           department?: string
           email?: string | null
+          emergency_contact?: string
           employee_id: string
           id?: string
           join_date?: string | null
+          license_no?: string
           name: string
           phone?: string | null
+          qualification?: string
           role?: string
           shift?: Database["public"]["Enums"]["shift_type"]
           shift_end?: string | null
           shift_start?: string | null
           station?: string
           status?: Database["public"]["Enums"]["staff_status"]
+          training_status?: string
           updated_at?: string
         }
         Update: {
@@ -1484,17 +1582,21 @@ export type Database = {
           created_at?: string
           department?: string
           email?: string | null
+          emergency_contact?: string
           employee_id?: string
           id?: string
           join_date?: string | null
+          license_no?: string
           name?: string
           phone?: string | null
+          qualification?: string
           role?: string
           shift?: Database["public"]["Enums"]["shift_type"]
           shift_end?: string | null
           shift_start?: string | null
           station?: string
           status?: Database["public"]["Enums"]["staff_status"]
+          training_status?: string
           updated_at?: string
         }
         Relationships: []
