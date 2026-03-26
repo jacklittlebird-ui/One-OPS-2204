@@ -5,14 +5,19 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 
 type ContractStatus = "Active" | "Expired" | "Pending" | "Terminated";
 
 type ContractRow = {
-  id: string; contract_no: string; airline: string; airline_iata: string;
-  start_date: string; end_date: string; services: string; stations: string;
+  id: string; contract_no: string; airline: string; airline_iata: string | null;
+  start_date: string; end_date: string; services: string | null; stations: string | null;
   currency: string; annual_value: number; status: ContractStatus;
-  auto_renew: boolean; notes: string;
+  auto_renew: boolean; notes: string | null;
 };
 
 const statusConfig: Record<ContractStatus, { icon: React.ReactNode; cls: string }> = {
@@ -47,7 +52,7 @@ const emptyContract = (): Partial<ContractRow> => ({
   status: "Pending" as ContractStatus, auto_renew: false, notes: "",
 });
 
-function ContractForm({ data, onChange, onSave, onCancel, title }: { data: Partial<ContractRow>; onChange: (d: Partial<ContractRow>) => void; onSave: () => void; onCancel: () => void; title: string; }) {
+function ContractForm({ data, onChange, onSave, onCancel, title, isSaving }: { data: Partial<ContractRow>; onChange: (d: Partial<ContractRow>) => void; onSave: () => void; onCancel: () => void; title: string; isSaving?: boolean }) {
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
@@ -87,7 +92,7 @@ function ContractForm({ data, onChange, onSave, onCancel, title }: { data: Parti
         </div>
         <div className="sticky bottom-0 bg-card border-t px-6 py-4 flex gap-3 justify-end rounded-b-xl">
           <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
-          <button onClick={onSave} className="toolbar-btn-primary">Save Contract</button>
+          <button onClick={onSave} disabled={isSaving} className="toolbar-btn-primary">{isSaving ? "Saving…" : "Save Contract"}</button>
         </div>
       </div>
     </div>
@@ -97,7 +102,7 @@ function ContractForm({ data, onChange, onSave, onCancel, title }: { data: Parti
 const PAGE_SIZE = 15;
 
 export default function ContractsPage() {
-  const { data: contracts, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<ContractRow>("contracts");
+  const { data: contracts, isLoading, add, update, remove, bulkInsert, isAdding, isUpdating } = useSupabaseTable<ContractRow>("contracts");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [page, setPage] = useState(1);
@@ -105,6 +110,7 @@ export default function ContractsPage() {
   const [newContract, setNewContract] = useState<Partial<ContractRow>>(emptyContract());
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<ContractRow>>({});
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
@@ -112,7 +118,11 @@ export default function ContractsPage() {
     if (statusFilter !== "All") r = r.filter(c => c.status === statusFilter);
     if (search) {
       const s = search.toLowerCase();
-      r = r.filter(c => c.airline.toLowerCase().includes(s) || c.contract_no.toLowerCase().includes(s) || c.services.toLowerCase().includes(s));
+      r = r.filter(c =>
+        c.airline.toLowerCase().includes(s) ||
+        c.contract_no.toLowerCase().includes(s) ||
+        (c.services || "").toLowerCase().includes(s)
+      );
     }
     return r;
   }, [contracts, statusFilter, search]);
@@ -134,13 +144,18 @@ export default function ContractsPage() {
     await update({ id: editId, ...rest } as any);
     setEditId(null);
   };
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    await remove(deleteId);
+    setDeleteId(null);
+  };
 
   const handleExport = () => {
     const ws = XLSX.utils.json_to_sheet(filtered.map(c => ({
-      "Contract No": c.contract_no, "Airline": c.airline, "IATA": c.airline_iata,
-      "Start Date": c.start_date, "End Date": c.end_date, "Services": c.services,
-      "Stations": c.stations, "Currency": c.currency, "Annual Value": c.annual_value,
-      "Status": c.status, "Auto-Renew": c.auto_renew ? "Yes" : "No", "Notes": c.notes,
+      "Contract No": c.contract_no, "Airline": c.airline, "IATA": c.airline_iata || "",
+      "Start Date": c.start_date, "End Date": c.end_date, "Services": c.services || "",
+      "Stations": c.stations || "", "Currency": c.currency, "Annual Value": c.annual_value,
+      "Status": c.status, "Auto-Renew": c.auto_renew ? "Yes" : "No", "Notes": c.notes || "",
     })));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Contracts"); XLSX.writeFile(wb, "Link_Contracts_Export.xlsx");
   };
@@ -226,17 +241,17 @@ export default function ContractsPage() {
                     <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                     <td className="px-3 py-2.5 font-mono text-xs font-semibold text-foreground">{c.contract_no}</td>
                     <td className="px-3 py-2.5 font-semibold text-foreground">{c.airline}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{c.airline_iata}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{c.airline_iata || "—"}</td>
                     <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{c.start_date}</td>
                     <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{c.end_date}{expiringSoon && <span className="ml-1 text-warning text-xs font-bold">⚠ {days}d</span>}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[200px] truncate">{c.services}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{c.stations}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[200px] truncate">{c.services || "—"}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{c.stations || "—"}</td>
                     <td className="px-3 py-2.5 font-semibold text-success">{c.currency} {c.annual_value.toLocaleString()}</td>
                     <td className="px-3 py-2.5"><StatusBadge s={c.status} /></td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{c.auto_renew ? "✔️" : "—"}</td>
                     <td className="px-3 py-2.5 flex gap-1.5">
                       <button onClick={() => startEdit(c)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
-                      <button onClick={() => remove(c.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
+                      <button onClick={() => setDeleteId(c.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
                     </td>
                   </tr>
                 );
@@ -257,8 +272,21 @@ export default function ContractsPage() {
         )}
       </div>
 
-      {showAdd && <ContractForm title="New Contract" data={newContract} onChange={setNewContract} onSave={saveNew} onCancel={() => setShowAdd(false)} />}
-      {editId && <ContractForm title="Edit Contract" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} />}
+      {showAdd && <ContractForm title="New Contract" data={newContract} onChange={setNewContract} onSave={saveNew} onCancel={() => setShowAdd(false)} isSaving={isAdding} />}
+      {editId && <ContractForm title="Edit Contract" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} isSaving={isUpdating} />}
+
+      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contract</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to delete this contract? This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
