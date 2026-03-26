@@ -1,13 +1,18 @@
-import { useState, useMemo, useRef, useCallback } from "react";
-import { Search, Plus, Download, Globe, Pencil, Trash2, X, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, Plus, Download, Globe, Pencil, Trash2, X, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database, Eye, MapPin } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type OverflyRow = {
   id: string; flight_no: string; operator: string; registration: string; aircraft_type: string;
   route_from: string; route_to: string; entry_point: string; exit_point: string;
   altitude: string; overfly_date: string; entry_time: string; exit_time: string;
   mtow: string; permit_no: string; status: string; fee: number; currency: string;
+  fir_zones: string; distance_nm: number;
 };
 
 const statusBadge = (s: string) => {
@@ -28,15 +33,17 @@ export default function OverflySchedulePage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [page, setPage] = useState(1);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editRow, setEditRow] = useState<Partial<OverflyRow>>({});
-  const [showAdd, setShowAdd] = useState(false);
-  const [newRow, setNewRow] = useState<Partial<OverflyRow>>({ flight_no: "", operator: "", registration: "", aircraft_type: "", route_from: "", route_to: "", entry_point: "", exit_point: "", altitude: "", overfly_date: "", entry_time: "", exit_time: "", mtow: "", permit_no: "", status: "Pending", fee: 0, currency: "USD" });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<OverflyRow | null>(null);
+  const [editItem, setEditItem] = useState<OverflyRow | null>(null);
+
+  const emptyForm = { flight_no: "", operator: "", registration: "", aircraft_type: "", route_from: "", route_to: "", entry_point: "", exit_point: "", altitude: "", overfly_date: "", entry_time: "", exit_time: "", mtow: "", permit_no: "", status: "Pending", fee: 0, currency: "USD", fir_zones: "", distance_nm: 0 };
+  const [form, setForm] = useState<any>(emptyForm);
 
   const filtered = useMemo(() => {
     let r = data;
     if (statusFilter !== "All") r = r.filter(x => x.status === statusFilter);
-    if (search) { const s = search.toLowerCase(); r = r.filter(x => x.flight_no.toLowerCase().includes(s) || x.operator.toLowerCase().includes(s) || x.permit_no.toLowerCase().includes(s)); }
+    if (search) { const s = search.toLowerCase(); r = r.filter(x => x.flight_no.toLowerCase().includes(s) || x.operator.toLowerCase().includes(s) || x.permit_no?.toLowerCase().includes(s)); }
     return r;
   }, [data, statusFilter, search]);
 
@@ -45,26 +52,25 @@ export default function OverflySchedulePage() {
   const approved = data.filter(d => d.status === "Approved").length;
   const pending = data.filter(d => d.status === "Pending").length;
   const totalFees = data.filter(d => d.status === "Approved").reduce((s, d) => s + d.fee, 0);
+  const totalNM = data.filter(d => d.status === "Approved").reduce((s, d) => s + (d.distance_nm || 0), 0);
 
-  const inp = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
-  const set = (key: string, val: any) => setEditRow(p => ({ ...p, [key]: val }));
-
-  const handleAdd = async () => {
-    if (!newRow.flight_no) return;
-    await add(newRow as any);
-    setShowAdd(false);
-    setNewRow({ status: "Pending", fee: 0, currency: "USD" });
+  const openAdd = () => { setEditItem(null); setForm(emptyForm); setDialogOpen(true); };
+  const openEdit = (row: OverflyRow) => {
+    setEditItem(row);
+    setForm({ ...row });
+    setDialogOpen(true);
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingId) return;
-    const { id, ...rest } = editRow;
-    await update({ id: editingId, ...rest } as any);
-    setEditingId(null);
+  const handleSave = async () => {
+    if (!form.flight_no || !form.operator) return;
+    const payload = { ...form, fee: Number(form.fee) || 0, distance_nm: Number(form.distance_nm) || 0 };
+    delete payload.id;
+    if (editItem) { await update({ id: editItem.id, ...payload }); } else { await add(payload); }
+    setDialogOpen(false);
   };
 
   const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ "Flight No": r.flight_no, Operator: r.operator, Registration: r.registration, "A/C Type": r.aircraft_type, From: r.route_from, To: r.route_to, Date: r.overfly_date, "Entry Time": r.entry_time, "Exit Time": r.exit_time, Altitude: r.altitude, "Permit No": r.permit_no, Status: r.status, Fee: r.fee, Currency: r.currency })));
+    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ "Flight No": r.flight_no, Operator: r.operator, Registration: r.registration, "A/C Type": r.aircraft_type, From: r.route_from, To: r.route_to, "Entry Point": r.entry_point, "Exit Point": r.exit_point, Date: r.overfly_date, "Entry Time": r.entry_time, "Exit Time": r.exit_time, Altitude: r.altitude, "FIR Zones": r.fir_zones, "Distance NM": r.distance_nm, "Permit No": r.permit_no, Status: r.status, Fee: r.fee, Currency: r.currency })));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Overfly Schedule"); XLSX.writeFile(wb, "overfly_schedule.xlsx");
   };
 
@@ -72,16 +78,23 @@ export default function OverflySchedulePage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Globe size={22} className="text-primary" /> Overfly Schedule</h1>
-        <p className="text-muted-foreground text-sm mt-1">Overflight permits, routes, and fees management</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Globe size={22} className="text-primary" /> Overfly Schedule</h1>
+          <p className="text-muted-foreground text-sm mt-1">التحليق · Overflight permits, FIR tracking, and fees</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport}><Download size={14} className="mr-1" /> Export</Button>
+          <Button size="sm" onClick={openAdd}><Plus size={14} className="mr-1" /> Add Overfly</Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="stat-card"><div className="stat-card-icon bg-primary"><Globe size={20} /></div><div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Overflights</div></div></div>
         <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{approved}</div><div className="text-xs text-muted-foreground">Approved</div></div></div>
         <div className="stat-card"><div className="stat-card-icon bg-warning"><Clock size={20} /></div><div><div className="text-2xl font-bold text-foreground">{pending}</div><div className="text-xs text-muted-foreground">Pending</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-info"><AlertCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">${totalFees.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Fees</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-info"><MapPin size={20} /></div><div><div className="text-2xl font-bold text-foreground">{totalNM.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total NM</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-accent"><AlertCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">${totalFees.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Fees</div></div></div>
       </div>
 
       <div className="bg-card rounded-lg border overflow-hidden">
@@ -94,75 +107,32 @@ export default function OverflySchedulePage() {
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option><option>Approved</option><option>Pending</option><option>Rejected</option><option>Expired</option>
           </select>
-          <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> Add Overfly</button>
-          <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
         </div>
-
-        {showAdd && (
-          <div className="p-4 border-b bg-muted">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 items-end">
-              <input placeholder="Flight No" value={newRow.flight_no || ""} onChange={e => setNewRow(p => ({ ...p, flight_no: e.target.value }))} className={inp} />
-              <input placeholder="Operator" value={newRow.operator || ""} onChange={e => setNewRow(p => ({ ...p, operator: e.target.value }))} className={inp} />
-              <input placeholder="Registration" value={newRow.registration || ""} onChange={e => setNewRow(p => ({ ...p, registration: e.target.value }))} className={inp} />
-              <input placeholder="A/C Type" value={newRow.aircraft_type || ""} onChange={e => setNewRow(p => ({ ...p, aircraft_type: e.target.value }))} className={inp} />
-              <input placeholder="From" value={newRow.route_from || ""} onChange={e => setNewRow(p => ({ ...p, route_from: e.target.value }))} className={inp} />
-              <input placeholder="To" value={newRow.route_to || ""} onChange={e => setNewRow(p => ({ ...p, route_to: e.target.value }))} className={inp} />
-              <input type="date" value={newRow.overfly_date || ""} onChange={e => setNewRow(p => ({ ...p, overfly_date: e.target.value }))} className={inp} />
-              <div className="flex gap-1">
-                <button onClick={handleAdd} className="toolbar-btn-success text-xs py-1">Save</button>
-                <button onClick={() => setShowAdd(false)} className="toolbar-btn-outline text-xs py-1"><X size={12} /></button>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr>{["FLIGHT","OPERATOR","REG","A/C TYPE","ROUTE","DATE","ENTRY","EXIT","ALTITUDE","PERMIT NO","STATUS","FEE","ACTIONS"].map(h => <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>)}</tr></thead>
+            <thead><tr>{["FLIGHT","OPERATOR","REG","ROUTE","DATE","ENTRY/EXIT","FIR","DIST NM","PERMIT","STATUS","FEE","ACTIONS"].map(h => <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>)}</tr></thead>
             <tbody>
               {pageData.length === 0 ? (
-                <tr><td colSpan={13} className="text-center py-16"><Database size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Records</p></td></tr>
+                <tr><td colSpan={12} className="text-center py-16"><Database size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Records</p></td></tr>
               ) : pageData.map(row => (
                 <tr key={row.id} className="data-table-row">
-                  {editingId === row.id ? (
-                    <>
-                      <td className="px-2 py-2"><input value={editRow.flight_no || ""} onChange={e => set("flight_no", e.target.value)} className={inp + " w-20"} /></td>
-                      <td className="px-2 py-2"><input value={editRow.operator || ""} onChange={e => set("operator", e.target.value)} className={inp + " w-28"} /></td>
-                      <td className="px-2 py-2"><input value={editRow.registration || ""} onChange={e => set("registration", e.target.value)} className={inp + " w-20"} /></td>
-                      <td className="px-2 py-2"><input value={editRow.aircraft_type || ""} onChange={e => set("aircraft_type", e.target.value)} className={inp + " w-24"} /></td>
-                      <td className="px-2 py-2 text-muted-foreground text-xs">{editRow.route_from}→{editRow.route_to}</td>
-                      <td className="px-2 py-2"><input type="date" value={editRow.overfly_date || ""} onChange={e => set("overfly_date", e.target.value)} className={inp + " w-32"} /></td>
-                      <td className="px-2 py-2"><input value={editRow.entry_time || ""} onChange={e => set("entry_time", e.target.value)} className={inp + " w-16"} /></td>
-                      <td className="px-2 py-2"><input value={editRow.exit_time || ""} onChange={e => set("exit_time", e.target.value)} className={inp + " w-16"} /></td>
-                      <td className="px-2 py-2"><input value={editRow.altitude || ""} onChange={e => set("altitude", e.target.value)} className={inp + " w-16"} /></td>
-                      <td className="px-2 py-2"><input value={editRow.permit_no || ""} onChange={e => set("permit_no", e.target.value)} className={inp + " w-28"} /></td>
-                      <td className="px-2 py-2"><select value={editRow.status || "Pending"} onChange={e => set("status", e.target.value)} className={inp}><option>Approved</option><option>Pending</option><option>Rejected</option><option>Expired</option></select></td>
-                      <td className="px-2 py-2"><input type="number" value={editRow.fee || 0} onChange={e => set("fee", +e.target.value)} className={inp + " w-20"} /></td>
-                      <td className="px-2 py-2 flex gap-1">
-                        <button onClick={handleSaveEdit} className="text-xs text-success hover:underline">Save</button>
-                        <button onClick={() => setEditingId(null)} className="text-xs text-destructive hover:underline">Cancel</button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-3 py-2.5 font-mono font-semibold text-foreground">{row.flight_no}</td>
-                      <td className="px-3 py-2.5 text-foreground">{row.operator}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.registration}</td>
-                      <td className="px-3 py-2.5 text-foreground">{row.aircraft_type}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.route_from}→{row.route_to}</td>
-                      <td className="px-3 py-2.5 text-foreground">{row.overfly_date}</td>
-                      <td className="px-3 py-2.5 text-foreground">{row.entry_time}</td>
-                      <td className="px-3 py-2.5 text-foreground">{row.exit_time}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-foreground">{row.altitude}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.permit_no}</td>
-                      <td className="px-3 py-2.5">{statusBadge(row.status)}</td>
-                      <td className="px-3 py-2.5 font-semibold text-success">{row.fee.toLocaleString()}</td>
-                      <td className="px-3 py-2.5 flex gap-1.5">
-                        <button onClick={() => { setEditingId(row.id); setEditRow({ ...row }); }} className="text-info hover:text-info/80"><Pencil size={13} /></button>
-                        <button onClick={() => remove(row.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
-                      </td>
-                    </>
-                  )}
+                  <td className="px-3 py-2.5 font-mono font-semibold text-foreground">{row.flight_no}</td>
+                  <td className="px-3 py-2.5 text-foreground">{row.operator}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.registration}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.route_from}→{row.route_to}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{row.overfly_date}</td>
+                  <td className="px-3 py-2.5 text-xs">{row.entry_point} {row.entry_time} → {row.exit_point} {row.exit_time}</td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground">{row.fir_zones || "—"}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs">{row.distance_nm || "—"}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.permit_no}</td>
+                  <td className="px-3 py-2.5">{statusBadge(row.status)}</td>
+                  <td className="px-3 py-2.5 font-semibold text-success">{row.fee.toLocaleString()}</td>
+                  <td className="px-3 py-2.5 flex gap-1.5">
+                    <button onClick={() => setDetailItem(row)} className="text-primary hover:text-primary/80"><Eye size={13} /></button>
+                    <button onClick={() => openEdit(row)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
+                    <button onClick={() => remove(row.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -179,6 +149,76 @@ export default function OverflySchedulePage() {
           </div>
         )}
       </div>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!detailItem} onOpenChange={() => setDetailItem(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Overfly — {detailItem?.flight_no}</DialogTitle></DialogHeader>
+          {detailItem && (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><span className="text-muted-foreground text-xs">Flight</span><p className="font-medium">{detailItem.flight_no}</p></div>
+              <div><span className="text-muted-foreground text-xs">Operator</span><p className="font-medium">{detailItem.operator}</p></div>
+              <div><span className="text-muted-foreground text-xs">Aircraft</span><p className="font-medium">{detailItem.aircraft_type} / {detailItem.registration}</p></div>
+              <div><span className="text-muted-foreground text-xs">MTOW</span><p className="font-medium">{detailItem.mtow}</p></div>
+              <div><span className="text-muted-foreground text-xs">Route</span><p className="font-medium">{detailItem.route_from} → {detailItem.route_to}</p></div>
+              <div><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{detailItem.overfly_date}</p></div>
+              <div><span className="text-muted-foreground text-xs">Entry</span><p className="font-medium">{detailItem.entry_point} @ {detailItem.entry_time}</p></div>
+              <div><span className="text-muted-foreground text-xs">Exit</span><p className="font-medium">{detailItem.exit_point} @ {detailItem.exit_time}</p></div>
+              <div><span className="text-muted-foreground text-xs">FIR Zones</span><p className="font-medium">{detailItem.fir_zones || "—"}</p></div>
+              <div><span className="text-muted-foreground text-xs">Distance</span><p className="font-medium">{detailItem.distance_nm} NM</p></div>
+              <div><span className="text-muted-foreground text-xs">Altitude</span><p className="font-medium">{detailItem.altitude}</p></div>
+              <div><span className="text-muted-foreground text-xs">Permit No</span><p className="font-medium">{detailItem.permit_no}</p></div>
+              <div><span className="text-muted-foreground text-xs">Fee</span><p className="font-medium font-mono">{detailItem.fee.toLocaleString()} {detailItem.currency}</p></div>
+              <div><span className="text-muted-foreground text-xs">Status</span><p>{statusBadge(detailItem.status)}</p></div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{editItem ? "Edit Overfly" : "Add Overfly"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Flight No" value={form.flight_no} onChange={e => setForm({ ...form, flight_no: e.target.value.toUpperCase() })} />
+              <Input placeholder="Operator" value={form.operator} onChange={e => setForm({ ...form, operator: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Input placeholder="Registration" value={form.registration} onChange={e => setForm({ ...form, registration: e.target.value.toUpperCase() })} />
+              <Input placeholder="A/C Type" value={form.aircraft_type} onChange={e => setForm({ ...form, aircraft_type: e.target.value })} />
+              <Input placeholder="MTOW" value={form.mtow} onChange={e => setForm({ ...form, mtow: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="From" value={form.route_from} onChange={e => setForm({ ...form, route_from: e.target.value.toUpperCase() })} />
+              <Input placeholder="To" value={form.route_to} onChange={e => setForm({ ...form, route_to: e.target.value.toUpperCase() })} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div><label className="text-xs text-muted-foreground">Date</label><Input type="date" value={form.overfly_date} onChange={e => setForm({ ...form, overfly_date: e.target.value })} /></div>
+              <Input placeholder="Entry Point" value={form.entry_point} onChange={e => setForm({ ...form, entry_point: e.target.value.toUpperCase() })} />
+              <Input placeholder="Exit Point" value={form.exit_point} onChange={e => setForm({ ...form, exit_point: e.target.value.toUpperCase() })} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Input placeholder="Entry Time" value={form.entry_time} onChange={e => setForm({ ...form, entry_time: e.target.value })} />
+              <Input placeholder="Exit Time" value={form.exit_time} onChange={e => setForm({ ...form, exit_time: e.target.value })} />
+              <Input placeholder="Altitude (FL)" value={form.altitude} onChange={e => setForm({ ...form, altitude: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="FIR Zones (e.g. HECC,HLLL)" value={form.fir_zones} onChange={e => setForm({ ...form, fir_zones: e.target.value })} />
+              <Input type="number" placeholder="Distance NM" value={form.distance_nm} onChange={e => setForm({ ...form, distance_nm: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Input placeholder="Permit No" value={form.permit_no} onChange={e => setForm({ ...form, permit_no: e.target.value })} />
+              <Input type="number" placeholder="Fee" value={form.fee} onChange={e => setForm({ ...form, fee: e.target.value })} />
+              <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="Pending">Pending</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Rejected">Rejected</SelectItem><SelectItem value="Expired">Expired</SelectItem></SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={handleSave}>{editItem ? "Update" : "Save"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
