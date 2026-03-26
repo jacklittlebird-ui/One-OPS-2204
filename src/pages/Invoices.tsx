@@ -24,6 +24,8 @@ type InvoiceRow = {
   currency: InvoiceCurrency; status: InvoiceStatus; notes: string;
   invoice_type: InvoiceType; finalized_at: string | null; finalized_by: string | null;
   journal_entry_id: string | null; sent_at: string | null; sent_to: string | null;
+  payment_date: string | null; payment_ref: string; billing_period: string;
+  credit_note_ref: string; station: string;
 };
 
 const statusConfig: Record<InvoiceStatus, { icon: React.ReactNode; cls: string }> = {
