@@ -51,7 +51,7 @@ export default function AirlinesPage() {
     if (!newRow.code || !newRow.name) return;
     await add(newRow);
     setShowAdd(false);
-    setNewRow({ code: "", name: "", country: "", contact_person: "", email: "", phone: "", status: "Active" });
+    setNewRow({ code: "", name: "", country: "", contact_person: "", email: "", phone: "", status: "Active", credit_terms: "Net 30", billing_currency: "USD", iata_code: "", icao_code: "", alliance: "" });
   };
 
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,11 +72,11 @@ export default function AirlinesPage() {
   }, [add]);
 
   const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ Code: r.code, Name: r.name, Country: r.country, "Contact Person": r.contact_person, Email: r.email, Phone: r.phone, Status: r.status })));
+    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({ Code: r.code, Name: r.name, "IATA": r.iata_code, "ICAO": r.icao_code, Country: r.country, Alliance: r.alliance, "Credit Terms": r.credit_terms, "Billing Currency": r.billing_currency, "Contact Person": r.contact_person, Email: r.email, Phone: r.phone, Status: r.status })));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Airlines"); XLSX.writeFile(wb, "airlines.xlsx");
   };
 
-  const columns = ["CODE", "AIRLINE NAME", "COUNTRY", "CONTACT PERSON", "EMAIL", "PHONE", "STATUS", "ACTIONS"];
+  const columns = ["CODE", "AIRLINE NAME", "IATA", "COUNTRY", "ALLIANCE", "CREDIT TERMS", "CONTACT", "STATUS", "ACTIONS"];
 
   return (
     <div>
@@ -87,7 +87,7 @@ export default function AirlinesPage() {
           <button onClick={() => navigate("/contracts")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-info border-info/40 hover:bg-info/10 transition-colors"><FileText size={14} /> Contracts</button>
         </div>
       </div>
-      <p className="text-muted-foreground text-sm mt-1 mb-6">Manage airline partners and their contact information</p>
+      <p className="text-muted-foreground text-sm mt-1 mb-6">Airline partners, commercial terms & contact directory</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="stat-card"><div className="stat-card-icon bg-primary"><Building2 size={20} /></div><div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Airlines</div></div></div>
@@ -140,7 +140,7 @@ export default function AirlinesPage() {
               {isLoading ? (
                 <tr><td colSpan={8} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
               ) : pageData.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-16">
+                <tr><td colSpan={9} className="text-center py-16">
                   <Database size={40} className="mx-auto text-muted-foreground/40 mb-3" />
                   <p className="font-semibold text-foreground">No Airlines Found</p>
                 </td></tr>
@@ -167,11 +167,15 @@ export default function AirlinesPage() {
                   ) : (
                     <>
                       <td className="px-4 py-2.5 text-foreground font-mono font-semibold">{row.code}</td>
-                      <td className="px-4 py-2.5 text-foreground">{row.name}</td>
+                      <td className="px-4 py-2.5 text-foreground font-semibold">{row.name}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.iata_code || "—"}</td>
                       <td className="px-4 py-2.5 text-foreground">{row.country}</td>
-                      <td className="px-4 py-2.5 text-foreground">{row.contact_person}</td>
-                      <td className="px-4 py-2.5 text-foreground">{row.email}</td>
-                      <td className="px-4 py-2.5 text-foreground">{row.phone}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.alliance || "—"}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.credit_terms || "Net 30"}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="text-foreground text-xs">{row.contact_person}</div>
+                        <div className="text-muted-foreground text-xs">{row.email}</div>
+                      </td>
                       <td className="px-4 py-2.5">{statusIcon(row.status)}<span className="text-foreground">{row.status}</span></td>
                       <td className="px-4 py-2.5 flex gap-2">
                         <button onClick={() => startEdit(row)} className="text-info hover:text-info/80"><Pencil size={14} /></button>
