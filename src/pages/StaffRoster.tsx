@@ -74,9 +74,9 @@ export default function StaffRosterPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Users size={22} className="text-primary" /> Staff Roster</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2"><Users size={22} className="text-primary" /> Staff Roster</h1>
           <p className="text-muted-foreground text-sm mt-1">الكادر · Staff scheduling, qualifications & training</p>
         </div>
         <div className="flex gap-2">
@@ -86,11 +86,11 @@ export default function StaffRosterPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="stat-card"><div className="stat-card-icon bg-primary"><Users size={20} /></div><div><div className="text-2xl font-bold text-foreground">{staff.length}</div><div className="text-xs text-muted-foreground">Total Staff</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{staff.filter(s => s.status === "Active").length}</div><div className="text-xs text-muted-foreground">On Duty</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-warning"><Clock size={20} /></div><div><div className="text-2xl font-bold text-foreground">{staff.filter(s => s.status === "On Leave").length}</div><div className="text-xs text-muted-foreground">On Leave</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-info"><GraduationCap size={20} /></div><div><div className="text-2xl font-bold text-foreground">{staff.filter(s => s.training_status === "Due Soon" || s.training_status === "Expired").length}</div><div className="text-xs text-muted-foreground">Training Due</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-destructive"><AlertCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{staff.filter(s => isExpiringSoon(s.cert_expiry)).length}</div><div className="text-xs text-muted-foreground">Cert Expiring</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-primary"><Users size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{staff.length}</div><div className="text-xs text-muted-foreground">Total Staff</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{staff.filter(s => s.status === "Active").length}</div><div className="text-xs text-muted-foreground">On Duty</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-warning"><Clock size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{staff.filter(s => s.status === "On Leave").length}</div><div className="text-xs text-muted-foreground">On Leave</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-info"><GraduationCap size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{staff.filter(s => s.training_status === "Due Soon" || s.training_status === "Expired").length}</div><div className="text-xs text-muted-foreground">Training Due</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-destructive"><AlertCircle size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{staff.filter(s => isExpiringSoon(s.cert_expiry)).length}</div><div className="text-xs text-muted-foreground">Cert Expiring</div></div></div>
       </div>
 
       <div className="bg-card rounded-lg border overflow-hidden">

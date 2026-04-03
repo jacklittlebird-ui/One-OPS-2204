@@ -96,9 +96,9 @@ export default function AirlinesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Airlines</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">Airlines</h1>
           <p className="text-muted-foreground text-sm">Airline partners, commercial terms & contact directory</p>
         </div>
         <div className="flex gap-2">
@@ -115,19 +115,19 @@ export default function AirlinesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><Building2 className="text-primary" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Airlines</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Airlines</div></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center"><CheckCircle className="text-success" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{activeCount}</div><div className="text-xs text-muted-foreground">Active Airlines</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{activeCount}</div><div className="text-xs text-muted-foreground">Active Airlines</div></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-info/10 flex items-center justify-center"><Globe className="text-info" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{countriesCount}</div><div className="text-xs text-muted-foreground">Countries</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{countriesCount}</div><div className="text-xs text-muted-foreground">Countries</div></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center"><Users className="text-accent-foreground" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{data.filter(d => d.contact_person).length}</div><div className="text-xs text-muted-foreground">Contacts</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{data.filter(d => d.contact_person).length}</div><div className="text-xs text-muted-foreground">Contacts</div></div>
         </CardContent></Card>
       </div>
 
