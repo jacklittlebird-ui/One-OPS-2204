@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, Plane, Calculator, FileText, Utensils, DollarSign,
   Shield, AlertTriangle, MoreHorizontal, ChevronDown, ChevronRight, FileBarChart2,
-  ShieldCheck, Users, Bell
+  ShieldCheck, Users, Bell, Settings
 } from "lucide-react";
 
 interface NavChild {
@@ -92,6 +92,9 @@ const navSections: NavSection[] = [
   },
   {
     label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications",
+  },
+  {
+    label: "SETTINGS", icon: <Settings size={18} />, path: "/settings",
   },
   {
     label: "USERS", icon: <Users size={18} />, path: "/users",

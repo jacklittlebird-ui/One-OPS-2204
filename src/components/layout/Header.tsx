@@ -103,7 +103,7 @@ export default function Header() {
       </button>
 
       {/* Settings */}
-      <button className="p-2 rounded-full hover:bg-muted transition-colors">
+      <button onClick={() => navigate("/settings")} className="p-2 rounded-full hover:bg-muted transition-colors">
         <Settings size={18} className="text-muted-foreground" />
       </button>
 
