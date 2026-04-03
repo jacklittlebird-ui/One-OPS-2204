@@ -27,30 +27,25 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       {/* Enhanced Header */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary via-primary/90 to-indigo p-6 text-primary-foreground">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-white/5 rounded-full translate-y-1/2" />
-        <div className="relative z-10 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{greeting}, {displayName} 👋</h1>
-            <p className="text-primary-foreground/70 text-sm mt-1 flex items-center gap-2">
-              <Calendar size={14} />
-              {today.toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-            </p>
-            <div className="flex items-center gap-4 mt-3">
-              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-2.5 py-1 rounded-full">
-                <MapPin size={12} /> Station: {profile?.station || "CAI"}
-              </div>
-              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-2.5 py-1 rounded-full">
-                <Clock size={12} /> {today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} Local
-              </div>
-              <div className="flex items-center gap-1.5 text-xs bg-success/30 px-2.5 py-1 rounded-full">
-                <Activity size={12} /> System Online
-              </div>
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary via-primary/90 to-indigo p-4 md:p-6 text-primary-foreground">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 hidden md:block" />
+        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 hidden md:block" />
+        <div className="relative z-10">
+          <h1 className="text-xl md:text-2xl font-bold">{greeting}, {displayName} 👋</h1>
+          <p className="text-primary-foreground/70 text-xs md:text-sm mt-1 flex items-center gap-2">
+            <Calendar size={14} />
+            {today.toLocaleDateString("en-GB", { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-3">
+            <div className="flex items-center gap-1.5 text-xs bg-white/10 px-2.5 py-1 rounded-full">
+              <MapPin size={12} /> {profile?.station || "CAI"}
             </div>
-          </div>
-          <div className="hidden md:flex items-center gap-2">
-            <Plane size={48} className="text-primary-foreground/15" />
+            <div className="flex items-center gap-1.5 text-xs bg-white/10 px-2.5 py-1 rounded-full">
+              <Clock size={12} /> {today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs bg-success/30 px-2.5 py-1 rounded-full">
+              <Activity size={12} /> Online
+            </div>
           </div>
         </div>
       </div>
