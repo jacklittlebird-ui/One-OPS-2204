@@ -328,10 +328,10 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Invoices</h1>
-          <p className="text-muted-foreground text-sm mt-1">IATA SIS-compliant airline invoicing & payment tracking</p>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Invoices</h1>
+          <p className="text-muted-foreground text-xs md:text-sm mt-1">IATA SIS-compliant airline invoicing</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
