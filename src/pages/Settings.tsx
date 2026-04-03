@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import {
   Building2, MapPin, Globe, Shield, Bell, User, Monitor, Lock, Clock,
-  Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History
+  Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────
