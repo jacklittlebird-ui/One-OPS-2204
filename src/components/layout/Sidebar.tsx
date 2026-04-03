@@ -94,6 +94,9 @@ const navSections: NavSection[] = [
     label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications",
   },
   {
+    label: "SETTINGS", icon: <Settings size={18} />, path: "/settings",
+  },
+  {
     label: "USERS", icon: <Users size={18} />, path: "/users",
   },
 ];
