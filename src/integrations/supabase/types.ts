@@ -1224,6 +1224,93 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          contract_alerts: boolean
+          created_at: string
+          email_enabled: boolean
+          flight_alerts: boolean
+          id: string
+          invoice_alerts: boolean
+          push_enabled: boolean
+          quiet_hours_enabled: boolean
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          staff_alerts: boolean
+          system_alerts: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contract_alerts?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          flight_alerts?: boolean
+          id?: string
+          invoice_alerts?: boolean
+          push_enabled?: boolean
+          quiet_hours_enabled?: boolean
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          staff_alerts?: boolean
+          system_alerts?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contract_alerts?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          flight_alerts?: boolean
+          id?: string
+          invoice_alerts?: boolean
+          push_enabled?: boolean
+          quiet_hours_enabled?: boolean
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          staff_alerts?: boolean
+          system_alerts?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       overfly_schedules: {
         Row: {
           aircraft_type: string | null
