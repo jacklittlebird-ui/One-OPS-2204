@@ -44,6 +44,7 @@ import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
 import UsersPage from "./pages/Users";
 import NotificationsPage from "./pages/Notifications";
+import SettingsPage from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
