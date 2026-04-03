@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -16,7 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users as UsersIcon, Plus, Shield, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Users as UsersIcon, Plus, Shield, Trash2, Pencil } from "lucide-react";
 
 type AppRole = "admin" | "station_manager" | "station_ops" | "employee";
 
@@ -63,6 +68,12 @@ export default function UsersPage() {
   const [newRole, setNewRole] = useState<AppRole>("employee");
   const [creating, setCreating] = useState(false);
 
+  // Edit user dialog
+  const [editOpen, setEditOpen] = useState(false);
+  const [editProfile, setEditProfile] = useState<UserProfile | null>(null);
+  const [editFullName, setEditFullName] = useState("");
+  const [editStation, setEditStation] = useState("");
+
   const fetchData = async () => {
     setLoading(true);
     const [profilesRes, rolesRes] = await Promise.all([
@@ -91,9 +102,9 @@ export default function UsersPage() {
       role: selectedRole,
     });
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
     } else {
-      toast({ title: "Role added" });
+      toast.success("Role added");
       setAddRoleOpen(false);
       fetchData();
     }
@@ -102,9 +113,9 @@ export default function UsersPage() {
   const handleRemoveRole = async (roleId: string) => {
     const { error } = await supabase.from("user_roles").delete().eq("id", roleId);
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
     } else {
-      toast({ title: "Role removed" });
+      toast.success("Role removed");
       fetchData();
     }
   };
@@ -120,7 +131,7 @@ export default function UsersPage() {
     });
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
       setCreating(false);
       return;
     }
@@ -132,7 +143,7 @@ export default function UsersPage() {
       });
     }
 
-    toast({ title: "User created", description: "The user has been invited." });
+    toast.success("User created");
     setCreateOpen(false);
     setNewEmail("");
     setNewPassword("");
@@ -140,6 +151,41 @@ export default function UsersPage() {
     setNewRole("employee");
     setCreating(false);
     setTimeout(fetchData, 1500);
+  };
+
+  const openEdit = (p: UserProfile) => {
+    setEditProfile(p);
+    setEditFullName(p.full_name || "");
+    setEditStation(p.station || "");
+    setEditOpen(true);
+  };
+
+  const handleEditUser = async () => {
+    if (!editProfile) return;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: editFullName, station: editStation })
+      .eq("id", editProfile.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("User updated");
+      setEditOpen(false);
+      setEditProfile(null);
+      fetchData();
+    }
+  };
+
+  const handleDeleteUser = async (profile: UserProfile) => {
+    // Delete roles first, then profile
+    await supabase.from("user_roles").delete().eq("user_id", profile.user_id);
+    const { error } = await supabase.from("profiles").delete().eq("id", profile.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("User deleted");
+      fetchData();
+    }
   };
 
   return (
@@ -197,6 +243,29 @@ export default function UsersPage() {
         )}
       </div>
 
+      {/* Edit User Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Full Name</Label>
+              <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} />
+            </div>
+            <div>
+              <Label>Station</Label>
+              <Input value={editStation} onChange={(e) => setEditStation(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditUser}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">All Users ({profiles.length})</CardTitle>
@@ -249,32 +318,63 @@ export default function UsersPage() {
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
-                          <Dialog open={addRoleOpen && selectedUserId === p.user_id} onOpenChange={(open) => {
-                            setAddRoleOpen(open);
-                            if (open) setSelectedUserId(p.user_id);
-                          }}>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Shield className="h-3 w-3 mr-1" /> Add Role
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Add Role to {p.full_name}</DialogTitle>
-                              </DialogHeader>
-                              <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as AppRole)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  {ALL_ROLES.filter((r) => !userRoles.some((ur) => ur.role === r)).map((r) => (
-                                    <SelectItem key={r} value={r}>{r.replace(/_/g, " ")}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <DialogFooter>
-                                <Button onClick={handleAddRole}>Add Role</Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
+                          <div className="flex items-center justify-end gap-1">
+                            {/* Add Role */}
+                            <Dialog open={addRoleOpen && selectedUserId === p.user_id} onOpenChange={(open) => {
+                              setAddRoleOpen(open);
+                              if (open) setSelectedUserId(p.user_id);
+                            }}>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Shield className="h-3 w-3 mr-1" /> Role
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Add Role to {p.full_name}</DialogTitle>
+                                </DialogHeader>
+                                <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as AppRole)}>
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {ALL_ROLES.filter((r) => !userRoles.some((ur) => ur.role === r)).map((r) => (
+                                      <SelectItem key={r} value={r}>{r.replace(/_/g, " ")}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <DialogFooter>
+                                  <Button onClick={handleAddRole}>Add Role</Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+
+                            {/* Edit */}
+                            <Button variant="outline" size="sm" onClick={() => openEdit(p)}>
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+
+                            {/* Delete */}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete {p.full_name || "this user"}? This will remove their profile and all assigned roles. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteUser(p)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>
