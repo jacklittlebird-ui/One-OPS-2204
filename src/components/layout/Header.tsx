@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Settings, LogOut, ChevronDown, Monitor, Code2, Server, TestTube, Moon, Sun } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 type Role = "UI/UX" | "Front-End" | "Back-End" | "Tester";
 
 const roleConfig: Record<Role, { icon: React.ReactNode; color: string }> = {
