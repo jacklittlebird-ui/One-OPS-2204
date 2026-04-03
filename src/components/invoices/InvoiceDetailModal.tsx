@@ -55,7 +55,7 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-card rounded-xl border shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
+        <div className="sticky top-0 bg-card border-b px-4 md:px-6 py-3 md:py-4 flex items-center justify-between rounded-t-xl z-10">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <FileText size={20} className="text-primary" />
@@ -73,7 +73,7 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-5 md:space-y-6">
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-primary/5 rounded-lg p-3 text-center">
@@ -158,14 +158,14 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
         </div>
 
         {/* Footer Actions */}
-        <div className="sticky bottom-0 bg-card border-t px-6 py-4 flex gap-3 justify-between rounded-b-xl">
-          <button onClick={onClose} className="toolbar-btn-outline">Close</button>
-          <div className="flex gap-2">
+        <div className="sticky bottom-0 bg-card border-t px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-between rounded-b-xl">
+          <button onClick={onClose} className="toolbar-btn-outline w-full sm:w-auto">Close</button>
+          <div className="flex gap-2 flex-wrap">
             {inv.invoice_type !== "Final" && (
-              <button onClick={() => { onClose(); onFinalize(inv); }} className="toolbar-btn-success flex items-center gap-1.5"><ShieldCheck size={14} /> Finalize</button>
+              <button onClick={() => { onClose(); onFinalize(inv); }} className="toolbar-btn-success flex items-center gap-1.5 flex-1 sm:flex-none justify-center"><ShieldCheck size={14} /> Finalize</button>
             )}
-            <button onClick={() => { onClose(); onPrint(inv); }} className="toolbar-btn-outline flex items-center gap-1.5"><Printer size={14} /> Print</button>
-            <button onClick={() => { onClose(); onEdit(inv); }} className="toolbar-btn-primary flex items-center gap-1.5"><FileText size={14} /> Edit</button>
+            <button onClick={() => { onClose(); onPrint(inv); }} className="toolbar-btn-outline flex items-center gap-1.5 flex-1 sm:flex-none justify-center"><Printer size={14} /> Print</button>
+            <button onClick={() => { onClose(); onEdit(inv); }} className="toolbar-btn-primary flex items-center gap-1.5 flex-1 sm:flex-none justify-center"><FileText size={14} /> Edit</button>
           </div>
         </div>
       </div>

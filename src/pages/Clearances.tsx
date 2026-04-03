@@ -95,9 +95,9 @@ export default function ClearancesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><ShieldCheck size={22} className="text-primary" /> Clearances & Permits</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2"><ShieldCheck size={22} className="text-primary" /> Clearances & Permits</h1>
           <p className="text-muted-foreground text-sm">التصاريح · Flight clearances and landing permits</p>
         </div>
         <div className="flex gap-2">
@@ -163,7 +163,7 @@ export default function ClearancesPage() {
           { label: "Expiring <7d", value: stats.expiringSoon, icon: <AlertTriangle size={20} />, color: "bg-destructive" },
           { label: "Approved PAX", value: stats.totalPax.toLocaleString(), icon: <Users size={20} />, color: "bg-info" },
         ].map(s => (
-          <div key={s.label} className="stat-card"><div className={`stat-card-icon ${s.color}`}>{s.icon}</div><div><div className="text-2xl font-bold text-foreground">{s.value}</div><div className="text-xs text-muted-foreground">{s.label}</div></div></div>
+          <div key={s.label} className="stat-card"><div className={`stat-card-icon ${s.color}`}>{s.icon}</div><div><div className="text-xl md:text-2xl font-bold text-foreground">{s.value}</div><div className="text-xs text-muted-foreground">{s.label}</div></div></div>
         ))}
       </div>
 

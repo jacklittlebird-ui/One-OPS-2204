@@ -117,17 +117,17 @@ export default function ContractsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Contracts</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Contracts</h1>
         <p className="text-muted-foreground text-sm mt-1">SGHA-compliant airline service agreements & contract management</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="stat-card"><div className="stat-card-icon bg-primary"><FileText size={20} /></div><div><div className="text-2xl font-bold text-foreground">{contracts.length}</div><div className="text-xs text-muted-foreground">Total Contracts</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{contracts.filter(c => c.status === "Active").length}</div><div className="text-xs text-muted-foreground">Active</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-warning"><AlertTriangle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{expiringCount}</div><div className="text-xs text-muted-foreground">Expiring ≤90d</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-info"><Calendar size={20} /></div><div><div className="text-2xl font-bold text-foreground">${activeValue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Active Annual Value</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-muted"><Clock size={20} /></div><div><div className="text-2xl font-bold text-foreground">{contracts.filter(c => c.status === "Pending").length}</div><div className="text-xs text-muted-foreground">Pending Approval</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-primary"><FileText size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{contracts.length}</div><div className="text-xs text-muted-foreground">Total Contracts</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{contracts.filter(c => c.status === "Active").length}</div><div className="text-xs text-muted-foreground">Active</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-warning"><AlertTriangle size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{expiringCount}</div><div className="text-xs text-muted-foreground">Expiring ≤90d</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-info"><Calendar size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">${activeValue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Active Annual Value</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-muted"><Clock size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{contracts.filter(c => c.status === "Pending").length}</div><div className="text-xs text-muted-foreground">Pending Approval</div></div></div>
       </div>
 
       {/* Renewal Alerts */}

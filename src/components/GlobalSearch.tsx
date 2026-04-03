@@ -90,7 +90,7 @@ export default function GlobalSearch() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[400px] bg-card border rounded-lg shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[400px] bg-card border rounded-lg shadow-xl z-50 overflow-hidden">
           <div className="flex items-center gap-2 px-3 py-2 border-b">
             <Search size={14} className="text-muted-foreground shrink-0" />
             <input

@@ -102,7 +102,11 @@ const navSections: NavSection[] = [
 ];
 
 
-export default function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export default function Sidebar({ onNavigate }: SidebarProps) {
   const location = useLocation();
   const currentPath = location.pathname;
   
@@ -156,6 +160,7 @@ export default function Sidebar() {
                       <Link
                         key={child.label}
                         to={child.path}
+                        onClick={onNavigate}
                         className={`block px-3 py-1.5 rounded text-sm transition-colors ${
                           isActive(child.path)
                             ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
@@ -171,6 +176,7 @@ export default function Sidebar() {
             ) : (
               <Link
                 to={section.path || "/"}
+                onClick={onNavigate}
                 className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
                   isActive(section.path || "/")
                     ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"

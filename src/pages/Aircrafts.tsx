@@ -107,9 +107,9 @@ export default function AircraftsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Aircrafts</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">Aircrafts</h1>
           <p className="text-muted-foreground text-sm">Fleet registry, specifications & airworthiness certificates</p>
         </div>
         <div className="flex gap-2">
@@ -126,23 +126,23 @@ export default function AircraftsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><PlaneTakeoff className="text-primary" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Aircraft</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Aircraft</div></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center"><CheckCircle className="text-success" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{operationalCount}</div><div className="text-xs text-muted-foreground">Operational</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{operationalCount}</div><div className="text-xs text-muted-foreground">Operational</div></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center"><Wrench className="text-warning" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{maintenanceCount}</div><div className="text-xs text-muted-foreground">In Maintenance</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{maintenanceCount}</div><div className="text-xs text-muted-foreground">In Maintenance</div></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-info/10 flex items-center justify-center"><Layers className="text-info" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{types.length}</div><div className="text-xs text-muted-foreground">Aircraft Types</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{types.length}</div><div className="text-xs text-muted-foreground">Aircraft Types</div></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center"><Building2 className="text-accent-foreground" size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{airlinesCount}</div><div className="text-xs text-muted-foreground">Airlines</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{airlinesCount}</div><div className="text-xs text-muted-foreground">Airlines</div></div>
         </CardContent></Card>
       </div>
 

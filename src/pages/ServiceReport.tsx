@@ -709,7 +709,7 @@ export default function ServiceReportPage() {
       {/* Header */}
       <div className="flex items-center gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <FileBarChart2 size={22} className="text-primary" /> Service Report
             <Link2 size={16} className="text-primary" />
           </h1>
@@ -728,19 +728,19 @@ export default function ServiceReportPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
           <div className="stat-card-icon bg-primary"><Plane size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{totalFlights}</div><div className="text-xs text-muted-foreground">Total Flights</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{totalFlights}</div><div className="text-xs text-muted-foreground">Total Flights</div></div>
         </div>
         <div className="stat-card">
           <div className="stat-card-icon bg-info"><Users size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">{totalPax.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Passengers</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">{totalPax.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Passengers</div></div>
         </div>
         <div className="stat-card">
           <div className="stat-card-icon bg-success"><DollarSign size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Revenue</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Revenue</div></div>
         </div>
         <div className="stat-card">
           <div className="stat-card-icon bg-warning"><Building2 size={20} /></div>
-          <div><div className="text-2xl font-bold text-foreground">${totalHandlingFees.toLocaleString()}</div><div className="text-xs text-muted-foreground">Handling Fees</div></div>
+          <div><div className="text-xl md:text-2xl font-bold text-foreground">${totalHandlingFees.toLocaleString()}</div><div className="text-xs text-muted-foreground">Handling Fees</div></div>
         </div>
       </div>
 

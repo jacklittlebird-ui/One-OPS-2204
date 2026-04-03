@@ -214,8 +214,8 @@ export default function FlightSchedulePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><PlaneTakeoff size={22} className="text-primary" /> Flight Schedule</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+        <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2"><PlaneTakeoff size={22} className="text-primary" /> Flight Schedule</h1>
         <button onClick={() => navigate("/services")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-semibold text-primary border-primary/40 hover:bg-primary/10 transition-colors">
           <Link2 size={14} /> Chart of Services Cost
         </button>
@@ -223,11 +223,11 @@ export default function FlightSchedulePage() {
       <p className="text-muted-foreground text-sm mt-1 mb-6">IATA SSIM-compliant flight schedule management</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div className="stat-card"><div className="stat-card-icon bg-primary"><PlaneTakeoff size={20} /></div><div><div className="text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Flights</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-info"><Calendar size={20} /></div><div><div className="text-2xl font-bold text-foreground">{scheduledCount}</div><div className="text-xs text-muted-foreground">Scheduled</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-warning"><AlertCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{delayedCount}</div><div className="text-xs text-muted-foreground">Delayed</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">{airlines.length}</div><div className="text-xs text-muted-foreground">Airlines</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-muted"><Clock size={20} /></div><div><div className="text-2xl font-bold text-foreground">{paxFlights}</div><div className="text-xs text-muted-foreground">Passenger Flights</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-primary"><PlaneTakeoff size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{data.length}</div><div className="text-xs text-muted-foreground">Total Flights</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-info"><Calendar size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{scheduledCount}</div><div className="text-xs text-muted-foreground">Scheduled</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-warning"><AlertCircle size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{delayedCount}</div><div className="text-xs text-muted-foreground">Delayed</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{airlines.length}</div><div className="text-xs text-muted-foreground">Airlines</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-muted"><Clock size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{paxFlights}</div><div className="text-xs text-muted-foreground">Passenger Flights</div></div></div>
       </div>
 
       <div className="bg-card rounded-lg border overflow-hidden">
