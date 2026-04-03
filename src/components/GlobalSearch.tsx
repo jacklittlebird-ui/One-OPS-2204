@@ -1,12 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Search, X, Plane, DollarSign, FileText, UtensilsCrossed, Shield, BookOpen, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-// Import all searchable data
-import { cateringItems, tubeCharges, airportTaxItems, basicRampItems, vendorEquipmentItems, hallVvipItems, abbreviationsList, aircraftTypesRef, sampleBulletins, sampleManualsAndForms, trafficRightsData, securityItems, fuelItems, vipItems, overflyItems } from "@/data/servicesData";
-import { sampleAirlines } from "@/data/airlinesData";
-import { sampleAircrafts } from "@/data/aircraftsData";
-import { sampleFlights } from "@/data/flightScheduleData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SearchResult {
   title: string;
@@ -16,27 +12,42 @@ interface SearchResult {
   icon: React.ReactNode;
 }
 
-function buildIndex(): { text: string; result: SearchResult }[] {
+function useSearchData() {
+  const airlines = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("code,name,country"); return data || []; } });
+  const aircrafts = useQuery({ queryKey: ["aircrafts"], queryFn: async () => { const { data } = await supabase.from("aircrafts").select("registration,type,airline"); return data || []; } });
+  const flights = useQuery({ queryKey: ["flight_schedules"], queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("flight_no,airline,origin,destination"); return data || []; } });
+  const catering = useQuery({ queryKey: ["catering_items"], queryFn: async () => { const { data } = await supabase.from("catering_items").select("item,price,category"); return data || []; } });
+  const tubes = useQuery({ queryKey: ["tube_charges"], queryFn: async () => { const { data } = await supabase.from("tube_charges").select("service,price,airport"); return data || []; } });
+  const taxes = useQuery({ queryKey: ["airport_tax"], queryFn: async () => { const { data } = await supabase.from("airport_tax").select("tax,amount,applicability"); return data || []; } });
+  const ramp = useQuery({ queryKey: ["basic_ramp"], queryFn: async () => { const { data } = await supabase.from("basic_ramp").select("service,price"); return data || []; } });
+  const equipment = useQuery({ queryKey: ["vendor_equipment"], queryFn: async () => { const { data } = await supabase.from("vendor_equipment").select("equipment,vendor,rate"); return data || []; } });
+  const hall = useQuery({ queryKey: ["hall_vvip"], queryFn: async () => { const { data } = await supabase.from("hall_vvip").select("service,price,terminal"); return data || []; } });
+  const abbr = useQuery({ queryKey: ["abbreviations"], queryFn: async () => { const { data } = await supabase.from("abbreviations").select("abbr,full_text"); return data || []; } });
+  const acTypes = useQuery({ queryKey: ["aircraft_types_ref"], queryFn: async () => { const { data } = await supabase.from("aircraft_types_ref").select("icao,iata,name,category"); return data || []; } });
+  const bulletins = useQuery({ queryKey: ["bulletins"], queryFn: async () => { const { data } = await supabase.from("bulletins").select("bulletin_id,title,type"); return data || []; } });
+  const manuals = useQuery({ queryKey: ["manuals_forms"], queryFn: async () => { const { data } = await supabase.from("manuals_forms").select("doc_id,title,category"); return data || []; } });
+  const rights = useQuery({ queryKey: ["traffic_rights"], queryFn: async () => { const { data } = await supabase.from("traffic_rights").select("right_name,description"); return data || []; } });
+
+  return { airlines, aircrafts, flights, catering, tubes, taxes, ramp, equipment, hall, abbr, acTypes, bulletins, manuals, rights };
+}
+
+function buildIndex(data: ReturnType<typeof useSearchData>): { text: string; result: SearchResult }[] {
   const entries: { text: string; result: SearchResult }[] = [];
 
-  sampleAirlines.forEach(a => entries.push({ text: `${a.code} ${a.name} ${a.country}`, result: { title: a.name, subtitle: `${a.code} · ${a.country}`, module: "Airlines", path: "/airlines", icon: <Plane size={14} /> } }));
-  sampleAircrafts.forEach(a => entries.push({ text: `${a.registration} ${a.type} ${a.airline}`, result: { title: a.registration, subtitle: `${a.type} · ${a.airline}`, module: "Aircrafts", path: "/aircrafts", icon: <Plane size={14} /> } }));
-  sampleFlights.forEach(f => entries.push({ text: `${f.flightNo} ${f.airline} ${f.origin} ${f.destination}`, result: { title: f.flightNo, subtitle: `${f.airline} · ${f.origin}→${f.destination}`, module: "Flights", path: "/flight-schedule", icon: <Plane size={14} /> } }));
-  cateringItems.forEach(c => entries.push({ text: `${c.item} ${c.category}`, result: { title: c.item, subtitle: `${c.price} · ${c.category}`, module: "Catering", path: "/catering", icon: <UtensilsCrossed size={14} /> } }));
-  tubeCharges.forEach(t => entries.push({ text: `${t.service} ${t.airport}`, result: { title: t.service, subtitle: `${t.price} · ${t.airport}`, module: "Tube", path: "/tube", icon: <Building2 size={14} /> } }));
-  airportTaxItems.forEach(t => entries.push({ text: `${t.tax} ${t.applicability}`, result: { title: t.tax, subtitle: t.amount, module: "Airport Tax", path: "/airport-tax", icon: <DollarSign size={14} /> } }));
-  basicRampItems.forEach(r => entries.push({ text: `${r.service}`, result: { title: r.service, subtitle: r.price, module: "Basic Ramp", path: "/basic-ramp", icon: <DollarSign size={14} /> } }));
-  vendorEquipmentItems.forEach(v => entries.push({ text: `${v.equipment} ${v.vendor}`, result: { title: v.equipment, subtitle: `${v.vendor} · ${v.rate}`, module: "Vendor Equipment", path: "/vendor-equipment", icon: <DollarSign size={14} /> } }));
-  hallVvipItems.forEach(h => entries.push({ text: `${h.service} ${h.terminal}`, result: { title: h.service, subtitle: `${h.price} · ${h.terminal}`, module: "Hall & VVIP", path: "/hall-vvip", icon: <Shield size={14} /> } }));
-  abbreviationsList.forEach(a => entries.push({ text: `${a.abbr} ${a.full}`, result: { title: a.abbr, subtitle: a.full, module: "Abbreviations", path: "/abbreviations", icon: <BookOpen size={14} /> } }));
-  aircraftTypesRef.forEach(a => entries.push({ text: `${a.icao} ${a.iata} ${a.name}`, result: { title: a.name, subtitle: `${a.icao}/${a.iata} · ${a.category}`, module: "Aircraft Types", path: "/aircraft-types", icon: <Plane size={14} /> } }));
-  sampleBulletins.forEach(b => entries.push({ text: `${b.id} ${b.title} ${b.type}`, result: { title: b.title, subtitle: `${b.id} · ${b.type}`, module: "Bulletins", path: "/bulletins", icon: <FileText size={14} /> } }));
-  sampleManualsAndForms.forEach(m => entries.push({ text: `${m.id} ${m.title} ${m.category}`, result: { title: m.title, subtitle: `${m.id} · ${m.category}`, module: "Manuals", path: "/manuals-forms", icon: <BookOpen size={14} /> } }));
-  trafficRightsData.forEach(t => entries.push({ text: `${t.right} ${t.description}`, result: { title: t.right, subtitle: t.description.slice(0, 60), module: "Traffic Rights", path: "/traffic-rights", icon: <Shield size={14} /> } }));
-  securityItems.forEach(s => entries.push({ text: `${s.service}`, result: { title: s.service, subtitle: s.price, module: "Security", path: "/services", icon: <Shield size={14} /> } }));
-  fuelItems.forEach(f => entries.push({ text: `${f.grade}`, result: { title: f.grade, subtitle: f.price, module: "Fuel", path: "/services", icon: <DollarSign size={14} /> } }));
-  vipItems.forEach(v => entries.push({ text: `${v.service} ${v.category}`, result: { title: v.service, subtitle: `${v.price} · ${v.category}`, module: "VIP", path: "/services", icon: <Shield size={14} /> } }));
-  overflyItems.forEach(o => entries.push({ text: `${o.permit}`, result: { title: o.permit, subtitle: o.price, module: "Overfly", path: "/services", icon: <DollarSign size={14} /> } }));
+  (data.airlines.data || []).forEach(a => entries.push({ text: `${a.code} ${a.name} ${a.country}`, result: { title: a.name, subtitle: `${a.code} · ${a.country}`, module: "Airlines", path: "/airlines", icon: <Plane size={14} /> } }));
+  (data.aircrafts.data || []).forEach(a => entries.push({ text: `${a.registration} ${a.type} ${a.airline}`, result: { title: a.registration, subtitle: `${a.type} · ${a.airline}`, module: "Aircrafts", path: "/aircrafts", icon: <Plane size={14} /> } }));
+  (data.flights.data || []).forEach(f => entries.push({ text: `${f.flight_no} ${f.airline} ${f.origin} ${f.destination}`, result: { title: f.flight_no, subtitle: `${f.airline} · ${f.origin}→${f.destination}`, module: "Flights", path: "/flight-schedule", icon: <Plane size={14} /> } }));
+  (data.catering.data || []).forEach(c => entries.push({ text: `${c.item} ${c.category}`, result: { title: c.item, subtitle: `${c.price} · ${c.category}`, module: "Catering", path: "/catering", icon: <UtensilsCrossed size={14} /> } }));
+  (data.tubes.data || []).forEach(t => entries.push({ text: `${t.service} ${t.airport}`, result: { title: t.service, subtitle: `${t.price} · ${t.airport}`, module: "Tube", path: "/tube", icon: <Building2 size={14} /> } }));
+  (data.taxes.data || []).forEach(t => entries.push({ text: `${t.tax} ${t.applicability}`, result: { title: t.tax, subtitle: t.amount, module: "Airport Tax", path: "/airport-tax", icon: <DollarSign size={14} /> } }));
+  (data.ramp.data || []).forEach(r => entries.push({ text: `${r.service}`, result: { title: r.service, subtitle: r.price, module: "Basic Ramp", path: "/basic-ramp", icon: <DollarSign size={14} /> } }));
+  (data.equipment.data || []).forEach(v => entries.push({ text: `${v.equipment} ${v.vendor}`, result: { title: v.equipment, subtitle: `${v.vendor} · ${v.rate}`, module: "Vendor Equipment", path: "/vendor-equipment", icon: <DollarSign size={14} /> } }));
+  (data.hall.data || []).forEach(h => entries.push({ text: `${h.service} ${h.terminal}`, result: { title: h.service, subtitle: `${h.price} · ${h.terminal}`, module: "Hall & VVIP", path: "/hall-vvip", icon: <Shield size={14} /> } }));
+  (data.abbr.data || []).forEach(a => entries.push({ text: `${a.abbr} ${a.full_text}`, result: { title: a.abbr, subtitle: a.full_text, module: "Abbreviations", path: "/abbreviations", icon: <BookOpen size={14} /> } }));
+  (data.acTypes.data || []).forEach(a => entries.push({ text: `${a.icao} ${a.iata} ${a.name}`, result: { title: a.name, subtitle: `${a.icao}/${a.iata} · ${a.category}`, module: "Aircraft Types", path: "/aircraft-types", icon: <Plane size={14} /> } }));
+  (data.bulletins.data || []).forEach(b => entries.push({ text: `${b.bulletin_id} ${b.title} ${b.type}`, result: { title: b.title, subtitle: `${b.bulletin_id} · ${b.type}`, module: "Bulletins", path: "/bulletins", icon: <FileText size={14} /> } }));
+  (data.manuals.data || []).forEach(m => entries.push({ text: `${m.doc_id} ${m.title} ${m.category}`, result: { title: m.title, subtitle: `${m.doc_id} · ${m.category}`, module: "Manuals", path: "/manuals-forms", icon: <BookOpen size={14} /> } }));
+  (data.rights.data || []).forEach(t => entries.push({ text: `${t.right_name} ${t.description}`, result: { title: t.right_name, subtitle: t.description.slice(0, 60), module: "Traffic Rights", path: "/traffic-rights", icon: <Shield size={14} /> } }));
 
   return entries;
 }
@@ -48,7 +59,15 @@ export default function GlobalSearch() {
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const index = useMemo(() => buildIndex(), []);
+  const searchData = useSearchData();
+
+  const index = useMemo(() => buildIndex(searchData), [
+    searchData.airlines.data, searchData.aircrafts.data, searchData.flights.data,
+    searchData.catering.data, searchData.tubes.data, searchData.taxes.data,
+    searchData.ramp.data, searchData.equipment.data, searchData.hall.data,
+    searchData.abbr.data, searchData.acTypes.data, searchData.bulletins.data,
+    searchData.manuals.data, searchData.rights.data,
+  ]);
 
   const results = useMemo(() => {
     if (!query || query.length < 2) return [];
@@ -64,7 +83,6 @@ export default function GlobalSearch() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Keyboard shortcut: Ctrl+K
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {

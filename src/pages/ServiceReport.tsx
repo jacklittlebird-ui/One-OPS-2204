@@ -7,8 +7,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { sampleDelayCodes } from "@/data/delayCodesData";
 import { generateAllCharges } from "@/data/airportChargesData";
+import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
 
@@ -270,6 +270,8 @@ interface ReportFormProps {
 }
 
 function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps) {
+  type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
+  const { data: delayCodes } = useSupabaseTable<DelayCodeRow>("delay_codes", { orderBy: "code", ascending: true });
   const recalcFinancials = (d: Partial<ReportFormData>) => {
     d.civilAviationFee = calcCivilAviation(d);
     d.airportCharge = getAirportCharge(d);
@@ -296,7 +298,7 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
     const newDelays = [...delays];
     newDelays[index] = { ...newDelays[index], [field]: val };
     if (field === "code") {
-      const found = sampleDelayCodes.find(dc => dc.code === val);
+      const found = delayCodes.find(dc => dc.code === val);
       newDelays[index].explanation = found?.description || "";
     }
     onChange({ ...data, delays: newDelays });
@@ -372,7 +374,7 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
                 <FormField label={`DLY Code ${i + 1}`}>
                   <select className={selectCls} value={d.code} onChange={e => setDelay(i, "code", e.target.value)}>
                     <option value="">— Select —</option>
-                    {sampleDelayCodes.map(dc => (
+                    {delayCodes.filter(dc => dc.active).map(dc => (
                       <option key={dc.id} value={dc.code}>{dc.code} – {dc.description.slice(0, 40)}</option>
                     ))}
                   </select>
