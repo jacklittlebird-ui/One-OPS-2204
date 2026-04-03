@@ -584,6 +584,249 @@ function UserProfileTab() {
   );
 }
 
+// ─── Theme & Appearance Tab ──────────────────────────────
+const themeColors = [
+  { name: "Default Indigo", value: "243 55% 25%", preview: "hsl(243, 55%, 25%)" },
+  { name: "Ocean Blue", value: "210 80% 45%", preview: "hsl(210, 80%, 45%)" },
+  { name: "Emerald", value: "160 60% 38%", preview: "hsl(160, 60%, 38%)" },
+  { name: "Teal", value: "170 60% 36%", preview: "hsl(170, 60%, 36%)" },
+  { name: "Violet", value: "270 60% 50%", preview: "hsl(270, 60%, 50%)" },
+  { name: "Rose", value: "350 70% 50%", preview: "hsl(350, 70%, 50%)" },
+  { name: "Orange", value: "25 90% 50%", preview: "hsl(25, 90%, 50%)" },
+  { name: "Amber", value: "45 93% 42%", preview: "hsl(45, 93%, 42%)" },
+  { name: "Fuchsia", value: "292 70% 50%", preview: "hsl(292, 70%, 50%)" },
+  { name: "Sky", value: "200 85% 50%", preview: "hsl(200, 85%, 50%)" },
+  { name: "Slate", value: "215 25% 35%", preview: "hsl(215, 25%, 35%)" },
+  { name: "Crimson", value: "0 84% 50%", preview: "hsl(0, 84%, 50%)" },
+];
+
+const accentColors = [
+  { name: "Green", value: "152 60% 45%", preview: "hsl(152, 60%, 45%)" },
+  { name: "Cyan", value: "190 80% 45%", preview: "hsl(190, 80%, 45%)" },
+  { name: "Amber", value: "45 93% 47%", preview: "hsl(45, 93%, 47%)" },
+  { name: "Pink", value: "340 75% 55%", preview: "hsl(340, 75%, 55%)" },
+  { name: "Orange", value: "25 90% 55%", preview: "hsl(25, 90%, 55%)" },
+  { name: "Lime", value: "85 70% 45%", preview: "hsl(85, 70%, 45%)" },
+];
+
+function ThemeAppearanceTab() {
+  const [mode, setMode] = useState<"light" | "dark">(() => {
+    return document.documentElement.classList.contains("dark") ? "dark" : "light";
+  });
+  const [selectedPrimary, setSelectedPrimary] = useState("243 55% 25%");
+  const [selectedAccent, setSelectedAccent] = useState("152 60% 45%");
+  const [borderRadius, setBorderRadius] = useState("0.5");
+
+  // Read current values on mount
+  useEffect(() => {
+    const root = document.documentElement;
+    const currentPrimary = getComputedStyle(root).getPropertyValue("--primary").trim();
+    const currentAccent = getComputedStyle(root).getPropertyValue("--accent").trim();
+    const currentRadius = getComputedStyle(root).getPropertyValue("--radius").trim();
+    if (currentPrimary) setSelectedPrimary(currentPrimary);
+    if (currentAccent) setSelectedAccent(currentAccent);
+    if (currentRadius) setBorderRadius(currentRadius.replace("rem", ""));
+  }, []);
+
+  const applyPrimary = (val: string) => {
+    setSelectedPrimary(val);
+    document.documentElement.style.setProperty("--primary", val);
+    document.documentElement.style.setProperty("--ring", val);
+    document.documentElement.style.setProperty("--sidebar-background", val.replace(/\d+%$/, (m) => `${Math.max(0, parseInt(m) - 7)}%`));
+  };
+
+  const applyAccent = (val: string) => {
+    setSelectedAccent(val);
+    document.documentElement.style.setProperty("--accent", val);
+    document.documentElement.style.setProperty("--sidebar-primary", val);
+    document.documentElement.style.setProperty("--success", val);
+  };
+
+  const applyMode = (m: "light" | "dark") => {
+    setMode(m);
+    document.documentElement.classList.toggle("dark", m === "dark");
+  };
+
+  const applyRadius = (val: string) => {
+    setBorderRadius(val);
+    document.documentElement.style.setProperty("--radius", `${val}rem`);
+  };
+
+  const handleReset = () => {
+    document.documentElement.style.removeProperty("--primary");
+    document.documentElement.style.removeProperty("--ring");
+    document.documentElement.style.removeProperty("--accent");
+    document.documentElement.style.removeProperty("--sidebar-background");
+    document.documentElement.style.removeProperty("--sidebar-primary");
+    document.documentElement.style.removeProperty("--success");
+    document.documentElement.style.removeProperty("--radius");
+    document.documentElement.classList.remove("dark");
+    setSelectedPrimary("243 55% 25%");
+    setSelectedAccent("152 60% 45%");
+    setBorderRadius("0.5");
+    setMode("light");
+    toast.success("Theme reset to defaults");
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Mode */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Sun size={18} className="text-amber" /> Appearance Mode</CardTitle>
+          <CardDescription>Choose between light and dark mode</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 max-w-sm">
+            <button
+              onClick={() => applyMode("light")}
+              className={`relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${mode === "light" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
+            >
+              {mode === "light" && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
+              <div className="w-12 h-12 rounded-lg bg-white border shadow-sm flex items-center justify-center">
+                <Sun size={20} className="text-amber" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Light</span>
+            </button>
+            <button
+              onClick={() => applyMode("dark")}
+              className={`relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${mode === "dark" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
+            >
+              {mode === "dark" && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
+              <div className="w-12 h-12 rounded-lg bg-gray-900 border border-gray-700 flex items-center justify-center">
+                <Moon size={20} className="text-sky" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Dark</span>
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Primary Color */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Palette size={18} className="text-primary" /> Primary Color</CardTitle>
+          <CardDescription>Main brand color used for buttons, links, and highlights</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            {themeColors.map(c => (
+              <button
+                key={c.value}
+                onClick={() => applyPrimary(c.value)}
+                className={`relative group flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${selectedPrimary === c.value ? "border-foreground shadow-md" : "border-transparent hover:border-border"}`}
+              >
+                <div className="w-10 h-10 rounded-full shadow-inner border border-black/10 flex items-center justify-center" style={{ backgroundColor: c.preview }}>
+                  {selectedPrimary === c.value && <Check size={16} className="text-white drop-shadow" />}
+                </div>
+                <span className="text-[10px] font-semibold text-muted-foreground group-hover:text-foreground">{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Accent Color */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Palette size={18} className="text-accent" /> Accent Color</CardTitle>
+          <CardDescription>Used for success states, sidebar highlights, and accents</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {accentColors.map(c => (
+              <button
+                key={c.value}
+                onClick={() => applyAccent(c.value)}
+                className={`relative group flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${selectedAccent === c.value ? "border-foreground shadow-md" : "border-transparent hover:border-border"}`}
+              >
+                <div className="w-10 h-10 rounded-full shadow-inner border border-black/10 flex items-center justify-center" style={{ backgroundColor: c.preview }}>
+                  {selectedAccent === c.value && <Check size={16} className="text-white drop-shadow" />}
+                </div>
+                <span className="text-[10px] font-semibold text-muted-foreground group-hover:text-foreground">{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Border Radius */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Monitor size={18} className="text-violet" /> Border Radius</CardTitle>
+          <CardDescription>Controls the roundness of buttons, cards, and inputs</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-6 max-w-md">
+            <div className="flex gap-3">
+              {[
+                { label: "None", val: "0" },
+                { label: "Small", val: "0.25" },
+                { label: "Medium", val: "0.5" },
+                { label: "Large", val: "0.75" },
+                { label: "Full", val: "1" },
+              ].map(r => (
+                <button
+                  key={r.val}
+                  onClick={() => applyRadius(r.val)}
+                  className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${borderRadius === r.val ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
+                >
+                  <div className="w-10 h-10 bg-primary/20 border border-primary/30" style={{ borderRadius: `${r.val}rem` }} />
+                  <span className="text-[10px] font-semibold text-muted-foreground">{r.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Preview</CardTitle>
+          <CardDescription>See how your theme choices look</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Button>Primary Button</Button>
+            <Button variant="secondary">Secondary</Button>
+            <Button variant="outline">Outline</Button>
+            <Button variant="destructive">Destructive</Button>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Badge>Default</Badge>
+            <Badge variant="secondary">Secondary</Badge>
+            <Badge variant="outline">Outline</Badge>
+            <Badge className="bg-success/15 text-success border-0">Success</Badge>
+            <Badge className="bg-warning/15 text-warning border-0">Warning</Badge>
+            <Badge className="bg-info/15 text-info border-0">Info</Badge>
+            <Badge className="bg-destructive/15 text-destructive border-0">Error</Badge>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <div className="w-8 h-8 rounded-full bg-primary" title="Primary" />
+            <div className="w-8 h-8 rounded-full bg-accent" title="Accent" />
+            <div className="w-8 h-8 rounded-full bg-info" title="Info" />
+            <div className="w-8 h-8 rounded-full bg-success" title="Success" />
+            <div className="w-8 h-8 rounded-full bg-warning" title="Warning" />
+            <div className="w-8 h-8 rounded-full bg-destructive" title="Destructive" />
+            <div className="w-8 h-8 rounded-full bg-indigo" title="Indigo" />
+            <div className="w-8 h-8 rounded-full bg-violet" title="Violet" />
+            <div className="w-8 h-8 rounded-full bg-rose" title="Rose" />
+            <div className="w-8 h-8 rounded-full bg-teal" title="Teal" />
+            <div className="w-8 h-8 rounded-full bg-cyan" title="Cyan" />
+            <div className="w-8 h-8 rounded-full bg-orange" title="Orange" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={handleReset} className="gap-2"><RefreshCw size={16} /> Reset to Defaults</Button>
+        <Button onClick={() => toast.success("Theme preferences saved")} className="gap-2"><Save size={16} /> Save Theme</Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Settings Page ──────────────────────────────────
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -592,6 +835,7 @@ export default function SettingsPage() {
     { value: "profile", label: "My Profile", icon: <User size={15} /> },
     { value: "company", label: "Company", icon: <Building2 size={15} /> },
     { value: "stations", label: "Stations", icon: <MapPin size={15} /> },
+    { value: "theme", label: "Theme", icon: <Palette size={15} /> },
     { value: "system", label: "System", icon: <Monitor size={15} /> },
     { value: "security", label: "Security", icon: <Shield size={15} /> },
     { value: "notifications", label: "Notifications", icon: <Bell size={15} /> },
@@ -617,6 +861,7 @@ export default function SettingsPage() {
           <TabsContent value="profile"><UserProfileTab /></TabsContent>
           <TabsContent value="company"><CompanyProfileTab /></TabsContent>
           <TabsContent value="stations"><StationManagementTab /></TabsContent>
+          <TabsContent value="theme"><ThemeAppearanceTab /></TabsContent>
           <TabsContent value="system"><SystemPreferencesTab /></TabsContent>
           <TabsContent value="security"><SecurityTab /></TabsContent>
           <TabsContent value="notifications"><NotificationPreferencesTab /></TabsContent>
