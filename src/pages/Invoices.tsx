@@ -2,7 +2,8 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileText, DollarSign,
   Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle,
-  Clock, XCircle, AlertCircle, Printer, ShieldCheck
+  Clock, XCircle, AlertCircle, Printer, ShieldCheck, Eye,
+  TrendingUp, Filter, Calendar, BarChart3
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -11,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import InvoicePrintView from "@/components/InvoicePrintView";
+import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 
 type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
 type InvoiceCurrency = "USD" | "EUR" | "EGP";
@@ -133,12 +135,19 @@ export default function InvoicesPage() {
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [currencyFilter, setCurrencyFilter] = useState("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [newInvoice, setNewInvoice] = useState<Partial<InvoiceRow>>(emptyInvoice());
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<InvoiceRow>>({});
   const [printInvoice, setPrintInvoice] = useState<any>(null);
+  const [detailInvoice, setDetailInvoice] = useState<InvoiceRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -163,15 +172,26 @@ export default function InvoicesPage() {
   const filtered = useMemo(() => {
     let r = invoices;
     if (statusFilter !== "All") r = r.filter(i => i.status === statusFilter);
-    if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref.toLowerCase().includes(s)); }
+    if (typeFilter !== "All") r = r.filter(i => (i.invoice_type || "Preliminary") === typeFilter);
+    if (currencyFilter !== "All") r = r.filter(i => i.currency === currencyFilter);
+    if (dateFrom) r = r.filter(i => i.date >= dateFrom);
+    if (dateTo) r = r.filter(i => i.date <= dateTo);
+    if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s)); }
     return r;
-  }, [invoices, statusFilter, search]);
+  }, [invoices, statusFilter, typeFilter, currencyFilter, dateFrom, dateTo, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // KPI calculations
+  const totalRevenue = invoices.reduce((s, i) => s + i.total, 0);
   const totalPaid = invoices.filter(i => i.status === "Paid").reduce((s, i) => s + i.total, 0);
-  const totalPending = invoices.filter(i => i.status === "Sent").reduce((s, i) => s + i.total, 0);
+  const totalPending = invoices.filter(i => i.status === "Sent" || i.status === "Draft").reduce((s, i) => s + i.total, 0);
   const totalOverdue = invoices.filter(i => i.status === "Overdue").reduce((s, i) => s + i.total, 0);
+  const finalizedCount = invoices.filter(i => i.invoice_type === "Final").length;
+  const collectionRate = totalRevenue > 0 ? Math.round((totalPaid / totalRevenue) * 100) : 0;
+
+  const activeFilterCount = [statusFilter !== "All", typeFilter !== "All", currencyFilter !== "All", !!dateFrom, !!dateTo].filter(Boolean).length;
 
   const saveNew = async () => {
     if (!newInvoice.operator) return;
@@ -186,18 +206,15 @@ export default function InvoicesPage() {
     setEditId(null);
   };
 
-  // Finalize: convert Preliminary → Final and auto-create journal entry
   const handleFinalize = async (inv: InvoiceRow) => {
     if (!confirm(`Finalize invoice ${inv.invoice_no}? This will create a journal entry.`)) return;
     try {
-      // 1. Fetch receivable & revenue accounts
       const { data: accounts } = await supabase.from("chart_of_accounts").select("id,code,name").in("code", ["1210", "4100", "4200", "4300", "4400"]);
       const acctMap: Record<string, string> = {};
       (accounts || []).forEach((a: any) => { acctMap[a.code] = a.id; });
       const receivableId = acctMap["1210"];
       if (!receivableId) { toast({ title: "Error", description: "Receivable account (1210) not found in Chart of Accounts", variant: "destructive" }); return; }
 
-      // 2. Create journal entry
       const entryNo = `JE-INV-${inv.invoice_no}`;
       const { data: je, error: jeErr } = await supabase.from("journal_entries").insert({
         entry_no: entryNo, entry_date: inv.date, description: `Invoice ${inv.invoice_no} - ${inv.operator}`,
@@ -208,7 +225,6 @@ export default function InvoicesPage() {
       if (jeErr) throw jeErr;
       const entryId = (je as any).id;
 
-      // 3. Create journal lines - debit receivable, credit revenue accounts
       const lines: any[] = [];
       lines.push({ entry_id: entryId, account_id: receivableId, debit: inv.total, credit: 0, description: `A/R - ${inv.operator}`, sort_order: 0 });
       let sortOrder = 1;
@@ -216,7 +232,6 @@ export default function InvoicesPage() {
       if (inv.handling > 0 && acctMap["4100"]) { lines.push({ entry_id: entryId, account_id: acctMap["4100"], debit: 0, credit: inv.handling, description: "Handling Revenue", sort_order: sortOrder++ }); }
       if (inv.airport_charges > 0 && acctMap["4300"]) { lines.push({ entry_id: entryId, account_id: acctMap["4300"], debit: 0, credit: inv.airport_charges, description: "Airport Charges Revenue", sort_order: sortOrder++ }); }
       if (inv.catering > 0 && acctMap["4400"]) { lines.push({ entry_id: entryId, account_id: acctMap["4400"], debit: 0, credit: inv.catering, description: "Catering Revenue", sort_order: sortOrder++ }); }
-      // Remaining amount to first revenue account
       const creditTotal = lines.filter(l => l.credit > 0).reduce((s: number, l: any) => s + l.credit, 0);
       const remaining = inv.total - creditTotal;
       if (remaining > 0) {
@@ -225,7 +240,6 @@ export default function InvoicesPage() {
       }
       await supabase.from("journal_entry_lines").insert(lines as any);
 
-      // 4. Update invoice to Final
       await supabase.from("invoices").update({
         invoice_type: "Final", finalized_at: new Date().toISOString(), finalized_by: "System",
         journal_entry_id: entryId, status: "Sent",
@@ -239,6 +253,34 @@ export default function InvoicesPage() {
     }
   };
 
+  // Bulk actions
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected invoice(s)?`)) return;
+    for (const id of selectedIds) { await remove(id); }
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkStatusChange = async (newStatus: InvoiceStatus) => {
+    if (selectedIds.size === 0) return;
+    for (const id of selectedIds) {
+      await supabase.from("invoices").update({ status: newStatus } as any).eq("id", id);
+    }
+    queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    setSelectedIds(new Set());
+    toast({ title: "Updated", description: `${selectedIds.size} invoice(s) marked as ${newStatus}` });
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelectedIds(next);
+  };
+  const toggleAll = () => {
+    if (selectedIds.size === pageData.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(pageData.map(i => i.id)));
+  };
+
   const handleExport = () => {
     const ws = XLSX.utils.json_to_sheet(filtered.map(i => ({
       "Invoice No": i.invoice_no, Date: i.date, "Due Date": i.due_date,
@@ -246,7 +288,8 @@ export default function InvoicesPage() {
       Description: i.description, "Civil Aviation": i.civil_aviation,
       Handling: i.handling, "Airport Charges": i.airport_charges,
       Catering: i.catering, Other: i.other, VAT: i.vat,
-      Subtotal: i.subtotal, Total: i.total, Currency: i.currency, Status: i.status, Notes: i.notes,
+      Subtotal: i.subtotal, Total: i.total, Currency: i.currency, Status: i.status,
+      Type: i.invoice_type, Station: i.station, "Billing Period": i.billing_period, Notes: i.notes,
     })));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Invoices"); XLSX.writeFile(wb, "Link_Invoices_Export.xlsx");
   };
@@ -270,9 +313,6 @@ export default function InvoicesPage() {
     reader.readAsBinaryString(file); e.target.value = "";
   }, [bulkInsert]);
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
-
-  // Convert for print view compatibility
   const toPrintFormat = (inv: InvoiceRow) => ({
     id: inv.id, invoiceNo: inv.invoice_no, date: inv.date, dueDate: inv.due_date,
     operator: inv.operator, airlineIATA: inv.airline_iata, flightRef: inv.flight_ref,
@@ -282,48 +322,160 @@ export default function InvoicesPage() {
     status: inv.status, notes: inv.notes,
   });
 
+  const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setDateFrom(""); setDateTo(""); };
+
+  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Invoices</h1>
-        <p className="text-muted-foreground text-sm mt-1">IATA SIS-compliant airline invoicing & payment tracking</p>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="stat-card"><div className="stat-card-icon bg-primary"><FileText size={20} /></div><div><div className="text-2xl font-bold text-foreground">{invoices.length}</div><div className="text-xs text-muted-foreground">Total Invoices</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">${totalPaid.toLocaleString()}</div><div className="text-xs text-muted-foreground">Paid</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-info"><Clock size={20} /></div><div><div className="text-2xl font-bold text-foreground">${totalPending.toLocaleString()}</div><div className="text-xs text-muted-foreground">Pending</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-destructive"><AlertCircle size={20} /></div><div><div className="text-2xl font-bold text-foreground">${totalOverdue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Overdue</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-muted"><DollarSign size={20} /></div><div><div className="text-2xl font-bold text-foreground">{invoices.filter(i => i.status === "Draft").length}</div><div className="text-xs text-muted-foreground">Drafts</div></div></div>
-      </div>
-
-      <div className="bg-card rounded-lg border overflow-hidden">
-        <div className="p-4 border-b flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-semibold text-foreground mr-auto">Invoice Records</h2>
-          <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-              className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-52 focus:outline-none focus:ring-1 focus:ring-primary" />
-          </div>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
-            <option>All</option>{(["Draft","Sent","Paid","Overdue","Cancelled"] as InvoiceStatus[]).map(s => <option key={s}>{s}</option>)}
-          </select>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Invoices</h1>
+          <p className="text-muted-foreground text-sm mt-1">IATA SIS-compliant airline invoicing & payment tracking</p>
+        </div>
+        <div className="flex gap-2">
           <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
-          <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload</button>
-          <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
-          <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
+        </div>
+      </div>
+
+      {/* Enhanced KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="stat-card flex-col items-start gap-2">
+          <div className="stat-card-icon bg-primary"><FileText size={18} /></div>
+          <div>
+            <div className="text-2xl font-bold text-foreground">{invoices.length}</div>
+            <div className="text-xs font-semibold text-foreground">Total Invoices</div>
+            <div className="text-[10px] text-muted-foreground">{finalizedCount} finalized</div>
+          </div>
+        </div>
+        <div className="stat-card flex-col items-start gap-2">
+          <div className="stat-card-icon bg-accent"><TrendingUp size={18} /></div>
+          <div>
+            <div className="text-2xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div>
+            <div className="text-xs font-semibold text-foreground">Total Revenue</div>
+            <div className="text-[10px] text-muted-foreground">All invoices</div>
+          </div>
+        </div>
+        <div className="stat-card flex-col items-start gap-2">
+          <div className="stat-card-icon bg-success"><CheckCircle size={18} /></div>
+          <div>
+            <div className="text-2xl font-bold text-foreground">${totalPaid.toLocaleString()}</div>
+            <div className="text-xs font-semibold text-foreground">Collected</div>
+            <div className="text-[10px] text-muted-foreground">{invoices.filter(i => i.status === "Paid").length} paid</div>
+          </div>
+        </div>
+        <div className="stat-card flex-col items-start gap-2">
+          <div className="stat-card-icon bg-info"><Clock size={18} /></div>
+          <div>
+            <div className="text-2xl font-bold text-foreground">${totalPending.toLocaleString()}</div>
+            <div className="text-xs font-semibold text-foreground">Pending</div>
+            <div className="text-[10px] text-muted-foreground">Draft + Sent</div>
+          </div>
+        </div>
+        <div className="stat-card flex-col items-start gap-2">
+          <div className="stat-card-icon bg-destructive"><AlertCircle size={18} /></div>
+          <div>
+            <div className="text-2xl font-bold text-foreground">${totalOverdue.toLocaleString()}</div>
+            <div className="text-xs font-semibold text-foreground">Overdue</div>
+            <div className="text-[10px] text-muted-foreground">{invoices.filter(i => i.status === "Overdue").length} invoices</div>
+          </div>
+        </div>
+        <div className="stat-card flex-col items-start gap-2">
+          <div className="stat-card-icon bg-emerald"><BarChart3 size={18} /></div>
+          <div>
+            <div className="text-2xl font-bold text-foreground">{collectionRate}%</div>
+            <div className="text-xs font-semibold text-foreground">Collection Rate</div>
+            <div className="text-[10px] text-muted-foreground">Paid / Total</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Invoice Table */}
+      <div className="bg-card rounded-lg border overflow-hidden">
+        {/* Toolbar */}
+        <div className="p-4 border-b space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-base font-semibold text-foreground mr-auto">Invoice Records</h2>
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input type="text" placeholder="Search invoices…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            <button onClick={() => setShowFilters(!showFilters)} className={`toolbar-btn-outline relative ${showFilters ? "ring-1 ring-primary" : ""}`}>
+              <Filter size={14} /> Filters
+              {activeFilterCount > 0 && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{activeFilterCount}</span>}
+            </button>
+            <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload</button>
+            <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
+          </div>
+
+          {/* Expandable Filters */}
+          {showFilters && (
+            <div className="flex flex-wrap items-end gap-3 pt-2 border-t">
+              <FormField label="Status">
+                <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
+                  <option>All</option>{(["Draft","Sent","Paid","Overdue","Cancelled"] as InvoiceStatus[]).map(s => <option key={s}>{s}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Type">
+                <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
+                  <option>All</option><option>Preliminary</option><option>Final</option>
+                </select>
+              </FormField>
+              <FormField label="Currency">
+                <select value={currencyFilter} onChange={e => { setCurrencyFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28">
+                  <option>All</option><option>USD</option><option>EUR</option><option>EGP</option>
+                </select>
+              </FormField>
+              <FormField label="From Date">
+                <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              </FormField>
+              <FormField label="To Date">
+                <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              </FormField>
+              {activeFilterCount > 0 && (
+                <button onClick={clearFilters} className="text-xs text-destructive hover:underline pb-1.5">Clear all</button>
+              )}
+            </div>
+          )}
+
+          {/* Bulk Actions Bar */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 pt-2 border-t">
+              <span className="text-sm font-semibold text-foreground">{selectedIds.size} selected</span>
+              <button onClick={() => handleBulkStatusChange("Paid")} className="text-xs px-2.5 py-1 rounded bg-success/15 text-success font-semibold hover:bg-success/25">Mark Paid</button>
+              <button onClick={() => handleBulkStatusChange("Sent")} className="text-xs px-2.5 py-1 rounded bg-info/15 text-info font-semibold hover:bg-info/25">Mark Sent</button>
+              <button onClick={handleBulkDelete} className="text-xs px-2.5 py-1 rounded bg-destructive/15 text-destructive font-semibold hover:bg-destructive/25">Delete</button>
+              <button onClick={() => setSelectedIds(new Set())} className="text-xs text-muted-foreground hover:underline ml-auto">Deselect all</button>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr>{["#","INVOICE NO","DATE","DUE","OPERATOR","FLIGHT REF","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"].map(h => (
-              <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
-            ))}</tr></thead>
+            <thead><tr>
+              <th className="data-table-header px-3 py-3 w-8">
+                <input type="checkbox" checked={pageData.length > 0 && selectedIds.size === pageData.length} onChange={toggleAll} className="rounded border-border" />
+              </th>
+              {["#","INVOICE NO","DATE","DUE","OPERATOR","FLIGHT REF","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"].map(h => (
+                <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
+              ))}
+            </tr></thead>
             <tbody>
               {pageData.length === 0 ? (
-                <tr><td colSpan={13} className="text-center py-16"><FileText size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Invoices</p></td></tr>
+                <tr><td colSpan={14} className="text-center py-16">
+                  <FileText size={40} className="mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="font-semibold text-foreground">No Invoices Found</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {activeFilterCount > 0 ? "Try adjusting your filters" : "Create your first invoice to get started"}
+                  </p>
+                </td></tr>
               ) : pageData.map((inv, i) => (
-                <tr key={inv.id} className="data-table-row">
+                <tr key={inv.id} className={`data-table-row cursor-pointer ${selectedIds.has(inv.id) ? "bg-primary/5" : ""}`} onClick={() => setDetailInvoice(inv)}>
+                  <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                    <input type="checkbox" checked={selectedIds.has(inv.id)} onChange={() => toggleSelect(inv.id)} className="rounded border-border" />
+                  </td>
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                   <td className="px-3 py-2.5 font-mono text-xs font-semibold text-foreground">{inv.invoice_no}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{inv.date}</td>
@@ -340,13 +492,16 @@ export default function InvoicesPage() {
                   <td className="px-3 py-2.5 font-bold text-success">${(inv.total || 0).toLocaleString()}</td>
                   <td className="px-3 py-2.5 text-muted-foreground">{inv.currency}</td>
                   <td className="px-3 py-2.5"><StatusBadge s={inv.status} /></td>
-                  <td className="px-3 py-2.5 flex gap-1.5">
-                    {inv.invoice_type !== "Final" && (
-                      <button onClick={() => handleFinalize(inv)} className="text-success hover:text-success/80" title="Finalize"><ShieldCheck size={13} /></button>
-                    )}
-                    <button onClick={() => setPrintInvoice(toPrintFormat(inv))} className="text-primary hover:text-primary/80"><Printer size={13} /></button>
-                    <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
-                    <button onClick={() => remove(inv.id)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
+                  <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => setDetailInvoice(inv)} className="text-primary hover:text-primary/80" title="View Details"><Eye size={13} /></button>
+                      {inv.invoice_type !== "Final" && (
+                        <button onClick={() => handleFinalize(inv)} className="text-success hover:text-success/80" title="Finalize"><ShieldCheck size={13} /></button>
+                      )}
+                      <button onClick={() => setPrintInvoice(toPrintFormat(inv))} className="text-muted-foreground hover:text-foreground" title="Print"><Printer size={13} /></button>
+                      <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
+                      <button onClick={() => remove(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -354,9 +509,15 @@ export default function InvoicesPage() {
           </table>
         </div>
 
+        {/* Pagination with summary */}
         {filtered.length > 0 && (
           <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
+            <div className="flex items-center gap-4">
+              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
+              {filtered.length !== invoices.length && (
+                <span className="text-xs text-primary">({invoices.length} total)</span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
               <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
@@ -366,9 +527,19 @@ export default function InvoicesPage() {
         )}
       </div>
 
+      {/* Modals */}
       {showAdd && <InvoiceForm title="New Invoice" data={newInvoice} onChange={setNewInvoice} onSave={saveNew} onCancel={() => setShowAdd(false)} />}
       {editId && <InvoiceForm title="Edit Invoice" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} />}
       {printInvoice && <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />}
+      {detailInvoice && (
+        <InvoiceDetailModal
+          invoice={detailInvoice}
+          onClose={() => setDetailInvoice(null)}
+          onEdit={startEdit}
+          onFinalize={handleFinalize}
+          onPrint={(inv) => setPrintInvoice(toPrintFormat(inv))}
+        />
+      )}
     </div>
   );
 }
