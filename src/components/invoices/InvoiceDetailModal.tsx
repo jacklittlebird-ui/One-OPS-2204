@@ -1,6 +1,6 @@
 import { X, FileText, DollarSign, Plane, Calendar, MapPin, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard } from "lucide-react";
 
-type InvoiceRow = {
+export type InvoiceRow = {
   id: string; invoice_no: string; date: string; due_date: string;
   operator: string; airline_iata: string; flight_ref: string; description: string;
   civil_aviation: number; handling: number; airport_charges: number;
