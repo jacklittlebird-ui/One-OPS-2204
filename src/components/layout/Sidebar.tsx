@@ -90,6 +90,9 @@ const navSections: NavSection[] = [
       { label: "Aircraft Types", path: "/aircraft-types" },
     ],
   },
+  {
+    label: "USERS", icon: <Users size={18} />, path: "/users",
+  },
 ];
 
 
