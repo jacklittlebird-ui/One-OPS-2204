@@ -73,7 +73,7 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-5 md:space-y-6">
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-primary/5 rounded-lg p-3 text-center">
