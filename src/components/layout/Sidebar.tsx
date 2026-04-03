@@ -176,6 +176,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             ) : (
               <Link
                 to={section.path || "/"}
+                onClick={onNavigate}
                 className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
                   isActive(section.path || "/")
                     ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
