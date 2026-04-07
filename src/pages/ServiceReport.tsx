@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
   DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, Receipt,
-  CheckCircle2, XCircle, Clock, MessageSquare
+  CheckCircle2, XCircle, Clock, MessageSquare, AlertCircle
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -451,6 +451,12 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
   );
 }
 
+// A merged row can be either a completed service report or an unlinked flight schedule
+interface MergedRow extends ReportFormData {
+  isLinked: boolean; // true = has service report, false = only flight schedule
+  flightScheduleId?: string;
+}
+
 export default function ServiceReportPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -460,6 +466,7 @@ export default function ServiceReportPage() {
   const [handlingFilter, setHandlingFilter] = useState("All Types");
   const [stationFilter, setStationFilter] = useState("All Stations");
   const [reviewFilter, setReviewFilter] = useState("All Review");
+  const [statusFilter, setStatusFilter] = useState("All Status");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
@@ -488,10 +495,74 @@ export default function ServiceReportPage() {
     },
   });
 
+  // Fetch flight schedules
+  const { data: dbFlights = [] } = useQuery({
+    queryKey: ["flight_schedules"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("flight_schedules").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const reports: ReportFormData[] = useMemo(
     () => dbReports.map(r => dbToForm(r, dbDelays)),
     [dbReports, dbDelays]
   );
+
+  // Merge: show all flight schedules + linked service reports
+  const mergedRows: MergedRow[] = useMemo(() => {
+    // Index service reports by flight_no for quick lookup
+    const reportsByFlight = new Map<string, ReportFormData[]>();
+    reports.forEach(r => {
+      const key = r.flightNo.trim().toLowerCase();
+      if (!reportsByFlight.has(key)) reportsByFlight.set(key, []);
+      reportsByFlight.get(key)!.push(r);
+    });
+
+    const rows: MergedRow[] = [];
+    const usedReportIds = new Set<string>();
+
+    // For each flight schedule, find matching service reports or create placeholder
+    dbFlights.forEach(f => {
+      const key = f.flight_no.trim().toLowerCase();
+      const matchedReports = reportsByFlight.get(key) || [];
+      if (matchedReports.length > 0) {
+        matchedReports.forEach(r => {
+          usedReportIds.add(r.id!);
+          rows.push({ ...r, isLinked: true, flightScheduleId: f.id });
+        });
+      } else {
+        // Create a placeholder row from flight schedule data
+        rows.push({
+          ...emptyReport() as ReportFormData,
+          id: undefined,
+          flightNo: f.flight_no,
+          operator: f.airline,
+          aircraftType: f.aircraft,
+          route: `${f.origin}/${f.destination}`,
+          sta: f.departure,
+          std: f.arrival,
+          reviewStatus: "pending",
+          reviewComment: "",
+          reviewedBy: "",
+          reviewedAt: null,
+          delays: [],
+          isLinked: false,
+          flightScheduleId: f.id,
+        });
+      }
+    });
+
+    // Also add service reports not linked to any flight schedule
+    reports.forEach(r => {
+      if (!usedReportIds.has(r.id!)) {
+        rows.push({ ...r, isLinked: true });
+      }
+    });
+
+    return rows;
+  }, [reports, dbFlights]);
 
   // Save new report
   const addMutation = useMutation({
@@ -529,7 +600,6 @@ export default function ServiceReportPage() {
       const dbData = formToDb(data);
       const { error } = await supabase.from("service_reports").update(dbData as any).eq("id", id);
       if (error) throw error;
-      // Replace delays: delete old, insert new
       await supabase.from("service_report_delays").delete().eq("report_id", id);
       if (delays.length > 0) {
         const delayRows = delays.map((d, i) => ({
@@ -584,11 +654,13 @@ export default function ServiceReportPage() {
     }
   }, [location.search]);
 
-  const allStations = useMemo(() => [...new Set(reports.map(r => r.station))], [reports]);
-  const allHandlingTypes = useMemo(() => [...new Set(reports.map(r => r.handlingType))], [reports]);
+  const allStations = useMemo(() => [...new Set(mergedRows.filter(r => r.station).map(r => r.station))], [mergedRows]);
+  const allHandlingTypes = useMemo(() => [...new Set(mergedRows.filter(r => r.handlingType).map(r => r.handlingType))], [mergedRows]);
 
   const filtered = useMemo(() => {
-    let r = reports;
+    let r = mergedRows;
+    if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
+    if (statusFilter === "Pending Completion") r = r.filter(x => !x.isLinked);
     if (handlingFilter !== "All Types") r = r.filter(x => x.handlingType === handlingFilter);
     if (stationFilter !== "All Stations") r = r.filter(x => x.station === stationFilter);
     if (reviewFilter !== "All Review") r = r.filter(x => x.reviewStatus === reviewFilter);
@@ -603,7 +675,7 @@ export default function ServiceReportPage() {
       );
     }
     return r;
-  }, [reports, handlingFilter, stationFilter, reviewFilter, dateFrom, dateTo, search]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, dateFrom, dateTo, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -783,6 +855,11 @@ export default function ServiceReportPage() {
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <option>All Status</option>
+            <option>Completed</option>
+            <option>Pending Completion</option>
+          </select>
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
           <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> New Report</button>
@@ -812,34 +889,42 @@ export default function ServiceReportPage() {
                   </td>
                 </tr>
               ) : pageData.map((r, i) => (
-                <tr key={r.id} className="data-table-row">
+                <tr key={r.id || `fs-${r.flightScheduleId}-${i}`} className={`data-table-row ${!r.isLinked ? "bg-muted/30" : ""}`}>
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground whitespace-nowrap">{r.operator}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flightNo}</td>
                   <td className="px-3 py-2.5">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${statusColor[r.handlingType] || "bg-muted text-muted-foreground"}`}>
-                      {r.handlingType}
-                    </span>
+                    {r.isLinked ? (
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${statusColor[r.handlingType] || "bg-muted text-muted-foreground"}`}>
+                        {r.handlingType}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">—</span>
+                    )}
                   </td>
-                  <td className="px-3 py-2.5 text-foreground">{r.station}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.isLinked ? r.station : "—"}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.route}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.arrivalDate}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.arrivalDate || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.aircraftType}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.mtow}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.isLinked ? r.mtow : "—"}</td>
                   <td className="px-3 py-2.5 text-center">
-                    {(() => { const dn = autoDayNight(r.td, r.arrivalDate); return (
+                    {r.isLinked ? (() => { const dn = autoDayNight(r.td, r.arrivalDate); return (
                       <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${dn === "N" ? "bg-info/15 text-info" : "bg-warning/15 text-warning"}`}>
                         {dn}
                       </span>
-                    ); })()}
+                    ); })() : "—"}
                   </td>
-                  <td className="px-3 py-2.5 text-foreground">{r.paxInAdultI + r.paxInInfI + r.paxInAdultD + r.paxInInfD}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.isLinked ? r.paxInAdultI + r.paxInInfI + r.paxInAdultD + r.paxInInfD : "—"}</td>
                   <td className="px-3 py-2.5 text-foreground">
-                    {r.delays && r.delays.length > 0 ? r.delays.map(d => d.code).join("/") : "—"}
+                    {r.isLinked && r.delays && r.delays.length > 0 ? r.delays.map(d => d.code).join("/") : "—"}
                   </td>
-                  <td className="px-3 py-2.5 font-semibold text-success">{r.totalCost.toLocaleString()}</td>
+                  <td className="px-3 py-2.5 font-semibold text-success">{r.isLinked ? r.totalCost.toLocaleString() : "—"}</td>
                   <td className="px-3 py-2.5">
-                    {(() => {
+                    {!r.isLinked ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+                        <AlertCircle size={11} />Incomplete
+                      </span>
+                    ) : (() => {
                       const cfg: Record<string, { icon: React.ReactNode; cls: string }> = {
                         pending: { icon: <Clock size={11} />, cls: "bg-warning/15 text-warning" },
                         approved: { icon: <CheckCircle2 size={11} />, cls: "bg-success/15 text-success" },
@@ -855,35 +940,58 @@ export default function ServiceReportPage() {
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">
-                      {r.reviewStatus === "pending" && (
+                      {!r.isLinked ? (
+                        <button
+                          onClick={() => {
+                            setNewReport({
+                              ...emptyReport(),
+                              flightNo: r.flightNo,
+                              operator: r.operator,
+                              aircraftType: r.aircraftType,
+                              route: r.route,
+                              sta: r.sta,
+                              std: r.std,
+                            });
+                            setShowAdd(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                          title="Complete Service Report"
+                        >
+                          <Pencil size={12} /> Complete
+                        </button>
+                      ) : (
                         <>
-                          <button onClick={async () => {
-                            await supabase.from("service_reports").update({ review_status: "approved", reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
-                            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
-                            toast({ title: "✅ Approved" });
-                          }} className="text-success hover:text-success/80" title="Approve"><CheckCircle2 size={13} /></button>
-                          <button onClick={async () => {
-                            const comment = prompt("Rejection reason:");
-                            if (comment === null) return;
-                            await supabase.from("service_reports").update({ review_status: "rejected", review_comment: comment, reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
-                            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
-                            toast({ title: "❌ Rejected", description: comment });
-                          }} className="text-destructive hover:text-destructive/80" title="Reject"><XCircle size={13} /></button>
+                          {r.reviewStatus === "pending" && (
+                            <>
+                              <button onClick={async () => {
+                                await supabase.from("service_reports").update({ review_status: "approved", reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
+                                queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                                toast({ title: "✅ Approved" });
+                              }} className="text-success hover:text-success/80" title="Approve"><CheckCircle2 size={13} /></button>
+                              <button onClick={async () => {
+                                const comment = prompt("Rejection reason:");
+                                if (comment === null) return;
+                                await supabase.from("service_reports").update({ review_status: "rejected", review_comment: comment, reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
+                                queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                                toast({ title: "❌ Rejected", description: comment });
+                              }} className="text-destructive hover:text-destructive/80" title="Reject"><XCircle size={13} /></button>
+                            </>
+                          )}
+                          {r.reviewStatus === "approved" && (
+                            <button onClick={() => {
+                              const params = new URLSearchParams({
+                                operator: r.operator, flightRef: r.flightNo,
+                                description: `${r.handlingType} – ${r.route}`,
+                                civilAviation: String(r.civilAviationFee), handling: String(r.handlingFee),
+                                airportCharges: String(r.airportCharge),
+                              });
+                              navigate(`/invoices?${params.toString()}`);
+                            }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
+                          )}
+                          <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
+                          <button onClick={() => deleteReport(r.id!)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
                         </>
                       )}
-                      {r.reviewStatus === "approved" && (
-                        <button onClick={() => {
-                          const params = new URLSearchParams({
-                            operator: r.operator, flightRef: r.flightNo,
-                            description: `${r.handlingType} – ${r.route}`,
-                            civilAviation: String(r.civilAviationFee), handling: String(r.handlingFee),
-                            airportCharges: String(r.airportCharge),
-                          });
-                          navigate(`/invoices?${params.toString()}`);
-                        }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
-                      )}
-                      <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
-                      <button onClick={() => deleteReport(r.id!)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
                     </div>
                   </td>
                 </tr>
