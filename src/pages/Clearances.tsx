@@ -137,7 +137,7 @@ export default function ClearancesPage() {
       "Airline": c.airline_id ? airlineMap[c.airline_id]?.name : "", "Route": c.route,
       "Arrival Flight": c.arrival_flight, "Departure Flight": c.departure_flight,
       "STA": c.sta, "STD": c.std, "Skd Type": c.skd_type,
-      "Permit No": c.permit_no, "Type": c.clearance_type, "Purpose": c.purpose,
+      "Permit No": c.permit_no, "Type": c.clearance_type,
       "Status": c.status, "Valid From": c.valid_from, "Valid To": c.valid_to,
       "PAX": c.passengers, "Cargo": c.cargo_kg,
     })),
@@ -209,7 +209,7 @@ export default function ClearancesPage() {
                 const statusIcon = c.status === "Pending" ? <Clock size={12} /> : c.status === "Approved" ? <CheckCircle2 size={12} /> : c.status === "Rejected" ? <XCircle size={12} /> : <AlertTriangle size={12} />;
                 return (
                   <TableRow key={c.id}>
-                    <TableCell className="text-xs">{c.requested_date || "—"}</TableCell>
+                    <TableCell className="text-xs">{formatDateDMY(c.requested_date)}</TableCell>
                     <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
                     <TableCell className="text-xs font-mono">{c.registration || "—"}</TableCell>
                     <TableCell className="text-xs">{c.aircraft_type || "—"}</TableCell>
