@@ -797,6 +797,8 @@ export default function ServiceReportPage() {
                               route: r.route,
                               sta: r.sta,
                               std: r.std,
+                              arrivalDate: r.arrivalDate,
+                              departureDate: r.departureDate,
                             });
                             setShowAdd(true);
                           }}
