@@ -309,186 +309,19 @@ function PayablesDashboard() {
 }
 
 function AdminDashboard() {
-  const navigate = useNavigate();
-
-  const { data: clearances = [] } = useQuery({
-    queryKey: ["admin_clearances"],
-    queryFn: async () => { const { data } = await supabase.from("clearances").select("id,status,valid_to,passengers"); return data || []; },
-  });
-  const { data: flights = [] } = useQuery({
-    queryKey: ["admin_flights"],
-    queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("id,status"); return data || []; },
-  });
-  const { data: reports = [] } = useQuery({
-    queryKey: ["admin_reports"],
-    queryFn: async () => { const { data } = await supabase.from("service_reports").select("id,review_status,total_cost"); return data || []; },
-  });
-  const { data: invoices = [] } = useQuery({
-    queryKey: ["admin_invoices"],
-    queryFn: async () => { const { data } = await supabase.from("invoices").select("id,status,total"); return data || []; },
-  });
-  const { data: vendorInv = [] } = useQuery({
-    queryKey: ["admin_vendor_inv"],
-    queryFn: async () => { const { data } = await supabase.from("vendor_invoices").select("id,status,total"); return data || []; },
-  });
-  const { data: contracts = [] } = useQuery({
-    queryKey: ["admin_contracts"],
-    queryFn: async () => { const { data } = await supabase.from("contracts").select("id,status,end_date,annual_value"); return data || []; },
-  });
-  const { data: staff = [] } = useQuery({
-    queryKey: ["admin_staff"],
-    queryFn: async () => { const { data } = await supabase.from("staff_roster").select("id,status"); return data || []; },
-  });
-  const { data: providers = [] } = useQuery({
-    queryKey: ["admin_providers"],
-    queryFn: async () => { const { data } = await supabase.from("service_providers").select("id,status"); return data || []; },
-  });
-
-  const pendingClearances = clearances.filter(c => c.status === "Pending").length;
-  const approvedClearances = clearances.filter(c => c.status === "Approved").length;
-  const scheduledFlights = flights.filter(f => f.status === "Scheduled").length;
-  const pendingReports = reports.filter(r => r.review_status === "pending").length;
-  const approvedReports = reports.filter(r => r.review_status === "approved").length;
-  const rejectedReports = reports.filter(r => r.review_status === "rejected").length;
-  const totalRevenue = invoices.reduce((s, i) => s + (i.total || 0), 0);
-  const paidRevenue = invoices.filter(i => i.status === "Paid").reduce((s, i) => s + (i.total || 0), 0);
-  const overdueInvoices = invoices.filter(i => i.status === "Overdue").length;
-  const totalPayables = vendorInv.reduce((s, v) => s + (v.total || 0), 0);
-  const activeContracts = contracts.filter(c => c.status === "Active").length;
-  const expiringContracts = contracts.filter(c => c.status === "Active" && c.end_date && (new Date(c.end_date).getTime() - Date.now()) / 86400000 <= 90).length;
-  const activeStaff = staff.filter(s => s.status === "Active").length;
-  const activeVendors = providers.filter(p => p.status === "Active").length;
-
-  const sections = [
-    {
-      title: "Clearance & Schedule",
-      icon: <ShieldCheck size={16} className="text-primary" />,
-      kpis: [
-        { label: "Pending Permits", value: pendingClearances, color: "text-warning" },
-        { label: "Approved", value: approvedClearances, color: "text-success" },
-        { label: "Scheduled Flights", value: scheduledFlights, color: "text-primary" },
-      ],
-      actions: [
-        { label: "Clearances", path: "/clearances" },
-        { label: "Flight Schedule", path: "/flight-schedule" },
-        { label: "Overfly", path: "/overfly-schedule" },
-      ],
-    },
-    {
-      title: "Operations & Review",
-      icon: <Eye size={16} className="text-info" />,
-      kpis: [
-        { label: "Pending Review", value: pendingReports, color: "text-warning" },
-        { label: "Approved", value: approvedReports, color: "text-success" },
-        { label: "Rejected", value: rejectedReports, color: "text-destructive" },
-      ],
-      actions: [
-        { label: "Service Reports", path: "/service-report" },
-        { label: "Staff Roster", path: "/staff-roster" },
-        { label: "Bulletins", path: "/bulletins" },
-      ],
-    },
-    {
-      title: "Revenue & Receivables",
-      icon: <Receipt size={16} className="text-success" />,
-      kpis: [
-        { label: "Total Revenue", value: `$${totalRevenue.toLocaleString()}`, color: "text-primary" },
-        { label: "Collected", value: `$${paidRevenue.toLocaleString()}`, color: "text-success" },
-        { label: "Overdue Invoices", value: overdueInvoices, color: "text-destructive" },
-      ],
-      actions: [
-        { label: "Client Invoices", path: "/invoices" },
-        { label: "Aging Reports", path: "/aging-reports" },
-        { label: "Financial Reports", path: "/financial-reports" },
-      ],
-    },
-    {
-      title: "Payables & Vendors",
-      icon: <CreditCard size={16} className="text-destructive" />,
-      kpis: [
-        { label: "Total Payables", value: `$${totalPayables.toLocaleString()}`, color: "text-warning" },
-        { label: "Active Vendors", value: activeVendors, color: "text-info" },
-      ],
-      actions: [
-        { label: "Vendor Invoices", path: "/vendor-invoices" },
-        { label: "Service Providers", path: "/service-providers" },
-      ],
-    },
-    {
-      title: "Contracts & Pricing",
-      icon: <FileText size={16} className="text-accent-foreground" />,
-      kpis: [
-        { label: "Active Contracts", value: activeContracts, color: "text-primary" },
-        { label: "Expiring <90d", value: expiringContracts, color: "text-warning" },
-      ],
-      actions: [
-        { label: "Contracts", path: "/contracts" },
-        { label: "Chart of Services", path: "/services" },
-        { label: "Airport Charges", path: "/airport-charges" },
-      ],
-    },
-    {
-      title: "Administration",
-      icon: <Users size={16} className="text-primary" />,
-      kpis: [
-        { label: "Active Staff", value: activeStaff, color: "text-success" },
-        { label: "Total Reports", value: reports.length, color: "text-info" },
-      ],
-      actions: [
-        { label: "Users", path: "/users" },
-        { label: "Settings", path: "/settings" },
-        { label: "Countries", path: "/countries" },
-      ],
-    },
-  ];
-
   return (
-    <div className="space-y-4">
-      {/* Top-level KPI strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[
-          { label: "Flights Scheduled", value: scheduledFlights, icon: <Plane size={18} />, color: "text-primary" },
-          { label: "Pending Reviews", value: pendingReports, icon: <Clock size={18} />, color: "text-warning" },
-          { label: "Revenue", value: `$${totalRevenue.toLocaleString()}`, icon: <DollarSign size={18} />, color: "text-success" },
-          { label: "Overdue", value: overdueInvoices, icon: <AlertTriangle size={18} />, color: "text-destructive" },
-          { label: "Contracts", value: activeContracts, icon: <FileText size={18} />, color: "text-info" },
-          { label: "Staff Active", value: activeStaff, icon: <Users size={18} />, color: "text-accent-foreground" },
-        ].map(s => (
-          <Card key={s.label}><CardContent className="p-3 flex items-center gap-3">
-            <div className={s.color}>{s.icon}</div>
-            <div><p className="text-lg font-bold">{s.value}</p><p className="text-[10px] text-muted-foreground">{s.label}</p></div>
-          </CardContent></Card>
-        ))}
-      </div>
-
-      {/* Department sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {sections.map(section => (
-          <Card key={section.title} className="overflow-hidden">
-            <CardHeader className="pb-2 pt-3 px-4">
-              <CardTitle className="text-sm flex items-center gap-2">{section.icon} {section.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-3 space-y-3">
-              <div className="flex flex-wrap gap-3">
-                {section.kpis.map(k => (
-                  <div key={k.label} className="text-center">
-                    <p className={`text-base font-bold ${k.color}`}>{k.value}</p>
-                    <p className="text-[9px] text-muted-foreground">{k.label}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {section.actions.map(a => (
-                  <Button key={a.path} variant="outline" size="sm" className="text-xs h-7" onClick={() => navigate(a.path)}>
-                    {a.label}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+    <Tabs defaultValue="operations" className="w-full">
+      <TabsList className="bg-muted/50 p-1">
+        <TabsTrigger value="operations" className="flex items-center gap-1.5 data-[state=active]:shadow-sm">
+          <Plane size={14} /> Operations
+        </TabsTrigger>
+        <TabsTrigger value="accountant" className="flex items-center gap-1.5 data-[state=active]:shadow-sm">
+          <DollarSign size={14} /> Finance
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="operations" className="mt-4"><OperationsDashboard /></TabsContent>
+      <TabsContent value="accountant" className="mt-4"><AccountantDashboard /></TabsContent>
+    </Tabs>
   );
 }
 
