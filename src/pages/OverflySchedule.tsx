@@ -1,12 +1,16 @@
 import { useState, useMemo } from "react";
 import { formatDateDMY } from "@/lib/utils";
-import { Search, Plus, Download, Globe, Pencil, Trash2, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database, Eye, MapPin, Ban } from "lucide-react";
+import { Search, Plus, Download, Globe, Pencil, Trash2, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database, Eye, Ban } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+
+type AirlineRow = { id: string; name: string; iata_code: string; icao_code: string };
 
 type OverflyRow = {
   id: string; flight_no: string; operator: string; registration: string; aircraft_type: string;
@@ -31,12 +35,14 @@ const PAGE_SIZE = 15;
 
 export default function OverflySchedulePage() {
   const { data, isLoading, add, update, remove } = useSupabaseTable<OverflyRow>("overfly_schedules");
+  const { data: airlines } = useSupabaseTable<AirlineRow>("airlines");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<OverflyRow | null>(null);
   const [editItem, setEditItem] = useState<OverflyRow | null>(null);
+  const [operatorOpen, setOperatorOpen] = useState(false);
 
   const emptyForm = { flight_no: "", operator: "", registration: "", aircraft_type: "", route_from: "", route_to: "", valid_from: "", valid_to: "", permit_no: "", status: "Pending" };
   const [form, setForm] = useState<any>(emptyForm);
@@ -165,33 +171,60 @@ export default function OverflySchedulePage() {
           <DialogHeader><DialogTitle>{editItem ? "Edit Overfly" : "Add Overfly"}</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Flight No" value={form.flight_no} onChange={e => setForm({ ...form, flight_no: e.target.value.toUpperCase() })} />
-              <Input placeholder="Operator" value={form.operator} onChange={e => setForm({ ...form, operator: e.target.value })} />
+              <div><label className="text-xs text-muted-foreground">Flight No</label><Input value={form.flight_no} onChange={e => setForm({ ...form, flight_no: e.target.value.toUpperCase() })} /></div>
+              <div>
+                <label className="text-xs text-muted-foreground">Operator</label>
+                <Popover open={operatorOpen} onOpenChange={setOperatorOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start font-normal h-10">
+                      {form.operator || <span className="text-muted-foreground">Select airline…</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[320px] p-0 pointer-events-auto" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search airlines…" />
+                      <CommandList>
+                        <CommandEmpty>No airlines found</CommandEmpty>
+                        <CommandGroup>
+                          {airlines.map(a => (
+                            <CommandItem key={a.id} value={`${a.name} ${a.iata_code} ${a.icao_code}`} onSelect={() => { setForm({ ...form, operator: a.name }); setOperatorOpen(false); }}>
+                              <span className="font-mono text-xs mr-2">{a.iata_code}</span>{a.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Registration" value={form.registration} onChange={e => setForm({ ...form, registration: e.target.value.toUpperCase() })} />
-              <Input placeholder="A/C Type" value={form.aircraft_type} onChange={e => setForm({ ...form, aircraft_type: e.target.value })} />
+              <div><label className="text-xs text-muted-foreground">Registration</label><Input value={form.registration} onChange={e => setForm({ ...form, registration: e.target.value.toUpperCase() })} /></div>
+              <div><label className="text-xs text-muted-foreground">A/C Type</label><Input value={form.aircraft_type} onChange={e => setForm({ ...form, aircraft_type: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="From" value={form.route_from} onChange={e => setForm({ ...form, route_from: e.target.value.toUpperCase() })} />
-              <Input placeholder="To" value={form.route_to} onChange={e => setForm({ ...form, route_to: e.target.value.toUpperCase() })} />
+              <div><label className="text-xs text-muted-foreground">From</label><Input value={form.route_from} onChange={e => setForm({ ...form, route_from: e.target.value.toUpperCase() })} /></div>
+              <div><label className="text-xs text-muted-foreground">To</label><Input value={form.route_to} onChange={e => setForm({ ...form, route_to: e.target.value.toUpperCase() })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><label className="text-xs text-muted-foreground">Valid From</label><Input type="date" value={form.valid_from} onChange={e => setForm({ ...form, valid_from: e.target.value })} /></div>
               <div><label className="text-xs text-muted-foreground">Valid To</label><Input type="date" value={form.valid_to} onChange={e => setForm({ ...form, valid_to: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Permit No" value={form.permit_no} onChange={e => setForm({ ...form, permit_no: e.target.value })} />
-              <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                  <SelectItem value="Expired">Expired</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
+              <div><label className="text-xs text-muted-foreground">Permit No</label><Input value={form.permit_no} onChange={e => setForm({ ...form, permit_no: e.target.value })} /></div>
+              <div>
+                <label className="text-xs text-muted-foreground">Status</label>
+                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                    <SelectItem value="Expired">Expired</SelectItem>
+                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button className="w-full" onClick={handleSave}>{editItem ? "Update" : "Save"}</Button>
           </div>
