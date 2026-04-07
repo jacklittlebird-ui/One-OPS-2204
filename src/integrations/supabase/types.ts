@@ -1401,6 +1401,8 @@ export type Database = {
           route_to: string
           status: Database["public"]["Enums"]["overfly_status"]
           updated_at: string
+          valid_from: string | null
+          valid_to: string | null
         }
         Insert: {
           aircraft_type?: string | null
@@ -1425,6 +1427,8 @@ export type Database = {
           route_to?: string
           status?: Database["public"]["Enums"]["overfly_status"]
           updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
         }
         Update: {
           aircraft_type?: string | null
@@ -1449,6 +1453,8 @@ export type Database = {
           route_to?: string
           status?: Database["public"]["Enums"]["overfly_status"]
           updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
         }
         Relationships: []
       }
@@ -2050,7 +2056,12 @@ export type Database = {
         | "Claimed"
         | "Forwarded"
         | "Disposed"
-      overfly_status: "Approved" | "Pending" | "Rejected" | "Expired"
+      overfly_status:
+        | "Approved"
+        | "Pending"
+        | "Rejected"
+        | "Expired"
+        | "Cancelled"
       service_category:
         | "Civil Aviation"
         | "Ground Handling"
@@ -2241,7 +2252,13 @@ export const Constants = {
         "Forwarded",
         "Disposed",
       ],
-      overfly_status: ["Approved", "Pending", "Rejected", "Expired"],
+      overfly_status: [
+        "Approved",
+        "Pending",
+        "Rejected",
+        "Expired",
+        "Cancelled",
+      ],
       service_category: [
         "Civil Aviation",
         "Ground Handling",
