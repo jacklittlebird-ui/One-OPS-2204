@@ -264,6 +264,13 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
             <div>
               <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Day of Week</h4>
               <div className="flex flex-wrap gap-1">
+                <button type="button" onClick={() => {
+                  const allSelected = WEEK_DAYS.every(d => selectedDays.includes(d));
+                  setForm({ ...form, week_days: allSelected ? "" : WEEK_DAYS.join(",") });
+                }}
+                  className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${WEEK_DAYS.every(d => selectedDays.includes(d)) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-muted-foreground hover:bg-accent"}`}>
+                  All
+                </button>
                 {WEEK_DAYS.map(d => (
                   <button key={d} type="button" onClick={() => toggleDay(d)}
                     className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${selectedDays.includes(d) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-muted-foreground hover:bg-accent"}`}>
