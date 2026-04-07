@@ -40,8 +40,6 @@ export default function ClearanceDetailDialog({ item, onClose, airlineMap }: Pro
               <Field label="A/C Type" value={item.aircraft_type} />
               <Field label="Departure Flight" value={item.departure_flight} />
               <Field label="Arrival Flight" value={item.arrival_flight} />
-              <Field label="Departure Date" value={formatDateDMY(item.departure_date)} />
-              <Field label="Arrival Date" value={formatDateDMY(item.arrival_date)} />
               <Field label="STA" value={item.sta} />
               <Field label="STD" value={item.std} />
               <Field label="Skd Type" value={item.skd_type} />
