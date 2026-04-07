@@ -17,7 +17,7 @@ type Row = {
   sort_order: number; is_total: boolean;
 };
 
-const emptyForm = { section: "National", tax: "", usd_except_ssh: "", usd_ssh: "", egp_all: "", sort_order: 0, is_total: false };
+const emptyForm = { section: "International", tax: "", usd_except_ssh: "", usd_ssh: "", egp_all: "", sort_order: 0, is_total: false };
 
 export default function AirportTaxPage() {
   const { data, isLoading } = useSupabaseTable<Row>("airport_tax", { orderBy: "sort_order", ascending: true });
@@ -26,7 +26,7 @@ export default function AirportTaxPage() {
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
-  const national = data.filter(r => r.section === "National");
+  const international = data.filter(r => r.section === "International");
   const domestic = data.filter(r => r.section === "Domestic");
 
   const handleExport = () => exportToExcel(data.map(r => ({
@@ -123,7 +123,7 @@ export default function AirportTaxPage() {
         <div className="text-center py-16 text-muted-foreground">Loading…</div>
       ) : (
         <div className="space-y-6">
-          {renderSection("National", national)}
+          {renderSection("International", international)}
           {renderSection("Domestic", domestic)}
         </div>
       )}
@@ -137,7 +137,7 @@ export default function AirportTaxPage() {
               <Select value={form.section} onValueChange={v => setForm(f => ({ ...f, section: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="National">National</SelectItem>
+                  <SelectItem value="International">International</SelectItem>
                   <SelectItem value="Domestic">Domestic</SelectItem>
                 </SelectContent>
               </Select>

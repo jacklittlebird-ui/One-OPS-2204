@@ -1,0 +1,1 @@
+UPDATE public.airport_tax SET section = 'International' WHERE section = 'National';
