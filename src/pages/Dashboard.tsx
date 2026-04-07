@@ -318,20 +318,7 @@ function ChannelDashboardContent({ channel }: { channel: Channel }) {
     case "payables": return <PayablesDashboard />;
     case "admin":
     default:
-      return (
-        <Tabs defaultValue="operations" className="w-full">
-          <TabsList className="bg-muted/50 p-1">
-            <TabsTrigger value="operations" className="flex items-center gap-1.5 data-[state=active]:shadow-sm">
-              <Plane size={14} /> Operations
-            </TabsTrigger>
-            <TabsTrigger value="accountant" className="flex items-center gap-1.5 data-[state=active]:shadow-sm">
-              <DollarSign size={14} /> Finance
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="operations" className="mt-4"><OperationsDashboard /></TabsContent>
-          <TabsContent value="accountant" className="mt-4"><AccountantDashboard /></TabsContent>
-        </Tabs>
-      );
+      return <AdminDashboard />;
   }
 }
 
