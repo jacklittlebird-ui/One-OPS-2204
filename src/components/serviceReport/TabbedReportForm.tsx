@@ -526,7 +526,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="MTOW (Tons)"><input className={readOnlyCls} value={data.mtow || ""} readOnly /></FormField>
                   <FormField label="Station"><input className={readOnlyCls} value={data.station || ""} readOnly /></FormField>
                   <FormField label="Route"><input className={readOnlyCls} value={data.route || ""} readOnly /></FormField>
-                  <FormField label="Departure Date"><input className={readOnlyCls} value={data.departureDate || ""} readOnly /></FormField>
+                  <DatePickerField label="Departure Date" value={data.departureDate || ""} onChange={() => {}} readOnly />
                 </div>
               </div>
               <div>
