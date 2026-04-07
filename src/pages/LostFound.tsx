@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateDMY } from "@/lib/utils";
 import { Search, Plus, Pencil, Trash2, X, Package, CheckCircle, Clock, AlertCircle, Database, Download, Eye } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
@@ -132,7 +133,7 @@ export default function LostFoundPage() {
               ) : filtered.map(row => (
                 <tr key={row.id} className="data-table-row">
                   <td className="px-3 py-2.5 font-mono text-xs font-semibold text-primary">{row.item_id || row.id.slice(0,8)}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{row.report_date}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(row.report_date)}</td>
                   <td className="px-3 py-2.5 font-mono font-semibold text-foreground">{row.flight_no}</td>
                   <td className="px-3 py-2.5 text-foreground">{row.airline}</td>
                   <td className="px-3 py-2.5 font-mono text-xs">{row.terminal || "—"}</td>
@@ -167,7 +168,7 @@ export default function LostFoundPage() {
           <DialogHeader><DialogTitle>Item Details — {detailItem?.item_id}</DialogTitle></DialogHeader>
           {detailItem && (
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{detailItem.report_date}</p></div>
+              <div><span className="text-muted-foreground text-xs">Date</span><p className="font-medium">{formatDateDMY(detailItem.report_date)}</p></div>
               <div><span className="text-muted-foreground text-xs">Flight</span><p className="font-medium">{detailItem.flight_no}</p></div>
               <div><span className="text-muted-foreground text-xs">Airline</span><p className="font-medium">{detailItem.airline}</p></div>
               <div><span className="text-muted-foreground text-xs">Station / Terminal</span><p className="font-medium">{detailItem.station} / {detailItem.terminal}</p></div>
