@@ -397,8 +397,8 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               <div>
                 <h3 className="text-sm font-bold text-accent uppercase tracking-wider mb-3">Services & Tags</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <FormField label="Project Tags"><input className={inputCls} value={data.projectTags || ""} onChange={e => set("projectTags", e.target.value)} placeholder="AVSEC, Full Handling…" /></FormField>
-                  <FormField label="Check-In System"><input className={inputCls} value={data.checkInSystem || ""} onChange={e => set("checkInSystem", e.target.value)} placeholder="Amadeus" /></FormField>
+                  <FormField label="Project Tags"><input className={inputCls} value={data.projectTags || ""} onChange={e => set("projectTags", e.target.value)} /></FormField>
+                  <FormField label="Check-In System"><input className={inputCls} value={data.checkInSystem || ""} onChange={e => set("checkInSystem", e.target.value)} /></FormField>
                 </div>
               </div>
             </div>
