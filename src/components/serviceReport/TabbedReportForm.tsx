@@ -1,0 +1,611 @@
+import { useState } from "react";
+import {
+  FileBarChart2, X, Plane, Clock, Users, DollarSign, UtensilsCrossed,
+  BedDouble, Fuel, Plus, Trash2, Building2
+} from "lucide-react";
+import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { Constants } from "@/integrations/supabase/types";
+import {
+  ReportFormData, ReportTab, REPORT_TABS, FLIGHT_STATUSES,
+  CateringLineItem, HotacLineItem, FuelLineItem, DelayEntry
+} from "./ReportFormTypes";
+import { generateAllCharges } from "@/data/airportChargesData";
+
+const handlingTypes = Constants.public.Enums.handling_type;
+const currencyOptions = ["USD", "EUR", "EGP"] as const;
+
+const stationOptions = [
+  { name: "Cairo", vendor: "Cairo Airport Company" },
+  { name: "Hurghada", vendor: "Egyptian Airports" },
+  { name: "Sharm El Sheikh", vendor: "Egyptian Airports" },
+  { name: "Luxor", vendor: "Egyptian Airports" },
+  { name: "Aswan", vendor: "Egyptian Airports" },
+];
+
+const allCharges = generateAllCharges();
+
+const inputCls = "text-sm border rounded px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
+const selectCls = "text-sm border rounded px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
+const readOnlyCls = "text-sm border rounded px-2.5 py-2 bg-muted text-foreground w-full";
+
+function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function isNightTime(timeStr: string, dateStr: string): boolean {
+  if (!timeStr || !dateStr) return false;
+  const [h] = timeStr.split(":").map(Number);
+  if (isNaN(h)) return false;
+  const month = new Date(dateStr).getMonth() + 1;
+  return month >= 4 && month <= 10 ? (h >= 17 || h < 3) : (h >= 16 || h < 4);
+}
+
+function autoDayNight(td: string, arrivalDate: string): "D" | "N" {
+  return (!td || !arrivalDate) ? "D" : isNightTime(td, arrivalDate) ? "N" : "D";
+}
+
+function calcGroundTime(co: string, ob: string): string {
+  if (!co || !ob) return "";
+  const [ch, cm] = co.split(":").map(Number);
+  const [oh, om] = ob.split(":").map(Number);
+  if (isNaN(ch) || isNaN(cm) || isNaN(oh) || isNaN(om)) return "";
+  let diff = (oh * 60 + om) - (ch * 60 + cm);
+  if (diff < 0) diff += 24 * 60;
+  return `${Math.floor(diff / 60)}:${String(diff % 60).padStart(2, "0")}`;
+}
+
+function timeDiffMinutes(t1: string, t2: string): number {
+  if (!t1 || !t2) return 0;
+  const [h1, m1] = t1.split(":").map(Number);
+  const [h2, m2] = t2.split(":").map(Number);
+  if ([h1, m1, h2, m2].some(isNaN)) return 0;
+  let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+  if (diff < 0) diff += 24 * 60;
+  return diff;
+}
+
+interface Props {
+  data: Partial<ReportFormData>;
+  onChange: (d: Partial<ReportFormData>) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  title: string;
+}
+
+const tabIcons: Record<ReportTab, React.ReactNode> = {
+  "flight": <Plane size={14} />,
+  "passengers": <Users size={14} />,
+  "timing": <Clock size={14} />,
+  "civil-aviation": <DollarSign size={14} />,
+  "catering": <UtensilsCrossed size={14} />,
+  "hotac": <BedDouble size={14} />,
+  "fuel-handling": <Fuel size={14} />,
+};
+
+export default function TabbedReportForm({ data, onChange, onSave, onCancel, title }: Props) {
+  const [activeTab, setActiveTab] = useState<ReportTab>("flight");
+
+  type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
+  const { data: delayCodes } = useSupabaseTable<DelayCodeRow>("delay_codes", { orderBy: "code", ascending: true });
+
+  const set = (key: keyof ReportFormData, val: any) => {
+    const updated = { ...data, [key]: val };
+    if (key === "co" || key === "ob") {
+      updated.groundTime = calcGroundTime(
+        key === "co" ? val : (data.co || ""),
+        key === "ob" ? val : (data.ob || "")
+      );
+    }
+    // Recalc financials on relevant changes
+    const financialKeys: (keyof ReportFormData)[] = ["mtow", "station", "td", "co", "ob", "to", "arrivalDate"];
+    if (financialKeys.includes(key) || key === "handlingFee") {
+      recalcFinancials(updated);
+    }
+    onChange(updated);
+  };
+
+  const recalcFinancials = (d: Partial<ReportFormData>) => {
+    const mtowStr = d.mtow || "";
+    const tonMatch = mtowStr.match(/(\d+)/);
+    if (!tonMatch) return;
+    const ton = parseInt(tonMatch[1]);
+    const station = d.station || "Cairo";
+    const vendor = stationOptions.find(s => s.name === station)?.vendor || "Egyptian Airports";
+    const charge = allCharges.find(c => c.vendorName === vendor && c.mtow === `${ton} TON`);
+    if (!charge) return;
+    const isNight = isNightTime(d.td || "", d.arrivalDate || "");
+    const landingFee = isNight ? charge.landingNight : charge.landingDay;
+    const groundMin = timeDiffMinutes(d.co || "", d.ob || "");
+
+    d.landingCharge = +landingFee.toFixed(2);
+    let civTotal = landingFee;
+    if (groundMin > 10 * 60) {
+      const days = Math.ceil(groundMin / (24 * 60));
+      d.housingDays = days;
+      d.housingCharge = +(charge.housing * days).toFixed(2);
+      d.parkingCharge = 0;
+      civTotal += d.housingCharge;
+    } else if (groundMin > 2 * 60) {
+      d.parkingCharge = +charge.parkingDay.toFixed(2);
+      d.housingCharge = 0;
+      d.housingDays = 0;
+      civTotal += d.parkingCharge;
+    } else {
+      d.parkingCharge = 0;
+      d.housingCharge = 0;
+      d.housingDays = 0;
+    }
+    d.civilAviationFee = +civTotal.toFixed(2);
+    d.airportCharge = +landingFee.toFixed(2);
+
+    // Parking hours
+    if (groundMin > 0) {
+      d.totalParkingHours = +(groundMin / 60).toFixed(2);
+    }
+
+    d.totalCost = +((d.civilAviationFee || 0) + (d.handlingFee || 0) + (d.airportCharge || 0)
+      + (d.fuelCharge || 0) + (d.cateringCharge || 0) + (d.hotacCharge || 0)).toFixed(2);
+  };
+
+  // Delay handlers
+  const delays = data.delays || [];
+  const setDelay = (index: number, field: keyof DelayEntry, val: any) => {
+    const newDelays = [...delays];
+    newDelays[index] = { ...newDelays[index], [field]: val };
+    if (field === "code") {
+      const found = delayCodes.find(dc => dc.code === val);
+      newDelays[index].explanation = found?.description || "";
+    }
+    onChange({ ...data, delays: newDelays });
+  };
+
+  // Line item helpers
+  const addCateringLine = () => {
+    const items = [...(data.cateringItems || []), { catering_item: "", supplier: "", quantity: 0, price_per_unit: 0, total: 0 }];
+    onChange({ ...data, cateringItems: items });
+  };
+  const setCateringLine = (i: number, field: keyof CateringLineItem, val: any) => {
+    const items = [...(data.cateringItems || [])];
+    items[i] = { ...items[i], [field]: val };
+    if (field === "quantity" || field === "price_per_unit") {
+      items[i].total = items[i].quantity * items[i].price_per_unit;
+    }
+    const cateringCharge = items.reduce((s, item) => s + item.total, 0);
+    onChange({ ...data, cateringItems: items, cateringCharge });
+  };
+  const removeCateringLine = (i: number) => {
+    const items = (data.cateringItems || []).filter((_, idx) => idx !== i);
+    const cateringCharge = items.reduce((s, item) => s + item.total, 0);
+    onChange({ ...data, cateringItems: items, cateringCharge });
+  };
+
+  const addHotacLine = () => {
+    const items = [...(data.hotacItems || []), { hotel_name: "", room_classification: "", type_of_service: "", quantity: 0, price_per_night: 0, total: 0 }];
+    onChange({ ...data, hotacItems: items });
+  };
+  const setHotacLine = (i: number, field: keyof HotacLineItem, val: any) => {
+    const items = [...(data.hotacItems || [])];
+    items[i] = { ...items[i], [field]: val };
+    if (field === "quantity" || field === "price_per_night") {
+      items[i].total = items[i].quantity * items[i].price_per_night;
+    }
+    const hotacCharge = items.reduce((s, item) => s + item.total, 0);
+    onChange({ ...data, hotacItems: items, hotacCharge });
+  };
+  const removeHotacLine = (i: number) => {
+    const items = (data.hotacItems || []).filter((_, idx) => idx !== i);
+    const hotacCharge = items.reduce((s, item) => s + item.total, 0);
+    onChange({ ...data, hotacItems: items, hotacCharge });
+  };
+
+  const addFuelLine = () => {
+    const items = [...(data.fuelItems || []), { fuel_type: "", supplier: "", quantity: 0, price_per_unit: 0, total: 0 }];
+    onChange({ ...data, fuelItems: items });
+  };
+  const setFuelLine = (i: number, field: keyof FuelLineItem, val: any) => {
+    const items = [...(data.fuelItems || [])];
+    items[i] = { ...items[i], [field]: val };
+    if (field === "quantity" || field === "price_per_unit") {
+      items[i].total = items[i].quantity * items[i].price_per_unit;
+    }
+    const fuelCharge = items.reduce((s, item) => s + item.total, 0);
+    onChange({ ...data, fuelItems: items, fuelCharge });
+  };
+  const removeFuelLine = (i: number) => {
+    const items = (data.fuelItems || []).filter((_, idx) => idx !== i);
+    const fuelCharge = items.reduce((s, item) => s + item.total, 0);
+    onChange({ ...data, fuelItems: items, fuelCharge });
+  };
+
+  const flightLabel = data.flightNo ? `${data.flightNo}` : "New Report";
+  const routeLabel = data.route || "";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
+      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-5xl max-h-[94vh] overflow-hidden m-4 flex flex-col">
+        {/* Header */}
+        <div className="bg-card border-b px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
+              <FileBarChart2 size={18} className="text-primary" />{title}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              <span className="text-primary font-semibold">{flightLabel}</span>
+              {routeLabel && <> · {routeLabel}</>}
+            </p>
+          </div>
+          <button onClick={onCancel} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
+        </div>
+
+        {/* Flight status bar */}
+        <div className="px-6 py-2 border-b flex items-center gap-1 bg-muted/30">
+          {FLIGHT_STATUSES.map((s, i) => (
+            <button
+              key={s}
+              onClick={() => set("flightStatus", s)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                data.flightStatus === s
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab navigation */}
+        <div className="px-6 py-2 border-b flex flex-wrap gap-1 bg-muted/20">
+          {REPORT_TABS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                activeTab === t.key
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              {tabIcons[t.key]}{t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === "flight" && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2"><Plane size={14} />Flight Info</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField label="Account / Operator"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
+                  <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
+                  <FormField label="Station">
+                    <select className={selectCls} value={data.station || "Cairo"} onChange={e => set("station", e.target.value)}>
+                      {stationOptions.map(s => <option key={s.name}>{s.name}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Route"><input className={inputCls} value={data.route || ""} onChange={e => set("route", e.target.value)} placeholder="ORY/CAI/ORY" /></FormField>
+                  <FormField label="Reg No"><input className={inputCls} value={data.registration || ""} onChange={e => set("registration", e.target.value)} placeholder="FGZHM" /></FormField>
+                  <FormField label="A/C Type"><input className={inputCls} value={data.aircraftType || ""} onChange={e => set("aircraftType", e.target.value)} placeholder="B737-800" /></FormField>
+                  <FormField label="MTOW"><input className={inputCls} value={data.mtow || ""} onChange={e => set("mtow", e.target.value)} placeholder="77" /></FormField>
+                  <FormField label="Config"><input type="number" className={inputCls} value={data.paxInAdultI || 0} onChange={e => set("paxInAdultI", +e.target.value)} /></FormField>
+                  <FormField label="STA"><input type="time" className={inputCls} value={data.sta || ""} onChange={e => set("sta", e.target.value)} /></FormField>
+                  <FormField label="STD"><input type="time" className={inputCls} value={data.std || ""} onChange={e => set("std", e.target.value)} /></FormField>
+                  <FormField label="Arrival Date"><input type="date" className={inputCls} value={data.arrivalDate || ""} onChange={e => set("arrivalDate", e.target.value)} /></FormField>
+                  <FormField label="Departure Date"><input type="date" className={inputCls} value={data.departureDate || ""} onChange={e => set("departureDate", e.target.value)} /></FormField>
+                  <FormField label="Handling Type">
+                    <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
+                      {handlingTypes.map(h => <option key={h}>{h}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Confirmation No"><input className={inputCls} value={data.confirmationNo || ""} onChange={e => set("confirmationNo", e.target.value)} /></FormField>
+                  <FormField label="Performed By"><input className={inputCls} value={data.performedBy || ""} onChange={e => set("performedBy", e.target.value)} /></FormField>
+                  <FormField label="Currency">
+                    <select className={selectCls} value={data.currency} onChange={e => set("currency", e.target.value as any)}>
+                      {currencyOptions.map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  </FormField>
+                </div>
+              </div>
+              {/* Services & Tags */}
+              <div>
+                <h3 className="text-sm font-bold text-accent uppercase tracking-wider mb-3">Services & Tags</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <FormField label="Project Tags"><input className={inputCls} value={data.projectTags || ""} onChange={e => set("projectTags", e.target.value)} placeholder="AVSEC, Full Handling…" /></FormField>
+                  <FormField label="Check-In System"><input className={inputCls} value={data.checkInSystem || ""} onChange={e => set("checkInSystem", e.target.value)} placeholder="Amadeus" /></FormField>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "passengers" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 border-b pb-2">Foreign Passengers</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Foreign Pax IN"><input type="number" className={inputCls} value={data.foreignPaxIn || 0} onChange={e => set("foreignPaxIn", +e.target.value)} /></FormField>
+                    <FormField label="Foreign Pax OUT"><input type="number" className={inputCls} value={data.foreignPaxOut || 0} onChange={e => set("foreignPaxOut", +e.target.value)} /></FormField>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 border-b pb-2">Egyptian Passengers</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Egyptian Pax IN"><input type="number" className={inputCls} value={data.egyptianPaxIn || 0} onChange={e => set("egyptianPaxIn", +e.target.value)} /></FormField>
+                    <FormField label="Egyptian Pax OUT"><input type="number" className={inputCls} value={data.egyptianPaxOut || 0} onChange={e => set("egyptianPaxOut", +e.target.value)} /></FormField>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 border-b pb-2">Other</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField label="Infant In"><input type="number" className={inputCls} value={data.infantIn || 0} onChange={e => set("infantIn", +e.target.value)} /></FormField>
+                  <FormField label="Infant Out"><input type="number" className={inputCls} value={data.infantOut || 0} onChange={e => set("infantOut", +e.target.value)} /></FormField>
+                  <FormField label="Crew"><input type="number" className={inputCls} value={data.crewCount || 0} onChange={e => set("crewCount", +e.target.value)} /></FormField>
+                  <FormField label="PAX Transit"><input type="number" className={inputCls} value={data.paxTransit || 0} onChange={e => set("paxTransit", +e.target.value)} /></FormField>
+                  <FormField label="Total Departing Pax"><input type="number" className={readOnlyCls} value={data.totalDepartingPax || 0} readOnly /></FormField>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 border-b pb-2">Estimated Billing (Preview Only)</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Estimated Foreign Pax Bill (USD)"><input type="number" step="0.01" className={inputCls} value={data.estimatedForeignBill || 0} onChange={e => set("estimatedForeignBill", +e.target.value)} /></FormField>
+                  <FormField label="Estimated Local Pax Bill (EGP)"><input type="number" step="0.01" className={inputCls} value={data.estimatedLocalBill || 0} onChange={e => set("estimatedLocalBill", +e.target.value)} /></FormField>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-3 border-b pb-2">Optional Services (Qty — Included in Egyptian/EGP Bill)</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <FormField label="Fire Cart Qty"><input type="number" className={inputCls} value={data.fireCartQty || 0} onChange={e => set("fireCartQty", +e.target.value)} /></FormField>
+                  <FormField label="Follow Me Qty"><input type="number" className={inputCls} value={data.followMeQty || 0} onChange={e => set("followMeQty", +e.target.value)} /></FormField>
+                  <FormField label="Jetway Qty"><input type="number" className={inputCls} value={data.jetwayQty || 0} onChange={e => set("jetwayQty", +e.target.value)} /></FormField>
+                  <FormField label="MET Folder Qty"><input type="number" className={inputCls} value={data.metFolderQty || 0} onChange={e => set("metFolderQty", +e.target.value)} /></FormField>
+                  <FormField label="File FLT Plan Qty"><input type="number" className={inputCls} value={data.fileFltPlanQty || 0} onChange={e => set("fileFltPlanQty", +e.target.value)} /></FormField>
+                  <FormField label="Print Operational FLT Plan Qty"><input type="number" className={inputCls} value={data.printOpsFltPlanQty || 0} onChange={e => set("printOpsFltPlanQty", +e.target.value)} /></FormField>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "timing" && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-bold text-info uppercase tracking-wider mb-3 flex items-center gap-2"><Clock size={14} />Aircraft Movement Timings</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField label="Touch Down (T/D)"><input type="time" className={inputCls} value={data.td || ""} onChange={e => set("td", e.target.value)} /></FormField>
+                  <FormField label="Chocks On (C/O)"><input type="time" className={inputCls} value={data.co || ""} onChange={e => set("co", e.target.value)} /></FormField>
+                  <FormField label="Chocks Off (O/B)"><input type="time" className={inputCls} value={data.ob || ""} onChange={e => set("ob", e.target.value)} /></FormField>
+                  <FormField label="Take Off (T/O)"><input type="time" className={inputCls} value={data.to || ""} onChange={e => set("to", e.target.value)} /></FormField>
+                  <FormField label="ATA (Actual Arrival)"><input type="time" className={inputCls} value={data.ata || ""} onChange={e => set("ata", e.target.value)} /></FormField>
+                  <FormField label="ATD (Actual Departure)"><input type="time" className={inputCls} value={data.atd || ""} onChange={e => set("atd", e.target.value)} /></FormField>
+                  <FormField label="STA (Read-Only)"><input className={readOnlyCls} value={data.sta || ""} readOnly /></FormField>
+                  <FormField label="STD (Read-Only)"><input className={readOnlyCls} value={data.std || ""} readOnly /></FormField>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-3">Parking / Housing Duration</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField label="Landing Time">
+                    <input className={readOnlyCls} value={autoDayNight(data.td || "", data.arrivalDate || "") === "D" ? "Day Landing" : "Night Landing"} readOnly />
+                  </FormField>
+                  <FormField label="Day / Night (auto)">
+                    <span className={`inline-flex items-center px-2 py-2 rounded text-sm font-bold ${
+                      autoDayNight(data.td || "", data.arrivalDate || "") === "N" ? "bg-info/15 text-info" : "bg-warning/15 text-warning"
+                    }`}>
+                      {autoDayNight(data.td || "", data.arrivalDate || "")}
+                    </span>
+                  </FormField>
+                  <FormField label="Ground Time (HH:MM)"><input className={readOnlyCls} value={data.groundTime || calcGroundTime(data.co || "", data.ob || "")} readOnly /></FormField>
+                  <FormField label="Parking Day Hours"><input type="number" step="0.01" className={inputCls} value={data.parkingDayHours || 0} onChange={e => set("parkingDayHours", +e.target.value)} /></FormField>
+                  <FormField label="Parking Night Hours"><input type="number" step="0.01" className={inputCls} value={data.parkingNightHours || 0} onChange={e => set("parkingNightHours", +e.target.value)} /></FormField>
+                  <FormField label="Total Parking Time (Hrs)"><input type="number" step="0.01" className={readOnlyCls} value={data.totalParkingHours || 0} readOnly /></FormField>
+                  <FormField label="Housing (Days)"><input type="number" step="0.01" className={readOnlyCls} value={data.housingDays || 0} readOnly /></FormField>
+                </div>
+              </div>
+              {/* Delay Codes */}
+              <div>
+                <h3 className="text-sm font-bold text-destructive uppercase tracking-wider mb-3">Delay Codes (up to 4)</h3>
+                {delays.map((d, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_80px_2fr_auto] gap-2 mb-2 items-end">
+                    <FormField label={`DLY Code ${i + 1}`}>
+                      <select className={selectCls} value={d.code} onChange={e => setDelay(i, "code", e.target.value)}>
+                        <option value="">— Select —</option>
+                        {delayCodes.filter(dc => dc.active).map(dc => (
+                          <option key={dc.id} value={dc.code}>{dc.code} – {dc.description.slice(0, 40)}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField label="Min">
+                      <input type="number" className={inputCls} value={d.timing || 0} onChange={e => setDelay(i, "timing", +e.target.value)} />
+                    </FormField>
+                    <FormField label="Explanation">
+                      <input className={readOnlyCls} value={d.explanation} readOnly />
+                    </FormField>
+                    <button onClick={() => onChange({ ...data, delays: delays.filter((_, idx) => idx !== i) })} className="p-1.5 text-destructive hover:text-destructive/80 mb-0.5"><X size={14} /></button>
+                  </div>
+                ))}
+                {delays.length < 4 && (
+                  <button onClick={() => onChange({ ...data, delays: [...delays, { code: "", timing: 0, explanation: "" }] })} className="toolbar-btn-outline text-xs mt-1"><Plus size={12} /> Add Delay</button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "civil-aviation" && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2 border-b pb-2"><Building2 size={14} />Flight Details</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <FormField label="Flight No"><input className={readOnlyCls} value={data.flightNo || ""} readOnly /></FormField>
+                  <FormField label="MTOW (Tons)"><input className={readOnlyCls} value={data.mtow || ""} readOnly /></FormField>
+                  <FormField label="Station"><input className={readOnlyCls} value={data.station || ""} readOnly /></FormField>
+                  <FormField label="Route"><input className={readOnlyCls} value={data.route || ""} readOnly /></FormField>
+                  <FormField label="Departure Date"><input className={readOnlyCls} value={data.departureDate || ""} readOnly /></FormField>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 border-b pb-2">Charges Summary</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField label="Landing Charge ($)"><input type="number" className={readOnlyCls} value={data.landingCharge || 0} readOnly /></FormField>
+                  <FormField label="Parking Charge ($)"><input type="number" className={readOnlyCls} value={data.parkingCharge || 0} readOnly /></FormField>
+                  <FormField label="Housing Charge ($)"><input type="number" className={readOnlyCls} value={data.housingCharge || 0} readOnly /></FormField>
+                  <FormField label="Total Civil Aviation ($)"><input type="number" className={readOnlyCls + " font-bold"} value={data.civilAviationFee || 0} readOnly /></FormField>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "catering" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                  <UtensilsCrossed size={14} />Catering
+                </h3>
+                <span className="text-sm font-semibold text-foreground">Grand Total: {(data.cateringCharge || 0).toFixed(2)}</span>
+              </div>
+              <p className="text-xs text-primary font-semibold">{data.flightNo} / {data.route}</p>
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className="data-table-header px-4 py-2.5 text-left">Catering Item</th>
+                      <th className="data-table-header px-4 py-2.5 text-left">Supplier</th>
+                      <th className="data-table-header px-4 py-2.5 text-left w-24">Quantity</th>
+                      <th className="data-table-header px-4 py-2.5 text-left w-28">Price / Unit</th>
+                      <th className="data-table-header px-4 py-2.5 text-left w-28">Total</th>
+                      <th className="data-table-header px-4 py-2.5 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.cateringItems || []).map((item, i) => (
+                      <tr key={i} className="data-table-row">
+                        <td className="px-4 py-2"><input className={inputCls} value={item.catering_item} onChange={e => setCateringLine(i, "catering_item", e.target.value)} /></td>
+                        <td className="px-4 py-2"><input className={inputCls} value={item.supplier} onChange={e => setCateringLine(i, "supplier", e.target.value)} /></td>
+                        <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setCateringLine(i, "quantity", +e.target.value)} /></td>
+                        <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_unit} onChange={e => setCateringLine(i, "price_per_unit", +e.target.value)} /></td>
+                        <td className="px-4 py-2 font-semibold text-foreground">{item.total.toFixed(2)}</td>
+                        <td className="px-4 py-2"><button onClick={() => removeCateringLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button onClick={addCateringLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
+            </div>
+          )}
+
+          {activeTab === "hotac" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                  <BedDouble size={14} />HOTAC
+                </h3>
+                <span className="text-sm font-semibold text-foreground">Grand Total: {(data.hotacCharge || 0).toFixed(2)}</span>
+              </div>
+              <p className="text-xs text-primary font-semibold">{data.flightNo} / {data.route}</p>
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className="data-table-header px-4 py-2.5 text-left">Hotel Name</th>
+                      <th className="data-table-header px-4 py-2.5 text-left">Room Classification</th>
+                      <th className="data-table-header px-4 py-2.5 text-left">Type of Service</th>
+                      <th className="data-table-header px-4 py-2.5 text-left w-24">Quantity</th>
+                      <th className="data-table-header px-4 py-2.5 text-left w-28">Price / Night</th>
+                      <th className="data-table-header px-4 py-2.5 text-left w-28">Total</th>
+                      <th className="data-table-header px-4 py-2.5 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.hotacItems || []).map((item, i) => (
+                      <tr key={i} className="data-table-row">
+                        <td className="px-4 py-2"><input className={inputCls} value={item.hotel_name} onChange={e => setHotacLine(i, "hotel_name", e.target.value)} /></td>
+                        <td className="px-4 py-2"><input className={inputCls} value={item.room_classification} onChange={e => setHotacLine(i, "room_classification", e.target.value)} /></td>
+                        <td className="px-4 py-2"><input className={inputCls} value={item.type_of_service} onChange={e => setHotacLine(i, "type_of_service", e.target.value)} /></td>
+                        <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setHotacLine(i, "quantity", +e.target.value)} /></td>
+                        <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_night} onChange={e => setHotacLine(i, "price_per_night", +e.target.value)} /></td>
+                        <td className="px-4 py-2 font-semibold text-foreground">{item.total.toFixed(2)}</td>
+                        <td className="px-4 py-2"><button onClick={() => removeHotacLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button onClick={addHotacLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
+            </div>
+          )}
+
+          {activeTab === "fuel-handling" && (
+            <div className="space-y-6">
+              {/* Fuel */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><Fuel size={14} />Fuel</h3>
+                  <span className="text-sm font-semibold text-foreground">Fuel Total: {(data.fuelCharge || 0).toFixed(2)}</span>
+                </div>
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="data-table-header px-4 py-2.5 text-left">Fuel Type</th>
+                        <th className="data-table-header px-4 py-2.5 text-left">Supplier</th>
+                        <th className="data-table-header px-4 py-2.5 text-left w-24">Quantity</th>
+                        <th className="data-table-header px-4 py-2.5 text-left w-28">Price / Unit</th>
+                        <th className="data-table-header px-4 py-2.5 text-left w-28">Total</th>
+                        <th className="data-table-header px-4 py-2.5 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data.fuelItems || []).map((item, i) => (
+                        <tr key={i} className="data-table-row">
+                          <td className="px-4 py-2"><input className={inputCls} value={item.fuel_type} onChange={e => setFuelLine(i, "fuel_type", e.target.value)} /></td>
+                          <td className="px-4 py-2"><input className={inputCls} value={item.supplier} onChange={e => setFuelLine(i, "supplier", e.target.value)} /></td>
+                          <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setFuelLine(i, "quantity", +e.target.value)} /></td>
+                          <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_unit} onChange={e => setFuelLine(i, "price_per_unit", +e.target.value)} /></td>
+                          <td className="px-4 py-2 font-semibold text-foreground">{item.total.toFixed(2)}</td>
+                          <td className="px-4 py-2"><button onClick={() => removeFuelLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <button onClick={addFuelLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
+              </div>
+
+              {/* Handling */}
+              <div>
+                <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-2 border-b pb-2"><DollarSign size={14} />Handling & Totals</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField label="Handling Fee ($)"><input type="number" step="0.01" className={inputCls} value={data.handlingFee || 0} onChange={e => set("handlingFee", +e.target.value)} /></FormField>
+                  <FormField label="Civil Aviation ($)"><input type="number" className={readOnlyCls} value={data.civilAviationFee || 0} readOnly /></FormField>
+                  <FormField label="Airport Charge ($)"><input type="number" className={readOnlyCls} value={data.airportCharge || 0} readOnly /></FormField>
+                  <FormField label="Catering ($)"><input type="number" className={readOnlyCls} value={data.cateringCharge || 0} readOnly /></FormField>
+                  <FormField label="HOTAC ($)"><input type="number" className={readOnlyCls} value={data.hotacCharge || 0} readOnly /></FormField>
+                  <FormField label="Fuel ($)"><input type="number" className={readOnlyCls} value={data.fuelCharge || 0} readOnly /></FormField>
+                  <FormField label="Total Cost ($)">
+                    <input type="number" className={readOnlyCls + " font-bold text-success"} value={
+                      ((data.civilAviationFee || 0) + (data.handlingFee || 0) + (data.airportCharge || 0)
+                      + (data.fuelCharge || 0) + (data.cateringCharge || 0) + (data.hotacCharge || 0)).toFixed(2)
+                    } readOnly />
+                  </FormField>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="bg-card border-t px-6 py-4 flex gap-3 justify-end">
+          <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
+          <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+        </div>
+      </div>
+    </div>
+  );
+}

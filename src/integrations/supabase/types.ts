@@ -1469,6 +1469,50 @@ export type Database = {
           },
         ]
       }
+      service_report_catering: {
+        Row: {
+          catering_item: string
+          created_at: string
+          id: string
+          price_per_unit: number
+          quantity: number
+          report_id: string
+          sort_order: number
+          supplier: string
+          total: number
+        }
+        Insert: {
+          catering_item?: string
+          created_at?: string
+          id?: string
+          price_per_unit?: number
+          quantity?: number
+          report_id: string
+          sort_order?: number
+          supplier?: string
+          total?: number
+        }
+        Update: {
+          catering_item?: string
+          created_at?: string
+          id?: string
+          price_per_unit?: number
+          quantity?: number
+          report_id?: string
+          sort_order?: number
+          supplier?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_report_catering_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_report_delays: {
         Row: {
           code: string
@@ -1504,32 +1548,151 @@ export type Database = {
           },
         ]
       }
+      service_report_fuel: {
+        Row: {
+          created_at: string
+          fuel_type: string
+          id: string
+          price_per_unit: number
+          quantity: number
+          report_id: string
+          sort_order: number
+          supplier: string
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          fuel_type?: string
+          id?: string
+          price_per_unit?: number
+          quantity?: number
+          report_id: string
+          sort_order?: number
+          supplier?: string
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          fuel_type?: string
+          id?: string
+          price_per_unit?: number
+          quantity?: number
+          report_id?: string
+          sort_order?: number
+          supplier?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_report_fuel_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_report_hotac: {
+        Row: {
+          created_at: string
+          hotel_name: string
+          id: string
+          price_per_night: number
+          quantity: number
+          report_id: string
+          room_classification: string
+          sort_order: number
+          total: number
+          type_of_service: string
+        }
+        Insert: {
+          created_at?: string
+          hotel_name?: string
+          id?: string
+          price_per_night?: number
+          quantity?: number
+          report_id: string
+          room_classification?: string
+          sort_order?: number
+          total?: number
+          type_of_service?: string
+        }
+        Update: {
+          created_at?: string
+          hotel_name?: string
+          id?: string
+          price_per_night?: number
+          quantity?: number
+          report_id?: string
+          room_classification?: string
+          sort_order?: number
+          total?: number
+          type_of_service?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_report_hotac_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_reports: {
         Row: {
           aircraft_type: string
           airport_charge: number
           arrival_date: string | null
+          ata: string | null
+          atd: string | null
+          catering_charge: number
           check_in_system: string | null
           civil_aviation_fee: number
           co: string | null
+          confirmation_no: string
           created_at: string
+          crew_count: number
           currency: Database["public"]["Enums"]["currency_type"]
           day_night: string
           departure_date: string | null
+          egyptian_pax_in: number
+          egyptian_pax_out: number
+          estimated_foreign_bill: number
+          estimated_local_bill: number
+          file_flt_plan_qty: number
+          fire_cart_qty: number
           flight_no: string
+          flight_status: string
+          follow_me_qty: number
+          foreign_pax_in: number
+          foreign_pax_out: number
+          fuel_charge: number
           ground_time: string | null
           handling_fee: number
           handling_type: Database["public"]["Enums"]["handling_type"]
+          hotac_charge: number
+          housing_charge: number
+          housing_days: number
           id: string
+          infant_in: number
+          infant_out: number
+          jetway_qty: number
+          landing_charge: number
+          met_folder_qty: number
           mtow: string
           ob: string | null
           operator: string
+          parking_charge: number
+          parking_day_hours: number
+          parking_night_hours: number
           pax_in_adult_d: number
           pax_in_adult_i: number
           pax_in_inf_d: number
           pax_in_inf_i: number
           pax_transit: number
           performed_by: string | null
+          print_ops_flt_plan_qty: number
           project_tags: string | null
           registration: string
           review_comment: string | null
@@ -1543,33 +1706,63 @@ export type Database = {
           td: string | null
           to: string | null
           total_cost: number
+          total_departing_pax: number
+          total_parking_hours: number
           updated_at: string
         }
         Insert: {
           aircraft_type?: string
           airport_charge?: number
           arrival_date?: string | null
+          ata?: string | null
+          atd?: string | null
+          catering_charge?: number
           check_in_system?: string | null
           civil_aviation_fee?: number
           co?: string | null
+          confirmation_no?: string
           created_at?: string
+          crew_count?: number
           currency?: Database["public"]["Enums"]["currency_type"]
           day_night?: string
           departure_date?: string | null
+          egyptian_pax_in?: number
+          egyptian_pax_out?: number
+          estimated_foreign_bill?: number
+          estimated_local_bill?: number
+          file_flt_plan_qty?: number
+          fire_cart_qty?: number
           flight_no: string
+          flight_status?: string
+          follow_me_qty?: number
+          foreign_pax_in?: number
+          foreign_pax_out?: number
+          fuel_charge?: number
           ground_time?: string | null
           handling_fee?: number
           handling_type?: Database["public"]["Enums"]["handling_type"]
+          hotac_charge?: number
+          housing_charge?: number
+          housing_days?: number
           id?: string
+          infant_in?: number
+          infant_out?: number
+          jetway_qty?: number
+          landing_charge?: number
+          met_folder_qty?: number
           mtow?: string
           ob?: string | null
           operator: string
+          parking_charge?: number
+          parking_day_hours?: number
+          parking_night_hours?: number
           pax_in_adult_d?: number
           pax_in_adult_i?: number
           pax_in_inf_d?: number
           pax_in_inf_i?: number
           pax_transit?: number
           performed_by?: string | null
+          print_ops_flt_plan_qty?: number
           project_tags?: string | null
           registration?: string
           review_comment?: string | null
@@ -1583,33 +1776,63 @@ export type Database = {
           td?: string | null
           to?: string | null
           total_cost?: number
+          total_departing_pax?: number
+          total_parking_hours?: number
           updated_at?: string
         }
         Update: {
           aircraft_type?: string
           airport_charge?: number
           arrival_date?: string | null
+          ata?: string | null
+          atd?: string | null
+          catering_charge?: number
           check_in_system?: string | null
           civil_aviation_fee?: number
           co?: string | null
+          confirmation_no?: string
           created_at?: string
+          crew_count?: number
           currency?: Database["public"]["Enums"]["currency_type"]
           day_night?: string
           departure_date?: string | null
+          egyptian_pax_in?: number
+          egyptian_pax_out?: number
+          estimated_foreign_bill?: number
+          estimated_local_bill?: number
+          file_flt_plan_qty?: number
+          fire_cart_qty?: number
           flight_no?: string
+          flight_status?: string
+          follow_me_qty?: number
+          foreign_pax_in?: number
+          foreign_pax_out?: number
+          fuel_charge?: number
           ground_time?: string | null
           handling_fee?: number
           handling_type?: Database["public"]["Enums"]["handling_type"]
+          hotac_charge?: number
+          housing_charge?: number
+          housing_days?: number
           id?: string
+          infant_in?: number
+          infant_out?: number
+          jetway_qty?: number
+          landing_charge?: number
+          met_folder_qty?: number
           mtow?: string
           ob?: string | null
           operator?: string
+          parking_charge?: number
+          parking_day_hours?: number
+          parking_night_hours?: number
           pax_in_adult_d?: number
           pax_in_adult_i?: number
           pax_in_inf_d?: number
           pax_in_inf_i?: number
           pax_transit?: number
           performed_by?: string | null
+          print_ops_flt_plan_qty?: number
           project_tags?: string | null
           registration?: string
           review_comment?: string | null
@@ -1623,6 +1846,8 @@ export type Database = {
           td?: string | null
           to?: string | null
           total_cost?: number
+          total_departing_pax?: number
+          total_parking_hours?: number
           updated_at?: string
         }
         Relationships: []
