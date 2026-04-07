@@ -294,7 +294,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Reg No"><input className={inputCls} value={data.registration || ""} onChange={e => set("registration", e.target.value)} placeholder="FGZHM" /></FormField>
                   <FormField label="A/C Type"><input className={inputCls} value={data.aircraftType || ""} onChange={e => set("aircraftType", e.target.value)} placeholder="B737-800" /></FormField>
                   <FormField label="MTOW"><input className={inputCls} value={data.mtow || ""} onChange={e => set("mtow", e.target.value)} placeholder="77" /></FormField>
-                  <FormField label="Config"><input type="number" className={inputCls} value={data.paxInAdultI || 0} onChange={e => set("paxInAdultI", +e.target.value)} /></FormField>
+                  <FormField label="Config"><input type="number" className={inputCls} value={data.paxInAdultI || ""} onChange={e => set("paxInAdultI", +e.target.value)} /></FormField>
                   <FormField label="STA"><input type="time" className={inputCls} value={data.sta || ""} onChange={e => set("sta", e.target.value)} /></FormField>
                   <FormField label="STD"><input type="time" className={inputCls} value={data.std || ""} onChange={e => set("std", e.target.value)} /></FormField>
                   <FormField label="Arrival Date"><input type="date" className={inputCls} value={data.arrivalDate || ""} onChange={e => set("arrivalDate", e.target.value)} /></FormField>
@@ -330,44 +330,44 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                 <div>
                   <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 border-b pb-2">Foreign Passengers</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Foreign Pax IN"><input type="number" className={inputCls} value={data.foreignPaxIn || 0} onChange={e => set("foreignPaxIn", +e.target.value)} /></FormField>
-                    <FormField label="Foreign Pax OUT"><input type="number" className={inputCls} value={data.foreignPaxOut || 0} onChange={e => set("foreignPaxOut", +e.target.value)} /></FormField>
+                    <FormField label="Foreign Pax IN"><input type="number" className={inputCls} value={data.foreignPaxIn || ""} onChange={e => set("foreignPaxIn", +e.target.value)} /></FormField>
+                    <FormField label="Foreign Pax OUT"><input type="number" className={inputCls} value={data.foreignPaxOut || ""} onChange={e => set("foreignPaxOut", +e.target.value)} /></FormField>
                   </div>
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 border-b pb-2">Egyptian Passengers</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Egyptian Pax IN"><input type="number" className={inputCls} value={data.egyptianPaxIn || 0} onChange={e => set("egyptianPaxIn", +e.target.value)} /></FormField>
-                    <FormField label="Egyptian Pax OUT"><input type="number" className={inputCls} value={data.egyptianPaxOut || 0} onChange={e => set("egyptianPaxOut", +e.target.value)} /></FormField>
+                    <FormField label="Egyptian Pax IN"><input type="number" className={inputCls} value={data.egyptianPaxIn || ""} onChange={e => set("egyptianPaxIn", +e.target.value)} /></FormField>
+                    <FormField label="Egyptian Pax OUT"><input type="number" className={inputCls} value={data.egyptianPaxOut || ""} onChange={e => set("egyptianPaxOut", +e.target.value)} /></FormField>
                   </div>
                 </div>
               </div>
               <div>
                 <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 border-b pb-2">Other</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label="Infant In"><input type="number" className={inputCls} value={data.infantIn || 0} onChange={e => set("infantIn", +e.target.value)} /></FormField>
-                  <FormField label="Infant Out"><input type="number" className={inputCls} value={data.infantOut || 0} onChange={e => set("infantOut", +e.target.value)} /></FormField>
-                  <FormField label="Crew"><input type="number" className={inputCls} value={data.crewCount || 0} onChange={e => set("crewCount", +e.target.value)} /></FormField>
-                  <FormField label="PAX Transit"><input type="number" className={inputCls} value={data.paxTransit || 0} onChange={e => set("paxTransit", +e.target.value)} /></FormField>
-                  <FormField label="Total Departing Pax"><input type="number" className={readOnlyCls} value={data.totalDepartingPax || 0} readOnly /></FormField>
+                  <FormField label="Infant In"><input type="number" className={inputCls} value={data.infantIn || ""} onChange={e => set("infantIn", +e.target.value)} /></FormField>
+                  <FormField label="Infant Out"><input type="number" className={inputCls} value={data.infantOut || ""} onChange={e => set("infantOut", +e.target.value)} /></FormField>
+                  <FormField label="Crew"><input type="number" className={inputCls} value={data.crewCount || ""} onChange={e => set("crewCount", +e.target.value)} /></FormField>
+                  <FormField label="PAX Transit"><input type="number" className={inputCls} value={data.paxTransit || ""} onChange={e => set("paxTransit", +e.target.value)} /></FormField>
+                  <FormField label="Total Departing Pax"><input type="number" className={readOnlyCls} value={data.totalDepartingPax || ""} readOnly /></FormField>
                 </div>
               </div>
               <div>
                 <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 border-b pb-2">Estimated Billing (Preview Only)</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Estimated Foreign Pax Bill (USD)"><input type="number" step="0.01" className={inputCls} value={data.estimatedForeignBill || 0} onChange={e => set("estimatedForeignBill", +e.target.value)} /></FormField>
-                  <FormField label="Estimated Local Pax Bill (EGP)"><input type="number" step="0.01" className={inputCls} value={data.estimatedLocalBill || 0} onChange={e => set("estimatedLocalBill", +e.target.value)} /></FormField>
+                  <FormField label="Estimated Foreign Pax Bill (USD)"><input type="number" step="0.01" className={inputCls} value={data.estimatedForeignBill || ""} onChange={e => set("estimatedForeignBill", +e.target.value)} /></FormField>
+                  <FormField label="Estimated Local Pax Bill (EGP)"><input type="number" step="0.01" className={inputCls} value={data.estimatedLocalBill || ""} onChange={e => set("estimatedLocalBill", +e.target.value)} /></FormField>
                 </div>
               </div>
               <div>
                 <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-3 border-b pb-2">Optional Services (Qty — Included in Egyptian/EGP Bill)</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <FormField label="Fire Cart Qty"><input type="number" className={inputCls} value={data.fireCartQty || 0} onChange={e => set("fireCartQty", +e.target.value)} /></FormField>
-                  <FormField label="Follow Me Qty"><input type="number" className={inputCls} value={data.followMeQty || 0} onChange={e => set("followMeQty", +e.target.value)} /></FormField>
-                  <FormField label="Jetway Qty"><input type="number" className={inputCls} value={data.jetwayQty || 0} onChange={e => set("jetwayQty", +e.target.value)} /></FormField>
-                  <FormField label="MET Folder Qty"><input type="number" className={inputCls} value={data.metFolderQty || 0} onChange={e => set("metFolderQty", +e.target.value)} /></FormField>
-                  <FormField label="File FLT Plan Qty"><input type="number" className={inputCls} value={data.fileFltPlanQty || 0} onChange={e => set("fileFltPlanQty", +e.target.value)} /></FormField>
-                  <FormField label="Print Operational FLT Plan Qty"><input type="number" className={inputCls} value={data.printOpsFltPlanQty || 0} onChange={e => set("printOpsFltPlanQty", +e.target.value)} /></FormField>
+                  <FormField label="Fire Cart Qty"><input type="number" className={inputCls} value={data.fireCartQty || ""} onChange={e => set("fireCartQty", +e.target.value)} /></FormField>
+                  <FormField label="Follow Me Qty"><input type="number" className={inputCls} value={data.followMeQty || ""} onChange={e => set("followMeQty", +e.target.value)} /></FormField>
+                  <FormField label="Jetway Qty"><input type="number" className={inputCls} value={data.jetwayQty || ""} onChange={e => set("jetwayQty", +e.target.value)} /></FormField>
+                  <FormField label="MET Folder Qty"><input type="number" className={inputCls} value={data.metFolderQty || ""} onChange={e => set("metFolderQty", +e.target.value)} /></FormField>
+                  <FormField label="File FLT Plan Qty"><input type="number" className={inputCls} value={data.fileFltPlanQty || ""} onChange={e => set("fileFltPlanQty", +e.target.value)} /></FormField>
+                  <FormField label="Print Operational FLT Plan Qty"><input type="number" className={inputCls} value={data.printOpsFltPlanQty || ""} onChange={e => set("printOpsFltPlanQty", +e.target.value)} /></FormField>
                 </div>
               </div>
             </div>
@@ -402,10 +402,10 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                     </span>
                   </FormField>
                   <FormField label="Ground Time (HH:MM)"><input className={readOnlyCls} value={data.groundTime || calcGroundTime(data.co || "", data.ob || "")} readOnly /></FormField>
-                  <FormField label="Parking Day Hours"><input type="number" step="0.01" className={inputCls} value={data.parkingDayHours || 0} onChange={e => set("parkingDayHours", +e.target.value)} /></FormField>
-                  <FormField label="Parking Night Hours"><input type="number" step="0.01" className={inputCls} value={data.parkingNightHours || 0} onChange={e => set("parkingNightHours", +e.target.value)} /></FormField>
-                  <FormField label="Total Parking Time (Hrs)"><input type="number" step="0.01" className={readOnlyCls} value={data.totalParkingHours || 0} readOnly /></FormField>
-                  <FormField label="Housing (Days)"><input type="number" step="0.01" className={readOnlyCls} value={data.housingDays || 0} readOnly /></FormField>
+                  <FormField label="Parking Day Hours"><input type="number" step="0.01" className={inputCls} value={data.parkingDayHours || ""} onChange={e => set("parkingDayHours", +e.target.value)} /></FormField>
+                  <FormField label="Parking Night Hours"><input type="number" step="0.01" className={inputCls} value={data.parkingNightHours || ""} onChange={e => set("parkingNightHours", +e.target.value)} /></FormField>
+                  <FormField label="Total Parking Time (Hrs)"><input type="number" step="0.01" className={readOnlyCls} value={data.totalParkingHours || ""} readOnly /></FormField>
+                  <FormField label="Housing (Days)"><input type="number" step="0.01" className={readOnlyCls} value={data.housingDays || ""} readOnly /></FormField>
                 </div>
               </div>
               {/* Delay Codes */}
@@ -422,7 +422,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                       </select>
                     </FormField>
                     <FormField label="Min">
-                      <input type="number" className={inputCls} value={d.timing || 0} onChange={e => setDelay(i, "timing", +e.target.value)} />
+                      <input type="number" className={inputCls} value={d.timing || ""} onChange={e => setDelay(i, "timing", +e.target.value)} />
                     </FormField>
                     <FormField label="Explanation">
                       <input className={readOnlyCls} value={d.explanation} readOnly />
@@ -452,10 +452,10 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               <div>
                 <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 border-b pb-2">Charges Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label="Landing Charge ($)"><input type="number" className={readOnlyCls} value={data.landingCharge || 0} readOnly /></FormField>
-                  <FormField label="Parking Charge ($)"><input type="number" className={readOnlyCls} value={data.parkingCharge || 0} readOnly /></FormField>
-                  <FormField label="Housing Charge ($)"><input type="number" className={readOnlyCls} value={data.housingCharge || 0} readOnly /></FormField>
-                  <FormField label="Total Civil Aviation ($)"><input type="number" className={readOnlyCls + " font-bold"} value={data.civilAviationFee || 0} readOnly /></FormField>
+                  <FormField label="Landing Charge ($)"><input type="number" className={readOnlyCls} value={data.landingCharge || ""} readOnly /></FormField>
+                  <FormField label="Parking Charge ($)"><input type="number" className={readOnlyCls} value={data.parkingCharge || ""} readOnly /></FormField>
+                  <FormField label="Housing Charge ($)"><input type="number" className={readOnlyCls} value={data.housingCharge || ""} readOnly /></FormField>
+                  <FormField label="Total Civil Aviation ($)"><input type="number" className={readOnlyCls + " font-bold"} value={data.civilAviationFee || ""} readOnly /></FormField>
                 </div>
               </div>
             </div>
@@ -582,12 +582,12 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               <div>
                 <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-2 border-b pb-2"><DollarSign size={14} />Handling & Totals</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label="Handling Fee ($)"><input type="number" step="0.01" className={inputCls} value={data.handlingFee || 0} onChange={e => set("handlingFee", +e.target.value)} /></FormField>
-                  <FormField label="Civil Aviation ($)"><input type="number" className={readOnlyCls} value={data.civilAviationFee || 0} readOnly /></FormField>
-                  <FormField label="Airport Charge ($)"><input type="number" className={readOnlyCls} value={data.airportCharge || 0} readOnly /></FormField>
-                  <FormField label="Catering ($)"><input type="number" className={readOnlyCls} value={data.cateringCharge || 0} readOnly /></FormField>
-                  <FormField label="HOTAC ($)"><input type="number" className={readOnlyCls} value={data.hotacCharge || 0} readOnly /></FormField>
-                  <FormField label="Fuel ($)"><input type="number" className={readOnlyCls} value={data.fuelCharge || 0} readOnly /></FormField>
+                  <FormField label="Handling Fee ($)"><input type="number" step="0.01" className={inputCls} value={data.handlingFee || ""} onChange={e => set("handlingFee", +e.target.value)} /></FormField>
+                  <FormField label="Civil Aviation ($)"><input type="number" className={readOnlyCls} value={data.civilAviationFee || ""} readOnly /></FormField>
+                  <FormField label="Airport Charge ($)"><input type="number" className={readOnlyCls} value={data.airportCharge || ""} readOnly /></FormField>
+                  <FormField label="Catering ($)"><input type="number" className={readOnlyCls} value={data.cateringCharge || ""} readOnly /></FormField>
+                  <FormField label="HOTAC ($)"><input type="number" className={readOnlyCls} value={data.hotacCharge || ""} readOnly /></FormField>
+                  <FormField label="Fuel ($)"><input type="number" className={readOnlyCls} value={data.fuelCharge || ""} readOnly /></FormField>
                   <FormField label="Total Cost ($)">
                     <input type="number" className={readOnlyCls + " font-bold text-success"} value={
                       ((data.civilAviationFee || 0) + (data.handlingFee || 0) + (data.airportCharge || 0)
