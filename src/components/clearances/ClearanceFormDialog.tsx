@@ -219,11 +219,31 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
               <DatePickerField label="Arrival Date" value={form.arrival_date} onChange={v => setForm({ ...form, arrival_date: v })} />
               <div>
                 <label className="text-xs text-muted-foreground">STA (24h)</label>
-                <Input type="time" step="60" value={form.sta} onChange={e => setForm({ ...form, sta: e.target.value })} />
+                <Input
+                  placeholder="HH:MM"
+                  maxLength={5}
+                  value={form.sta}
+                  onChange={e => {
+                    let v = e.target.value.replace(/[^0-9:]/g, "");
+                    if (v.length === 2 && !v.includes(":") && form.sta?.length !== 3) v += ":";
+                    if (v.length > 5) v = v.slice(0, 5);
+                    setForm({ ...form, sta: v });
+                  }}
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">STD (24h)</label>
-                <Input type="time" step="60" value={form.std} onChange={e => setForm({ ...form, std: e.target.value })} />
+                <Input
+                  placeholder="HH:MM"
+                  maxLength={5}
+                  value={form.std}
+                  onChange={e => {
+                    let v = e.target.value.replace(/[^0-9:]/g, "");
+                    if (v.length === 2 && !v.includes(":") && form.std?.length !== 3) v += ":";
+                    if (v.length > 5) v = v.slice(0, 5);
+                    setForm({ ...form, std: v });
+                  }}
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Skd Type</label>
