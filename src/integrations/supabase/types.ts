@@ -344,25 +344,43 @@ export type Database = {
           amount: string
           applicability: string
           created_at: string
+          egp_all: string
           id: string
+          is_total: boolean
+          section: string
+          sort_order: number
           tax: string
           unit: string
+          usd_except_ssh: string
+          usd_ssh: string
         }
         Insert: {
           amount?: string
           applicability?: string
           created_at?: string
+          egp_all?: string
           id?: string
+          is_total?: boolean
+          section?: string
+          sort_order?: number
           tax?: string
           unit?: string
+          usd_except_ssh?: string
+          usd_ssh?: string
         }
         Update: {
           amount?: string
           applicability?: string
           created_at?: string
+          egp_all?: string
           id?: string
+          is_total?: boolean
+          section?: string
+          sort_order?: number
           tax?: string
           unit?: string
+          usd_except_ssh?: string
+          usd_ssh?: string
         }
         Relationships: []
       }
