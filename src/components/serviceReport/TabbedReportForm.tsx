@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import {
   FileBarChart2, X, Plane, Clock, Users, DollarSign, UtensilsCrossed,
-  BedDouble, Fuel, Plus, Trash2, Building2
+  BedDouble, Fuel, Plus, Trash2, Building2, CalendarIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { Constants } from "@/integrations/supabase/types";
@@ -10,6 +11,10 @@ import {
   CateringLineItem, HotacLineItem, FuelLineItem, DelayEntry
 } from "./ReportFormTypes";
 import { generateAllCharges } from "@/data/airportChargesData";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const handlingTypes = Constants.public.Enums.handling_type;
 const currencyOptions = ["USD", "EUR", "EGP"] as const;
