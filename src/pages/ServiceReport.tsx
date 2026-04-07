@@ -517,17 +517,8 @@ export default function ServiceReportPage() {
   const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
     queryKey: ["flight_schedules"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("flight_schedules").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: dbClearances = [], isLoading: isLoadingClearances } = useQuery({
-    queryKey: ["clearances", "service-report-source"],
-    queryFn: async () => {
       const { data, error } = await supabase
-        .from("clearances")
+        .from("flight_schedules")
         .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -544,7 +535,7 @@ export default function ServiceReportPage() {
     },
   });
 
-  const isLoading = isLoadingReports || isLoadingDelays || isLoadingFlights || isLoadingClearances || isLoadingAirlines;
+  const isLoading = isLoadingReports || isLoadingDelays || isLoadingFlights || isLoadingAirlines;
 
   const airlineById = useMemo(
     () => new Map(dbAirlines.map((airline: { id: string; name: string; code: string }) => [airline.id, airline])),
@@ -557,13 +548,13 @@ export default function ServiceReportPage() {
   );
 
   const scheduleSources: ScheduleSourceRow[] = useMemo(() => {
-    const clearanceRows: ScheduleSourceRow[] = dbClearances
-      .filter(c => c.flight_no)
-      .map(c => {
+    return (dbFlights as any[])
+      .filter((c: any) => c.flight_no)
+      .map((c: any) => {
         const airline = c.airline_id ? airlineById.get(c.airline_id) : undefined;
         return {
           id: c.id,
-          sourceType: "clearances",
+          sourceType: "flight_schedules" as const,
           flightNo: c.flight_no,
           operator: airline?.name || airline?.code || c.handling_agent || "",
           aircraftType: c.aircraft_type || "",
@@ -573,29 +564,7 @@ export default function ServiceReportPage() {
           station: resolveStationFromRoute(c.route || ""),
         };
       });
-
-    const legacyFlightRows: ScheduleSourceRow[] = dbFlights
-      .filter(f => f.flight_no)
-      .map(f => ({
-        id: f.id,
-        sourceType: "flight_schedules",
-        flightNo: f.flight_no,
-        operator: f.airline || "",
-        aircraftType: f.aircraft || "",
-        route: [f.origin, f.destination].filter(Boolean).join("/"),
-        sta: f.departure || "",
-        std: f.arrival || "",
-        station: f.destination || "",
-      }));
-
-    const deduped = new Map<string, ScheduleSourceRow>();
-    [...clearanceRows, ...legacyFlightRows].forEach(row => {
-      const key = [row.flightNo, row.route, row.sta, row.std].map(value => value.trim().toLowerCase()).join("|");
-      if (!deduped.has(key)) deduped.set(key, row);
-    });
-
-    return Array.from(deduped.values());
-  }, [dbClearances, dbFlights, airlineById]);
+  }, [dbFlights, airlineById]);
 
   const mergedRows: MergedRow[] = useMemo(() => {
     const reportsByFlight = new Map<string, ReportFormData[]>();
