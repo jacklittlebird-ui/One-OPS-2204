@@ -18,7 +18,7 @@ import ClearanceFormDialog from "@/components/clearances/ClearanceFormDialog";
 import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog";
 
 export default function ClearancesPage() {
-  const { data, isLoading, add, update, remove } = useSupabaseTable<ClearanceRow>("clearances");
+  const { data, isLoading, add, update, remove } = useSupabaseTable<ClearanceRow>("flight_schedules");
   const { data: airlines } = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("id,name,code"); return data || []; } });
 
   const [search, setSearch] = useState("");
