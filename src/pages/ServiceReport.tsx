@@ -451,10 +451,30 @@ function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps
   );
 }
 
-// A merged row can be either a completed service report or an unlinked flight schedule
+// A merged row can be either a completed service report or a source schedule awaiting completion
 interface MergedRow extends ReportFormData {
-  isLinked: boolean; // true = has service report, false = only flight schedule
+  isLinked: boolean;
   flightScheduleId?: string;
+  sourceType?: "flight_schedules" | "clearances";
+}
+
+interface ScheduleSourceRow {
+  id: string;
+  sourceType: "flight_schedules" | "clearances";
+  flightNo: string;
+  operator: string;
+  aircraftType: string;
+  route: string;
+  sta: string;
+  std: string;
+  station: string;
+}
+
+function resolveStationFromRoute(route: string) {
+  const parts = route.split("/").map(part => part.trim()).filter(Boolean);
+  if (parts.length >= 3) return parts[1];
+  if (parts.length >= 2) return parts[parts.length - 1];
+  return "";
 }
 
 export default function ServiceReportPage() {
@@ -476,8 +496,7 @@ export default function ServiceReportPage() {
   const [editData, setEditData] = useState<Partial<ReportFormData>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch reports + delays
-  const { data: dbReports = [], isLoading } = useQuery({
+  const { data: dbReports = [], isLoading: isLoadingReports } = useQuery({
     queryKey: ["service_reports"],
     queryFn: async () => {
       const { data, error } = await supabase.from("service_reports").select("*").order("created_at", { ascending: false });
@@ -486,7 +505,7 @@ export default function ServiceReportPage() {
     },
   });
 
-  const { data: dbDelays = [] } = useQuery({
+  const { data: dbDelays = [], isLoading: isLoadingDelays } = useQuery({
     queryKey: ["service_report_delays"],
     queryFn: async () => {
       const { data, error } = await supabase.from("service_report_delays").select("*");
@@ -495,8 +514,7 @@ export default function ServiceReportPage() {
     },
   });
 
-  // Fetch flight schedules
-  const { data: dbFlights = [] } = useQuery({
+  const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
     queryKey: ["flight_schedules"],
     queryFn: async () => {
       const { data, error } = await supabase.from("flight_schedules").select("*").order("created_at", { ascending: false });
@@ -505,14 +523,81 @@ export default function ServiceReportPage() {
     },
   });
 
+  const { data: dbClearances = [], isLoading: isLoadingClearances } = useQuery({
+    queryKey: ["clearances", "service-report-source"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clearances")
+        .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: dbAirlines = [], isLoading: isLoadingAirlines } = useQuery({
+    queryKey: ["airlines", "service-report-source"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("airlines").select("id, name, code");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const isLoading = isLoadingReports || isLoadingDelays || isLoadingFlights || isLoadingClearances || isLoadingAirlines;
+
+  const airlineById = useMemo(
+    () => new Map(dbAirlines.map((airline: { id: string; name: string; code: string }) => [airline.id, airline])),
+    [dbAirlines]
+  );
+
   const reports: ReportFormData[] = useMemo(
     () => dbReports.map(r => dbToForm(r, dbDelays)),
     [dbReports, dbDelays]
   );
 
-  // Merge: show all flight schedules + linked service reports
+  const scheduleSources: ScheduleSourceRow[] = useMemo(() => {
+    const clearanceRows: ScheduleSourceRow[] = dbClearances
+      .filter(c => c.flight_no)
+      .map(c => {
+        const airline = c.airline_id ? airlineById.get(c.airline_id) : undefined;
+        return {
+          id: c.id,
+          sourceType: "clearances",
+          flightNo: c.flight_no,
+          operator: airline?.name || airline?.code || c.handling_agent || "",
+          aircraftType: c.aircraft_type || "",
+          route: c.route || "",
+          sta: c.sta || "",
+          std: c.std || "",
+          station: resolveStationFromRoute(c.route || ""),
+        };
+      });
+
+    const legacyFlightRows: ScheduleSourceRow[] = dbFlights
+      .filter(f => f.flight_no)
+      .map(f => ({
+        id: f.id,
+        sourceType: "flight_schedules",
+        flightNo: f.flight_no,
+        operator: f.airline || "",
+        aircraftType: f.aircraft || "",
+        route: [f.origin, f.destination].filter(Boolean).join("/"),
+        sta: f.departure || "",
+        std: f.arrival || "",
+        station: f.destination || "",
+      }));
+
+    const deduped = new Map<string, ScheduleSourceRow>();
+    [...clearanceRows, ...legacyFlightRows].forEach(row => {
+      const key = [row.flightNo, row.route, row.sta, row.std].map(value => value.trim().toLowerCase()).join("|");
+      if (!deduped.has(key)) deduped.set(key, row);
+    });
+
+    return Array.from(deduped.values());
+  }, [dbClearances, dbFlights, airlineById]);
+
   const mergedRows: MergedRow[] = useMemo(() => {
-    // Index service reports by flight_no for quick lookup
     const reportsByFlight = new Map<string, ReportFormData[]>();
     reports.forEach(r => {
       const key = r.flightNo.trim().toLowerCase();
@@ -523,38 +608,44 @@ export default function ServiceReportPage() {
     const rows: MergedRow[] = [];
     const usedReportIds = new Set<string>();
 
-    // For each flight schedule, find matching service reports or create placeholder
-    dbFlights.forEach(f => {
-      const key = f.flight_no.trim().toLowerCase();
+    scheduleSources.forEach(source => {
+      const key = source.flightNo.trim().toLowerCase();
       const matchedReports = reportsByFlight.get(key) || [];
+
       if (matchedReports.length > 0) {
         matchedReports.forEach(r => {
           usedReportIds.add(r.id!);
-          rows.push({ ...r, isLinked: true, flightScheduleId: f.id });
+          rows.push({
+            ...r,
+            isLinked: true,
+            flightScheduleId: source.id,
+            sourceType: source.sourceType,
+          });
         });
-      } else {
-        // Create a placeholder row from flight schedule data
-        rows.push({
-          ...emptyReport() as ReportFormData,
-          id: undefined,
-          flightNo: f.flight_no,
-          operator: f.airline,
-          aircraftType: f.aircraft,
-          route: `${f.origin}/${f.destination}`,
-          sta: f.departure,
-          std: f.arrival,
-          reviewStatus: "pending",
-          reviewComment: "",
-          reviewedBy: "",
-          reviewedAt: null,
-          delays: [],
-          isLinked: false,
-          flightScheduleId: f.id,
-        });
+        return;
       }
+
+      rows.push({
+        ...emptyReport() as ReportFormData,
+        id: undefined,
+        flightNo: source.flightNo,
+        operator: source.operator,
+        aircraftType: source.aircraftType,
+        route: source.route,
+        sta: source.sta,
+        std: source.std,
+        station: source.station || "Cairo",
+        reviewStatus: "pending",
+        reviewComment: "",
+        reviewedBy: "",
+        reviewedAt: null,
+        delays: [],
+        isLinked: false,
+        flightScheduleId: source.id,
+        sourceType: source.sourceType,
+      });
     });
 
-    // Also add service reports not linked to any flight schedule
     reports.forEach(r => {
       if (!usedReportIds.has(r.id!)) {
         rows.push({ ...r, isLinked: true });
@@ -562,7 +653,7 @@ export default function ServiceReportPage() {
     });
 
     return rows;
-  }, [reports, dbFlights]);
+  }, [reports, scheduleSources]);
 
   // Save new report
   const addMutation = useMutation({
