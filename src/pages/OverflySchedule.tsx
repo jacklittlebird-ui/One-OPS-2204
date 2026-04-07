@@ -53,12 +53,17 @@ export default function OverflySchedulePage() {
   const emptyForm = { flight_no: "", operator: "", registration: "", aircraft_type: "", route_from: "", route_to: "", valid_from: "", valid_to: "", permit_no: "", status: "Pending" };
   const [form, setForm] = useState<any>(emptyForm);
 
+  const operators = useMemo(() => [...new Set(data.map(d => d.operator).filter(Boolean))].sort(), [data]);
+
   const filtered = useMemo(() => {
     let r = data;
     if (statusFilter !== "All") r = r.filter(x => x.status === statusFilter);
+    if (operatorFilter !== "All") r = r.filter(x => x.operator === operatorFilter);
+    if (dateFrom) r = r.filter(x => x.valid_from && x.valid_from >= dateFrom);
+    if (dateTo) r = r.filter(x => x.valid_to && x.valid_to <= dateTo);
     if (search) { const s = search.toLowerCase(); r = r.filter(x => x.flight_no.toLowerCase().includes(s) || x.operator.toLowerCase().includes(s) || x.permit_no?.toLowerCase().includes(s)); }
     return r;
-  }, [data, statusFilter, search]);
+  }, [data, statusFilter, operatorFilter, dateFrom, dateTo, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
