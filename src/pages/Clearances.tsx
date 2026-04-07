@@ -113,21 +113,54 @@ export default function ClearancesPage() {
 
   const handleSave = async () => {
     if (!form.flight_no) { toast({ title: "Error", description: "Flight number is required", variant: "destructive" }); return; }
-    const payload: any = {
-      ...form,
-      passengers: Number(form.passengers) || 0,
-      cargo_kg: Number(form.cargo_kg) || 0,
-      config: Number(form.config) || 0,
-      no_of_flights: Number(form.no_of_flights) || 0,
+    const buildPayload = (overrides: any = {}) => {
+      const p: any = {
+        ...form,
+        ...overrides,
+        passengers: Number(form.passengers) || 0,
+        cargo_kg: Number(form.cargo_kg) || 0,
+        config: Number(form.config) || 0,
+        no_of_flights: Number(form.no_of_flights) || 0,
+      };
+      if (!p.airline_id) delete p.airline_id;
+      if (!p.valid_from) p.valid_from = null;
+      if (!p.valid_to) p.valid_to = null;
+      if (!p.departure_date) p.departure_date = null;
+      if (!p.arrival_date) p.arrival_date = null;
+      if (!p.period_from) p.period_from = null;
+      if (!p.period_to) p.period_to = null;
+      return p;
     };
-    if (!payload.airline_id) delete payload.airline_id;
-    if (!payload.valid_from) payload.valid_from = null;
-    if (!payload.valid_to) payload.valid_to = null;
-    if (!payload.departure_date) payload.departure_date = null;
-    if (!payload.arrival_date) payload.arrival_date = null;
-    if (!payload.period_from) payload.period_from = null;
-    if (!payload.period_to) payload.period_to = null;
-    if (editItem) { await update({ id: editItem.id, ...payload }); } else { await add(payload); }
+
+    if (editItem) {
+      await update({ id: editItem.id, ...buildPayload() });
+    } else {
+      // If period + week days are set, create individual records per flight date
+      const noOfFlights = Number(form.no_of_flights) || 0;
+      if (form.period_from && form.period_to && form.week_days && noOfFlights > 1) {
+        const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+        const selectedDays = form.week_days.split(",").filter(Boolean).map((d: string) => dayMap[d]).filter((n: number) => n !== undefined);
+        const start = new Date(form.period_from);
+        const end = new Date(form.period_to);
+        const flightDates: string[] = [];
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          if (selectedDays.includes(d.getDay())) {
+            flightDates.push(d.toISOString().slice(0, 10));
+          }
+        }
+        let count = 0;
+        for (const fDate of flightDates) {
+          await add(buildPayload({
+            requested_date: fDate,
+            no_of_flights: 1,
+          }));
+          count++;
+        }
+        toast({ title: "✅ Created", description: `${count} individual flight records created.` });
+      } else {
+        await add(buildPayload());
+      }
+    }
     setDialogOpen(false);
   };
 
