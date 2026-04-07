@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Users as UsersIcon, Plus, Shield, Trash2, Pencil } from "lucide-react";
 
-type AppRole = "admin" | "station_manager" | "station_ops" | "employee";
+type AppRole = "admin" | "station_manager" | "station_ops" | "employee" | "clearance" | "contracts" | "operations" | "receivables" | "payables";
 
 interface UserProfile {
   id: string;
@@ -44,9 +44,14 @@ const ROLE_COLORS: Record<AppRole, string> = {
   station_manager: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   station_ops: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   employee: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  clearance: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  contracts: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  operations: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+  receivables: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+  payables: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
 };
 
-const ALL_ROLES: AppRole[] = ["admin", "station_manager", "station_ops", "employee"];
+const ALL_ROLES: AppRole[] = ["admin", "station_manager", "station_ops", "employee", "clearance", "contracts", "operations", "receivables", "payables"];
 
 export default function UsersPage() {
   const { user } = useAuth();
