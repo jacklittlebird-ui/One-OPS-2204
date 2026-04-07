@@ -374,6 +374,34 @@ export default function ServiceReportPage() {
     return rows;
   }, [reports, scheduleSources]);
 
+  // Save line items helper
+  const saveLineItems = async (reportId: string, data: Partial<ReportFormData>) => {
+    const cateringItems = data.cateringItems || [];
+    const hotacItems = data.hotacItems || [];
+    const fuelItems = data.fuelItems || [];
+
+    // Delete existing line items
+    await Promise.all([
+      supabase.from("service_report_catering").delete().eq("report_id", reportId),
+      supabase.from("service_report_hotac").delete().eq("report_id", reportId),
+      supabase.from("service_report_fuel").delete().eq("report_id", reportId),
+    ]);
+
+    // Insert new line items
+    if (cateringItems.length > 0) {
+      const rows = cateringItems.map((item, i) => ({ report_id: reportId, catering_item: item.catering_item, supplier: item.supplier, quantity: item.quantity, price_per_unit: item.price_per_unit, total: item.total, sort_order: i }));
+      await supabase.from("service_report_catering").insert(rows);
+    }
+    if (hotacItems.length > 0) {
+      const rows = hotacItems.map((item, i) => ({ report_id: reportId, hotel_name: item.hotel_name, room_classification: item.room_classification, type_of_service: item.type_of_service, quantity: item.quantity, price_per_night: item.price_per_night, total: item.total, sort_order: i }));
+      await supabase.from("service_report_hotac").insert(rows);
+    }
+    if (fuelItems.length > 0) {
+      const rows = fuelItems.map((item, i) => ({ report_id: reportId, fuel_type: item.fuel_type, supplier: item.supplier, quantity: item.quantity, price_per_unit: item.price_per_unit, total: item.total, sort_order: i }));
+      await supabase.from("service_report_fuel").insert(rows);
+    }
+  };
+
   // Save new report
   const addMutation = useMutation({
     mutationFn: async (data: Partial<ReportFormData>) => {
@@ -392,6 +420,7 @@ export default function ServiceReportPage() {
         const { error: dErr } = await supabase.from("service_report_delays").insert(delayRows);
         if (dErr) throw dErr;
       }
+      await saveLineItems(inserted.id, data);
       return inserted;
     },
     onSuccess: () => {
@@ -422,6 +451,7 @@ export default function ServiceReportPage() {
         const { error: dErr } = await supabase.from("service_report_delays").insert(delayRows);
         if (dErr) throw dErr;
       }
+      await saveLineItems(id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] });
