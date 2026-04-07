@@ -51,7 +51,7 @@ const ChannelContext = createContext<ChannelContextType | undefined>(undefined);
 export function ChannelProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [userRoles, setUserRoles] = useState<string[]>([]);
-  const [activeChannel, setActiveChannel] = useState<Channel>("station");
+  const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
