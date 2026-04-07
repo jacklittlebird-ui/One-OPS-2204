@@ -1587,6 +1587,10 @@ export type Database = {
           performed_by: string | null
           project_tags: string | null
           registration: string
+          review_comment: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           route: string
           sta: string | null
           station: string
@@ -1623,6 +1627,10 @@ export type Database = {
           performed_by?: string | null
           project_tags?: string | null
           registration?: string
+          review_comment?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           route?: string
           sta?: string | null
           station?: string
@@ -1659,6 +1667,10 @@ export type Database = {
           performed_by?: string | null
           project_tags?: string | null
           registration?: string
+          review_comment?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           route?: string
           sta?: string | null
           station?: string
