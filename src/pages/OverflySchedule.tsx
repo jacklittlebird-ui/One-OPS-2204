@@ -41,6 +41,9 @@ export default function OverflySchedulePage() {
   const { data: airlines } = useSupabaseTable<AirlineRow>("airlines");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [operatorFilter, setOperatorFilter] = useState("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<OverflyRow | null>(null);
