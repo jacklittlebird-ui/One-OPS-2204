@@ -55,7 +55,12 @@ export function ChannelProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setUserRoles([]);
+      setActiveChannel(null);
+      setLoading(false);
+      return;
+    }
     
     const fetchRoles = async () => {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
@@ -77,6 +82,14 @@ export function ChannelProvider({ children }: { children: ReactNode }) {
   const channels = rolesToChannels(userRoles);
   const isAdmin = userRoles.includes("admin");
   const resolvedChannel = activeChannel || channels[0] || "station";
+
+  if (!user) {
+    return (
+      <ChannelContext.Provider value={{ channels, activeChannel: resolvedChannel, setActiveChannel: setActiveChannel as (c: Channel) => void, loading: false, userRoles, isAdmin: false }}>
+        {children}
+      </ChannelContext.Provider>
+    );
+  }
 
   if (loading || !activeChannel) {
     return (
