@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
+import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
 import { ClearanceRow, CLEARANCE_TYPES, STATUS_CONFIG, emptyForm } from "@/components/clearances/ClearanceTypes";
@@ -109,7 +110,9 @@ export default function ClearancesPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}><Download size={14} className="mr-1" /> Export</Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}><Upload size={14} className="mr-1" /> Upload Excel</Button>
           <Button size="sm" onClick={openAdd}><Plus size={14} className="mr-1" /> Add Flights</Button>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleUpload} />
         </div>
       </div>
 
