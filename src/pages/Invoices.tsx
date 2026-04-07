@@ -5,6 +5,7 @@ import {
   Clock, XCircle, AlertCircle, Printer, ShieldCheck, Eye,
   TrendingUp, Filter, Calendar, BarChart3
 } from "lucide-react";
+import { formatDateDMY } from "@/lib/utils";
 import { useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
@@ -478,8 +479,8 @@ export default function InvoicesPage() {
                   </td>
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                   <td className="px-3 py-2.5 font-mono text-xs font-semibold text-foreground">{inv.invoice_no}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{inv.date}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{inv.due_date}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(inv.date)}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{formatDateDMY(inv.due_date)}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground">{inv.operator}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{inv.flight_ref}</td>
                   <td className="px-3 py-2.5">

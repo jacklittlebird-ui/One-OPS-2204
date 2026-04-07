@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateDMY } from "@/lib/utils";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -187,9 +188,9 @@ export default function VendorInvoicesPage() {
                   <TableRow key={v.id} className={isOverdue ? "bg-destructive/5" : isDueSoon ? "bg-warning/5" : ""}>
                     <TableCell className="font-medium font-mono"><FileText size={14} className="inline mr-1.5 text-muted-foreground" />{v.invoice_no}</TableCell>
                     <TableCell>{v.vendor_name}</TableCell>
-                    <TableCell>{v.date}</TableCell>
+                    <TableCell>{formatDateDMY(v.date)}</TableCell>
                     <TableCell>
-                      {v.due_date}
+                      {formatDateDMY(v.due_date)}
                       {isOverdue && <span className="ml-1 text-[10px] text-destructive font-semibold">({Math.abs(days)}d overdue)</span>}
                       {isDueSoon && <span className="ml-1 text-[10px] text-warning font-semibold">({days}d left)</span>}
                     </TableCell>
@@ -221,8 +222,8 @@ export default function VendorInvoicesPage() {
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="text-muted-foreground">Vendor:</span> <span className="font-semibold">{detailItem.vendor_name}</span></div>
                 <div><span className="text-muted-foreground">Status:</span> <Badge variant={detailItem.status === "Paid" ? "default" : "secondary"}>{detailItem.status}</Badge></div>
-                <div><span className="text-muted-foreground">Date:</span> {detailItem.date}</div>
-                <div><span className="text-muted-foreground">Due:</span> {detailItem.due_date}</div>
+                <div><span className="text-muted-foreground">Date:</span> {formatDateDMY(detailItem.date)}</div>
+                <div><span className="text-muted-foreground">Due:</span> {formatDateDMY(detailItem.due_date)}</div>
               </div>
               <div className="border-t pt-2 space-y-1">
                 <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><span className="font-mono">{detailItem.amount.toLocaleString()}</span></div>

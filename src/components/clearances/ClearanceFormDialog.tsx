@@ -1,9 +1,12 @@
+import { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CLEARANCE_TYPES, PURPOSES, SKD_TYPES, HANDLING_OPTIONS } from "./ClearanceTypes";
+import { CLEARANCE_TYPES, SKD_TYPES, HANDLING_OPTIONS } from "./ClearanceTypes";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   open: boolean;
@@ -17,7 +20,37 @@ interface Props {
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+function calcNoOfFlights(periodFrom: string, periodTo: string, weekDays: string): number {
+  if (!periodFrom || !periodTo || !weekDays) return 0;
+  const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const selectedDays = weekDays.split(",").filter(Boolean).map(d => dayMap[d]).filter(n => n !== undefined);
+  if (selectedDays.length === 0) return 0;
+  let count = 0;
+  const start = new Date(periodFrom);
+  const end = new Date(periodTo);
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    if (selectedDays.includes(d.getDay())) count++;
+  }
+  return count;
+}
+
 export default function ClearanceFormDialog({ open, onOpenChange, form, setForm, airlines, isEdit, onSave }: Props) {
+  const { data: airports } = useQuery({
+    queryKey: ["airports-iata"],
+    queryFn: async () => {
+      const { data } = await supabase.from("airports").select("id,iata_code,name").order("iata_code");
+      return data || [];
+    },
+  });
+
+  // Auto-calculate no_of_flights
+  useEffect(() => {
+    const calc = calcNoOfFlights(form.period_from, form.period_to, form.week_days);
+    if (calc !== Number(form.no_of_flights)) {
+      setForm((prev: any) => ({ ...prev, no_of_flights: calc }));
+    }
+  }, [form.period_from, form.period_to, form.week_days]);
+
   const toggleDay = (day: string) => {
     const days = form.week_days ? form.week_days.split(",").filter(Boolean) : [];
     const updated = days.includes(day) ? days.filter((d: string) => d !== day) : [...days, day];
@@ -41,7 +74,15 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">Station</label>
-              <Input placeholder="Station" value={form.authority} onChange={e => setForm({ ...form, authority: e.target.value.toUpperCase() })} />
+              <Select value={form.authority || "none"} onValueChange={v => setForm({ ...form, authority: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="Select Station" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {(airports || []).map((a: any) => (
+                    <SelectItem key={a.id} value={a.iata_code}>{a.iata_code} — {a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -104,13 +145,6 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <Checkbox checked={form.royalty} onCheckedChange={v => setForm({ ...form, royalty: !!v })} />
                 <label className="text-sm">Royalty</label>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Handling</label>
-                <Select value={form.handling || "none"} onValueChange={v => setForm({ ...form, handling: v === "none" ? "" : v })}>
-                  <SelectTrigger><SelectValue placeholder="Select Handling" /></SelectTrigger>
-                  <SelectContent><SelectItem value="none">—</SelectItem>{HANDLING_OPTIONS.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
             </div>
           </div>
 
@@ -132,7 +166,7 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
               <div className="space-y-2">
                 <div><label className="text-xs text-muted-foreground">From</label><Input type="date" value={form.period_from} onChange={e => setForm({ ...form, period_from: e.target.value })} /></div>
                 <div><label className="text-xs text-muted-foreground">To</label><Input type="date" value={form.period_to} onChange={e => setForm({ ...form, period_to: e.target.value })} /></div>
-                <div><label className="text-xs text-muted-foreground">No of Flights</label><Input type="number" value={form.no_of_flights} onChange={e => setForm({ ...form, no_of_flights: e.target.value })} /></div>
+                <div><label className="text-xs text-muted-foreground">No of Flights (auto)</label><Input type="number" value={form.no_of_flights} readOnly className="bg-muted" /></div>
               </div>
             </div>
           </div>
@@ -150,13 +184,6 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <Select value={form.clearance_type} onValueChange={v => setForm({ ...form, clearance_type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{CLEARANCE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Purpose</label>
-                <Select value={form.purpose} onValueChange={v => setForm({ ...form, purpose: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PURPOSES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>

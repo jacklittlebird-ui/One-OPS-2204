@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateDMY } from "@/lib/utils";
 import { Search, BookOpen, CheckCircle, Clock, Download } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
@@ -60,7 +61,7 @@ export default function ManualsAndFormsPage() {
                   <td className="px-3 py-2.5 font-semibold text-foreground">{m.title}</td>
                   <td className="px-3 py-2.5"><span className={`px-2 py-0.5 rounded text-xs font-medium ${catCfg[m.category]}`}>{m.category}</span></td>
                   <td className="px-3 py-2.5 font-mono text-xs text-foreground">{m.version}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{m.last_updated}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(m.last_updated)}</td>
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{m.department}</td>
                   <td className="px-3 py-2.5"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusCfg[m.status]}`}>{m.status}</span></td>
                 </tr>

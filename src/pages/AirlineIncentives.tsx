@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateDMY } from "@/lib/utils";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -161,7 +162,7 @@ export default function AirlineIncentivesPage() {
                   <TableCell className="font-mono">{i.threshold.toLocaleString()}</TableCell>
                   <TableCell className="font-mono">{i.rate}%</TableCell>
                   <TableCell className="font-mono">{i.max_amount.toLocaleString()} {i.currency}</TableCell>
-                  <TableCell className="text-xs">{i.start_date}{i.end_date ? ` → ${i.end_date}` : " → ∞"}</TableCell>
+                  <TableCell className="text-xs">{formatDateDMY(i.start_date)}{i.end_date ? ` → ${formatDateDMY(i.end_date)}` : " → ∞"}</TableCell>
                   <TableCell><Badge variant={i.status === "Active" ? "default" : "secondary"}>{i.status}</Badge></TableCell>
                   <TableCell>
                     <div className="flex gap-1">

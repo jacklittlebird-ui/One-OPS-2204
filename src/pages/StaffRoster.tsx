@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateDMY } from "@/lib/utils";
 import { Search, Plus, Pencil, Trash2, X, Users, CheckCircle, Clock, AlertCircle, Database, Download, Eye, GraduationCap, Shield } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
@@ -126,7 +127,7 @@ export default function StaffRosterPage() {
                   <td className="px-3 py-2.5"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusCfg[row.status] || ""}`}>{row.status}</span></td>
                   <td className="px-3 py-2.5">
                     <span className={`text-xs font-medium ${isExpiringSoon(row.cert_expiry) ? "text-warning font-bold" : "text-foreground"}`}>
-                      {row.cert_expiry}{isExpiringSoon(row.cert_expiry) && " ⚠️"}
+                      {formatDateDMY(row.cert_expiry)}{isExpiringSoon(row.cert_expiry) && " ⚠️"}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 flex gap-1.5">
@@ -158,8 +159,8 @@ export default function StaffRosterPage() {
               <div><span className="text-muted-foreground text-xs">Qualification</span><p className="font-medium">{detailItem.qualification || "—"}</p></div>
               <div><span className="text-muted-foreground text-xs">License No</span><p className="font-medium">{detailItem.license_no || "—"}</p></div>
               <div><span className="text-muted-foreground text-xs">Training Status</span><p><Badge variant={detailItem.training_status === "Current" ? "default" : "destructive"}>{detailItem.training_status}</Badge></p></div>
-              <div><span className="text-muted-foreground text-xs">Cert Expiry</span><p className="font-medium">{detailItem.cert_expiry || "—"}</p></div>
-              <div><span className="text-muted-foreground text-xs">Join Date</span><p className="font-medium">{detailItem.join_date || "—"}</p></div>
+              <div><span className="text-muted-foreground text-xs">Cert Expiry</span><p className="font-medium">{formatDateDMY(detailItem.cert_expiry)}</p></div>
+              <div><span className="text-muted-foreground text-xs">Join Date</span><p className="font-medium">{formatDateDMY(detailItem.join_date)}</p></div>
               <div><span className="text-muted-foreground text-xs">Emergency Contact</span><p className="font-medium">{detailItem.emergency_contact || "—"}</p></div>
             </div>
           )}

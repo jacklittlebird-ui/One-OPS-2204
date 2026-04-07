@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateDMY } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -78,7 +79,7 @@ export default function ReviewPanel({ reportId, currentStatus, reviewComment, re
             {reviewedBy && (
               <div className="text-xs text-muted-foreground">
                 Last reviewed by <span className="font-semibold">{reviewedBy}</span>
-                {reviewedAt && ` on ${new Date(reviewedAt).toLocaleDateString()}`}
+                {reviewedAt && ` on ${formatDateDMY(reviewedAt)}`}
               </div>
             )}
             <div>

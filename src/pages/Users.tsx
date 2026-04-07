@@ -22,6 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Users as UsersIcon, Plus, Shield, Trash2, Pencil } from "lucide-react";
+import { formatDateDMY } from "@/lib/utils";
 
 type AppRole = "admin" | "station_manager" | "station_ops" | "employee" | "clearance" | "contracts" | "operations" | "receivables" | "payables";
 
@@ -319,7 +320,7 @@ export default function UsersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">
-                        {new Date(p.created_at).toLocaleDateString()}
+                        {formatDateDMY(p.created_at)}
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">

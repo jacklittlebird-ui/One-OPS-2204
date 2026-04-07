@@ -18,6 +18,7 @@ import {
   Building2, MapPin, Globe, Shield, Bell, User, Monitor, Lock, Clock,
   Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check
 } from "lucide-react";
+import { formatDateDMY } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────
 interface Profile {
@@ -570,8 +571,8 @@ function UserProfileTab() {
           <CardTitle className="flex items-center gap-2"><RefreshCw size={18} className="text-lime" /> Account Info</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div><span className="text-muted-foreground">Joined:</span> <span className="font-medium">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span></div>
-          <div><span className="text-muted-foreground">Last Sign In:</span> <span className="font-medium">{user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : "—"}</span></div>
+          <div><span className="text-muted-foreground">Joined:</span> <span className="font-medium">{user?.created_at ? formatDateDMY(user.created_at) : "—"}</span></div>
+          <div><span className="text-muted-foreground">Last Sign In:</span> <span className="font-medium">{user?.last_sign_in_at ? formatDateDMY(user.last_sign_in_at) : "—"}</span></div>
           <div><span className="text-muted-foreground">Email Confirmed:</span> <span className="font-medium">{user?.email_confirmed_at ? "Yes" : "No"}</span></div>
           <div><span className="text-muted-foreground">Provider:</span> <span className="font-medium capitalize">{user?.app_metadata?.provider || "email"}</span></div>
         </CardContent>

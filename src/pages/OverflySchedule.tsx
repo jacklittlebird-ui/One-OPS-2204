@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateDMY } from "@/lib/utils";
 import { Search, Plus, Download, Globe, Pencil, Trash2, X, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database, Eye, MapPin } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
@@ -121,7 +122,7 @@ export default function OverflySchedulePage() {
                   <td className="px-3 py-2.5 text-foreground">{row.operator}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.registration}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.route_from}→{row.route_to}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{row.overfly_date}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(row.overfly_date)}</td>
                   <td className="px-3 py-2.5 text-xs">{row.entry_point} {row.entry_time} → {row.exit_point} {row.exit_time}</td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">{row.fir_zones || "—"}</td>
                   <td className="px-3 py-2.5 font-mono text-xs">{row.distance_nm || "—"}</td>

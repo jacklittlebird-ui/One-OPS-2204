@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateDMY } from "@/lib/utils";
 import { Search, FileText, CheckCircle, AlertCircle, Download, Plus, Pencil, Trash2, Eye, Users } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
@@ -106,9 +107,9 @@ export default function BulletinsPage() {
                   <td className="px-3 py-2.5 font-semibold text-foreground max-w-[200px] truncate">{b.title}</td>
                   <td className="px-3 py-2.5"><span className="px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">{b.type}</span></td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">{b.category_code || "—"}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{b.issued_date}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{b.effective_date}</td>
-                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{b.expiry_date}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(b.issued_date)}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(b.effective_date)}</td>
+                  <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(b.expiry_date)}</td>
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{b.issued_by}</td>
                   <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[100px] truncate">{b.recipients || "—"}</td>
                   <td className="px-3 py-2.5"><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${priorityCfg[b.priority]}`}>{b.priority}</span></td>
@@ -137,9 +138,9 @@ export default function BulletinsPage() {
                 <div><span className="text-muted-foreground text-xs">Priority</span><p><Badge variant={detailItem.priority === "High" ? "destructive" : "secondary"}>{detailItem.priority}</Badge></p></div>
                 <div><span className="text-muted-foreground text-xs">Status</span><p><Badge variant={detailItem.status === "Active" ? "default" : "secondary"}>{detailItem.status}</Badge></p></div>
                 <div><span className="text-muted-foreground text-xs">Issued By</span><p className="font-medium">{detailItem.issued_by}</p></div>
-                <div><span className="text-muted-foreground text-xs">Issued Date</span><p className="font-medium">{detailItem.issued_date}</p></div>
-                <div><span className="text-muted-foreground text-xs">Effective</span><p className="font-medium">{detailItem.effective_date || "—"}</p></div>
-                <div><span className="text-muted-foreground text-xs">Expiry</span><p className="font-medium">{detailItem.expiry_date || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Issued Date</span><p className="font-medium">{formatDateDMY(detailItem.issued_date)}</p></div>
+                <div><span className="text-muted-foreground text-xs">Effective</span><p className="font-medium">{formatDateDMY(detailItem.effective_date)}</p></div>
+                <div><span className="text-muted-foreground text-xs">Expiry</span><p className="font-medium">{formatDateDMY(detailItem.expiry_date)}</p></div>
               </div>
               <div><span className="text-muted-foreground text-xs">Title</span><p className="font-semibold">{detailItem.title}</p></div>
               <div><span className="text-muted-foreground text-xs">Description</span><p className="text-muted-foreground">{detailItem.description || "—"}</p></div>
