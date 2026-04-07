@@ -584,71 +584,119 @@ export type Database = {
         Row: {
           aircraft_type: string
           airline_id: string | null
+          arrival_date: string | null
+          arrival_flight: string | null
           authority: string
           cargo_kg: number
           clearance_type: string
+          config: number | null
           created_at: string
+          departure_date: string | null
+          departure_flight: string | null
           flight_no: string
           flight_schedule_id: string | null
+          handling: string | null
           handling_agent: string
           id: string
+          no_of_flights: number | null
+          notes: string | null
           passengers: number
+          period_from: string | null
+          period_to: string | null
           permit_no: string
           purpose: string
+          ref_no: string | null
           registration: string
           remarks: string
           requested_date: string | null
           route: string
+          royalty: boolean | null
+          skd_type: string | null
+          sta: string | null
           status: Database["public"]["Enums"]["clearance_status"]
+          std: string | null
           updated_at: string
           valid_from: string | null
           valid_to: string | null
+          week_days: string | null
         }
         Insert: {
           aircraft_type?: string
           airline_id?: string | null
+          arrival_date?: string | null
+          arrival_flight?: string | null
           authority?: string
           cargo_kg?: number
           clearance_type?: string
+          config?: number | null
           created_at?: string
+          departure_date?: string | null
+          departure_flight?: string | null
           flight_no?: string
           flight_schedule_id?: string | null
+          handling?: string | null
           handling_agent?: string
           id?: string
+          no_of_flights?: number | null
+          notes?: string | null
           passengers?: number
+          period_from?: string | null
+          period_to?: string | null
           permit_no?: string
           purpose?: string
+          ref_no?: string | null
           registration?: string
           remarks?: string
           requested_date?: string | null
           route?: string
+          royalty?: boolean | null
+          skd_type?: string | null
+          sta?: string | null
           status?: Database["public"]["Enums"]["clearance_status"]
+          std?: string | null
           updated_at?: string
           valid_from?: string | null
           valid_to?: string | null
+          week_days?: string | null
         }
         Update: {
           aircraft_type?: string
           airline_id?: string | null
+          arrival_date?: string | null
+          arrival_flight?: string | null
           authority?: string
           cargo_kg?: number
           clearance_type?: string
+          config?: number | null
           created_at?: string
+          departure_date?: string | null
+          departure_flight?: string | null
           flight_no?: string
           flight_schedule_id?: string | null
+          handling?: string | null
           handling_agent?: string
           id?: string
+          no_of_flights?: number | null
+          notes?: string | null
           passengers?: number
+          period_from?: string | null
+          period_to?: string | null
           permit_no?: string
           purpose?: string
+          ref_no?: string | null
           registration?: string
           remarks?: string
           requested_date?: string | null
           route?: string
+          royalty?: boolean | null
+          skd_type?: string | null
+          sta?: string | null
           status?: Database["public"]["Enums"]["clearance_status"]
+          std?: string | null
           updated_at?: string
           valid_from?: string | null
           valid_to?: string | null
+          week_days?: string | null
         }
         Relationships: [
           {
