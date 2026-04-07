@@ -76,9 +76,18 @@ export function ChannelProvider({ children }: { children: ReactNode }) {
 
   const channels = rolesToChannels(userRoles);
   const isAdmin = userRoles.includes("admin");
+  const resolvedChannel = activeChannel || channels[0] || "station";
+
+  if (loading || !activeChannel) {
+    return (
+      <ChannelContext.Provider value={{ channels, activeChannel: resolvedChannel, setActiveChannel: setActiveChannel as (c: Channel) => void, loading: true, userRoles, isAdmin }}>
+        {null}
+      </ChannelContext.Provider>
+    );
+  }
 
   return (
-    <ChannelContext.Provider value={{ channels, activeChannel, setActiveChannel, loading, userRoles, isAdmin }}>
+    <ChannelContext.Provider value={{ channels, activeChannel: resolvedChannel, setActiveChannel: setActiveChannel as (c: Channel) => void, loading, userRoles, isAdmin }}>
       {children}
     </ChannelContext.Provider>
   );
