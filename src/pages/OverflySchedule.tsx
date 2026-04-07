@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { formatDateDMY } from "@/lib/utils";
-import { Search, Plus, Download, Globe, Pencil, Trash2, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database, Eye, Ban } from "lucide-react";
+import { Search, Plus, Download, Globe, Pencil, Trash2, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database, Eye, Ban, CalendarIcon } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format, parse } from "date-fns";
 
 type AirlineRow = { id: string; name: string; iata_code: string; icao_code: string };
 
@@ -207,8 +210,34 @@ export default function OverflySchedulePage() {
               <div><label className="text-xs text-muted-foreground">To</label><Input value={form.route_to} onChange={e => setForm({ ...form, route_to: e.target.value.toUpperCase() })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-xs text-muted-foreground">Valid From</label><Input type="date" value={form.valid_from} onChange={e => setForm({ ...form, valid_from: e.target.value })} /></div>
-              <div><label className="text-xs text-muted-foreground">Valid To</label><Input type="date" value={form.valid_to} onChange={e => setForm({ ...form, valid_to: e.target.value })} /></div>
+              <div>
+                <label className="text-xs text-muted-foreground">Valid From</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !form.valid_from && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.valid_from ? format(new Date(form.valid_from), "dd/MM/yyyy") : "DD/MM/YYYY"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                    <Calendar mode="single" selected={form.valid_from ? new Date(form.valid_from) : undefined} onSelect={d => setForm({ ...form, valid_from: d ? format(d, "yyyy-MM-dd") : "" })} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Valid To</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !form.valid_to && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.valid_to ? format(new Date(form.valid_to), "dd/MM/yyyy") : "DD/MM/YYYY"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                    <Calendar mode="single" selected={form.valid_to ? new Date(form.valid_to) : undefined} onSelect={d => setForm({ ...form, valid_to: d ? format(d, "yyyy-MM-dd") : "" })} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><label className="text-xs text-muted-foreground">Permit No</label><Input value={form.permit_no} onChange={e => setForm({ ...form, permit_no: e.target.value })} /></div>
