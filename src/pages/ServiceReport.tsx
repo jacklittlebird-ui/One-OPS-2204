@@ -23,188 +23,182 @@ const PAGE_SIZE = 15;
 const handlingTypes = Constants.public.Enums.handling_type;
 type HandlingType = typeof handlingTypes[number];
 
-const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground";
-const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
+const statusColor: Record<string, string> = {
+  "Turn Around": "bg-primary/10 text-primary",
+  "Night Stop": "bg-info/10 text-info",
+  "Transit": "bg-success/10 text-success",
+  "Technical": "bg-warning/10 text-warning",
+  "Ferry In": "bg-accent/10 text-accent",
+  "Ferry Out": "bg-accent/10 text-accent",
+  "VIP Hall": "bg-destructive/10 text-destructive",
+  "Overflying": "bg-muted text-muted-foreground",
+};
 
-interface ReportFormProps {
-  data: Partial<ReportFormData>;
-  onChange: (d: Partial<ReportFormData>) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  title: string;
+const stationOptions = [
+  { name: "Cairo", vendor: "Cairo Airport Company" },
+  { name: "Hurghada", vendor: "Egyptian Airports" },
+  { name: "Sharm El Sheikh", vendor: "Egyptian Airports" },
+  { name: "Luxor", vendor: "Egyptian Airports" },
+  { name: "Aswan", vendor: "Egyptian Airports" },
+];
+
+const allCharges = generateAllCharges();
+
+function isNightTime(timeStr: string, dateStr: string): boolean {
+  if (!timeStr || !dateStr) return false;
+  const [h] = timeStr.split(":").map(Number);
+  if (isNaN(h)) return false;
+  const month = new Date(dateStr).getMonth() + 1;
+  return month >= 4 && month <= 10 ? (h >= 17 || h < 3) : (h >= 16 || h < 4);
 }
 
-function ReportForm({ data, onChange, onSave, onCancel, title }: ReportFormProps) {
-  type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
-  const { data: delayCodes } = useSupabaseTable<DelayCodeRow>("delay_codes", { orderBy: "code", ascending: true });
-  const recalcFinancials = (d: Partial<ReportFormData>) => {
-    d.civilAviationFee = calcCivilAviation(d);
-    d.airportCharge = getAirportCharge(d);
-    d.totalCost = +((d.civilAviationFee || 0) + (d.handlingFee || 0) + (d.airportCharge || 0)).toFixed(2);
+function autoDayNight(td: string, arrivalDate: string): "D" | "N" {
+  return (!td || !arrivalDate) ? "D" : isNightTime(td, arrivalDate) ? "N" : "D";
+}
+
+// Convert DB row to form data
+function dbToForm(row: any, delays: any[]): ReportFormData {
+  return {
+    id: row.id,
+    operator: row.operator,
+    handlingType: row.handling_type,
+    station: row.station,
+    aircraftType: row.aircraft_type,
+    registration: row.registration,
+    flightNo: row.flight_no,
+    mtow: row.mtow,
+    route: row.route,
+    arrivalDate: row.arrival_date || "",
+    departureDate: row.departure_date || "",
+    dayNight: row.day_night,
+    sta: row.sta || "",
+    std: row.std || "",
+    td: row.td || "",
+    co: row.co || "",
+    ob: row.ob || "",
+    to: row.to || "",
+    ata: row.ata || "",
+    atd: row.atd || "",
+    groundTime: row.ground_time || "",
+    delays: delays
+      .filter(d => d.report_id === row.id)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(d => ({ code: d.code, timing: d.timing, explanation: d.explanation })),
+    paxInAdultI: row.pax_in_adult_i,
+    paxInInfI: row.pax_in_inf_i,
+    paxInAdultD: row.pax_in_adult_d,
+    paxInInfD: row.pax_in_inf_d,
+    paxTransit: row.pax_transit,
+    foreignPaxIn: row.foreign_pax_in || 0,
+    foreignPaxOut: row.foreign_pax_out || 0,
+    egyptianPaxIn: row.egyptian_pax_in || 0,
+    egyptianPaxOut: row.egyptian_pax_out || 0,
+    infantIn: row.infant_in || 0,
+    infantOut: row.infant_out || 0,
+    crewCount: row.crew_count || 0,
+    totalDepartingPax: row.total_departing_pax || 0,
+    estimatedForeignBill: Number(row.estimated_foreign_bill || 0),
+    estimatedLocalBill: Number(row.estimated_local_bill || 0),
+    fireCartQty: row.fire_cart_qty || 0,
+    followMeQty: row.follow_me_qty || 0,
+    jetwayQty: row.jetway_qty || 0,
+    metFolderQty: row.met_folder_qty || 0,
+    fileFltPlanQty: row.file_flt_plan_qty || 0,
+    printOpsFltPlanQty: row.print_ops_flt_plan_qty || 0,
+    confirmationNo: row.confirmation_no || "",
+    flightStatus: row.flight_status || "Scheduled",
+    projectTags: row.project_tags || "",
+    checkInSystem: row.check_in_system || "",
+    performedBy: row.performed_by || "Link Egypt",
+    civilAviationFee: Number(row.civil_aviation_fee),
+    handlingFee: Number(row.handling_fee),
+    airportCharge: Number(row.airport_charge),
+    totalCost: Number(row.total_cost),
+    currency: row.currency,
+    parkingDayHours: Number(row.parking_day_hours || 0),
+    parkingNightHours: Number(row.parking_night_hours || 0),
+    totalParkingHours: Number(row.total_parking_hours || 0),
+    housingDays: Number(row.housing_days || 0),
+    landingCharge: Number(row.landing_charge || 0),
+    parkingCharge: Number(row.parking_charge || 0),
+    housingCharge: Number(row.housing_charge || 0),
+    fuelCharge: Number(row.fuel_charge || 0),
+    cateringCharge: Number(row.catering_charge || 0),
+    hotacCharge: Number(row.hotac_charge || 0),
+    cateringItems: [],
+    hotacItems: [],
+    fuelItems: [],
+    reviewStatus: row.review_status || "pending",
+    reviewComment: row.review_comment || "",
+    reviewedBy: row.reviewed_by || "",
+    reviewedAt: row.reviewed_at || null,
   };
+}
 
-  const set = (key: keyof ReportFormData, val: any) => {
-    const updated = { ...data, [key]: val };
-    if (key === "co" || key === "ob") {
-      updated.groundTime = calcGroundTime(
-        key === "co" ? val : (data.co || ""),
-        key === "ob" ? val : (data.ob || "")
-      );
-    }
-    const financialTriggers: (keyof ReportFormData)[] = ["mtow", "station", "td", "co", "ob", "to", "arrivalDate"];
-    if (financialTriggers.includes(key) || key === "handlingFee") {
-      recalcFinancials(updated);
-    }
-    onChange(updated);
+function formToDb(data: Partial<ReportFormData>) {
+  return {
+    operator: data.operator || "",
+    handling_type: data.handlingType || "Turn Around",
+    station: data.station || "Cairo",
+    aircraft_type: data.aircraftType || "",
+    registration: data.registration || "",
+    flight_no: data.flightNo || "",
+    mtow: data.mtow || "",
+    route: data.route || "",
+    arrival_date: data.arrivalDate || null,
+    departure_date: data.departureDate || null,
+    day_night: autoDayNight(data.td || "", data.arrivalDate || ""),
+    sta: data.sta || "",
+    std: data.std || "",
+    td: data.td || "",
+    co: data.co || "",
+    ob: data.ob || "",
+    to: data.to || "",
+    ata: data.ata || "",
+    atd: data.atd || "",
+    ground_time: data.groundTime || "",
+    pax_in_adult_i: data.paxInAdultI || 0,
+    pax_in_inf_i: data.paxInInfI || 0,
+    pax_in_adult_d: data.paxInAdultD || 0,
+    pax_in_inf_d: data.paxInInfD || 0,
+    pax_transit: data.paxTransit || 0,
+    foreign_pax_in: data.foreignPaxIn || 0,
+    foreign_pax_out: data.foreignPaxOut || 0,
+    egyptian_pax_in: data.egyptianPaxIn || 0,
+    egyptian_pax_out: data.egyptianPaxOut || 0,
+    infant_in: data.infantIn || 0,
+    infant_out: data.infantOut || 0,
+    crew_count: data.crewCount || 0,
+    total_departing_pax: data.totalDepartingPax || 0,
+    estimated_foreign_bill: data.estimatedForeignBill || 0,
+    estimated_local_bill: data.estimatedLocalBill || 0,
+    fire_cart_qty: data.fireCartQty || 0,
+    follow_me_qty: data.followMeQty || 0,
+    jetway_qty: data.jetwayQty || 0,
+    met_folder_qty: data.metFolderQty || 0,
+    file_flt_plan_qty: data.fileFltPlanQty || 0,
+    print_ops_flt_plan_qty: data.printOpsFltPlanQty || 0,
+    confirmation_no: data.confirmationNo || "",
+    flight_status: data.flightStatus || "Scheduled",
+    project_tags: data.projectTags || "",
+    check_in_system: data.checkInSystem || "",
+    performed_by: data.performedBy || "Link Egypt",
+    civil_aviation_fee: data.civilAviationFee || 0,
+    handling_fee: data.handlingFee || 0,
+    airport_charge: data.airportCharge || 0,
+    total_cost: data.totalCost || 0,
+    currency: data.currency || "USD",
+    parking_day_hours: data.parkingDayHours || 0,
+    parking_night_hours: data.parkingNightHours || 0,
+    total_parking_hours: data.totalParkingHours || 0,
+    housing_days: data.housingDays || 0,
+    landing_charge: data.landingCharge || 0,
+    parking_charge: data.parkingCharge || 0,
+    housing_charge: data.housingCharge || 0,
+    fuel_charge: data.fuelCharge || 0,
+    catering_charge: data.cateringCharge || 0,
+    hotac_charge: data.hotacCharge || 0,
   };
-
-  const delays = data.delays || [];
-  const setDelay = (index: number, field: keyof DelayEntry, val: any) => {
-    const newDelays = [...delays];
-    newDelays[index] = { ...newDelays[index], [field]: val };
-    if (field === "code") {
-      const found = delayCodes.find(dc => dc.code === val);
-      newDelays[index].explanation = found?.description || "";
-    }
-    onChange({ ...data, delays: newDelays });
-  };
-  const addDelay = () => {
-    if (delays.length < 4) {
-      onChange({ ...data, delays: [...delays, { code: "", timing: 0, explanation: "" }] });
-    }
-  };
-  const removeDelay = (i: number) => {
-    onChange({ ...data, delays: delays.filter((_, idx) => idx !== i) });
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto m-4">
-        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
-          <h2 className="font-bold text-foreground text-lg flex items-center gap-2"><FileBarChart2 size={18} className="text-primary" />{title}</h2>
-          <button onClick={onCancel} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
-        </div>
-        <div className="p-6 space-y-6">
-          {/* Flight Data */}
-          <div>
-            <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2"><Plane size={14} />Flight Data</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <FormField label="Operator"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="Air Cairo" /></FormField>
-              <FormField label="Flight No."><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="SM123/124" /></FormField>
-              <FormField label="Aircraft Type"><input className={inputCls} value={data.aircraftType || ""} onChange={e => set("aircraftType", e.target.value)} placeholder="A320/200" /></FormField>
-              <FormField label="Registration"><input className={inputCls} value={data.registration || ""} onChange={e => set("registration", e.target.value)} placeholder="SU-CAI" /></FormField>
-              <FormField label="MTOW"><input className={inputCls} value={data.mtow || ""} onChange={e => set("mtow", e.target.value)} placeholder="77 TON" /></FormField>
-              <FormField label="Route"><input className={inputCls} value={data.route || ""} onChange={e => set("route", e.target.value)} placeholder="AMS/CAI/AMS" /></FormField>
-              <FormField label="Station">
-                <select className={selectCls} value={data.station || "Cairo"} onChange={e => set("station", e.target.value)}>
-                  {stationOptions.map(s => <option key={s.name}>{s.name}</option>)}
-                </select>
-              </FormField>
-              <FormField label="Handling Type">
-                <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value as HandlingType)}>
-                  {handlingTypes.map(h => <option key={h}>{h}</option>)}
-                </select>
-              </FormField>
-            </div>
-          </div>
-
-          {/* Operation Data */}
-          <div>
-            <h3 className="text-sm font-bold text-info uppercase tracking-wider mb-3 flex items-center gap-2"><Building2 size={14} />Operation Data</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <FormField label="Arrival Date"><input type="date" className={inputCls} value={data.arrivalDate || ""} onChange={e => set("arrivalDate", e.target.value)} /></FormField>
-              <FormField label="Departure Date"><input type="date" className={inputCls} value={data.departureDate || ""} onChange={e => set("departureDate", e.target.value)} /></FormField>
-              <FormField label="Day / Night (auto)">
-                <input className={inputCls + " bg-muted"} value={autoDayNight(data.td || "", data.arrivalDate || "")} readOnly />
-              </FormField>
-              <FormField label="Ground Time (auto)">
-                <input className={inputCls + " bg-muted"} value={data.groundTime || ""} readOnly placeholder="Auto" />
-              </FormField>
-              <FormField label="STA"><input type="time" className={inputCls} value={data.sta || ""} onChange={e => set("sta", e.target.value)} /></FormField>
-              <FormField label="STD"><input type="time" className={inputCls} value={data.std || ""} onChange={e => set("std", e.target.value)} /></FormField>
-              <FormField label="T/D (Touchdown)"><input type="time" className={inputCls} value={data.td || ""} onChange={e => set("td", e.target.value)} /></FormField>
-              <FormField label="C/O (Chocks On)"><input type="time" className={inputCls} value={data.co || ""} onChange={e => set("co", e.target.value)} /></FormField>
-              <FormField label="O/B (Off Blocks)"><input type="time" className={inputCls} value={data.ob || ""} onChange={e => set("ob", e.target.value)} /></FormField>
-              <FormField label="T/O (Takeoff)"><input type="time" className={inputCls} value={data.to || ""} onChange={e => set("to", e.target.value)} /></FormField>
-            </div>
-          </div>
-
-          {/* Delay Codes */}
-          <div>
-            <h3 className="text-sm font-bold text-destructive uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Building2 size={14} />Delay Codes (up to 4)
-            </h3>
-            {delays.map((d, i) => (
-              <div key={i} className="grid grid-cols-[1fr_80px_2fr_auto] gap-2 mb-2 items-end">
-                <FormField label={`DLY Code ${i + 1}`}>
-                  <select className={selectCls} value={d.code} onChange={e => setDelay(i, "code", e.target.value)}>
-                    <option value="">— Select —</option>
-                    {delayCodes.filter(dc => dc.active).map(dc => (
-                      <option key={dc.id} value={dc.code}>{dc.code} – {dc.description.slice(0, 40)}</option>
-                    ))}
-                  </select>
-                </FormField>
-                <FormField label="Timing (min)">
-                  <input type="number" className={inputCls} value={d.timing || 0} onChange={e => setDelay(i, "timing", +e.target.value)} />
-                </FormField>
-                <FormField label="Explanation (auto)">
-                  <input className={inputCls + " bg-muted"} value={d.explanation} readOnly />
-                </FormField>
-                <button onClick={() => removeDelay(i)} className="p-1.5 text-destructive hover:text-destructive/80 mb-0.5"><X size={14} /></button>
-              </div>
-            ))}
-            {delays.length < 4 && (
-              <button onClick={addDelay} className="toolbar-btn-outline text-xs mt-1"><Plus size={12} /> Add Delay</button>
-            )}
-          </div>
-
-          {/* PAX + Services */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-3 flex items-center gap-2"><Users size={14} />Passengers</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField label="PAX IN Adult /I"><input type="number" className={inputCls} value={data.paxInAdultI || 0} onChange={e => set("paxInAdultI", +e.target.value)} /></FormField>
-                <FormField label="PAX IN INF /I"><input type="number" className={inputCls} value={data.paxInInfI || 0} onChange={e => set("paxInInfI", +e.target.value)} /></FormField>
-                <FormField label="PAX IN Adult /D"><input type="number" className={inputCls} value={data.paxInAdultD || 0} onChange={e => set("paxInAdultD", +e.target.value)} /></FormField>
-                <FormField label="PAX IN INF /D"><input type="number" className={inputCls} value={data.paxInInfD || 0} onChange={e => set("paxInInfD", +e.target.value)} /></FormField>
-                <FormField label="PAX Transit"><input type="number" className={inputCls} value={data.paxTransit || 0} onChange={e => set("paxTransit", +e.target.value)} /></FormField>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-accent uppercase tracking-wider mb-3">Services & Tags</h3>
-              <div className="grid grid-cols-1 gap-4">
-                <FormField label="Project Tags (Services)"><input className={inputCls + " w-full"} value={data.projectTags || ""} onChange={e => set("projectTags", e.target.value)} placeholder="AVSEC, Full Handling…" /></FormField>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Check-In System"><input className={inputCls} value={data.checkInSystem || ""} onChange={e => set("checkInSystem", e.target.value)} placeholder="Amadeus" /></FormField>
-                  <FormField label="Performed By"><input className={inputCls} value={data.performedBy || ""} onChange={e => set("performedBy", e.target.value)} placeholder="Link Egypt" /></FormField>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Financials */}
-          <div>
-            <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-2"><DollarSign size={14} />Financials (auto-calculated from MTOW)</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <FormField label="Civil Aviation ($)"><input type="number" className={inputCls + " bg-muted"} value={data.civilAviationFee || 0} readOnly /></FormField>
-              <FormField label="Handling Fee ($)"><input type="number" className={inputCls} value={data.handlingFee || 0} onChange={e => set("handlingFee", +e.target.value)} /></FormField>
-              <FormField label="Airport Charge ($)"><input type="number" className={inputCls + " bg-muted"} value={data.airportCharge || 0} readOnly /></FormField>
-              <FormField label="Total Cost ($)"><input type="number" className={inputCls + " bg-muted"} value={data.totalCost || 0} readOnly /></FormField>
-              <FormField label="Currency">
-                <select className={selectCls} value={data.currency} onChange={e => set("currency", e.target.value as "USD"|"EUR"|"EGP")}>
-                  {currencyOptions.map(c => <option key={c}>{c}</option>)}
-                </select>
-              </FormField>
-            </div>
-          </div>
-        </div>
-        <div className="sticky bottom-0 bg-card border-t px-6 py-4 flex gap-3 justify-end rounded-b-xl">
-          <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
-          <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // A merged row can be either a completed service report or a source schedule awaiting completion
