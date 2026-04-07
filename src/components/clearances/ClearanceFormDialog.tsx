@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { format, parse } from "date-fns";
+import { CalendarIcon, ChevronsUpDown, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { ChevronsUpDown, Check } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { CLEARANCE_TYPES, SKD_TYPES, HANDLING_OPTIONS } from "./ClearanceTypes";
+import { CLEARANCE_TYPES, SKD_TYPES } from "./ClearanceTypes";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -38,6 +40,53 @@ function calcNoOfFlights(periodFrom: string, periodTo: string, weekDays: string)
   return count;
 }
 
+/** Convert ISO string (yyyy-mm-dd) to Date or undefined */
+function toDate(val: string | null | undefined): Date | undefined {
+  if (!val) return undefined;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? undefined : d;
+}
+
+/** Convert Date to ISO string (yyyy-mm-dd) for storage */
+function toISO(d: Date | undefined): string {
+  if (!d) return "";
+  return format(d, "yyyy-MM-dd");
+}
+
+/** Display date as DD/MM/YYYY */
+function displayDate(val: string | null | undefined): string {
+  if (!val) return "";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "";
+  return format(d, "dd/MM/yyyy");
+}
+
+function DatePickerField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground">{label}</label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? displayDate(value) : "DD/MM/YYYY"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={toDate(value)}
+            onSelect={(d) => { onChange(toISO(d)); setOpen(false); }}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 export default function ClearanceFormDialog({ open, onOpenChange, form, setForm, airlines, isEdit, onSave }: Props) {
   const [airlineOpen, setAirlineOpen] = useState(false);
   const [stationOpen, setStationOpen] = useState(false);
@@ -49,7 +98,6 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
     },
   });
 
-  // Auto-calculate no_of_flights
   useEffect(() => {
     const calc = calcNoOfFlights(form.period_from, form.period_to, form.week_days);
     if (calc !== Number(form.no_of_flights)) {
@@ -167,21 +215,15 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <label className="text-xs text-muted-foreground">Arrival Flight</label>
                 <Input placeholder="Arrival Flight" value={form.arrival_flight} onChange={e => setForm({ ...form, arrival_flight: e.target.value.toUpperCase() })} />
               </div>
+              <DatePickerField label="Departure Date" value={form.departure_date} onChange={v => setForm({ ...form, departure_date: v })} />
+              <DatePickerField label="Arrival Date" value={form.arrival_date} onChange={v => setForm({ ...form, arrival_date: v })} />
               <div>
-                <label className="text-xs text-muted-foreground">Departure Date</label>
-                <Input type="date" value={form.departure_date} onChange={e => setForm({ ...form, departure_date: e.target.value })} />
+                <label className="text-xs text-muted-foreground">STA (24h)</label>
+                <Input type="time" step="60" value={form.sta} onChange={e => setForm({ ...form, sta: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Arrival Date</label>
-                <Input type="date" value={form.arrival_date} onChange={e => setForm({ ...form, arrival_date: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">STA</label>
-                <Input type="time" value={form.sta} onChange={e => setForm({ ...form, sta: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">STD</label>
-                <Input type="time" value={form.std} onChange={e => setForm({ ...form, std: e.target.value })} />
+                <label className="text-xs text-muted-foreground">STD (24h)</label>
+                <Input type="time" step="60" value={form.std} onChange={e => setForm({ ...form, std: e.target.value })} />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Skd Type</label>
@@ -213,8 +255,8 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
             <div>
               <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Period of Schedule</h4>
               <div className="space-y-2">
-                <div><label className="text-xs text-muted-foreground">From</label><Input type="date" value={form.period_from} onChange={e => setForm({ ...form, period_from: e.target.value })} /></div>
-                <div><label className="text-xs text-muted-foreground">To</label><Input type="date" value={form.period_to} onChange={e => setForm({ ...form, period_to: e.target.value })} /></div>
+                <DatePickerField label="From" value={form.period_from} onChange={v => setForm({ ...form, period_from: v })} />
+                <DatePickerField label="To" value={form.period_to} onChange={v => setForm({ ...form, period_to: v })} />
                 <div><label className="text-xs text-muted-foreground">No of Flights (auto)</label><Input type="number" value={form.no_of_flights} readOnly className="bg-muted" /></div>
               </div>
             </div>
@@ -248,18 +290,9 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Requested Date</label>
-                <Input type="date" value={form.requested_date} onChange={e => setForm({ ...form, requested_date: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Valid From</label>
-                <Input type="date" value={form.valid_from} onChange={e => setForm({ ...form, valid_from: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Valid To</label>
-                <Input type="date" value={form.valid_to} onChange={e => setForm({ ...form, valid_to: e.target.value })} />
-              </div>
+              <DatePickerField label="Requested Date" value={form.requested_date} onChange={v => setForm({ ...form, requested_date: v })} />
+              <DatePickerField label="Valid From" value={form.valid_from} onChange={v => setForm({ ...form, valid_from: v })} />
+              <DatePickerField label="Valid To" value={form.valid_to} onChange={v => setForm({ ...form, valid_to: v })} />
               <div>
                 <label className="text-xs text-muted-foreground">Handling Agent</label>
                 <Input placeholder="Handling Agent" value={form.handling_agent} onChange={e => setForm({ ...form, handling_agent: e.target.value })} />
