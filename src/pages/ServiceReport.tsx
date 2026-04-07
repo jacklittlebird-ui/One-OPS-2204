@@ -591,6 +591,7 @@ export default function ServiceReportPage() {
     let r = reports;
     if (handlingFilter !== "All Types") r = r.filter(x => x.handlingType === handlingFilter);
     if (stationFilter !== "All Stations") r = r.filter(x => x.station === stationFilter);
+    if (reviewFilter !== "All Review") r = r.filter(x => x.reviewStatus === reviewFilter);
     if (dateFrom) r = r.filter(x => x.arrivalDate >= dateFrom);
     if (dateTo) r = r.filter(x => x.arrivalDate <= dateTo);
     if (search) {
@@ -602,7 +603,7 @@ export default function ServiceReportPage() {
       );
     }
     return r;
-  }, [reports, handlingFilter, stationFilter, dateFrom, dateTo, search]);
+  }, [reports, handlingFilter, stationFilter, reviewFilter, dateFrom, dateTo, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -775,6 +776,12 @@ export default function ServiceReportPage() {
           <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Stations</option>
             {allStations.map(s => <option key={s}>{s}</option>)}
+          </select>
+          <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <option>All Review</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
