@@ -215,6 +215,8 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <label className="text-xs text-muted-foreground">Arrival Flight</label>
                 <Input placeholder="Arrival Flight" value={form.arrival_flight} onChange={e => setForm({ ...form, arrival_flight: e.target.value.toUpperCase() })} />
               </div>
+              <DatePickerField label="Arrival Date" value={form.arrival_date} onChange={v => setForm({ ...form, arrival_date: v })} />
+              <DatePickerField label="Departure Date" value={form.departure_date} onChange={v => setForm({ ...form, departure_date: v })} />
               <div>
                 <label className="text-xs text-muted-foreground">STA (24h)</label>
                 <Input
