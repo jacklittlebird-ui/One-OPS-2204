@@ -59,6 +59,10 @@ interface ReportFormData {
   airportCharge: number;
   totalCost: number;
   currency: "USD" | "EUR" | "EGP";
+  reviewStatus: string;
+  reviewComment: string;
+  reviewedBy: string;
+  reviewedAt: string | null;
 }
 
 const statusColor: Record<string, string> = {
@@ -211,6 +215,10 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
     airportCharge: Number(row.airport_charge),
     totalCost: Number(row.total_cost),
     currency: row.currency,
+    reviewStatus: row.review_status || "pending",
+    reviewComment: row.review_comment || "",
+    reviewedBy: row.reviewed_by || "",
+    reviewedAt: row.reviewed_at || null,
   };
 }
 
