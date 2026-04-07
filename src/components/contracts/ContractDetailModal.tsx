@@ -1,4 +1,5 @@
 import { FileText, X, Mail, User, Calendar, DollarSign, Building2 } from "lucide-react";
+import { formatDateDMY } from "@/lib/utils";
 import type { ContractRow } from "./ContractTypes";
 import { ContractStatusBadge, ContractTypeBadge } from "./ContractStatusBadge";
 import { daysUntilExpiry } from "./ContractTypes";
@@ -60,8 +61,8 @@ export function ContractDetailModal({ contract: c, onClose }: Props) {
           <div className="border-t pt-4">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Duration</h3>
             <div className="grid grid-cols-3 gap-x-8 gap-y-1">
-              <InfoRow label="Start Date" value={c.start_date} icon={<Calendar size={14} />} />
-              <InfoRow label="End Date" value={c.end_date} icon={<Calendar size={14} />} />
+              <InfoRow label="Start Date" value={formatDateDMY(c.start_date)} icon={<Calendar size={14} />} />
+              <InfoRow label="End Date" value={formatDateDMY(c.end_date)} icon={<Calendar size={14} />} />
               <InfoRow label="Duration" value={`${duration} days`} />
               <InfoRow label="Auto-Renew" value={c.auto_renew ? "✔ Yes" : "No"} />
               <InfoRow label="Days Remaining" value={days > 0 ? `${days} days` : "Expired"} />

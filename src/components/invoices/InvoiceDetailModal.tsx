@@ -1,4 +1,5 @@
 import { X, FileText, DollarSign, Plane, Calendar, MapPin, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard } from "lucide-react";
+import { formatDateDMY } from "@/lib/utils";
 
 export type InvoiceRow = {
   id: string; invoice_no: string; date: string; due_date: string;
@@ -107,11 +108,11 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
           {/* Dates */}
           <div className="bg-muted/30 rounded-lg p-4">
             <h3 className="text-xs font-bold text-info uppercase tracking-wider mb-2 flex items-center gap-1.5"><Calendar size={12} /> Dates</h3>
-            <DetailRow label="Invoice Date" value={inv.date} />
-            <DetailRow label="Due Date" value={inv.due_date} />
-            {inv.finalized_at && <DetailRow label="Finalized At" value={new Date(inv.finalized_at).toLocaleDateString()} />}
-            {inv.sent_at && <DetailRow label="Sent At" value={new Date(inv.sent_at).toLocaleDateString()} />}
-            {inv.payment_date && <DetailRow label="Payment Date" value={inv.payment_date} />}
+            <DetailRow label="Invoice Date" value={formatDateDMY(inv.date)} />
+            <DetailRow label="Due Date" value={formatDateDMY(inv.due_date)} />
+            {inv.finalized_at && <DetailRow label="Finalized At" value={formatDateDMY(inv.finalized_at)} />}
+            {inv.sent_at && <DetailRow label="Sent At" value={formatDateDMY(inv.sent_at)} />}
+            {inv.payment_date && <DetailRow label="Payment Date" value={formatDateDMY(inv.payment_date)} />}
           </div>
 
           {/* Charges Breakdown */}
