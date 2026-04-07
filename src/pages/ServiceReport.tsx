@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
-  DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, Receipt
+  DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, Receipt,
+  CheckCircle2, XCircle, Clock, MessageSquare
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -58,6 +59,10 @@ interface ReportFormData {
   airportCharge: number;
   totalCost: number;
   currency: "USD" | "EUR" | "EGP";
+  reviewStatus: string;
+  reviewComment: string;
+  reviewedBy: string;
+  reviewedAt: string | null;
 }
 
 const statusColor: Record<string, string> = {
@@ -210,6 +215,10 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
     airportCharge: Number(row.airport_charge),
     totalCost: Number(row.total_cost),
     currency: row.currency,
+    reviewStatus: row.review_status || "pending",
+    reviewComment: row.review_comment || "",
+    reviewedBy: row.reviewed_by || "",
+    reviewedAt: row.reviewed_at || null,
   };
 }
 
@@ -450,6 +459,7 @@ export default function ServiceReportPage() {
   const [search, setSearch] = useState("");
   const [handlingFilter, setHandlingFilter] = useState("All Types");
   const [stationFilter, setStationFilter] = useState("All Stations");
+  const [reviewFilter, setReviewFilter] = useState("All Review");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
@@ -581,6 +591,7 @@ export default function ServiceReportPage() {
     let r = reports;
     if (handlingFilter !== "All Types") r = r.filter(x => x.handlingType === handlingFilter);
     if (stationFilter !== "All Stations") r = r.filter(x => x.station === stationFilter);
+    if (reviewFilter !== "All Review") r = r.filter(x => x.reviewStatus === reviewFilter);
     if (dateFrom) r = r.filter(x => x.arrivalDate >= dateFrom);
     if (dateTo) r = r.filter(x => x.arrivalDate <= dateTo);
     if (search) {
@@ -592,7 +603,7 @@ export default function ServiceReportPage() {
       );
     }
     return r;
-  }, [reports, handlingFilter, stationFilter, dateFrom, dateTo, search]);
+  }, [reports, handlingFilter, stationFilter, reviewFilter, dateFrom, dateTo, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -766,6 +777,12 @@ export default function ServiceReportPage() {
             <option>All Stations</option>
             {allStations.map(s => <option key={s}>{s}</option>)}
           </select>
+          <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <option>All Review</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
           <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> New Report</button>
@@ -778,17 +795,17 @@ export default function ServiceReportPage() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["#", "OPERATOR", "FLIGHT", "TYPE", "STATION", "ROUTE", "ARR DATE", "A/C TYPE", "MTOW", "D/N", "STA", "C/O", "O/B", "GND TIME", "PAX IN", "DLY", "TOTAL ($)", "ACTIONS"].map(h => (
+                {["#", "OPERATOR", "FLIGHT", "TYPE", "STATION", "ROUTE", "ARR DATE", "A/C TYPE", "MTOW", "D/N", "PAX IN", "DLY", "TOTAL ($)", "REVIEW", "ACTIONS"].map(h => (
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={18} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                <tr><td colSpan={15} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
               ) : pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={18} className="text-center py-16">
+                  <td colSpan={15} className="text-center py-16">
                     <FileBarChart2 size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                     <p className="font-semibold text-foreground">No Service Reports Found</p>
                     <p className="text-muted-foreground text-sm mt-1">Add a new report or upload an Excel file</p>
@@ -816,26 +833,55 @@ export default function ServiceReportPage() {
                       </span>
                     ); })()}
                   </td>
-                  <td className="px-3 py-2.5 text-foreground">{r.sta}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.co || "—"}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.ob || "—"}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.groundTime || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.paxInAdultI + r.paxInInfI + r.paxInAdultD + r.paxInInfD}</td>
                   <td className="px-3 py-2.5 text-foreground">
                     {r.delays && r.delays.length > 0 ? r.delays.map(d => d.code).join("/") : "—"}
                   </td>
                   <td className="px-3 py-2.5 font-semibold text-success">{r.totalCost.toLocaleString()}</td>
                   <td className="px-3 py-2.5">
+                    {(() => {
+                      const cfg: Record<string, { icon: React.ReactNode; cls: string }> = {
+                        pending: { icon: <Clock size={11} />, cls: "bg-warning/15 text-warning" },
+                        approved: { icon: <CheckCircle2 size={11} />, cls: "bg-success/15 text-success" },
+                        rejected: { icon: <XCircle size={11} />, cls: "bg-destructive/15 text-destructive" },
+                      };
+                      const c = cfg[r.reviewStatus] || cfg.pending;
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${c.cls}`}>
+                          {c.icon}{r.reviewStatus === "pending" ? "Pending" : r.reviewStatus === "approved" ? "Approved" : "Rejected"}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                  <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">
-                      <button onClick={() => {
-                        const params = new URLSearchParams({
-                          operator: r.operator, flightRef: r.flightNo,
-                          description: `${r.handlingType} – ${r.route}`,
-                          civilAviation: String(r.civilAviationFee), handling: String(r.handlingFee),
-                          airportCharges: String(r.airportCharge),
-                        });
-                        navigate(`/invoices?${params.toString()}`);
-                      }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
+                      {r.reviewStatus === "pending" && (
+                        <>
+                          <button onClick={async () => {
+                            await supabase.from("service_reports").update({ review_status: "approved", reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
+                            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                            toast({ title: "✅ Approved" });
+                          }} className="text-success hover:text-success/80" title="Approve"><CheckCircle2 size={13} /></button>
+                          <button onClick={async () => {
+                            const comment = prompt("Rejection reason:");
+                            if (comment === null) return;
+                            await supabase.from("service_reports").update({ review_status: "rejected", review_comment: comment, reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
+                            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                            toast({ title: "❌ Rejected", description: comment });
+                          }} className="text-destructive hover:text-destructive/80" title="Reject"><XCircle size={13} /></button>
+                        </>
+                      )}
+                      {r.reviewStatus === "approved" && (
+                        <button onClick={() => {
+                          const params = new URLSearchParams({
+                            operator: r.operator, flightRef: r.flightNo,
+                            description: `${r.handlingType} – ${r.route}`,
+                            civilAviation: String(r.civilAviationFee), handling: String(r.handlingFee),
+                            airportCharges: String(r.airportCharge),
+                          });
+                          navigate(`/invoices?${params.toString()}`);
+                        }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
+                      )}
                       <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
                       <button onClick={() => deleteReport(r.id!)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
                     </div>

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
+import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
 import { ClearanceRow, CLEARANCE_TYPES, STATUS_CONFIG, emptyForm } from "@/components/clearances/ClearanceTypes";
@@ -26,6 +27,50 @@ export default function ClearancesPage() {
   const [detailItem, setDetailItem] = useState<ClearanceRow | null>(null);
   const [editItem, setEditItem] = useState<ClearanceRow | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json<any>(ws);
+        let count = 0;
+        for (const row of json) {
+          const payload: any = {
+            flight_no: row["Flight"] || row["Flight No"] || row["flight_no"] || row["FLIGHT"] || "",
+            registration: row["Reg No"] || row["Registration"] || row["REG"] || "",
+            aircraft_type: row["A/C Type"] || row["Aircraft Type"] || row["aircraft_type"] || "",
+            route: row["Route"] || row["ROUTE"] || row["route"] || "",
+            sta: row["STA"] || row["sta"] || "",
+            std: row["STD"] || row["std"] || "",
+            skd_type: row["Skd Type"] || row["SKD"] || "",
+            permit_no: row["Permit No"] || row["permit_no"] || "",
+            clearance_type: row["Type"] || row["clearance_type"] || "Landing",
+            purpose: row["Purpose"] || row["purpose"] || "Scheduled",
+            status: row["Status"] || "Pending",
+            passengers: Number(row["PAX"] || row["passengers"] || 0),
+            cargo_kg: Number(row["Cargo"] || row["cargo_kg"] || 0),
+            handling: row["Handling"] || "",
+            week_days: row["Days"] || row["week_days"] || "",
+            arrival_flight: row["Arrival Flight"] || "",
+            departure_flight: row["Departure Flight"] || "",
+          };
+          if (!payload.flight_no) continue;
+          await add(payload);
+          count++;
+        }
+        toast({ title: "✅ Import Complete", description: `${count} flight records imported from Excel.` });
+      } catch (err: any) {
+        toast({ title: "Import Error", description: err.message, variant: "destructive" });
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = "";
+  }, [add]);
 
   const airlineMap = Object.fromEntries((airlines || []).map((a: any) => [a.id, a]));
 
@@ -109,7 +154,9 @@ export default function ClearancesPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}><Download size={14} className="mr-1" /> Export</Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}><Upload size={14} className="mr-1" /> Upload Excel</Button>
           <Button size="sm" onClick={openAdd}><Plus size={14} className="mr-1" /> Add Flights</Button>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleUpload} />
         </div>
       </div>
 
