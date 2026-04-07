@@ -1969,7 +1969,16 @@ export type Database = {
     }
     Enums: {
       account_type: "Asset" | "Liability" | "Equity" | "Revenue" | "Expense"
-      app_role: "admin" | "station_manager" | "station_ops" | "employee"
+      app_role:
+        | "admin"
+        | "station_manager"
+        | "station_ops"
+        | "employee"
+        | "clearance"
+        | "contracts"
+        | "operations"
+        | "receivables"
+        | "payables"
       clearance_status:
         | "Pending"
         | "Approved"
@@ -2152,7 +2161,17 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["Asset", "Liability", "Equity", "Revenue", "Expense"],
-      app_role: ["admin", "station_manager", "station_ops", "employee"],
+      app_role: [
+        "admin",
+        "station_manager",
+        "station_ops",
+        "employee",
+        "clearance",
+        "contracts",
+        "operations",
+        "receivables",
+        "payables",
+      ],
       clearance_status: [
         "Pending",
         "Approved",
