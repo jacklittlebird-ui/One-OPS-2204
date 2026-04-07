@@ -18,6 +18,7 @@ import {
   Building2, MapPin, Globe, Shield, Bell, User, Monitor, Lock, Clock,
   Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check
 } from "lucide-react";
+import { formatDateDMY } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────
 interface Profile {
