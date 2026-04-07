@@ -63,10 +63,9 @@ export function ChannelProvider({ children }: { children: ReactNode }) {
       setUserRoles(roles);
       
       const available = rolesToChannels(roles);
-      // Default admin users to admin channel on first load
-      if (roles.includes("admin") && activeChannel === "station") {
+      if (roles.includes("admin")) {
         setActiveChannel("admin");
-      } else if (!available.includes(activeChannel)) {
+      } else {
         setActiveChannel(available[0]);
       }
       setLoading(false);
