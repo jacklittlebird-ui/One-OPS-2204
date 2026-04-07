@@ -218,6 +218,8 @@ interface ScheduleSourceRow {
   sta: string;
   std: string;
   station: string;
+  arrivalDate: string;
+  departureDate: string;
 }
 
 function resolveStationFromRoute(route: string) {
@@ -269,7 +271,7 @@ export default function ServiceReportPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("flight_schedules")
-        .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent")
+        .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent, arrival_date, departure_date")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -312,6 +314,8 @@ export default function ServiceReportPage() {
           sta: c.sta || "",
           std: c.std || "",
           station: resolveStationFromRoute(c.route || ""),
+          arrivalDate: c.arrival_date || "",
+          departureDate: c.departure_date || "",
         };
       });
   }, [dbFlights, airlineById]);
@@ -354,6 +358,8 @@ export default function ServiceReportPage() {
         sta: source.sta,
         std: source.std,
         station: source.station || "Cairo",
+        arrivalDate: source.arrivalDate,
+        departureDate: source.departureDate,
         reviewStatus: "pending",
         reviewComment: "",
         reviewedBy: "",
