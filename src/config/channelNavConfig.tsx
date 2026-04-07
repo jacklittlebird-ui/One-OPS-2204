@@ -26,7 +26,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
     {
       label: "CLEARANCE", icon: <ShieldCheck size={18} />, collapsible: true,
       children: [
-        { label: "Clearances", path: "/clearances" },
+        { label: "Flight Schedules", path: "/clearances" },
         { label: "Overfly Schedule", path: "/overfly-schedule" },
       ],
     },
@@ -47,7 +47,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
     {
       label: "SCHEDULE", icon: <Plane size={18} />, collapsible: true,
       children: [
-        { label: "Clearances", path: "/clearances" },
+        { label: "Flight Schedules", path: "/clearances" },
       ],
     },
     {
@@ -107,7 +107,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
       label: "REVIEW", icon: <ClipboardCheck size={18} />, collapsible: true,
       children: [
         { label: "Service Report", path: "/service-report" },
-        { label: "Clearances", path: "/clearances" },
+        { label: "Flight Schedules", path: "/clearances" },
       ],
     },
     {
@@ -183,7 +183,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
     {
       label: "CLEARANCE", icon: <ShieldCheck size={18} />, collapsible: true,
       children: [
-        { label: "Clearances", path: "/clearances" },
+        { label: "Flight Schedules", path: "/clearances" },
         { label: "Overfly Schedule", path: "/overfly-schedule" },
       ],
     },
