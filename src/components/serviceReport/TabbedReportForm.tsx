@@ -474,17 +474,6 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Police Service Fees (EGP)"><input type="number" step="0.01" className={readOnlyCls} value={data.policeServiceFee || ""} readOnly /></FormField>
                 </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-3 border-b pb-2">Optional Services (Qty — Included in Egyptian/EGP Bill)</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <FormField label="Fire Cart Qty"><input type="number" className={inputCls} value={data.fireCartQty || ""} onChange={e => set("fireCartQty", +e.target.value)} /></FormField>
-                  <FormField label="Follow Me Qty"><input type="number" className={inputCls} value={data.followMeQty || ""} onChange={e => set("followMeQty", +e.target.value)} /></FormField>
-                  <FormField label="Jetway Qty"><input type="number" className={inputCls} value={data.jetwayQty || ""} onChange={e => set("jetwayQty", +e.target.value)} /></FormField>
-                  <FormField label="MET Folder Qty"><input type="number" className={inputCls} value={data.metFolderQty || ""} onChange={e => set("metFolderQty", +e.target.value)} /></FormField>
-                  <FormField label="File FLT Plan Qty"><input type="number" className={inputCls} value={data.fileFltPlanQty || ""} onChange={e => set("fileFltPlanQty", +e.target.value)} /></FormField>
-                  <FormField label="Print Operational FLT Plan Qty"><input type="number" className={inputCls} value={data.printOpsFltPlanQty || ""} onChange={e => set("printOpsFltPlanQty", +e.target.value)} /></FormField>
-                </div>
-              </div>
             </div>
           )}
 
@@ -571,6 +560,17 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Parking Charge ($)"><input type="number" className={readOnlyCls} value={data.parkingCharge || ""} readOnly /></FormField>
                   <FormField label="Housing Charge ($)"><input type="number" className={readOnlyCls} value={data.housingCharge || ""} readOnly /></FormField>
                   <FormField label="Total Civil Aviation ($)"><input type="number" className={readOnlyCls + " font-bold"} value={data.civilAviationFee || ""} readOnly /></FormField>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-3 border-b pb-2">Optional Services (Qty — Included in Egyptian/EGP Bill)</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <FormField label="Fire Cart Qty"><input type="number" className={inputCls} value={data.fireCartQty || ""} onChange={e => set("fireCartQty", +e.target.value)} /></FormField>
+                  <FormField label="Follow Me Qty"><input type="number" className={inputCls} value={data.followMeQty || ""} onChange={e => set("followMeQty", +e.target.value)} /></FormField>
+                  <FormField label="Jetway Qty"><input type="number" className={inputCls} value={data.jetwayQty || ""} onChange={e => set("jetwayQty", +e.target.value)} /></FormField>
+                  <FormField label="MET Folder Qty"><input type="number" className={inputCls} value={data.metFolderQty || ""} onChange={e => set("metFolderQty", +e.target.value)} /></FormField>
+                  <FormField label="File FLT Plan Qty"><input type="number" className={inputCls} value={data.fileFltPlanQty || ""} onChange={e => set("fileFltPlanQty", +e.target.value)} /></FormField>
+                  <FormField label="Print Operational FLT Plan Qty"><input type="number" className={inputCls} value={data.printOpsFltPlanQty || ""} onChange={e => set("printOpsFltPlanQty", +e.target.value)} /></FormField>
                 </div>
               </div>
             </div>
