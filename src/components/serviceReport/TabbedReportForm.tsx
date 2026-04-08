@@ -156,56 +156,58 @@ function timeDiffMinutes(t1: string, t2: string): number {
 }
 
 /**
- * Calculate minutes of overlap between the billable parking window and a time-of-day window.
- * Billable parking: starts at C/O + 2h (grace), max 10 hours, ends at O/B.
- * So: parkStart = C/O + 120min, parkEnd = min(O/B, C/O + 720min)
+ * Determine if a given minute-of-day falls in the NIGHT window.
+ * Apr–Oct: Night = 17:00–03:00 (next day)
+ * Nov–Mar: Night = 16:00–04:00 (next day)
  */
-function calcOverlapMinutes(co: string, ob: string, arrivalDate: string, windowStartH: number, windowStartM: number, windowEndH: number, windowEndM: number, overnight: boolean): number {
-  if (!co || !ob || !arrivalDate) return 0;
+function isNightMinute(minuteOfDay: number, month: number): boolean {
+  // Normalize to 0–1439
+  const m = ((minuteOfDay % 1440) + 1440) % 1440;
+  if (month >= 4 && month <= 10) {
+    // Night: 17:00 (1020) to 03:00 (180) next day
+    return m >= 1020 || m < 180;
+  }
+  // Night: 16:00 (960) to 04:00 (240) next day
+  return m >= 960 || m < 240;
+}
+
+/**
+ * Calculate parking day/night hours using the rule:
+ * "The START of each billable hour determines if the ENTIRE hour is Day or Night."
+ * Billable window: C/O + 2h grace → min(O/B, C/O + 12h), max 10 billable hours.
+ */
+function calcParkingHours(co: string, ob: string, arrivalDate: string): { dayHours: number; nightHours: number } {
+  if (!co || !ob || !arrivalDate) return { dayHours: 0, nightHours: 0 };
   const [ch, cm] = co.split(":").map(Number);
   const [oh, om] = ob.split(":").map(Number);
-  if ([ch, cm, oh, om].some(isNaN)) return 0;
+  if ([ch, cm, oh, om].some(isNaN)) return { dayHours: 0, nightHours: 0 };
 
-  // Billable parking window: C/O + 2h grace to min(O/B, C/O + 12h)
   const coMin = ch * 60 + cm;
   let obMin = oh * 60 + om;
   if (obMin <= coMin) obMin += 24 * 60; // overnight
+
   const parkStart = coMin + 120; // after 2h grace
-  const parkEndMax = coMin + 720; // max 10h billable (2h grace + 10h = 12h from C/O)
+  const parkEndMax = coMin + 720; // max 10 billable hours
   const parkEnd = Math.min(obMin, parkEndMax);
-  if (parkEnd <= parkStart) return 0;
+  if (parkEnd <= parkStart) return { dayHours: 0, nightHours: 0 };
 
-  const wStart = windowStartH * 60 + windowStartM;
-  const wEnd = overnight ? (windowEndH * 60 + windowEndM + 24 * 60) : (windowEndH * 60 + windowEndM);
-
-  let total = 0;
-  // Check multiple 24h periods to handle wrap-around
-  for (const offset of [0, 24 * 60]) {
-    const ws = wStart + offset;
-    const we = wEnd + offset;
-    const oStart = Math.max(parkStart, ws);
-    const oEnd = Math.min(parkEnd, we);
-    if (oEnd > oStart) total += oEnd - oStart;
-  }
-  return total;
-}
-
-function calcParkingNightMinutes(co: string, ob: string, arrivalDate: string): number {
   const month = new Date(arrivalDate).getMonth() + 1;
-  if (month >= 4 && month <= 10) {
-    return calcOverlapMinutes(co, ob, arrivalDate, 17, 0, 3, 0, true);
-  }
-  return calcOverlapMinutes(co, ob, arrivalDate, 16, 0, 4, 0, true);
-}
+  const totalBillableMin = parkEnd - parkStart;
+  const totalHours = Math.ceil(totalBillableMin / 60);
 
-function calcParkingDayMinutes(co: string, ob: string, arrivalDate: string): number {
-  const month = new Date(arrivalDate).getMonth() + 1;
-  if (month >= 4 && month <= 10) {
-    // Day = 03:01 to 16:59
-    return calcOverlapMinutes(co, ob, arrivalDate, 3, 1, 16, 59, false);
+  let dayHours = 0;
+  let nightHours = 0;
+
+  for (let h = 0; h < totalHours; h++) {
+    const hourStartMin = parkStart + h * 60;
+    if (isNightMinute(hourStartMin, month)) {
+      nightHours++;
+    } else {
+      dayHours++;
+    }
   }
-  // Day = 04:01 to 15:59
-  return calcOverlapMinutes(co, ob, arrivalDate, 4, 1, 15, 59, false);
+
+  return { dayHours, nightHours };
 }
 
 interface Props {
@@ -305,10 +307,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
       civTotal += d.housingCharge;
     } else if (groundMin > 2 * 60) {
       // Calculate day/night overlap in minutes, then round up each to whole hours
-      const nightParkMin = calcParkingNightMinutes(d.co || "", d.ob || "", d.arrivalDate || "");
-      const dayParkMin = calcParkingDayMinutes(d.co || "", d.ob || "", d.arrivalDate || "");
-      const nightHours = nightParkMin > 0 ? Math.ceil(nightParkMin / 60) : 0;
-      const dayHours = dayParkMin > 0 ? Math.ceil(dayParkMin / 60) : 0;
+      const { dayHours, nightHours } = calcParkingHours(d.co || "", d.ob || "", d.arrivalDate || "");
       // Charge = dayHours × day_rate + nightHours × night_rate
       d.parkingCharge = +((dayHours * charge.parking_day) + (nightHours * charge.parking_night)).toFixed(2);
       d.parkingNightHours = nightHours;
