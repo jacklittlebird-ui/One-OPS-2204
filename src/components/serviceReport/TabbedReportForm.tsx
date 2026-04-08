@@ -199,7 +199,11 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     }
     // Recalc financials on relevant changes
     const financialKeys: (keyof ReportFormData)[] = ["mtow", "station", "td", "co", "ob", "to", "arrivalDate"];
-    const paxKeys: (keyof ReportFormData)[] = ["foreignPaxOut", "egyptianPaxOut", "infantOut"];
+    const paxKeys: (keyof ReportFormData)[] = ["totalDepartingPax", "egyptianPaxOut", "infantOut"];
+    if (paxKeys.includes(key)) {
+      // Auto-calc foreignPaxOut = totalDepartingPax - egyptianPaxOut
+      updated.foreignPaxOut = Math.max(0, (updated.totalDepartingPax || 0) - (updated.egyptianPaxOut || 0));
+    }
     if (financialKeys.includes(key) || paxKeys.includes(key) || key === "handlingFee") {
       recalcFinancials(updated);
     }
@@ -433,7 +437,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 border-b pb-2">Foreign Passengers</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField label="Foreign Pax IN"><input type="number" className={inputCls} value={data.foreignPaxIn || ""} onChange={e => set("foreignPaxIn", +e.target.value)} /></FormField>
-                    <FormField label="Foreign Pax OUT"><input type="number" className={inputCls} value={data.foreignPaxOut || ""} onChange={e => set("foreignPaxOut", +e.target.value)} /></FormField>
+                    <FormField label="Foreign Pax OUT"><input type="number" className={readOnlyCls} value={data.foreignPaxOut || ""} readOnly /></FormField>
                   </div>
                 </div>
                 <div>
@@ -451,7 +455,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Infant Out"><input type="number" className={inputCls} value={data.infantOut || ""} onChange={e => set("infantOut", +e.target.value)} /></FormField>
                   <FormField label="Crew"><input type="number" className={inputCls} value={data.crewCount || ""} onChange={e => set("crewCount", +e.target.value)} /></FormField>
                   <FormField label="PAX Transit"><input type="number" className={inputCls} value={data.paxTransit || ""} onChange={e => set("paxTransit", +e.target.value)} /></FormField>
-                  <FormField label="Total Departing Pax"><input type="number" className={readOnlyCls} value={data.totalDepartingPax || ""} readOnly /></FormField>
+                  <FormField label="Total Departing Pax"><input type="number" className={inputCls} value={data.totalDepartingPax || ""} onChange={e => set("totalDepartingPax", +e.target.value)} /></FormField>
                 </div>
               </div>
               <div>
