@@ -155,23 +155,31 @@ function timeDiffMinutes(t1: string, t2: string): number {
   return diff;
 }
 
-/** Calculate minutes of overlap between parking window and a time-of-day window */
+/**
+ * Calculate minutes of overlap between the billable parking window and a time-of-day window.
+ * Billable parking: starts at C/O + 2h (grace), max 10 hours, ends at O/B.
+ * So: parkStart = C/O + 120min, parkEnd = min(O/B, C/O + 720min)
+ */
 function calcOverlapMinutes(co: string, ob: string, arrivalDate: string, windowStartH: number, windowStartM: number, windowEndH: number, windowEndM: number, overnight: boolean): number {
   if (!co || !ob || !arrivalDate) return 0;
   const [ch, cm] = co.split(":").map(Number);
   const [oh, om] = ob.split(":").map(Number);
   if ([ch, cm, oh, om].some(isNaN)) return 0;
 
-  // Parking window: C/O + 1hr to O/B - 1hr (the 2hr free period)
-  let parkStart = ch * 60 + cm + 60;
-  let parkEnd = oh * 60 + om - 60;
-  if (parkEnd <= parkStart) parkEnd += 24 * 60;
+  // Billable parking window: C/O + 2h grace to min(O/B, C/O + 12h)
+  const coMin = ch * 60 + cm;
+  let obMin = oh * 60 + om;
+  if (obMin <= coMin) obMin += 24 * 60; // overnight
+  const parkStart = coMin + 120; // after 2h grace
+  const parkEndMax = coMin + 720; // max 10h billable (2h grace + 10h = 12h from C/O)
+  const parkEnd = Math.min(obMin, parkEndMax);
   if (parkEnd <= parkStart) return 0;
 
   const wStart = windowStartH * 60 + windowStartM;
   const wEnd = overnight ? (windowEndH * 60 + windowEndM + 24 * 60) : (windowEndH * 60 + windowEndM);
 
   let total = 0;
+  // Check multiple 24h periods to handle wrap-around
   for (const offset of [0, 24 * 60]) {
     const ws = wStart + offset;
     const we = wEnd + offset;
