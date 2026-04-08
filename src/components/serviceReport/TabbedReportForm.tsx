@@ -284,11 +284,16 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
 
     d.landingCharge = +landingFee.toFixed(2);
     let civTotal = landingFee;
-    if (groundMin > 10 * 60) {
+    const isCairo = station === "Cairo";
+    if (isCairo && groundMin > 10 * 60) {
+      // Cairo: >10h ground time = housing only, no parking
       const days = Math.ceil(groundMin / (24 * 60));
       d.housingDays = days;
       d.housingCharge = +(charge.housing * days).toFixed(2);
       d.parkingCharge = 0;
+      d.parkingDayHours = 0;
+      d.parkingNightHours = 0;
+      d.totalParkingHours = 0;
       civTotal += d.housingCharge;
     } else if (groundMin > 2 * 60) {
       // Use night or day parking rate based on which has more hours
