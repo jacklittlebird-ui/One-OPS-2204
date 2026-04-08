@@ -199,13 +199,19 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     }
     // Recalc financials on relevant changes
     const financialKeys: (keyof ReportFormData)[] = ["mtow", "station", "td", "co", "ob", "to", "arrivalDate"];
-    if (financialKeys.includes(key) || key === "handlingFee") {
+    const paxKeys: (keyof ReportFormData)[] = ["foreignPaxOut", "egyptianPaxOut", "infantOut"];
+    if (financialKeys.includes(key) || paxKeys.includes(key) || key === "handlingFee") {
       recalcFinancials(updated);
     }
     onChange(updated);
   };
 
   const recalcFinancials = (d: Partial<ReportFormData>) => {
+    // Estimated pax bills (always calculate regardless of MTOW)
+    const totalOutPax = (d.foreignPaxOut || 0) + (d.egyptianPaxOut || 0) + (d.infantOut || 0);
+    d.estimatedForeignBill = +(totalOutPax * 28).toFixed(2);
+    d.estimatedLocalBill = +(totalOutPax * 115).toFixed(2);
+
     const mtowStr = d.mtow || "";
     const tonMatch = mtowStr.match(/(\d+)/);
     if (!tonMatch) return;
