@@ -132,29 +132,55 @@ export default function ClearancesPage() {
       return p;
     };
 
-    if (editItem) {
-      await update({ id: editItem.id, ...buildPayload() });
-    } else {
-      // If period + week days are set, create individual records per flight date
+    const expandFlightDates = (): string[] | null => {
       const noOfFlights = Number(form.no_of_flights) || 0;
-      if (form.period_from && form.period_to && form.week_days && noOfFlights > 1) {
-        const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-        const selectedDays = form.week_days.split(",").filter(Boolean).map((d: string) => dayMap[d]).filter((n: number) => n !== undefined);
-        const start = new Date(form.period_from);
-        const end = new Date(form.period_to);
-        const flightDates: string[] = [];
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-          if (selectedDays.includes(d.getDay())) {
-            flightDates.push(d.toISOString().slice(0, 10));
-          }
+      if (!form.period_from || !form.period_to || !form.week_days || noOfFlights <= 1) return null;
+      const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      const selectedDays = form.week_days.split(",").filter(Boolean).map((d: string) => dayMap[d]).filter((n: number) => n !== undefined);
+      const start = new Date(form.period_from);
+      const end = new Date(form.period_to);
+      const dates: string[] = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        if (selectedDays.includes(d.getDay())) dates.push(d.toISOString().slice(0, 10));
+      }
+      return dates;
+    };
+
+    if (editItem) {
+      const flightDates = expandFlightDates();
+      if (flightDates && flightDates.length > 0) {
+        // Find sibling records that share the same schedule properties
+        const siblings = data.filter(r =>
+          r.flight_no === editItem.flight_no &&
+          r.airline_id === editItem.airline_id &&
+          r.route === editItem.route &&
+          r.clearance_type === editItem.clearance_type &&
+          r.permit_no === editItem.permit_no &&
+          r.id !== editItem.id &&
+          r.no_of_flights === 1
+        );
+        // Remove old sibling records
+        for (const s of siblings) {
+          await remove(s.id);
         }
+        // Remove the edited record itself
+        await remove(editItem.id);
+        // Create new expanded records
         let count = 0;
         for (const fDate of flightDates) {
-          await add(buildPayload({
-            arrival_date: fDate,
-            departure_date: fDate,
-            no_of_flights: 1,
-          }));
+          await add(buildPayload({ arrival_date: fDate, departure_date: fDate, no_of_flights: 1 }));
+          count++;
+        }
+        toast({ title: "✅ Updated", description: `Schedule updated: ${count} flight records created.` });
+      } else {
+        await update({ id: editItem.id, ...buildPayload() });
+      }
+    } else {
+      const flightDates = expandFlightDates();
+      if (flightDates && flightDates.length > 0) {
+        let count = 0;
+        for (const fDate of flightDates) {
+          await add(buildPayload({ arrival_date: fDate, departure_date: fDate, no_of_flights: 1 }));
           count++;
         }
         toast({ title: "✅ Created", description: `${count} individual flight records created.` });
