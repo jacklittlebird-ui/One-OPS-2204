@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useChannel, CHANNEL_LABELS } from "@/contexts/ChannelContext";
 import { getNavForChannel, type NavChild } from "@/config/channelNavConfig";
 import { ChannelSwitcher } from "./ChannelSwitcher";
+import oneOpsLogo from "@/assets/one-ops-logo.png";
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -39,8 +40,9 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <aside className="w-56 min-h-screen bg-sidebar flex flex-col shrink-0">
       <div className="px-4 py-4 flex items-center gap-2">
+        <img src={oneOpsLogo} alt="One OPS" className="w-10 h-10 object-contain" />
         <span className="text-lg font-bold text-sidebar-primary-foreground tracking-wide">
-          ✈ Link Aero
+          One OPS
         </span>
       </div>
 
