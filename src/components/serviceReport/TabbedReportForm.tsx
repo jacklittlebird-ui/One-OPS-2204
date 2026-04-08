@@ -234,7 +234,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     const charge = airportCharges.find(c => c.vendor_name === vendor && c.mtow === `${ton} TON`);
     if (!charge) return;
     const isNight = isNightTime(d.td || "", d.arrivalDate || "");
-    const landingFee = isNight ? charge.landingNight : charge.landingDay;
+    const landingFee = isNight ? charge.landing_night : charge.landing_day;
     const groundMin = timeDiffMinutes(d.co || "", d.ob || "");
 
     d.landingCharge = +landingFee.toFixed(2);
@@ -246,7 +246,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
       d.parkingCharge = 0;
       civTotal += d.housingCharge;
     } else if (groundMin > 2 * 60) {
-      d.parkingCharge = +charge.parkingDay.toFixed(2);
+      d.parkingCharge = +charge.parking_day.toFixed(2);
       d.housingCharge = 0;
       d.housingDays = 0;
       civTotal += d.parkingCharge;
