@@ -97,6 +97,7 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
     infantOut: row.infant_out || 0,
     crewCount: row.crew_count || 0,
     totalDepartingPax: row.total_departing_pax || 0,
+    totalForeignPaxOut: Math.max(0, (row.foreign_pax_out || 0) - (row.egyptian_pax_out || 0)),
     estimatedForeignBill: Number(row.estimated_foreign_bill || 0),
     estimatedLocalBill: Number(row.estimated_local_bill || 0),
     fireCartQty: row.fire_cart_qty || 0,
