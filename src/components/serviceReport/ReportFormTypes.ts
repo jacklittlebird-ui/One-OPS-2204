@@ -79,6 +79,12 @@ export interface ReportFormData {
   // Billing
   estimatedForeignBill: number;
   estimatedLocalBill: number;
+  // Tax preview fields
+  intDeparturePaxTax: number;
+  developingSecSysCharge: number;
+  sitaCute: number;
+  stateResourceDevFee: number;
+  policeServiceFee: number;
   // Optional services
   fireCartQty: number;
   followMeQty: number;
