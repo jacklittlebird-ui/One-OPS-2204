@@ -111,6 +111,26 @@ export default function ClearancesPage() {
     setDialogOpen(true);
   };
 
+  const hasScheduleDefinition = (record: Partial<ClearanceRow> | null | undefined) => {
+    if (!record) return false;
+    return Boolean(record.period_from && record.period_to && record.week_days);
+  };
+
+  const getScheduleGroupIds = (source: ClearanceRow) => {
+    return data
+      .filter(r =>
+        r.flight_no === source.flight_no &&
+        (r.airline_id || "") === (source.airline_id || "") &&
+        r.route === source.route &&
+        r.clearance_type === source.clearance_type &&
+        r.permit_no === source.permit_no &&
+        (r.period_from || "") === (source.period_from || "") &&
+        (r.period_to || "") === (source.period_to || "") &&
+        (r.week_days || "") === (source.week_days || "")
+      )
+      .map(r => r.id);
+  };
+
   const handleSave = async () => {
     if (!form.flight_no) { toast({ title: "Error", description: "Flight number is required", variant: "destructive" }); return; }
     const buildPayload = (overrides: any = {}) => {
@@ -133,12 +153,12 @@ export default function ClearancesPage() {
     };
 
     const expandFlightDates = (): string[] | null => {
-      const noOfFlights = Number(form.no_of_flights) || 0;
-      if (!form.period_from || !form.period_to || !form.week_days || noOfFlights <= 1) return null;
+      if (!form.period_from || !form.period_to || !form.week_days) return null;
       const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
       const selectedDays = form.week_days.split(",").filter(Boolean).map((d: string) => dayMap[d]).filter((n: number) => n !== undefined);
       const start = new Date(form.period_from);
       const end = new Date(form.period_to);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end || selectedDays.length === 0) return null;
       const dates: string[] = [];
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         if (selectedDays.includes(d.getDay())) dates.push(d.toISOString().slice(0, 10));
@@ -147,23 +167,12 @@ export default function ClearancesPage() {
     };
 
     if (editItem) {
+      const shouldReplaceScheduleGroup = hasScheduleDefinition(editItem) || hasScheduleDefinition(form);
       const flightDates = expandFlightDates();
-      if (flightDates && flightDates.length > 0) {
-        // Collect IDs of sibling records that share the same schedule properties
-        const idsToDelete = data
-          .filter(r =>
-            r.flight_no === editItem.flight_no &&
-            r.airline_id === editItem.airline_id &&
-            r.route === editItem.route &&
-            r.clearance_type === editItem.clearance_type &&
-            r.permit_no === editItem.permit_no &&
-            r.no_of_flights === 1
-          )
-          .map(r => r.id);
-        // Also include the edited record itself
+      if (shouldReplaceScheduleGroup) {
+        const idsToDelete = getScheduleGroupIds(editItem);
         if (!idsToDelete.includes(editItem.id)) idsToDelete.push(editItem.id);
 
-        // Bulk delete old records directly via supabase
         if (idsToDelete.length > 0) {
           const { error: delError } = await supabase
             .from("flight_schedules")
@@ -175,8 +184,10 @@ export default function ClearancesPage() {
           }
         }
 
-        // Create new expanded records
-        const newRecords = flightDates.map(fDate => buildPayload({ arrival_date: fDate, departure_date: fDate, no_of_flights: 1 }));
+        const newRecords = flightDates && flightDates.length > 0
+          ? flightDates.map(fDate => buildPayload({ arrival_date: fDate, departure_date: fDate, no_of_flights: 1 }))
+          : [buildPayload()];
+
         const { error: insertError } = await supabase
           .from("flight_schedules")
           .insert(newRecords);
@@ -185,9 +196,8 @@ export default function ClearancesPage() {
           return;
         }
 
-        // Refresh the list
-        refetch();
-        toast({ title: "✅ Updated", description: `Schedule updated: ${newRecords.length} flight records replaced.` });
+        await refetch();
+        toast({ title: "✅ Updated", description: `Schedule updated: ${newRecords.length} flight record${newRecords.length === 1 ? "" : "s"} amended.` });
       } else {
         await update({ id: editItem.id, ...buildPayload() });
       }
