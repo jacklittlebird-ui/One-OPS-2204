@@ -156,6 +156,7 @@ export const emptyReport = (): Partial<ReportFormData> => ({
   foreignPaxIn: 0, foreignPaxOut: 0, egyptianPaxIn: 0, egyptianPaxOut: 0,
   infantIn: 0, infantOut: 0, crewCount: 0, totalDepartingPax: 0, totalForeignPaxOut: 0,
   estimatedForeignBill: 0, estimatedLocalBill: 0,
+  intDeparturePaxTax: 0, developingSecSysCharge: 0, sitaCute: 0, stateResourceDevFee: 0, policeServiceFee: 0,
   fireCartQty: 0, followMeQty: 0, jetwayQty: 0,
   metFolderQty: 0, fileFltPlanQty: 0, printOpsFltPlanQty: 0,
   confirmationNo: "", flightStatus: "Scheduled",
