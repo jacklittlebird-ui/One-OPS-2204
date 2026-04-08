@@ -258,9 +258,11 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     d.civilAviationFee = +civTotal.toFixed(2);
     d.airportCharge = +landingFee.toFixed(2);
 
-    // Parking hours
+    // Parking hours = ground time minus 2 hours
     if (groundMin > 0) {
-      d.totalParkingHours = +(groundMin / 60).toFixed(2);
+      const parkingMin = Math.max(0, groundMin - 120);
+      d.totalParkingHours = +(parkingMin / 60).toFixed(2);
+      d.parkingNightHours = +(parkingMin / 60).toFixed(2);
     }
 
     d.totalCost = +((d.civilAviationFee || 0) + (d.handlingFee || 0) + (d.airportCharge || 0)
@@ -488,14 +490,12 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               <div>
                 <h3 className="text-sm font-bold text-info uppercase tracking-wider mb-3 flex items-center gap-2"><Clock size={14} />Aircraft Movement Timings</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <TimeField label="STA (Read-Only)" value={data.sta || ""} readOnly />
+                  <TimeField label="STD (Read-Only)" value={data.std || ""} readOnly />
                   <TimeField label="Touch Down (T/D)" value={data.td || ""} onChange={v => set("td", v)} />
                   <TimeField label="Chocks On (C/O)" value={data.co || ""} onChange={v => set("co", v)} />
                   <TimeField label="Chocks Off (O/B)" value={data.ob || ""} onChange={v => set("ob", v)} />
                   <TimeField label="Take Off (T/O)" value={data.to || ""} onChange={v => set("to", v)} />
-                  <TimeField label="ATA (Actual Arrival)" value={data.ata || ""} onChange={v => set("ata", v)} />
-                  <TimeField label="ATD (Actual Departure)" value={data.atd || ""} onChange={v => set("atd", v)} />
-                  <TimeField label="STA (Read-Only)" value={data.sta || ""} readOnly />
-                  <TimeField label="STD (Read-Only)" value={data.std || ""} readOnly />
                 </div>
               </div>
               <div>
