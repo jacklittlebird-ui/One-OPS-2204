@@ -149,29 +149,45 @@ export default function ClearancesPage() {
     if (editItem) {
       const flightDates = expandFlightDates();
       if (flightDates && flightDates.length > 0) {
-        // Find sibling records that share the same schedule properties
-        const siblings = data.filter(r =>
-          r.flight_no === editItem.flight_no &&
-          r.airline_id === editItem.airline_id &&
-          r.route === editItem.route &&
-          r.clearance_type === editItem.clearance_type &&
-          r.permit_no === editItem.permit_no &&
-          r.id !== editItem.id &&
-          r.no_of_flights === 1
-        );
-        // Remove old sibling records
-        for (const s of siblings) {
-          await remove(s.id);
+        // Collect IDs of sibling records that share the same schedule properties
+        const idsToDelete = data
+          .filter(r =>
+            r.flight_no === editItem.flight_no &&
+            r.airline_id === editItem.airline_id &&
+            r.route === editItem.route &&
+            r.clearance_type === editItem.clearance_type &&
+            r.permit_no === editItem.permit_no &&
+            r.no_of_flights === 1
+          )
+          .map(r => r.id);
+        // Also include the edited record itself
+        if (!idsToDelete.includes(editItem.id)) idsToDelete.push(editItem.id);
+
+        // Bulk delete old records directly via supabase
+        if (idsToDelete.length > 0) {
+          const { error: delError } = await supabase
+            .from("flight_schedules")
+            .delete()
+            .in("id", idsToDelete);
+          if (delError) {
+            toast({ title: "Error", description: `Failed to remove old records: ${delError.message}`, variant: "destructive" });
+            return;
+          }
         }
-        // Remove the edited record itself
-        await remove(editItem.id);
+
         // Create new expanded records
-        let count = 0;
-        for (const fDate of flightDates) {
-          await add(buildPayload({ arrival_date: fDate, departure_date: fDate, no_of_flights: 1 }));
-          count++;
+        const newRecords = flightDates.map(fDate => buildPayload({ arrival_date: fDate, departure_date: fDate, no_of_flights: 1 }));
+        const { error: insertError } = await supabase
+          .from("flight_schedules")
+          .insert(newRecords);
+        if (insertError) {
+          toast({ title: "Error", description: insertError.message, variant: "destructive" });
+          return;
         }
-        toast({ title: "✅ Updated", description: `Schedule updated: ${count} flight records created.` });
+
+        // Refresh the list
+        refetch();
+        toast({ title: "✅ Updated", description: `Schedule updated: ${newRecords.length} flight records replaced.` });
       } else {
         await update({ id: editItem.id, ...buildPayload() });
       }
