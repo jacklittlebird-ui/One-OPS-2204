@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plane, Loader2, Eye, EyeOff, Shield, Globe, Clock } from "lucide-react";
+import { Loader2, Eye, EyeOff, Shield, Globe, Clock } from "lucide-react";
+import oneOpsLogo from "@/assets/one-ops-logo.png";
+import linkAeroVertical from "@/assets/linkaero-logo-vertical.png";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
