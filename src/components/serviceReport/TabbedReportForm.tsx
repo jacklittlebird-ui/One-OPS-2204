@@ -311,28 +311,22 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
       const dayHours = dayParkMin > 0 ? Math.ceil(dayParkMin / 60) : 0;
       // Charge = dayHours × day_rate + nightHours × night_rate
       d.parkingCharge = +((dayHours * charge.parking_day) + (nightHours * charge.parking_night)).toFixed(2);
+      d.parkingNightHours = nightHours;
+      d.parkingDayHours = dayHours;
+      d.totalParkingHours = nightHours + dayHours;
       d.housingCharge = 0;
       d.housingDays = 0;
       civTotal += d.parkingCharge;
     } else {
       d.parkingCharge = 0;
+      d.parkingDayHours = 0;
+      d.parkingNightHours = 0;
+      d.totalParkingHours = 0;
       d.housingCharge = 0;
       d.housingDays = 0;
     }
     d.civilAviationFee = +civTotal.toFixed(2);
     d.airportCharge = +landingFee.toFixed(2);
-
-    // Parking hours calculation — overlap with seasonal day/night windows
-    if (groundMin > 0) {
-      const nightMin = calcParkingNightMinutes(d.co || "", d.ob || "", d.arrivalDate || "");
-      const dayMin = calcParkingDayMinutes(d.co || "", d.ob || "", d.arrivalDate || "");
-      // Round up: each started hour counts
-      const nightHrs = nightMin > 0 ? Math.ceil(nightMin / 60) : 0;
-      const dayHrs = dayMin > 0 ? Math.ceil(dayMin / 60) : 0;
-      d.parkingNightHours = nightHrs;
-      d.parkingDayHours = dayHrs;
-      d.totalParkingHours = nightHrs + dayHrs;
-    }
 
     d.totalCost = +((d.civilAviationFee || 0) + (d.handlingFee || 0) + (d.airportCharge || 0)
       + (d.fuelCharge || 0) + (d.cateringCharge || 0) + (d.hotacCharge || 0)).toFixed(2);
