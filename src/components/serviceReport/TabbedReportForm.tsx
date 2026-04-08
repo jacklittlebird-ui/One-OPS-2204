@@ -155,6 +155,50 @@ function timeDiffMinutes(t1: string, t2: string): number {
   return diff;
 }
 
+/** Calculate minutes of overlap between parking window and night window */
+function calcParkingNightMinutes(co: string, ob: string, arrivalDate: string): number {
+  if (!co || !ob || !arrivalDate) return 0;
+  const [ch, cm] = co.split(":").map(Number);
+  const [oh, om] = ob.split(":").map(Number);
+  if ([ch, cm, oh, om].some(isNaN)) return 0;
+
+  // Parking window: C/O + 1hr to O/B - 1hr (the 2hr free period)
+  let parkStart = ch * 60 + cm + 60; // C/O + 1 hour
+  let parkEnd = oh * 60 + om - 60;   // O/B - 1 hour
+  if (parkEnd <= parkStart) {
+    // Handle overnight: add 24hrs to end
+    parkEnd += 24 * 60;
+  }
+  if (parkEnd <= parkStart) return 0;
+
+  // Night window based on season
+  const month = new Date(arrivalDate).getMonth() + 1;
+  let nightStart: number, nightEnd: number;
+  if (month >= 4 && month <= 10) {
+    // Apr-Oct: 17:00 to 03:00
+    nightStart = 17 * 60;
+    nightEnd = 27 * 60; // 03:00 next day = 24*60 + 3*60
+  } else {
+    // Nov-Mar: 16:00 to 04:00
+    nightStart = 16 * 60;
+    nightEnd = 28 * 60; // 04:00 next day
+  }
+
+  // Calculate overlap between [parkStart, parkEnd] and [nightStart, nightEnd]
+  // We need to consider both the current night window and a shifted one (+24h)
+  let totalNight = 0;
+  for (const offset of [0, 24 * 60]) {
+    const ns = nightStart + offset;
+    const ne = nightEnd + offset;
+    const overlapStart = Math.max(parkStart, ns);
+    const overlapEnd = Math.min(parkEnd, ne);
+    if (overlapEnd > overlapStart) {
+      totalNight += overlapEnd - overlapStart;
+    }
+  }
+  return totalNight;
+}
+
 interface Props {
   data: Partial<ReportFormData>;
   onChange: (d: Partial<ReportFormData>) => void;
