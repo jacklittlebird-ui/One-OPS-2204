@@ -199,7 +199,8 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     }
     // Recalc financials on relevant changes
     const financialKeys: (keyof ReportFormData)[] = ["mtow", "station", "td", "co", "ob", "to", "arrivalDate"];
-    if (financialKeys.includes(key) || key === "handlingFee") {
+    const paxKeys: (keyof ReportFormData)[] = ["foreignPaxOut", "egyptianPaxOut", "infantOut"];
+    if (financialKeys.includes(key) || paxKeys.includes(key) || key === "handlingFee") {
       recalcFinancials(updated);
     }
     onChange(updated);
@@ -246,6 +247,11 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
 
     d.totalCost = +((d.civilAviationFee || 0) + (d.handlingFee || 0) + (d.airportCharge || 0)
       + (d.fuelCharge || 0) + (d.cateringCharge || 0) + (d.hotacCharge || 0)).toFixed(2);
+
+    // Estimated pax bills
+    const totalOutPax = (d.foreignPaxOut || 0) + (d.egyptianPaxOut || 0) + (d.infantOut || 0);
+    d.estimatedForeignBill = +(totalOutPax * 28).toFixed(2);
+    d.estimatedLocalBill = +(totalOutPax * 115).toFixed(2);
   };
 
   // Delay handlers
