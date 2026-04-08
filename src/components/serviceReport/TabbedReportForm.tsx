@@ -210,10 +210,9 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     // Total on Board & Total Foreign Pax OUT
     d.totalDepartingPax = (d.foreignPaxOut || 0) + (d.infantOut || 0);
     d.totalForeignPaxOut = Math.max(0, d.totalDepartingPax - (d.egyptianPaxOut || 0));
-    // Estimated pax bills (always calculate regardless of MTOW)
-    const totalOutPax = (d.foreignPaxOut || 0) + (d.egyptianPaxOut || 0) + (d.infantOut || 0);
-    d.estimatedForeignBill = +(totalOutPax * 28).toFixed(2);
-    d.estimatedLocalBill = +(totalOutPax * 115).toFixed(2);
+    const totalOnBoard = d.totalDepartingPax || 0;
+    d.estimatedForeignBill = +(totalOnBoard * 28).toFixed(2);
+    d.estimatedLocalBill = +(totalOnBoard * 115).toFixed(2);
 
     const mtowStr = d.mtow || "";
     const tonMatch = mtowStr.match(/(\d+)/);
