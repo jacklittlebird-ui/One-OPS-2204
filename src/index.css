@@ -220,3 +220,8 @@
 input[type="time"] {
   font-variant-numeric: tabular-nums;
 }
+
+/* Bump base font size globally */
+html {
+  font-size: 15px;
+}

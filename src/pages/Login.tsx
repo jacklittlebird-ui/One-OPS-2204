@@ -38,7 +38,7 @@ export default function LoginPage() {
 
          <div className="relative z-10 px-12 max-w-lg text-center space-y-8">
            <div className="inline-flex items-center gap-3">
-             <img src={linkAeroVertical} alt="Link Aero" className="h-16 object-contain" />
+             <span className="text-5xl font-extrabold text-white tracking-tight">Link Aero</span>
            </div>
 
           <p className="text-white/80 text-lg leading-relaxed">
