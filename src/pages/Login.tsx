@@ -81,33 +81,33 @@ export default function LoginPage() {
             <p className="text-muted-foreground text-sm mt-1">Sign in to your account to continue</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-card border rounded-xl p-6 space-y-5 shadow-lg">
+          <form onSubmit={handleSubmit} className="bg-card border rounded-xl p-6 space-y-5 shadow-lg text-[15px]">
             <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
+              <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full mt-1.5 px-3 py-2.5 text-sm border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                className="w-full mt-1.5 px-3 py-2.5 text-[15px] border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                 placeholder="you@linkaero.com"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Password</label>
+              <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Password</label>
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full mt-1.5 px-3 py-2.5 text-sm border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                className="w-full mt-1.5 px-3 py-2.5 text-[15px] border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(prev => !prev)}
-                className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 {showPassword ? "Hide password" : "Show password"}
@@ -115,7 +115,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="bg-destructive/10 text-destructive text-sm px-3 py-2 rounded-lg">
+              <div className="bg-destructive/10 text-destructive text-[15px] px-3 py-2 rounded-lg">
                 {error}
               </div>
             )}
@@ -123,7 +123,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-primary/20"
+              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-[15px] hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-primary/20"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : null}
               Sign In
