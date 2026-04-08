@@ -39,9 +39,9 @@ export default function LoginPage() {
         <div className="relative z-10 px-12 max-w-lg text-center space-y-8">
           <div className="inline-flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
-              <Plane size={36} className="text-white" />
+              <img src={oneOpsLogo} alt="One OPS" className="w-9 h-9 object-contain" />
             </div>
-            <span className="text-4xl font-extrabold text-white tracking-tight">Link Aero</span>
+            <span className="text-4xl font-extrabold text-white tracking-tight">One OPS</span>
           </div>
 
           <p className="text-white/80 text-lg leading-relaxed">
@@ -66,17 +66,19 @@ export default function LoginPage() {
       {/* Right panel — login form */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm">
-          {/* Mobile-only branding */}
-          <div className="text-center mb-8 lg:hidden">
-            <div className="inline-flex items-center gap-2 mb-2">
-              <Plane size={28} className="text-primary" />
-              <span className="text-2xl font-bold text-foreground">Link Aero</span>
-            </div>
+          {/* Logos */}
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <img src={oneOpsLogo} alt="One OPS" className="w-16 h-16 object-contain" />
+            <img src={linkAeroVertical} alt="Link Aero" className="h-24 object-contain" />
+          </div>
+
+          {/* Mobile-only subtitle */}
+          <div className="text-center mb-6 lg:hidden">
             <p className="text-muted-foreground text-sm">Ground Handling Operations</p>
           </div>
 
           {/* Desktop heading */}
-          <div className="hidden lg:block mb-8">
+          <div className="hidden lg:block mb-6 text-center">
             <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
             <p className="text-muted-foreground text-sm mt-1">Sign in to your account to continue</p>
           </div>
