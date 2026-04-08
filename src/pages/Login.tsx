@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plane, Loader2, Eye, EyeOff, Shield, Globe, Clock } from "lucide-react";
+import { Loader2, Eye, EyeOff, Shield, Globe, Clock } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -36,10 +37,8 @@ export default function LoginPage() {
 
         <div className="relative z-10 px-12 max-w-lg text-center space-y-8">
           <div className="inline-flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
-              <Plane size={36} className="text-white" />
-            </div>
-            <span className="text-4xl font-extrabold text-white tracking-tight">Link Aero</span>
+            <img src={logo} alt="One OPS" className="h-16 w-auto" />
+            <span className="text-4xl font-extrabold text-white tracking-tight">One OPS</span>
           </div>
 
           <p className="text-white/80 text-lg leading-relaxed">
@@ -67,8 +66,8 @@ export default function LoginPage() {
           {/* Mobile-only branding */}
           <div className="text-center mb-8 lg:hidden">
             <div className="inline-flex items-center gap-2 mb-2">
-              <Plane size={28} className="text-primary" />
-              <span className="text-2xl font-bold text-foreground">Link Aero</span>
+              <img src={logo} alt="One OPS" className="h-10 w-auto" />
+              <span className="text-2xl font-bold text-foreground">One OPS</span>
             </div>
             <p className="text-muted-foreground text-sm">Ground Handling Operations</p>
           </div>
