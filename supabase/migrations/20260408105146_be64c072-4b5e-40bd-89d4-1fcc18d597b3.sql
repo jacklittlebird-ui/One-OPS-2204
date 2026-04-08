@@ -1,0 +1,2 @@
+ALTER TABLE public.aircrafts DROP CONSTRAINT aircrafts_status_check;
+ALTER TABLE public.aircrafts ADD CONSTRAINT aircrafts_status_check CHECK (status IN ('Passenger', 'Military', 'Private', 'Cargo', 'Ambulance'));
