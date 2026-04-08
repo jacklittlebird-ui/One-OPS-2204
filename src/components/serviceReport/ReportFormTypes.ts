@@ -75,6 +75,7 @@ export interface ReportFormData {
   infantOut: number;
   crewCount: number;
   totalDepartingPax: number;
+  totalForeignPaxOut: number;
   // Billing
   estimatedForeignBill: number;
   estimatedLocalBill: number;
@@ -147,7 +148,7 @@ export const emptyReport = (): Partial<ReportFormData> => ({
   delays: [],
   paxInAdultI: 0, paxInInfI: 0, paxInAdultD: 0, paxInInfD: 0, paxTransit: 0,
   foreignPaxIn: 0, foreignPaxOut: 0, egyptianPaxIn: 0, egyptianPaxOut: 0,
-  infantIn: 0, infantOut: 0, crewCount: 0, totalDepartingPax: 0,
+  infantIn: 0, infantOut: 0, crewCount: 0, totalDepartingPax: 0, totalForeignPaxOut: 0,
   estimatedForeignBill: 0, estimatedLocalBill: 0,
   fireCartQty: 0, followMeQty: 0, jetwayQty: 0,
   metFolderQty: 0, fileFltPlanQty: 0, printOpsFltPlanQty: 0,

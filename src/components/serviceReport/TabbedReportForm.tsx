@@ -207,6 +207,8 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
   };
 
   const recalcFinancials = (d: Partial<ReportFormData>) => {
+    // Total Foreign Pax OUT
+    d.totalForeignPaxOut = Math.max(0, (d.foreignPaxOut || 0) - (d.egyptianPaxOut || 0));
     // Estimated pax bills (always calculate regardless of MTOW)
     const totalOutPax = (d.foreignPaxOut || 0) + (d.egyptianPaxOut || 0) + (d.infantOut || 0);
     d.estimatedForeignBill = +(totalOutPax * 28).toFixed(2);
@@ -451,7 +453,8 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Infant Out"><input type="number" className={inputCls} value={data.infantOut || ""} onChange={e => set("infantOut", +e.target.value)} /></FormField>
                   <FormField label="Crew"><input type="number" className={inputCls} value={data.crewCount || ""} onChange={e => set("crewCount", +e.target.value)} /></FormField>
                   <FormField label="PAX Transit"><input type="number" className={inputCls} value={data.paxTransit || ""} onChange={e => set("paxTransit", +e.target.value)} /></FormField>
-                  <FormField label="Total Departing Pax"><input type="number" className={readOnlyCls} value={data.totalDepartingPax || ""} readOnly /></FormField>
+                  <FormField label="Total on Board"><input type="number" className={readOnlyCls} value={data.totalDepartingPax || ""} readOnly /></FormField>
+                  <FormField label="Total Foreign Pax OUT"><input type="number" className={readOnlyCls} value={data.totalForeignPaxOut || ""} readOnly /></FormField>
                 </div>
               </div>
               <div>
