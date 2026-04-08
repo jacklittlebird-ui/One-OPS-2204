@@ -307,10 +307,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
       civTotal += d.housingCharge;
     } else if (groundMin > 2 * 60) {
       // Calculate day/night overlap in minutes, then round up each to whole hours
-      const nightParkMin = calcParkingNightMinutes(d.co || "", d.ob || "", d.arrivalDate || "");
-      const dayParkMin = calcParkingDayMinutes(d.co || "", d.ob || "", d.arrivalDate || "");
-      const nightHours = nightParkMin > 0 ? Math.ceil(nightParkMin / 60) : 0;
-      const dayHours = dayParkMin > 0 ? Math.ceil(dayParkMin / 60) : 0;
+      const { dayHours, nightHours } = calcParkingHours(d.co || "", d.ob || "", d.arrivalDate || "");
       // Charge = dayHours × day_rate + nightHours × night_rate
       d.parkingCharge = +((dayHours * charge.parking_day) + (nightHours * charge.parking_night)).toFixed(2);
       d.parkingNightHours = nightHours;
