@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { format } from "date-fns";
 import {
   FileBarChart2, X, Plane, Clock, Users, DollarSign, UtensilsCrossed,
@@ -10,6 +10,7 @@ import {
   ReportFormData, ReportTab, REPORT_TABS, FLIGHT_STATUSES,
   CateringLineItem, HotacLineItem, FuelLineItem, DelayEntry
 } from "./ReportFormTypes";
+import { supabase } from "@/integrations/supabase/client";
 import { generateAllCharges } from "@/data/airportChargesData";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -172,6 +173,21 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
 
   type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
   const { data: delayCodes } = useSupabaseTable<DelayCodeRow>("delay_codes", { orderBy: "code", ascending: true });
+
+  const lookupMtowByReg = useCallback(async (reg: string) => {
+    if (!reg || reg.length < 2) return;
+    const { data: aircraft } = await supabase
+      .from("aircrafts")
+      .select("mtow")
+      .eq("registration", reg.toUpperCase())
+      .limit(1)
+      .maybeSingle();
+    if (aircraft && aircraft.mtow) {
+      const updated = { ...data, registration: reg, mtow: `${aircraft.mtow}` };
+      recalcFinancials(updated);
+      onChange(updated);
+    }
+  }, [data, onChange]);
 
   const set = (key: keyof ReportFormData, val: any) => {
     const updated = { ...data, [key]: val };
@@ -371,7 +387,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                     </select>
                   </FormField>
                   <FormField label="Route"><input className={inputCls} value={data.route || ""} onChange={e => set("route", e.target.value)} placeholder="ORY/CAI/ORY" /></FormField>
-                  <FormField label="Reg No"><input className={inputCls} value={data.registration || ""} onChange={e => set("registration", e.target.value)} /></FormField>
+                  <FormField label="Reg No"><input className={inputCls} value={data.registration || ""} onChange={e => set("registration", e.target.value)} onBlur={e => lookupMtowByReg(e.target.value)} /></FormField>
                   <FormField label="A/C Type"><input className={inputCls} value={data.aircraftType || ""} onChange={e => set("aircraftType", e.target.value)} /></FormField>
                   <FormField label="MTOW"><input className={inputCls} value={data.mtow || ""} onChange={e => set("mtow", e.target.value)} /></FormField>
                   <FormField label="Config"><input type="number" className={inputCls} value={data.paxInAdultI || ""} onChange={e => set("paxInAdultI", +e.target.value)} /></FormField>
