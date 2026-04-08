@@ -57,7 +57,7 @@ export default function AircraftsPage() {
     if (airlineFilter !== "all") result = result.filter(r => r.airline === airlineFilter);
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(r => r.registration.toLowerCase().includes(s) || r.model.toLowerCase().includes(s) || r.airline.toLowerCase().includes(s) || r.certificate_no?.toLowerCase().includes(s) || r.ac_type?.toLowerCase().includes(s));
+      result = result.filter(r => (r.registration || '').toLowerCase().includes(s) || (r.model || '').toLowerCase().includes(s) || (r.airline || '').toLowerCase().includes(s) || (r.certificate_no || '').toLowerCase().includes(s) || (r.ac_type || '').toLowerCase().includes(s));
     }
     return result;
   }, [data, typeFilter, categoryFilter, airlineFilter, search]);
