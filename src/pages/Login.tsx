@@ -65,7 +65,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Logos */}
           <div className="flex items-center justify-center gap-4 mb-8">
-            <img src={oneOpsLogo} alt="One OPS" className="w-24 h-24 object-contain" />
+            <img src={oneOpsLogo} alt="One OPS" className="w-32 h-32 object-contain" />
             <div className="w-px h-12 bg-border" />
             <img src={linkAeroVertical} alt="Link Aero" className="h-14 object-contain" />
           </div>
