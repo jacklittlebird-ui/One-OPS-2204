@@ -154,6 +154,7 @@ export default function AirportsPage() {
               </div>
             </DialogContent>
           </Dialog>
+          )}
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
         </div>
       </div>
