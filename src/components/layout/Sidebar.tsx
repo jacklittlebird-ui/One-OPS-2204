@@ -5,7 +5,7 @@ import { useChannel, CHANNEL_LABELS } from "@/contexts/ChannelContext";
 import { getNavForChannel, type NavChild } from "@/config/channelNavConfig";
 import { ChannelSwitcher } from "./ChannelSwitcher";
 import oneOpsLogo from "@/assets/one-ops-logo.png";
-import linkAeroLogo from "@/assets/linkaero-logo-vertical.png";
+import linkAeroLogo from "@/assets/linkaero-logo.png";
 
 interface SidebarProps {
   onNavigate?: () => void;
