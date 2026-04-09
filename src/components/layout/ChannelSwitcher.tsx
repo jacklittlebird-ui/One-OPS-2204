@@ -18,23 +18,33 @@ const CHANNEL_ICONS: Record<Channel, React.ReactNode> = {
 
 export function ChannelSwitcher() {
   const { channels, activeChannel, setActiveChannel } = useChannel();
+  const activeLabel = CHANNEL_LABELS[activeChannel];
+  const activeDescription = CHANNEL_DESCRIPTIONS[activeChannel];
 
   if (channels.length <= 1) {
     return (
-      <div className="mx-3 mb-2 px-3 py-2 rounded-md bg-white/80 dark:bg-muted/50 flex items-center gap-2 text-xs text-sidebar-foreground">
-        {CHANNEL_ICONS[activeChannel]}
-        <span className="font-semibold uppercase tracking-wider">{CHANNEL_LABELS[activeChannel]}</span>
+      <div className="mx-3 mb-3 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/70 px-3 py-2.5 text-sidebar-accent-foreground shadow-sm">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0">{CHANNEL_ICONS[activeChannel]}</span>
+          <div className="min-w-0">
+            <div className="truncate text-[11px] font-semibold uppercase tracking-[0.18em]">{activeLabel}</div>
+            <div className="truncate text-[10px] normal-case tracking-normal text-sidebar-foreground/70">{activeDescription}</div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-3 mb-2">
+    <div className="mx-3 mb-3">
       <Select value={activeChannel} onValueChange={(v) => setActiveChannel(v as Channel)}>
-        <SelectTrigger className="h-9 bg-white/80 dark:bg-muted/50 border-sidebar-border text-sidebar-foreground text-xs font-semibold uppercase tracking-wider">
-          <div className="flex items-center gap-2">
-            {CHANNEL_ICONS[activeChannel]}
-            <SelectValue />
+        <SelectTrigger className="h-auto min-h-11 rounded-lg border-sidebar-border/60 bg-sidebar-accent/70 px-3 py-2 text-sidebar-accent-foreground shadow-sm hover:bg-sidebar-accent focus:ring-sidebar-ring">
+          <div className="flex min-w-0 items-center gap-2 text-left">
+            <span className="shrink-0">{CHANNEL_ICONS[activeChannel]}</span>
+            <div className="min-w-0">
+              <div className="truncate text-[11px] font-semibold uppercase tracking-[0.18em]">{activeLabel}</div>
+              <div className="truncate text-[10px] normal-case tracking-normal text-sidebar-foreground/70">{activeDescription}</div>
+            </div>
           </div>
         </SelectTrigger>
         <SelectContent>
