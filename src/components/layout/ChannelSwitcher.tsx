@@ -21,7 +21,7 @@ export function ChannelSwitcher() {
 
   if (channels.length <= 1) {
     return (
-      <div className="mx-3 mb-2 px-3 py-2 rounded-md bg-sidebar-accent/50 flex items-center gap-2 text-xs text-sidebar-foreground">
+      <div className="mx-3 mb-2 px-3 py-2 rounded-md bg-white/80 dark:bg-muted/50 flex items-center gap-2 text-xs text-sidebar-foreground">
         {CHANNEL_ICONS[activeChannel]}
         <span className="font-semibold uppercase tracking-wider">{CHANNEL_LABELS[activeChannel]}</span>
       </div>
@@ -31,7 +31,7 @@ export function ChannelSwitcher() {
   return (
     <div className="mx-3 mb-2">
       <Select value={activeChannel} onValueChange={(v) => setActiveChannel(v as Channel)}>
-        <SelectTrigger className="h-9 bg-sidebar-accent/50 border-sidebar-border text-sidebar-foreground text-xs font-semibold uppercase tracking-wider">
+        <SelectTrigger className="h-9 bg-white/80 dark:bg-muted/50 border-sidebar-border text-sidebar-foreground text-xs font-semibold uppercase tracking-wider">
           <div className="flex items-center gap-2">
             {CHANNEL_ICONS[activeChannel]}
             <SelectValue />
