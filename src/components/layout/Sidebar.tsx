@@ -40,10 +40,10 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
 
   return (
     <aside className="w-56 min-h-screen bg-sidebar flex flex-col shrink-0">
-      <div className="px-4 py-4 flex items-center gap-0.5 bg-muted">
-        <img src={linkAeroLogo} alt="Link Aero" className="h-8 object-contain" />
-        <div className="w-px h-8 bg-sidebar-border" />
-        <img src={oneOpsLogo} alt="One OPS" className="w-14 h-12 object-contain" />
+      <div className="px-4 py-3 flex items-center justify-center gap-2 border-b border-sidebar-border bg-sidebar">
+        <img src={linkAeroLogo} alt="Link Aero" className="h-9 object-contain" />
+        <div className="w-px h-7 bg-sidebar-border/50" />
+        <img src={oneOpsLogo} alt="One OPS" className="h-9 object-contain" />
       </div>
 
       <ChannelSwitcher />
