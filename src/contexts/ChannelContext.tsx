@@ -11,7 +11,7 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   operations: "Operations",
   receivables: "Receivables",
   payables: "Payables",
-  admin: "Admin & Management",
+  admin: "Management",
 };
 
 export const CHANNEL_DESCRIPTIONS: Record<Channel, string> = {
