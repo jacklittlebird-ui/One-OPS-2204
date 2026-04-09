@@ -40,7 +40,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <aside className="w-56 min-h-screen bg-sidebar flex flex-col shrink-0">
       <div className="px-4 py-4 flex items-center gap-2">
-        <img src={oneOpsLogo} alt="One OPS" className="w-14 h-14 object-contain" />
+        <img src={oneOpsLogo} alt="One OPS" className="w-20 h-16 object-contain" />
         <span className="text-lg font-bold text-sidebar-primary-foreground tracking-wide">
           One OPS
         </span>
