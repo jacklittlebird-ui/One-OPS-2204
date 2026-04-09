@@ -29,7 +29,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex bg-background">
       {/* Left panel — branding */}
       <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden items-center justify-center"
-        style={{ background: "linear-gradient(135deg, hsl(243 55% 18%), hsl(243 55% 30%), hsl(152 60% 35%))" }}
+        style={{ background: "linear-gradient(135deg, hsl(210 80% 20%), hsl(210 70% 35%), hsl(210 60% 50%))" }}
       >
         {/* Decorative circles */}
         <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-white/5" />
