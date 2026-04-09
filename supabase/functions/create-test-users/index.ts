@@ -68,6 +68,43 @@ Deno.serve(async (req) => {
     results.push({ email: testEmail, action: "all roles assigned" });
   }
 
+  // 3) Create clearance@one.com with clearance role only
+  const clearanceEmail = "clearance@one.com";
+  const clearancePassword = "Clear12345";
+  let clearanceUserId: string | null = null;
+
+  const existingClearance = adminList?.users?.find((u: any) => u.email === clearanceEmail);
+  if (existingClearance) {
+    clearanceUserId = existingClearance.id;
+    await supabaseAdmin.auth.admin.updateUserById(clearanceUserId!, { password: clearancePassword });
+    results.push({ email: clearanceEmail, action: "already exists, password updated" });
+  } else {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email: clearanceEmail,
+      password: clearancePassword,
+      email_confirm: true,
+      user_metadata: { full_name: "Clearance User" },
+    });
+    if (error) {
+      results.push({ email: clearanceEmail, error: error.message });
+    } else {
+      clearanceUserId = data.user?.id || null;
+      results.push({ email: clearanceEmail, action: "created" });
+    }
+  }
+
+  if (clearanceUserId) {
+    await supabaseAdmin.from("user_roles").upsert(
+      { user_id: clearanceUserId, role: "clearance" },
+      { onConflict: "user_id,role" }
+    );
+    await supabaseAdmin.from("profiles").upsert(
+      { user_id: clearanceUserId, full_name: "Clearance User", station: "CAI" },
+      { onConflict: "user_id" }
+    );
+    results.push({ email: clearanceEmail, action: "clearance role assigned" });
+  }
+
   return new Response(JSON.stringify({ results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
