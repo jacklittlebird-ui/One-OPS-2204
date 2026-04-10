@@ -41,6 +41,10 @@ export function useSupabaseTable<T extends Record<string, any>>(
       }
       return allData as T[];
     },
+    retry: 3,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    placeholderData: (prev: T[] | undefined) => prev,
   });
 
   const addMutation = useMutation({
