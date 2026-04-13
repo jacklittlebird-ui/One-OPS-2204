@@ -1,19 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Settings, LogOut, ChevronDown, Monitor, Code2, Server, TestTube, Moon, Sun, Menu } from "lucide-react";
+import { Bell, Settings, LogOut, Moon, Sun, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-type Role = "UI/UX" | "Front-End" | "Back-End" | "Tester";
-
-const roleConfig: Record<Role, { icon: React.ReactNode; color: string }> = {
-  "UI/UX":      { icon: <Monitor size={13} />,  color: "hsl(var(--primary))" },
-  "Front-End":  { icon: <Code2 size={13} />,    color: "hsl(var(--info))" },
-  "Back-End":   { icon: <Server size={13} />,   color: "hsl(var(--warning))" },
-  "Tester":     { icon: <TestTube size={13} />, color: "hsl(var(--accent))" },
-};
 
 interface HeaderProps {
   onMenuClick?: () => void;
