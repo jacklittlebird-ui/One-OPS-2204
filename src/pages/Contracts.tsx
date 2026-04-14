@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import {
   Search, Plus, Download, Upload, FileText, ChevronLeft, ChevronRight,
-  Pencil, Trash2, AlertTriangle, CheckCircle, Clock, Calendar, Eye
+  Pencil, Trash2, AlertTriangle, CheckCircle, Clock, Calendar, Eye, X, Shield
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
@@ -18,11 +18,32 @@ import { ContractDetailModal } from "@/components/contracts/ContractDetailModal"
 
 const PAGE_SIZE = 15;
 
+const SERVICE_TABS = [
+  { key: "all", label: "All Contracts", icon: <FileText size={14} /> },
+  { key: "Ground Handling", label: "Ground Handling", icon: <FileText size={14} /> },
+  { key: "Security", label: "Security", icon: <Shield size={14} /> },
+  { key: "Catering", label: "Catering", icon: <FileText size={14} /> },
+  { key: "Fuel", label: "Fuel", icon: <FileText size={14} /> },
+  { key: "Cargo", label: "Cargo", icon: <FileText size={14} /> },
+  { key: "Passenger", label: "Passenger Services", icon: <FileText size={14} /> },
+  { key: "Lounge", label: "Lounge & VVIP", icon: <FileText size={14} /> },
+];
+
+const SERVICE_SCOPES = ["Full Service", "Arrival Only", "Departure Only", "Turnaround", "Ad-Hoc", "Supervision Only"];
+
+type ServiceRate = {
+  id?: string;
+  service_type: string;
+  rate: number;
+  staff_count: number;
+  duration_hours: number;
+};
+
 export default function ContractsPage() {
   const { data: contracts, isLoading, add, update, remove, bulkInsert, isAdding, isUpdating } = useSupabaseTable<ContractRow>("contracts");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [typeFilter, setTypeFilter] = useState("All");
+  const [activeTab, setActiveTab] = useState("all");
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [newContract, setNewContract] = useState<Partial<ContractRow>>(emptyContract());
@@ -30,12 +51,13 @@ export default function ContractsPage() {
   const [editData, setEditData] = useState<Partial<ContractRow>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewContract, setViewContract] = useState<ContractRow | null>(null);
+  const [newServiceRates, setNewServiceRates] = useState<ServiceRate[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
     let r = contracts;
+    if (activeTab !== "all") r = r.filter(c => (c.services || "").toLowerCase().includes(activeTab.toLowerCase()) || c.contract_type === activeTab);
     if (statusFilter !== "All") r = r.filter(c => c.status === statusFilter);
-    if (typeFilter !== "All") r = r.filter(c => c.contract_type === typeFilter);
     if (search) {
       const s = search.toLowerCase();
       r = r.filter(c =>
@@ -47,18 +69,17 @@ export default function ContractsPage() {
       );
     }
     return r;
-  }, [contracts, statusFilter, typeFilter, search]);
+  }, [contracts, activeTab, statusFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const expiringCount = contracts.filter(c => c.status === "Active" && daysUntilExpiry(c.end_date) <= 90 && daysUntilExpiry(c.end_date) > 0).length;
   const activeValue = contracts.filter(c => c.status === "Active").reduce((s, c) => s + c.annual_value, 0);
-  const contractTypes = [...new Set(contracts.map(c => c.contract_type).filter(Boolean))];
 
   const saveNew = async () => {
     if (!newContract.airline) return;
     await add(newContract as any);
-    setShowAdd(false); setNewContract(emptyContract());
+    setShowAdd(false); setNewContract(emptyContract()); setNewServiceRates([]);
   };
   const startEdit = (c: ContractRow) => { setEditId(c.id); setEditData({ ...c }); };
   const saveEdit = async () => {
@@ -112,6 +133,17 @@ export default function ContractsPage() {
     reader.readAsBinaryString(file); e.target.value = "";
   }, [bulkInsert]);
 
+  const openNewContractForm = (serviceType?: string) => {
+    const nc = emptyContract();
+    if (serviceType && serviceType !== "all") {
+      nc.services = serviceType;
+      nc.contract_type = serviceType === "Security" ? "Bilateral" : "SGHA";
+    }
+    setNewContract(nc);
+    setNewServiceRates([]);
+    setShowAdd(true);
+  };
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
   return (
@@ -130,6 +162,28 @@ export default function ContractsPage() {
         <div className="stat-card"><div className="stat-card-icon bg-muted"><Clock size={20} /></div><div><div className="text-xl md:text-2xl font-bold text-foreground">{contracts.filter(c => c.status === "Pending").length}</div><div className="text-xs text-muted-foreground">Pending Approval</div></div></div>
       </div>
 
+      {/* Service Type Tabs */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b">
+        {SERVICE_TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => { setActiveTab(tab.key); setPage(1); }}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+              activeTab === tab.key
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
+            }`}
+          >
+            {tab.icon} {tab.label}
+            {tab.key !== "all" && (
+              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full ml-1">
+                {contracts.filter(c => (c.services || "").toLowerCase().includes(tab.key.toLowerCase()) || c.contract_type === tab.key).length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* Renewal Alerts */}
       {expiringCount > 0 && (
         <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
@@ -137,8 +191,7 @@ export default function ContractsPage() {
           <div className="space-y-1">
             {contracts.filter(c => c.status === "Active" && daysUntilExpiry(c.end_date) <= 90 && daysUntilExpiry(c.end_date) > 0).map(c => (
               <p key={c.id} className="text-sm text-foreground">
-                <span className="font-semibold">{c.airline}</span> ({c.contract_no}) —{" "}
-                <span className="font-bold text-warning">{daysUntilExpiry(c.end_date)} days</span>
+                <span className="font-semibold">{c.airline}</span> ({c.contract_no}) — <span className="font-bold text-warning">{daysUntilExpiry(c.end_date)} days</span>
                 {c.contact_person && <span className="text-muted-foreground ml-2">• Contact: {c.contact_person}</span>}
               </p>
             ))}
@@ -149,7 +202,9 @@ export default function ContractsPage() {
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">
         <div className="p-4 border-b flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-semibold text-foreground mr-auto">Contract Records</h2>
+          <h2 className="text-base font-semibold text-foreground mr-auto">
+            {activeTab === "all" ? "All Contracts" : `${SERVICE_TABS.find(t => t.key === activeTab)?.label} Contracts`}
+          </h2>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input type="text" placeholder="Search contracts…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -158,12 +213,7 @@ export default function ContractsPage() {
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>{STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
-          {contractTypes.length > 1 && (
-            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
-              <option value="All">All Types</option>{contractTypes.map(t => <option key={t}>{t}</option>)}
-            </select>
-          )}
-          <button onClick={() => { setNewContract(emptyContract()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Contract</button>
+          <button onClick={() => openNewContractForm(activeTab)} className="toolbar-btn-primary"><Plus size={14} /> New Contract</button>
           <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload</button>
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
@@ -223,7 +273,7 @@ export default function ContractsPage() {
       </div>
 
       {/* Modals */}
-      {showAdd && <ContractForm title="New Contract" data={newContract} onChange={setNewContract} onSave={saveNew} onCancel={() => setShowAdd(false)} isSaving={isAdding} />}
+      {showAdd && <ContractFormWithRates title="New Contract" data={newContract} onChange={setNewContract} onSave={saveNew} onCancel={() => setShowAdd(false)} isSaving={isAdding} serviceRates={newServiceRates} onServiceRatesChange={setNewServiceRates} />}
       {editId && <ContractForm title="Edit Contract" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} isSaving={isUpdating} />}
       {viewContract && <ContractDetailModal contract={viewContract} onClose={() => setViewContract(null)} />}
 
@@ -239,6 +289,169 @@ export default function ContractsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/* Enhanced Contract Form with Service Type Rates */
+const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
+const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
+
+const SERVICE_SCOPES_LIST = ["Full Service", "Arrival Only", "Departure Only", "Turnaround", "Ad-Hoc", "Supervision Only"];
+const RATE_SERVICE_TYPES = ["Arrival", "Departure", "Turnaround", "Maintenance", "ADHOC", "Transportation"];
+
+function ContractFormWithRates({
+  data, onChange, onSave, onCancel, title, isSaving,
+  serviceRates, onServiceRatesChange,
+}: {
+  data: Partial<ContractRow>;
+  onChange: (d: Partial<ContractRow>) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  title: string;
+  isSaving?: boolean;
+  serviceRates: ServiceRate[];
+  onServiceRatesChange: (r: ServiceRate[]) => void;
+}) {
+  const set = (key: string, val: any) => onChange({ ...data, [key]: val });
+
+  const addRate = () => {
+    onServiceRatesChange([...serviceRates, { service_type: "", rate: 0, staff_count: 0, duration_hours: 0 }]);
+  };
+
+  const updateRate = (idx: number, key: string, val: any) => {
+    const updated = [...serviceRates];
+    (updated[idx] as any)[key] = val;
+    onServiceRatesChange(updated);
+  };
+
+  const removeRate = (idx: number) => {
+    onServiceRatesChange(serviceRates.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
+      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4">
+        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
+          <h2 className="font-bold text-foreground text-lg">{title}</h2>
+          <button onClick={onCancel} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Airline & Station */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-foreground">Airline</label>
+              <input className={inputCls} value={data.airline || ""} onChange={e => set("airline", e.target.value)} placeholder="Select airline" />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Station (Airport)</label>
+              <input className={inputCls} value={data.stations || ""} onChange={e => set("stations", e.target.value)} placeholder="Select station" />
+            </div>
+          </div>
+
+          {/* Service Scope & Team */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-foreground">Service Scope</label>
+              <select className={selectCls} value={(data as any).service_scope || ""} onChange={e => set("service_scope", e.target.value)}>
+                <option value="">Select scope</option>
+                {SERVICE_SCOPES_LIST.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Default Team Size</label>
+              <input className={inputCls} value={(data as any).default_team_size || ""} onChange={e => set("default_team_size", e.target.value)} placeholder="e.g. 3-person, 5 staff" />
+            </div>
+          </div>
+
+          {/* Financial */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-foreground">Base Flat Fee ($)</label>
+              <input type="number" className={inputCls} value={(data as any).base_flat_fee || ""} onChange={e => set("base_flat_fee", +e.target.value)} placeholder="Optional" />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Overtime $/hr/staff</label>
+              <input type="number" className={inputCls} value={(data as any).overtime_rate || 0} onChange={e => set("overtime_rate", +e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Status</label>
+              <select className={selectCls} value={data.status || "Pending"} onChange={e => set("status", e.target.value)}>
+                {["Draft", ...STATUSES].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Dates */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-foreground">Effective Date</label>
+              <input type="date" className={inputCls} value={data.start_date || ""} onChange={e => set("start_date", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Expiry Date</label>
+              <input type="date" className={inputCls} value={data.end_date || ""} onChange={e => set("end_date", e.target.value)} />
+            </div>
+          </div>
+
+          {/* Service Type Rates */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Service Type Rates</h3>
+                <p className="text-xs text-muted-foreground">Define rate, staff & duration per service type</p>
+              </div>
+              <button onClick={addRate} className="toolbar-btn-outline text-xs">+ Add Rate</button>
+            </div>
+            {serviceRates.length === 0 ? (
+              <div className="bg-muted/50 rounded-lg p-4 text-center text-sm text-muted-foreground">
+                No service rates defined. Add rates for each service type (Arrival, Departure, etc.)
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {serviceRates.map((r, i) => (
+                  <div key={i} className="grid grid-cols-5 gap-2 items-end">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Service Type</label>
+                      <select className={selectCls} value={r.service_type} onChange={e => updateRate(i, "service_type", e.target.value)}>
+                        <option value="">Select</option>
+                        {RATE_SERVICE_TYPES.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Rate ($)</label>
+                      <input type="number" className={inputCls} value={r.rate} onChange={e => updateRate(i, "rate", +e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Staff</label>
+                      <input type="number" className={inputCls} value={r.staff_count} onChange={e => updateRate(i, "staff_count", +e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Hours</label>
+                      <input type="number" className={inputCls} value={r.duration_hours} onChange={e => updateRate(i, "duration_hours", +e.target.value)} />
+                    </div>
+                    <button onClick={() => removeRate(i)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded mb-0.5"><Trash2 size={14} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="text-sm font-semibold text-foreground">Notes</label>
+            <textarea className={inputCls + " resize-none"} rows={3} value={data.notes || ""} onChange={e => set("notes", e.target.value)} placeholder="Additional terms or notes..." />
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-card border-t px-6 py-4 flex gap-3 justify-end rounded-b-xl">
+          <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
+          <button onClick={onSave} disabled={isSaving} className="toolbar-btn-primary">
+            {isSaving ? "Saving…" : "Create Contract"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
