@@ -834,6 +834,111 @@ export type Database = {
         }
         Relationships: []
       }
+      dispatch_assignments: {
+        Row: {
+          actual_duration_hours: number
+          actual_end: string
+          actual_start: string
+          airline: string
+          base_fee: number
+          contract_duration_hours: number
+          contract_id: string | null
+          created_at: string
+          dispatched_by: string
+          flight_date: string
+          flight_no: string
+          flight_schedule_id: string | null
+          id: string
+          notes: string
+          overtime_charge: number
+          overtime_hours: number
+          overtime_rate: number
+          scheduled_end: string
+          scheduled_start: string
+          service_rate: number
+          service_type: string
+          staff_count: number
+          staff_names: string
+          station: string
+          status: string
+          total_charge: number
+          updated_at: string
+        }
+        Insert: {
+          actual_duration_hours?: number
+          actual_end?: string
+          actual_start?: string
+          airline?: string
+          base_fee?: number
+          contract_duration_hours?: number
+          contract_id?: string | null
+          created_at?: string
+          dispatched_by?: string
+          flight_date?: string
+          flight_no?: string
+          flight_schedule_id?: string | null
+          id?: string
+          notes?: string
+          overtime_charge?: number
+          overtime_hours?: number
+          overtime_rate?: number
+          scheduled_end?: string
+          scheduled_start?: string
+          service_rate?: number
+          service_type?: string
+          staff_count?: number
+          staff_names?: string
+          station?: string
+          status?: string
+          total_charge?: number
+          updated_at?: string
+        }
+        Update: {
+          actual_duration_hours?: number
+          actual_end?: string
+          actual_start?: string
+          airline?: string
+          base_fee?: number
+          contract_duration_hours?: number
+          contract_id?: string | null
+          created_at?: string
+          dispatched_by?: string
+          flight_date?: string
+          flight_no?: string
+          flight_schedule_id?: string | null
+          id?: string
+          notes?: string
+          overtime_charge?: number
+          overtime_hours?: number
+          overtime_rate?: number
+          scheduled_end?: string
+          scheduled_start?: string
+          service_rate?: number
+          service_type?: string
+          staff_count?: number
+          staff_names?: string
+          station?: string
+          status?: string
+          total_charge?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_assignments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "flight_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flight_schedules: {
         Row: {
           aircraft_type: string
