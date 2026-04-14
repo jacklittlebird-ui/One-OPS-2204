@@ -110,6 +110,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
       children: [
         { label: "Service Report", path: "/service-report" },
         { label: "Flight Schedules", path: "/clearances" },
+        { label: "Station Dispatch", path: "/station-dispatch" },
       ],
     },
     {
@@ -125,6 +126,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
     {
       label: "QUALITY & SAFETY", icon: <AlertTriangle size={18} />, collapsible: true,
       children: [
+        { label: "Irregularity Reports", path: "/irregularity-reports" },
         { label: "Bulletins", path: "/bulletins" },
         { label: "Manuals & Forms", path: "/manuals-forms" },
       ],
