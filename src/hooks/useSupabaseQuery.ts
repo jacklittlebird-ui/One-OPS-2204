@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type TableName = 
   | "flight_schedules" | "service_reports" | "service_report_delays"
@@ -18,12 +19,19 @@ export function useSupabaseTable<T extends Record<string, any>>(
   options?: { orderBy?: string; ascending?: boolean }
 ) {
   const queryClient = useQueryClient();
+  const { session } = useAuth();
   const orderCol = options?.orderBy || "created_at";
   const asc = options?.ascending ?? false;
 
   const query = useQuery({
-    queryKey: [table],
+    queryKey: [table, session?.user?.id],
     queryFn: async () => {
+      // Double-check we have a valid session before querying
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) {
+        throw new Error("No active session");
+      }
+
       const PAGE_SIZE = 1000;
       let allData: any[] = [];
       let from = 0;
@@ -41,11 +49,16 @@ export function useSupabaseTable<T extends Record<string, any>>(
       }
       return allData as T[];
     },
+    enabled: !!session,
     retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
     staleTime: 30_000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    placeholderData: (prev: T[] | undefined) => prev,
+    refetchOnReconnect: true,
   });
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: [table] });
 
   const addMutation = useMutation({
     mutationFn: async (row: Partial<T>) => {
@@ -54,7 +67,7 @@ export function useSupabaseTable<T extends Record<string, any>>(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [table] });
+      invalidate();
       toast({ title: "Saved", description: "Record added successfully." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -72,7 +85,7 @@ export function useSupabaseTable<T extends Record<string, any>>(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [table] });
+      invalidate();
       toast({ title: "Updated", description: "Record updated successfully." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -84,7 +97,7 @@ export function useSupabaseTable<T extends Record<string, any>>(
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [table] });
+      invalidate();
       toast({ title: "Deleted", description: "Record removed." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -97,7 +110,7 @@ export function useSupabaseTable<T extends Record<string, any>>(
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [table] });
+      invalidate();
       toast({ title: "Imported", description: "Records imported successfully." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
