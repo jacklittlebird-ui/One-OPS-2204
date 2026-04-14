@@ -398,7 +398,7 @@ export default function SecurityServiceReportsPage() {
                     <td className="px-3 py-2.5">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc}`}>{r.status}</span>
                       {hasIrregularity && (
-                        <AlertTriangle size={12} className="inline ml-1 text-destructive" title="Has irregularity" />
+                        <span title="Has irregularity"><AlertTriangle size={12} className="inline ml-1 text-destructive" /></span>
                       )}
                     </td>
                     <td className="px-3 py-2.5">
