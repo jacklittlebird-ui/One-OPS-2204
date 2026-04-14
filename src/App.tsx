@@ -47,6 +47,8 @@ import UsersPage from "./pages/Users";
 import NotificationsPage from "./pages/Notifications";
 import SettingsPage from "./pages/Settings";
 import AuditLogPage from "./pages/AuditLog";
+import StationDispatchPage from "./pages/StationDispatch";
+import IrregularityReportsPage from "./pages/IrregularityReports";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +105,8 @@ function AppRoutes() {
       <Route path="/notifications" element={<ProtectedRoute><AppLayout><NotificationsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/audit-log" element={<ProtectedRoute><AppLayout><AuditLogPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/station-dispatch" element={<ProtectedRoute><AppLayout><StationDispatchPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/irregularity-reports" element={<ProtectedRoute><AppLayout><IrregularityReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
