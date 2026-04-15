@@ -129,11 +129,23 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
         notes: f.notes || null,
       }));
 
+      // Remove duplicates: delete existing records matching same airline + station + flight_no + dates
+      const uniqueKeys = [...new Set(records.map(r => r.flight_no).filter(Boolean))];
+      if (uniqueKeys.length > 0 && selectedAirline) {
+        let query = supabase
+          .from("flight_schedules")
+          .delete()
+          .eq("airline_id", selectedAirline)
+          .eq("authority", selectedStation)
+          .in("flight_no", uniqueKeys as string[]);
+        await query;
+      }
+
       const { error } = await supabase.from("flight_schedules").insert(records);
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-      toast({ title: "✅ Import Complete", description: `${records.length} flight records imported successfully.` });
+      toast({ title: "✅ Import Complete", description: `${records.length} flight records imported (duplicates replaced).` });
       handleClose();
     } catch (err: any) {
       toast({ title: "Import Error", description: err.message, variant: "destructive" });
