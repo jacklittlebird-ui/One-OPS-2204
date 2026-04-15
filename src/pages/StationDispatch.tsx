@@ -290,7 +290,7 @@ export default function StationDispatchPage() {
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
   // KPIs
-  const todayDispatches = dispatches.filter(d => d.flight_date >= dateFrom && d.flight_date <= dateTo && d.station === stationFilter);
+  const todayDispatches = dispatches.filter(d => d.flight_date >= dateFrom && d.flight_date <= dateTo && (!stationFilter || d.station === stationFilter));
   const completedCount = todayDispatches.filter(d => d.status === "Completed").length;
   const overtimeTotal = todayDispatches.reduce((s, d) => s + (d.overtime_hours || 0), 0);
   const revenueTotal = todayDispatches.reduce((s, d) => s + (d.total_charge || 0), 0);
