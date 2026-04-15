@@ -298,7 +298,7 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <Input placeholder="Permit No" value={form.permit_no} onChange={e => setForm({ ...form, permit_no: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Clearance Type</label>
+                <label className="text-xs text-muted-foreground">Service Type</label>
                 <Select value={form.clearance_type} onValueChange={v => setForm({ ...form, clearance_type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{CLEARANCE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>

@@ -37,7 +37,7 @@ export type ClearanceRow = {
   notes: string;
 };
 
-export const CLEARANCE_TYPES = ["Arrival", "Departure", "Turnaround", "Maintenance", "ADHOC", "Transportation"];
+export const CLEARANCE_TYPES = ["Full Handling", "Turnaround Security", "Arrival Security", "Departure Security", "Maintenance", "Transportation", "Hotel Accommodation", "Fuel Only", "Technical Stop", "Supervision Only", "Payment"];
 export const PURPOSES = ["Scheduled", "Charter", "Technical Stop", "Cargo", "VIP", "Diplomatic", "Medical Evacuation", "Ferry"];
 export const SKD_TYPES = ["Schedule", "Charter", "Cargo", "General Aviation", "Military", "State"];
 export const HANDLING_OPTIONS = ["Full Handling", "Ramp Only", "Transit", "Technical", "VIP Hall", "Ferry"];
@@ -52,7 +52,7 @@ export const STATUS_CONFIG: Record<string, { cls: string }> = {
 
 export const emptyForm = {
   airline_id: "", permit_no: "", flight_no: "", aircraft_type: "", registration: "",
-  route: "", clearance_type: "Arrival", requested_date: new Date().toISOString().slice(0, 10),
+  route: "", clearance_type: "Full Handling", requested_date: new Date().toISOString().slice(0, 10),
   valid_from: "", valid_to: "", status: "Pending", authority: "", remarks: "",
   purpose: "Scheduled", passengers: 0, cargo_kg: 0, handling_agent: "",
   config: 0, departure_flight: "", arrival_flight: "",
