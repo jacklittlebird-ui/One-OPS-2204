@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ParsedFlight, parseScheduleData, readFileAsRows } from "@/lib/scheduleParser";
+import { ParsedRow, parseScheduleFile } from "@/lib/scheduleParser";
 import { CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 
 interface Props {
@@ -22,9 +22,8 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<"upload" | "preview" | "importing">("upload");
-  const [flights, setFlights] = useState<ParsedFlight[]>([]);
-  const [format, setFormat] = useState("");
-  const [unmatchedCount, setUnmatchedCount] = useState(0);
+  const [flights, setFlights] = useState<ParsedRow[]>([]);
+  const [isTrafficReport, setIsTrafficReport] = useState(false);
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
   const [selectedAirline, setSelectedAirline] = useState("");
@@ -47,11 +46,6 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
     },
   });
 
-  const stationCodes = useMemo(
-    () => (airports || []).map((a: any) => a.iata_code?.toUpperCase()).filter(Boolean),
-    [airports]
-  );
-
   const processFile = useCallback(async (file: File) => {
     if (!selectedAirline) {
       toast({ title: "Airline required", description: "Please select an airline before uploading.", variant: "destructive" });
@@ -64,29 +58,18 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
 
     setFileName(file.name);
     try {
-      const rows = await readFileAsRows(file);
-      if (rows.length === 0) {
-        toast({ title: "Empty file", description: "No data rows found.", variant: "destructive" });
+      const result = await parseScheduleFile(file);
+      if (result.rows.length === 0) {
+        toast({ title: "Empty file", description: "No data rows found. Check the file format.", variant: "destructive" });
         return;
       }
-      const result = parseScheduleData(rows, stationCodes);
-      // Apply selected airline to all parsed flights
-      const airlineObj = (airlines || []).find((a: any) => a.id === selectedAirline);
-      const airlineName = airlineObj?.name || "";
-      const enriched = result.flights.map(f => ({
-        ...f,
-        airline_name: f.airline_name || airlineName,
-        matched_station: f.matched_station || selectedStation,
-        station_role: f.station_role || ("turnaround" as const),
-      }));
-      setFlights(enriched);
-      setFormat(result.format);
-      setUnmatchedCount(enriched.filter(f => !f.matched_station).length);
+      setFlights(result.rows);
+      setIsTrafficReport(result.isTrafficReport);
       setStep("preview");
     } catch (err: any) {
       toast({ title: "Parse Error", description: err.message, variant: "destructive" });
     }
-  }, [stationCodes, selectedAirline, selectedStation, airlines]);
+  }, [selectedAirline, selectedStation]);
 
   const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,7 +85,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
     if (file) await processFile(file);
   }, [processFile]);
 
-  const updateFlight = (idx: number, key: keyof ParsedFlight, value: any) => {
+  const updateFlight = (idx: number, key: keyof ParsedRow, value: any) => {
     setFlights(prev => prev.map((f, i) => i === idx ? { ...f, [key]: value } : f));
   };
 
@@ -117,26 +100,33 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
 
     try {
       const records = flights.map(f => ({
-        flight_no: f.flight_no,
+        flight_no: f.flight_number || f.arrival_flight || f.departure_flight,
         airline_id: selectedAirline || null,
         route: f.route,
         aircraft_type: f.aircraft_type,
-        registration: f.registration,
-        sta: f.sta,
-        std: f.std,
+        registration: f._ac_reg || f.config,
+        sta: f.sta || null,
+        std: f.std || null,
         arrival_date: f.arrival_date || null,
         departure_date: f.departure_date || null,
-        passengers: f.passengers,
-        cargo_kg: f.cargo_kg,
-        week_days: f.week_days,
-        skd_type: f.skd_type,
-        clearance_type: f.clearance_type,
-        permit_no: f.permit_no,
-        handling_agent: f.handling_agent,
-        config: f.config,
-        authority: f.matched_station || selectedStation,
+        arrival_flight: f.arrival_flight || null,
+        departure_flight: f.departure_flight || null,
+        passengers: 0,
+        cargo_kg: 0,
+        week_days: f.week_days?.join(",") || null,
+        skd_type: null,
+        clearance_type: f.service_type || "Full Handling",
+        permit_no: "",
+        handling_agent: "",
+        config: parseInt(f.config) || null,
+        authority: selectedStation,
         status: "Pending" as const,
         purpose: "Scheduled",
+        period_from: f.period_from || null,
+        period_to: f.period_to || null,
+        no_of_flights: f.number_of_flights || null,
+        ref_no: f.ref_number || null,
+        notes: f.notes || null,
       }));
 
       const { error } = await supabase.from("flight_schedules").insert(records);
@@ -156,8 +146,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
   const handleClose = () => {
     setStep("upload");
     setFlights([]);
-    setFormat("");
-    setUnmatchedCount(0);
+    setIsTrafficReport(false);
     setFileName("");
     setSelectedAirline("");
     setSelectedStation("");
@@ -183,7 +172,6 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
 
         {step === "upload" && (
           <div className="flex flex-col gap-5">
-            {/* Airline & Station selectors */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">
@@ -221,7 +209,6 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
               </div>
             </div>
 
-            {/* Drop zone */}
             <div
               className={`border-2 border-dashed rounded-lg py-10 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
                 dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
@@ -232,24 +219,20 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
               onDrop={handleDrop}
             >
               <Upload size={28} className="text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Drop a file or click to browse
-              </p>
+              <p className="text-sm text-muted-foreground">Drop a file or click to browse</p>
               <div className="flex gap-2 flex-wrap justify-center">
                 {formatBadges.map(b => (
-                  <Badge key={b.ext} variant="outline" className="text-xs font-normal">
-                    {b.label}
-                  </Badge>
+                  <Badge key={b.ext} variant="outline" className="text-xs font-normal">{b.label}</Badge>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground text-center max-w-md mt-1">
-                Supports both clearance formats (Flight No, Route, STA, STD) and traffic report formats (FltId, DepStn, ArrStn, DatOp)
+                Supports clearance formats (Flight No, Route, STA, STD) and traffic reports (FltId, DepStn, ArrStn, DatOp)
               </p>
             </div>
             <input
               ref={fileRef}
               type="file"
-              accept=".xlsx,.xls,.csv,.docx,.pdf,.txt,.tsv"
+              accept=".xlsx,.xls,.csv,.docx,.doc,.pdf,.txt,.tsv"
               className="hidden"
               onChange={handleFile}
             />
@@ -263,16 +246,11 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
                 <FileSpreadsheet size={12} /> {fileName}
               </Badge>
               <Badge variant="secondary">
-                Format: {format === "traffic" ? "Traffic Report" : format === "clearance" ? "Clearance" : "Auto"}
+                Format: {isTrafficReport ? "Traffic Report" : "Clearance"}
               </Badge>
               <Badge variant="secondary" className="gap-1">
                 <CheckCircle2 size={12} /> {flights.length} records
               </Badge>
-              {unmatchedCount > 0 && (
-                <Badge variant="destructive" className="gap-1">
-                  <AlertTriangle size={12} /> {unmatchedCount} unmatched stations
-                </Badge>
-              )}
             </div>
 
             <ScrollArea className="flex-1 max-h-[50vh] border rounded-md">
@@ -281,58 +259,31 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
                   <TableRow>
                     <TableHead className="w-8">#</TableHead>
                     <TableHead>Flight</TableHead>
-                    <TableHead>Airline</TableHead>
                     <TableHead>Route</TableHead>
-                    <TableHead>Station</TableHead>
-                    <TableHead>Role</TableHead>
                     <TableHead>A/C Type</TableHead>
                     <TableHead>Reg</TableHead>
                     <TableHead>STA</TableHead>
                     <TableHead>STD</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Arr Date</TableHead>
+                    <TableHead>Dep Date</TableHead>
                     <TableHead>Service Type</TableHead>
                     <TableHead className="w-8"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {flights.map((f, i) => (
-                    <TableRow key={i} className={!f.matched_station ? "bg-warning/5" : ""}>
+                    <TableRow key={i}>
                       <TableCell className="text-xs text-muted-foreground">{i + 1}</TableCell>
-                      <TableCell className="font-mono font-medium text-sm">{f.flight_no}</TableCell>
-                      <TableCell className="text-xs">{f.airline_name || "—"}</TableCell>
-                      <TableCell className="font-mono text-xs">{f.route}</TableCell>
-                      <TableCell>
-                        {f.matched_station ? (
-                          <Badge variant="outline" className="text-xs">{f.matched_station}</Badge>
-                        ) : (
-                          <Select value={f.matched_station || "none"} onValueChange={v => {
-                            const station = v === "none" ? "" : v;
-                            const role = station === f.origin.toUpperCase() ? "departure" : station === f.destination.toUpperCase() ? "arrival" : "turnaround";
-                            updateFlight(i, "matched_station", station);
-                            updateFlight(i, "station_role", role);
-                          }}>
-                            <SelectTrigger className="h-7 text-xs w-24">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">—</SelectItem>
-                              {stationCodes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-xs capitalize">
-                          {f.station_role || "—"}
-                        </Badge>
-                      </TableCell>
+                      <TableCell className="font-mono font-medium text-sm">{f.flight_number || "—"}</TableCell>
+                      <TableCell className="font-mono text-xs">{f.route || "—"}</TableCell>
                       <TableCell className="text-xs">{f.aircraft_type || "—"}</TableCell>
-                      <TableCell className="text-xs font-mono">{f.registration || "—"}</TableCell>
+                      <TableCell className="text-xs font-mono">{f._ac_reg || "—"}</TableCell>
                       <TableCell className="text-xs">{f.sta || "—"}</TableCell>
                       <TableCell className="text-xs">{f.std || "—"}</TableCell>
-                      <TableCell className="text-xs">{f.arrival_date || f.departure_date || "—"}</TableCell>
+                      <TableCell className="text-xs">{f.arrival_date || "—"}</TableCell>
+                      <TableCell className="text-xs">{f.departure_date || "—"}</TableCell>
                       <TableCell>
-                        <Select value={f.clearance_type} onValueChange={v => updateFlight(i, "clearance_type", v)}>
+                        <Select value={f.service_type || "Full Handling"} onValueChange={v => updateFlight(i, "service_type", v)}>
                           <SelectTrigger className="h-7 text-xs w-36">
                             <SelectValue />
                           </SelectTrigger>
@@ -355,9 +306,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
             <div className="flex justify-between items-center pt-3 border-t">
               <Button variant="outline" onClick={handleClose}>Cancel</Button>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => { setStep("upload"); setFlights([]); }}>
-                  Re-upload
-                </Button>
+                <Button variant="outline" onClick={() => { setStep("upload"); setFlights([]); }}>Re-upload</Button>
                 <Button onClick={handleImport} disabled={flights.length === 0}>
                   <Upload size={14} className="mr-2" />
                   Import {flights.length} Records
