@@ -1,329 +1,302 @@
 import * as XLSX from "xlsx";
-import * as mammoth from "mammoth";
+import type { Database } from "@/integrations/supabase/types";
 
-export type ParsedFlight = {
-  flight_no: string;
-  airline_name: string;
+type ServiceType = Database["public"]["Enums"]["service_type"];
+
+export interface ParsedRow {
+  flight_number: string;
   route: string;
-  origin: string;
-  destination: string;
   aircraft_type: string;
-  registration: string;
-  sta: string;
-  std: string;
+  config: string;
+  arrival_flight: string;
   arrival_date: string;
+  sta: string;
+  departure_flight: string;
   departure_date: string;
-  passengers: number;
-  cargo_kg: number;
-  week_days: string;
-  skd_type: string;
-  clearance_type: string;
-  permit_no: string;
-  handling_agent: string;
-  config: number;
-  matched_station: string;
-  station_role: "arrival" | "departure" | "turnaround" | "";
-  _raw: Record<string, any>;
+  std: string;
+  service_type: ServiceType;
+  week_days: string[];
+  period_from: string;
+  period_to: string;
+  number_of_flights: number | null;
+  ref_number: string;
+  notes: string;
+  _station_raw: string;
+  _station_id: string;
+  _dep_stn: string;
+  _arr_stn: string;
+  _ac_reg: string;
+}
+
+const COL_MAP: Record<string, keyof ParsedRow> = {
+  "flight": "flight_number", "flight no": "flight_number", "flight_number": "flight_number",
+  "flightno": "flight_number", "flt": "flight_number", "flt no": "flight_number",
+  "fltid": "flight_number",
+  "route": "route",
+  "a/c type": "aircraft_type", "ac type": "aircraft_type", "aircraft": "aircraft_type",
+  "aircraft_type": "aircraft_type", "actype": "aircraft_type",
+  "acreg": "_ac_reg", "ac reg": "_ac_reg", "registration": "_ac_reg", "reg": "_ac_reg",
+  "config": "config", "configuration": "config", "cfg": "config",
+  "arrival flight": "arrival_flight", "arr flight": "arrival_flight",
+  "arrival_flight": "arrival_flight", "arr flt": "arrival_flight",
+  "arrival date": "arrival_date", "arr date": "arrival_date", "arrival_date": "arrival_date",
+  "sta": "sta", "eta": "sta",
+  "departure flight": "departure_flight", "dep flight": "departure_flight",
+  "departure_flight": "departure_flight", "dep flt": "departure_flight",
+  "departure date": "departure_date", "dep date": "departure_date", "departure_date": "departure_date",
+  "std": "std", "etd": "std",
+  "datop": "arrival_date",
+  "depstn": "_dep_stn", "dep stn": "_dep_stn", "dep": "_dep_stn", "origin": "_dep_stn",
+  "arrstn": "_arr_stn", "arr stn": "_arr_stn", "arr": "_arr_stn", "dest": "_arr_stn", "destination": "_arr_stn",
+  "handling": "service_type", "service type": "service_type", "service_type": "service_type",
+  "handling type": "service_type",
+  "week days": "week_days", "weekdays": "week_days", "days": "week_days",
+  "week_days": "week_days", "day": "week_days",
+  "from": "period_from", "period from": "period_from", "period_from": "period_from",
+  "start": "period_from", "start date": "period_from",
+  "to": "period_to", "period to": "period_to", "period_to": "period_to",
+  "end": "period_to", "end date": "period_to",
+  "no of flights": "number_of_flights", "number_of_flights": "number_of_flights",
+  "flights": "number_of_flights", "no flights": "number_of_flights", "total flights": "number_of_flights",
+  "ref": "ref_number", "ref#": "ref_number", "ref_number": "ref_number", "reference": "ref_number",
+  "notes": "notes", "remarks": "notes", "comment": "notes",
 };
 
-type FormatType = "clearance" | "traffic" | "unknown";
+export const STATION_COL_NAMES = ["station", "airport", "iata", "apt", "base", "port"];
 
-const CLEARANCE_HEADERS = ["flight no", "route", "sta", "std", "a/c type", "aircraft type", "permit"];
-const TRAFFIC_HEADERS = ["fltid", "depstn", "arrstn", "datop", "fltno"];
-
-function detectFormat(headers: string[]): FormatType {
-  const lower = headers.map(h => h.toLowerCase().trim());
-  const trafficScore = TRAFFIC_HEADERS.filter(h => lower.some(l => l.includes(h))).length;
-  const clearanceScore = CLEARANCE_HEADERS.filter(h => lower.some(l => l.includes(h))).length;
-  if (trafficScore >= 2) return "traffic";
-  if (clearanceScore >= 2) return "clearance";
-  return "unknown";
+export function normalizeServiceType(val: string): ServiceType {
+  const lower = val?.toLowerCase().trim() || "";
+  if (lower.includes("arrival") && !lower.includes("departure")) return "arrival";
+  if (lower.includes("departure") && !lower.includes("arrival")) return "departure";
+  if (lower.includes("turnaround") || lower.includes("turn")) return "turnaround";
+  if (lower.includes("maintenance") || lower.includes("maint")) return "maintenance";
+  if (lower.includes("adhoc") || lower.includes("ad-hoc") || lower.includes("ad hoc")) return "adhoc";
+  if (lower.includes("transport")) return "transportation";
+  return "turnaround";
 }
 
-function col(row: Record<string, any>, ...keys: string[]): string {
-  for (const k of keys) {
-    for (const rk of Object.keys(row)) {
-      if (rk.toLowerCase().trim() === k.toLowerCase()) return String(row[rk] ?? "").trim();
-    }
-  }
-  return "";
-}
-
-function colNum(row: Record<string, any>, ...keys: string[]): number {
-  const v = col(row, ...keys);
-  return Number(v) || 0;
-}
-
-function normalizeDate(val: string): string {
+export function parseDate(val: any): string {
   if (!val) return "";
-  if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val.slice(0, 10);
-  const dmy = val.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
-  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
-  const num = Number(val);
-  if (num > 30000 && num < 100000) {
-    const d = new Date((num - 25569) * 86400 * 1000);
-    return d.toISOString().slice(0, 10);
+  if (val instanceof Date || (typeof val === "object" && val.getFullYear)) {
+    const d = val as Date;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
-  return val;
-}
-
-function matchStations(
-  origin: string,
-  destination: string,
-  stationCodes: string[]
-): { matched_station: string; station_role: ParsedFlight["station_role"] } {
-  const o = origin.toUpperCase();
-  const d = destination.toUpperCase();
-  const oMatch = stationCodes.includes(o);
-  const dMatch = stationCodes.includes(d);
-  if (oMatch && dMatch) return { matched_station: o, station_role: "turnaround" };
-  if (dMatch) return { matched_station: d, station_role: "arrival" };
-  if (oMatch) return { matched_station: o, station_role: "departure" };
-  return { matched_station: "", station_role: "" };
-}
-
-function autoServiceType(role: ParsedFlight["station_role"]): string {
-  if (role === "arrival") return "Arrival Handling";
-  if (role === "departure") return "Departure Handling";
-  return "Full Handling";
-}
-
-function parseClearanceRow(row: Record<string, any>, stationCodes: string[]): ParsedFlight[] {
-  const flightNo = col(row, "Flight No", "Flight", "flight_no", "FLIGHT", "FltNo");
-  if (!flightNo) return [];
-
-  const route = col(row, "Route", "ROUTE", "route");
-  const parts = route.split(/[-\/]/).map(s => s.trim().toUpperCase());
-  const origin = parts[0] || col(row, "Origin", "DepStn", "DEP");
-  const destination = parts[1] || col(row, "Destination", "ArrStn", "ARR");
-  const stationMatch = matchStations(origin, destination, stationCodes);
-
-  return [{
-    flight_no: flightNo,
-    airline_name: col(row, "Airline", "Operator", "airline", "Account"),
-    route: route || `${origin}-${destination}`,
-    origin, destination,
-    aircraft_type: col(row, "A/C Type", "Aircraft Type", "aircraft_type", "AcType"),
-    registration: col(row, "Reg No", "Registration", "REG", "registration"),
-    sta: col(row, "STA", "sta"),
-    std: col(row, "STD", "std"),
-    arrival_date: normalizeDate(col(row, "Arrival Date", "arrival_date", "Date")),
-    departure_date: normalizeDate(col(row, "Departure Date", "departure_date", "Date")),
-    passengers: colNum(row, "PAX", "passengers", "Pax"),
-    cargo_kg: colNum(row, "Cargo", "cargo_kg"),
-    week_days: col(row, "Days", "week_days", "WeekDays"),
-    skd_type: col(row, "Skd Type", "SKD", "skd_type"),
-    clearance_type: col(row, "Service Type", "Type", "clearance_type") || autoServiceType(stationMatch.station_role),
-    permit_no: col(row, "Permit No", "permit_no", "Permit"),
-    handling_agent: col(row, "Handling Agent", "handling_agent", "Handling"),
-    config: colNum(row, "Config", "config"),
-    ...stationMatch,
-    _raw: row,
-  }];
-}
-
-function parseTrafficRow(row: Record<string, any>, stationCodes: string[]): ParsedFlight[] {
-  const flightNo = col(row, "FltId", "FltNo", "Flight No", "FlightId", "FLIGHT");
-  if (!flightNo) return [];
-
-  const origin = col(row, "DepStn", "DEP", "Origin").toUpperCase();
-  const destination = col(row, "ArrStn", "ARR", "Destination").toUpperCase();
-  const date = normalizeDate(col(row, "DatOp", "Date", "FlightDate", "DateOp"));
-  const acType = col(row, "AcType", "A/C Type", "Aircraft", "ACType");
-  const reg = col(row, "Registration", "Reg", "REG", "AcReg");
-  const pax = colNum(row, "Pax", "PAX", "PaxTotal");
-  const airline = col(row, "Airline", "Operator", "Carrier");
-
-  const results: ParsedFlight[] = [];
-  const oMatch = stationCodes.includes(origin);
-  const dMatch = stationCodes.includes(destination);
-
-  const base: Omit<ParsedFlight, "matched_station" | "station_role" | "clearance_type"> = {
-    flight_no: flightNo,
-    airline_name: airline,
-    route: `${origin}-${destination}`,
-    origin, destination,
-    aircraft_type: acType,
-    registration: reg,
-    sta: col(row, "STA", "ArrTime", "sta"),
-    std: col(row, "STD", "DepTime", "std"),
-    arrival_date: date,
-    departure_date: date,
-    passengers: pax,
-    cargo_kg: colNum(row, "Cargo", "cargo_kg"),
-    week_days: "",
-    skd_type: "",
-    permit_no: "",
-    handling_agent: "",
-    config: 0,
-    _raw: row,
-  };
-
-  if (oMatch && dMatch) {
-    results.push({ ...base, matched_station: origin, station_role: "departure", clearance_type: "Departure Handling" });
-    results.push({ ...base, matched_station: destination, station_role: "arrival", clearance_type: "Arrival Handling" });
-  } else if (dMatch) {
-    results.push({ ...base, matched_station: destination, station_role: "arrival", clearance_type: "Arrival Handling" });
-  } else if (oMatch) {
-    results.push({ ...base, matched_station: origin, station_role: "departure", clearance_type: "Departure Handling" });
-  } else {
-    results.push({ ...base, matched_station: "", station_role: "", clearance_type: "Full Handling" });
+  if (typeof val === "number") {
+    const date = XLSX.SSF.parse_date_code(val);
+    return `${date.y}-${String(date.m).padStart(2, "0")}-${String(date.d).padStart(2, "0")}`;
   }
-
-  return results;
-}
-
-export function parseScheduleData(
-  rows: Record<string, any>[],
-  stationCodes: string[]
-): { flights: ParsedFlight[]; format: FormatType; unmatchedCount: number } {
-  if (rows.length === 0) return { flights: [], format: "unknown", unmatchedCount: 0 };
-
-  const headers = Object.keys(rows[0]);
-  const format = detectFormat(headers);
-  const parser = format === "traffic" ? parseTrafficRow : parseClearanceRow;
-  const codes = stationCodes.map(s => s.toUpperCase());
-
-  const flights: ParsedFlight[] = [];
-  for (const row of rows) {
-    flights.push(...parser(row, codes));
+  const str = String(val).trim();
+  const parts = str.split(/[\/\-]/);
+  if (parts.length === 3) {
+    const [a, b, c] = parts.map(Number);
+    if (c > 100) return `${c}-${String(a).padStart(2, "0")}-${String(b).padStart(2, "0")}`;
+    if (a > 100) return `${a}-${String(b).padStart(2, "0")}-${String(c).padStart(2, "0")}`;
   }
-
-  const unmatchedCount = flights.filter(f => !f.matched_station).length;
-  return { flights, format, unmatchedCount };
+  return str;
 }
 
-// ─── HTML table parser (for DOCX output) ─────────────────────────
-function parseHtmlTables(html: string): Record<string, any>[] {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  const tables = doc.querySelectorAll("table");
-  const rows: Record<string, any>[] = [];
-
-  for (const table of Array.from(tables)) {
-    const trs = table.querySelectorAll("tr");
-    if (trs.length < 2) continue;
-
-    // First row as headers
-    const headers = Array.from(trs[0].querySelectorAll("th, td")).map(
-      (cell) => (cell.textContent || "").trim()
-    );
-    if (headers.length === 0) continue;
-
-    for (let i = 1; i < trs.length; i++) {
-      const cells = Array.from(trs[i].querySelectorAll("td, th"));
-      const row: Record<string, any> = {};
-      headers.forEach((h, j) => {
-        row[h] = (cells[j]?.textContent || "").trim();
-      });
-      rows.push(row);
+export function parseTime(val: any): string {
+  if (!val && val !== 0) return "";
+  if (typeof val === "number") {
+    if (val >= 0 && val < 1) {
+      const totalMinutes = Math.round(val * 24 * 60);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    }
+    const intVal = Math.round(val);
+    if (intVal >= 0 && intVal <= 2400) {
+      const h = Math.floor(intVal / 100);
+      const m = intVal % 100;
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
     }
   }
-
-  return rows;
+  const str = String(val).trim();
+  if (/^\d{1,2}:\d{2}$/.test(str)) return str;
+  if (/^\d{3,4}$/.test(str)) {
+    const n = parseInt(str);
+    return `${String(Math.floor(n / 100)).padStart(2, "0")}:${String(n % 100).padStart(2, "0")}`;
+  }
+  return str;
 }
 
-// ─── Plain text table parser (tab/pipe/multi-space delimited) ────
-function parseTextTable(text: string): Record<string, any>[] {
-  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-  if (lines.length < 2) return [];
-
-  // Detect delimiter
-  const firstLine = lines[0];
-  let delimiter: RegExp;
-  if (firstLine.includes("\t")) {
-    delimiter = /\t+/;
-  } else if (firstLine.includes("|")) {
-    delimiter = /\s*\|\s*/;
-  } else {
-    delimiter = /\s{2,}/;
-  }
-
-  const headers = firstLine.split(delimiter).map(h => h.trim()).filter(Boolean);
-  if (headers.length < 2) return [];
-
-  const rows: Record<string, any>[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    // Skip separator lines
-    if (/^[-=|+\s]+$/.test(lines[i])) continue;
-    const cells = lines[i].split(delimiter).map(c => c.trim());
-    if (cells.length < 2) continue;
-    const row: Record<string, any> = {};
-    headers.forEach((h, j) => {
-      row[h] = cells[j] || "";
-    });
-    rows.push(row);
-  }
-
-  return rows;
+export function parseWeekDays(val: any): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  const str = String(val);
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  return days.filter((d) => str.toLowerCase().includes(d.toLowerCase().slice(0, 3)));
 }
 
-// ─── PDF text extraction ──────────────────────────────────────────
-async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
+function emptyRow(): ParsedRow {
+  return {
+    flight_number: "", route: "", aircraft_type: "", config: "",
+    arrival_flight: "", arrival_date: "", sta: "", departure_flight: "",
+    departure_date: "", std: "", service_type: "turnaround",
+    week_days: [], period_from: "", period_to: "",
+    number_of_flights: null, ref_number: "", notes: "",
+    _station_raw: "", _station_id: "", _dep_stn: "", _arr_stn: "", _ac_reg: "",
+  };
+}
+
+function mapRowFromJson(
+  row: Record<string, any>,
+  mapping: Record<string, keyof ParsedRow>,
+  stationColName: string
+): ParsedRow {
+  const r: any = emptyRow();
+  for (const [origCol, field] of Object.entries(mapping)) {
+    const val = row[origCol];
+    if (field === "service_type") r[field] = normalizeServiceType(String(val));
+    else if (["arrival_date", "departure_date", "period_from", "period_to"].includes(field)) r[field] = parseDate(val);
+    else if (field === "sta" || field === "std") r[field] = parseTime(val);
+    else if (field === "week_days") r[field] = parseWeekDays(val);
+    else if (field === "number_of_flights") r[field] = val ? parseInt(String(val)) || null : null;
+    else r[field] = String(val || "");
+  }
+  if (stationColName && row[stationColName]) {
+    r._station_raw = String(row[stationColName]).trim();
+  }
+  if (r._dep_stn && r._arr_stn && !r.route) {
+    r.route = `${r._dep_stn}/${r._arr_stn}`;
+  }
+  if (r.arrival_date && !r.departure_date) {
+    r.departure_date = r.arrival_date;
+  }
+  return r;
+}
+
+function buildMapping(headers: string[]): { mapping: Record<string, keyof ParsedRow>; stationCol: string; isTrafficReport: boolean } {
+  const mapping: Record<string, keyof ParsedRow> = {};
+  let stationCol = "";
+  let isTrafficReport = false;
+  const seen = new Set<string>();
+
+  for (const h of headers) {
+    const baseName = h.replace(/_\d+$/, "");
+    const normalized = baseName.toLowerCase().trim();
+    if (COL_MAP[normalized] && !seen.has(normalized)) {
+      mapping[h] = COL_MAP[normalized];
+      seen.add(normalized);
+    }
+    if (STATION_COL_NAMES.some((s) => normalized === s || normalized.includes(s))) {
+      stationCol = h;
+    }
+    if (normalized === "depstn" || normalized === "arrstn" || normalized === "fltid" || normalized === "datop") {
+      isTrafficReport = true;
+    }
+  }
+  return { mapping, stationCol, isTrafficReport };
+}
+
+function findHeaderRow(ws: XLSX.WorkSheet): number {
+  const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+  const knownHeaders = new Set(Object.keys(COL_MAP));
+  for (let r = range.s.r; r <= Math.min(range.e.r, 20); r++) {
+    let matchCount = 0;
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c })];
+      if (cell?.v) {
+        const val = String(cell.v).toLowerCase().trim();
+        if (knownHeaders.has(val)) matchCount++;
+      }
+    }
+    if (matchCount >= 2) return r;
+  }
+  return 0;
+}
+
+export function parseExcel(buffer: ArrayBuffer): { rows: ParsedRow[]; stationCol: string; isTrafficReport: boolean } {
+  const data = new Uint8Array(buffer);
+  const wb = XLSX.read(data, { type: "array", cellDates: true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const headerRowIdx = findHeaderRow(ws);
+  const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "", range: headerRowIdx });
+  if (json.length === 0) return { rows: [], stationCol: "", isTrafficReport: false };
+  const headers = Object.keys(json[0]);
+  const { mapping, stationCol, isTrafficReport } = buildMapping(headers);
+  if (Object.keys(mapping).length === 0) return { rows: [], stationCol: "", isTrafficReport: false };
+  const rows = json.map((row) => mapRowFromJson(row, mapping, stationCol)).filter((r) => r.flight_number);
+  return { rows, stationCol, isTrafficReport };
+}
+
+export async function parseDocx(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; stationCol: string; isTrafficReport: boolean }> {
+  const mammoth = await import("mammoth");
+  const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
+  return parseHtmlTables(result.value);
+}
+
+export async function parsePdf(buffer: ArrayBuffer): Promise<{ rows: ParsedRow[]; stationCol: string; isTrafficReport: boolean }> {
   const pdfjsLib = await import("pdfjs-dist");
-  
-  // Set worker to empty to use fake worker
   pdfjsLib.GlobalWorkerOptions.workerSrc = "";
-  
-  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
-  const textParts: string[] = [];
-
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+  const pdf = await loadingTask.promise;
+  let fullText = "";
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item: any) => item.str)
-      .join(" ");
-    textParts.push(pageText);
+    const strings = content.items.filter((item: any) => "str" in item).map((item: any) => item.str);
+    fullText += strings.join(" ") + "\n";
   }
-
-  return textParts.join("\n");
+  return parseTextContent(fullText);
 }
 
-// ─── Main file reader (supports xlsx, xls, csv, docx, pdf, txt) ─
-export async function readFileAsRows(file: File): Promise<Record<string, any>[]> {
-  const ext = file.name.split(".").pop()?.toLowerCase();
-
-  if (ext === "csv") {
-    const text = await file.text();
-    const wb = XLSX.read(text, { type: "string" });
-    return XLSX.utils.sheet_to_json<Record<string, any>>(wb.Sheets[wb.SheetNames[0]]);
+function parseHtmlTables(html: string): { rows: ParsedRow[]; stationCol: string; isTrafficReport: boolean } {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const tables = doc.querySelectorAll("table");
+  if (tables.length > 0) {
+    let bestTable: HTMLTableElement | null = null;
+    let maxRows = 0;
+    tables.forEach((t) => { if (t.rows.length > maxRows) { maxRows = t.rows.length; bestTable = t; } });
+    if (bestTable) {
+      const tbl = bestTable as HTMLTableElement;
+      const headers = Array.from(tbl.rows[0]?.cells || []).map((c) => c.textContent?.trim() || "");
+      const { mapping, stationCol, isTrafficReport } = buildMapping(headers);
+      const rows: ParsedRow[] = [];
+      for (let i = 1; i < tbl.rows.length; i++) {
+        const cells = tbl.rows[i].cells;
+        const rowObj: Record<string, any> = {};
+        headers.forEach((h, idx) => { rowObj[h] = cells[idx]?.textContent?.trim() || ""; });
+        rows.push(mapRowFromJson(rowObj, mapping, stationCol));
+      }
+      return { rows: rows.filter((r) => r.flight_number), stationCol, isTrafficReport };
+    }
   }
+  const textContent = doc.body?.textContent || "";
+  return parseTextContent(textContent);
+}
 
-  if (ext === "xlsx" || ext === "xls") {
-    const buffer = await file.arrayBuffer();
-    const wb = XLSX.read(buffer, { type: "array" });
-    return XLSX.utils.sheet_to_json<Record<string, any>>(wb.Sheets[wb.SheetNames[0]]);
+function parseTextContent(text: string): { rows: ParsedRow[]; stationCol: string; isTrafficReport: boolean } {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  let headerIdx = -1;
+  let headerTokens: string[] = [];
+  for (let i = 0; i < Math.min(lines.length, 20); i++) {
+    const tokens = lines[i].split(/\s{2,}|\t/).map((t) => t.trim()).filter(Boolean);
+    const matchCount = tokens.filter((t) => COL_MAP[t.toLowerCase().trim()]).length;
+    if (matchCount >= 2) { headerIdx = i; headerTokens = tokens; break; }
   }
-
-  if (ext === "docx") {
-    const buffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
-    const html = result.value;
-    // Try HTML tables first
-    const tableRows = parseHtmlTables(html);
-    if (tableRows.length > 0) return tableRows;
-    // Fallback: extract plain text and try to parse as delimited
-    const textResult = await mammoth.extractRawText({ arrayBuffer: buffer });
-    return parseTextTable(textResult.value);
+  if (headerIdx === -1) return { rows: [], stationCol: "", isTrafficReport: false };
+  const { mapping, stationCol, isTrafficReport } = buildMapping(headerTokens);
+  const rows: ParsedRow[] = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const tokens = lines[i].split(/\s{2,}|\t/).map((t) => t.trim()).filter(Boolean);
+    if (tokens.length < 2) continue;
+    const rowObj: Record<string, any> = {};
+    headerTokens.forEach((h, idx) => { rowObj[h] = tokens[idx] || ""; });
+    rows.push(mapRowFromJson(rowObj, mapping, stationCol));
   }
+  return { rows: rows.filter((r) => r.flight_number), stationCol, isTrafficReport };
+}
 
-  if (ext === "pdf") {
-    const buffer = await file.arrayBuffer();
-    const text = await extractPdfText(buffer);
-    const rows = parseTextTable(text);
-    if (rows.length > 0) return rows;
-    throw new Error("Could not extract tabular data from PDF. Try converting to Excel or CSV first.");
-  }
-
-  if (ext === "txt" || ext === "tsv") {
-    const text = await file.text();
-    const rows = parseTextTable(text);
-    if (rows.length > 0) return rows;
-    // Try as CSV fallback
-    const wb = XLSX.read(text, { type: "string" });
-    return XLSX.utils.sheet_to_json<Record<string, any>>(wb.Sheets[wb.SheetNames[0]]);
-  }
-
-  throw new Error(`Unsupported file format: .${ext}. Please use Excel (.xlsx), CSV, Word (.docx), PDF, or text files.`);
+export async function parseScheduleFile(
+  file: File
+): Promise<{ rows: ParsedRow[]; stationCol: string; isTrafficReport: boolean }> {
+  const buffer = await file.arrayBuffer();
+  const ext = file.name.split(".").pop()?.toLowerCase() || "";
+  if (["xlsx", "xls", "csv"].includes(ext)) return parseExcel(buffer);
+  if (ext === "docx" || ext === "doc") return parseDocx(buffer);
+  if (ext === "pdf") return parsePdf(buffer);
+  try { return parseExcel(buffer); }
+  catch { throw new Error(`Unsupported file format: .${ext}`); }
 }
