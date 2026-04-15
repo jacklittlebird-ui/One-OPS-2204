@@ -13,6 +13,7 @@ import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
 import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
+import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
@@ -724,7 +725,7 @@ export default function ServiceReportPage() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["#", "OPERATOR", "FLIGHT", "TYPE", "STATION", "ROUTE", "ARR DATE", "A/C TYPE", "MTOW", "D/N", "PAX IN", "DLY", "TOTAL ($)", "REVIEW", "ACTIONS"].map(h => (
+                {["#", "OPERATOR", "FLIGHT", "TYPE", "STATION", "ROUTE", "ARR DATE", "A/C TYPE", "MTOW", "D/N", "PAX IN", "DLY", "TOTAL ($)", "PIPELINE", "ACTIONS"].map(h => (
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -772,23 +773,10 @@ export default function ServiceReportPage() {
                   </td>
                   <td className="px-3 py-2.5 font-semibold text-success">{r.isLinked ? r.totalCost.toLocaleString() : "—"}</td>
                   <td className="px-3 py-2.5">
-                    {!r.isLinked ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
-                        <AlertCircle size={11} />Incomplete
-                      </span>
-                    ) : (() => {
-                      const cfg: Record<string, { icon: React.ReactNode; cls: string }> = {
-                        pending: { icon: <Clock size={11} />, cls: "bg-warning/15 text-warning" },
-                        approved: { icon: <CheckCircle2 size={11} />, cls: "bg-success/15 text-success" },
-                        rejected: { icon: <XCircle size={11} />, cls: "bg-destructive/15 text-destructive" },
-                      };
-                      const c = cfg[r.reviewStatus] || cfg.pending;
-                      return (
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${c.cls}`}>
-                          {c.icon}{r.reviewStatus === "pending" ? "Pending" : r.reviewStatus === "approved" ? "Approved" : "Rejected"}
-                        </span>
-                      );
-                    })()}
+                    <PipelineStepper
+                      currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus })}
+                      compact
+                    />
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">

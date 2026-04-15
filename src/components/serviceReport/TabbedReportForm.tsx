@@ -10,6 +10,7 @@ import {
   ReportFormData, ReportTab, REPORT_TABS, FLIGHT_STATUSES,
   CateringLineItem, HotacLineItem, FuelLineItem, DelayEntry
 } from "./ReportFormTypes";
+import PipelineStepper, { derivePipelineStage } from "./PipelineStepper";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -449,6 +450,16 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             </p>
           </div>
           <button onClick={onCancel} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
+        </div>
+
+        {/* Pipeline stepper */}
+        <div className="px-6 py-3 border-b bg-muted/20 flex items-center justify-center">
+          <PipelineStepper
+            currentStage={derivePipelineStage({
+              isLinked: !!data.id,
+              reviewStatus: data.reviewStatus || "pending",
+            })}
+          />
         </div>
 
         {/* Flight status bar */}

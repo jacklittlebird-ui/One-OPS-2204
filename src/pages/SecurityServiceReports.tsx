@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -354,7 +355,7 @@ export default function SecurityServiceReportsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["#", "STATION", "AIRLINE", "FLIGHT", "DATE", "TYPE", "STAFF", "ACTUAL TIME", "DURATION", "OT (h)", "CHARGE ($)", "STATUS", "REVIEW", "ACTIONS"].map(h => (
+                {["#", "STATION", "AIRLINE", "FLIGHT", "DATE", "TYPE", "STAFF", "ACTUAL TIME", "DURATION", "OT (h)", "CHARGE ($)", "STATUS", "PIPELINE", "ACTIONS"].map(h => (
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -402,9 +403,13 @@ export default function SecurityServiceReportsPage() {
                       )}
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${rc.cls}`}>
-                        {rc.icon}{r.review_status}
-                      </span>
+                      <PipelineStepper
+                        currentStage={derivePipelineStage({
+                          isLinked: r.status === "Completed",
+                          reviewStatus: r.review_status === "Approved" ? "approved" : r.review_status === "Ready for Billing" ? "ready_for_billing" : r.review_status === "Rejected" ? "rejected" : "pending",
+                        })}
+                        compact
+                      />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-1">
