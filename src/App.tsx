@@ -108,7 +108,7 @@ function AppRoutes() {
       <Route path="/audit-log" element={<ProtectedRoute><AppLayout><AuditLogPage /></AppLayout></ProtectedRoute>} />
       <Route path="/station-dispatch" element={<ProtectedRoute><AppLayout><StationDispatchPage /></AppLayout></ProtectedRoute>} />
       <Route path="/irregularity-reports" element={<ProtectedRoute><AppLayout><IrregularityReportsPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/security-service-reports" element={<ProtectedRoute><AppLayout><SecurityServiceReportsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/security-service-reports" element={<Navigate to="/service-report" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

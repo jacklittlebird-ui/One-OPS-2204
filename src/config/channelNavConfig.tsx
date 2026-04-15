@@ -54,8 +54,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
     {
       label: "REPORTING", icon: <FileBarChart2 size={18} />, collapsible: true,
       children: [
-        { label: "Service Report", path: "/service-report" },
-        { label: "Security Reports", path: "/security-service-reports" },
+        { label: "Service Reports", path: "/service-report" },
         { label: "Irregularity Reports", path: "/irregularity-reports" },
         { label: "Lost & Found", path: "/lost-found" },
         { label: "Delay Codes", path: "/delay-codes" },
@@ -109,8 +108,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
     {
       label: "REVIEW", icon: <ClipboardCheck size={18} />, collapsible: true,
       children: [
-        { label: "Service Report", path: "/service-report" },
-        { label: "Security Reports", path: "/security-service-reports" },
+        { label: "Service Reports", path: "/service-report" },
         { label: "Flight Schedules", path: "/clearances" },
         { label: "Station Dispatch", path: "/station-dispatch" },
       ],
