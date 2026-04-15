@@ -27,6 +27,8 @@ const SERVICE_TABS = [
   { key: "Cargo", label: "Cargo", icon: <FileText size={14} /> },
   { key: "Passenger", label: "Passenger Services", icon: <FileText size={14} /> },
   { key: "Lounge", label: "Lounge & VVIP", icon: <FileText size={14} /> },
+  { key: "Hotel", label: "Hotel Accommodation", icon: <FileText size={14} /> },
+  { key: "Transportation", label: "Transportation", icon: <FileText size={14} /> },
 ];
 
 const SERVICE_SCOPES = ["Full Service", "Arrival Only", "Departure Only", "Turnaround", "Ad-Hoc", "Supervision Only"];
