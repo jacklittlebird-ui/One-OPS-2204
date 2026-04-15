@@ -110,7 +110,7 @@ export default function StationDispatchPage() {
   const { data: serviceRates } = useSupabaseTable<ServiceRateRow>("contract_service_rates");
   const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines");
 
-  const [stationFilter, setStationFilter] = useState("CAI");
+  const [stationFilter, setStationFilter] = useState("");
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
@@ -144,7 +144,8 @@ export default function StationDispatchPage() {
 
   // Filtered dispatches
   const filtered = useMemo(() => {
-    let r = dispatches.filter(d => d.station === stationFilter);
+    let r = [...dispatches];
+    if (stationFilter) r = r.filter(d => d.station === stationFilter);
     if (dateFrom) r = r.filter(d => d.flight_date >= dateFrom);
     if (dateTo) r = r.filter(d => d.flight_date <= dateTo);
     if (airlineFilter) r = r.filter(d => d.airline.toLowerCase() === airlineFilter.toLowerCase());
@@ -161,9 +162,11 @@ export default function StationDispatchPage() {
   // Station flights for the date range
   const stationFlights = useMemo(() => {
     return flights.filter(f => {
-      const routeMatch = (f.route || "").toUpperCase().includes(stationFilter);
-      const authorityMatch = (f.authority || "").toUpperCase() === stationFilter;
-      const stationMatch = routeMatch || authorityMatch;
+      if (stationFilter) {
+        const routeMatch = (f.route || "").toUpperCase().includes(stationFilter);
+        const authorityMatch = (f.authority || "").toUpperCase() === stationFilter;
+        if (!(routeMatch || authorityMatch)) return false;
+      }
       const arrDate = f.arrival_date || "";
       const depDate = f.departure_date || "";
       const inRange = (d: string) => {
@@ -172,7 +175,7 @@ export default function StationDispatchPage() {
         if (dateTo && d > dateTo) return false;
         return true;
       };
-      if (!(stationMatch && (inRange(arrDate) || inRange(depDate)))) return false;
+      if (!(inRange(arrDate) || inRange(depDate))) return false;
       if (airlineFilter && f.airline_id) {
         const aName = airlineMap[f.airline_id]?.name || "";
         if (aName.toLowerCase() !== airlineFilter.toLowerCase()) return false;
@@ -287,7 +290,7 @@ export default function StationDispatchPage() {
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
   // KPIs
-  const todayDispatches = dispatches.filter(d => d.flight_date >= dateFrom && d.flight_date <= dateTo && d.station === stationFilter);
+  const todayDispatches = dispatches.filter(d => d.flight_date >= dateFrom && d.flight_date <= dateTo && (!stationFilter || d.station === stationFilter));
   const completedCount = todayDispatches.filter(d => d.status === "Completed").length;
   const overtimeTotal = todayDispatches.reduce((s, d) => s + (d.overtime_hours || 0), 0);
   const revenueTotal = todayDispatches.reduce((s, d) => s + (d.total_charge || 0), 0);
@@ -306,14 +309,18 @@ export default function StationDispatchPage() {
         <div className="stat-card"><div className="stat-card-icon bg-primary"><Plane size={20} /></div><div><div className="text-xl font-bold text-foreground">{todayDispatches.length}</div><div className="text-xs text-muted-foreground">Dispatched Today</div></div></div>
         <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-xl font-bold text-foreground">{completedCount}</div><div className="text-xs text-muted-foreground">Completed</div></div></div>
         <div className="stat-card"><div className="stat-card-icon bg-warning"><AlertTriangle size={20} /></div><div><div className="text-xl font-bold text-foreground">{overtimeTotal.toFixed(1)}h</div><div className="text-xs text-muted-foreground">Overtime Hours</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-info"><Users size={20} /></div><div><div className="text-xl font-bold text-foreground">{stationFlights.length - [...assignedFlightIds].filter(id => dispatches.find(d => d.flight_schedule_id === id)?.station === stationFilter).length}</div><div className="text-xs text-muted-foreground">Unassigned Flights</div></div></div>
+        <div className="stat-card"><div className="stat-card-icon bg-info"><Users size={20} /></div><div><div className="text-xl font-bold text-foreground">{stationFlights.length - [...assignedFlightIds].filter(id => dispatches.find(d => d.flight_schedule_id === id && (!stationFilter || d.station === stationFilter))).length}</div><div className="text-xs text-muted-foreground">Unassigned Flights</div></div></div>
         <div className="stat-card"><div className="stat-card-icon bg-muted"><Clock size={20} /></div><div><div className="text-xl font-bold text-foreground">${revenueTotal.toLocaleString()}</div><div className="text-xs text-muted-foreground">Today's Charges</div></div></div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className={selectCls + " w-40"}>
+          <option value="">All Stations</option>
           {STATIONS.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
+        </select>
+        <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className={selectCls + " w-44"}>
+          <option value="">All Airlines</option>
+          {[...airlines].sort((a, b) => a.name.localeCompare(b.name)).map(a => <option key={a.id} value={a.name}>{a.iata_code ? `${a.iata_code} — ` : ""}{a.name}</option>)}
         </select>
         <div className="flex items-center gap-1.5">
           <label className="text-xs text-muted-foreground font-medium">From</label>
@@ -323,10 +330,6 @@ export default function StationDispatchPage() {
           <label className="text-xs text-muted-foreground font-medium">To</label>
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className={inputCls + " w-36"} />
         </div>
-        <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className={selectCls + " w-44"}>
-          <option value="">All Airlines</option>
-          {airlines.map(a => <option key={a.id} value={a.name}>{a.iata_code ? `${a.iata_code} — ` : ""}{a.name}</option>)}
-        </select>
         <div className="relative">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Search…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
