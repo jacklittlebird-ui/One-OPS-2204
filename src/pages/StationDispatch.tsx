@@ -313,10 +313,14 @@ export default function StationDispatchPage() {
         <div className="stat-card"><div className="stat-card-icon bg-muted"><Clock size={20} /></div><div><div className="text-xl font-bold text-foreground">${revenueTotal.toLocaleString()}</div><div className="text-xs text-muted-foreground">Today's Charges</div></div></div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className={selectCls + " w-40"}>
+          <option value="">All Stations</option>
           {STATIONS.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
+        </select>
+        <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className={selectCls + " w-44"}>
+          <option value="">All Airlines</option>
+          {[...airlines].sort((a, b) => a.name.localeCompare(b.name)).map(a => <option key={a.id} value={a.name}>{a.iata_code ? `${a.iata_code} — ` : ""}{a.name}</option>)}
         </select>
         <div className="flex items-center gap-1.5">
           <label className="text-xs text-muted-foreground font-medium">From</label>
@@ -326,10 +330,6 @@ export default function StationDispatchPage() {
           <label className="text-xs text-muted-foreground font-medium">To</label>
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className={inputCls + " w-36"} />
         </div>
-        <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className={selectCls + " w-44"}>
-          <option value="">All Airlines</option>
-          {airlines.map(a => <option key={a.id} value={a.name}>{a.iata_code ? `${a.iata_code} — ` : ""}{a.name}</option>)}
-        </select>
         <div className="relative">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input type="text" placeholder="Search…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
