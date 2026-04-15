@@ -346,7 +346,7 @@ export default function StationDispatchPage() {
           <div className="bg-card rounded-lg border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr>{["#","FLIGHT","AIRLINE","TYPE","STAFF","SCHED TIME","ACTUAL TIME","DURATION","OT HRS","CHARGE","STATUS","ACTIONS"].map(h =>
+                <thead><tr>{["#","FLIGHT","AIRLINE","SERVICE TYPE","STAFF","SCHED TIME","ACTUAL TIME","DURATION","OT HRS","CHARGE","STATUS","ACTIONS"].map(h =>
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 )}</tr></thead>
                 <tbody>
@@ -397,7 +397,7 @@ export default function StationDispatchPage() {
           <div className="bg-card rounded-lg border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr>{["FLIGHT","TYPE","ROUTE","STA","STD","A/C TYPE","REG","STATUS","ASSIGN"].map(h =>
+                <thead><tr>{["FLIGHT","SERVICE TYPE","ROUTE","STA","STD","A/C TYPE","REG","STATUS","ASSIGN"].map(h =>
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 )}</tr></thead>
                 <tbody>
