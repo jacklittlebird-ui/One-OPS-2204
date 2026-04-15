@@ -403,9 +403,13 @@ export default function SecurityServiceReportsPage() {
                       )}
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${rc.cls}`}>
-                        {rc.icon}{r.review_status}
-                      </span>
+                      <PipelineStepper
+                        currentStage={derivePipelineStage({
+                          isLinked: r.status === "Completed",
+                          reviewStatus: r.review_status === "Approved" ? "approved" : r.review_status === "Ready for Billing" ? "ready_for_billing" : r.review_status === "Rejected" ? "rejected" : "pending",
+                        })}
+                        compact
+                      />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-1">
