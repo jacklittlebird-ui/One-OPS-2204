@@ -452,6 +452,16 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
           <button onClick={onCancel} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
         </div>
 
+        {/* Pipeline stepper */}
+        <div className="px-6 py-3 border-b bg-muted/20 flex items-center justify-center">
+          <PipelineStepper
+            currentStage={derivePipelineStage({
+              isLinked: !!data.id,
+              reviewStatus: data.reviewStatus || "pending",
+            })}
+          />
+        </div>
+
         {/* Flight status bar */}
         <div className="px-6 py-2 border-b flex items-center gap-1 bg-muted/30">
           {FLIGHT_STATUSES.map((s, i) => (
