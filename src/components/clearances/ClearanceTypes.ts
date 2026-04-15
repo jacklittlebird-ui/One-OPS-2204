@@ -39,7 +39,7 @@ export type ClearanceRow = {
 
 export const CLEARANCE_TYPES = ["Arrival", "Departure", "Turnaround", "Maintenance", "ADHOC", "Transportation"];
 export const PURPOSES = ["Scheduled", "Charter", "Technical Stop", "Cargo", "VIP", "Diplomatic", "Medical Evacuation", "Ferry"];
-export const SKD_TYPES = ["Schedule", "Charter", "Extra", "Cargo", "VIP", "Technical"];
+export const SKD_TYPES = ["Schedule", "Charter", "Cargo", "General Aviation", "Military", "State"];
 export const HANDLING_OPTIONS = ["Full Handling", "Ramp Only", "Transit", "Technical", "VIP Hall", "Ferry"];
 
 export const STATUS_CONFIG: Record<string, { cls: string }> = {
