@@ -160,7 +160,7 @@ export default function ChartOfAccountsPage() {
                   <Input type="number" placeholder="Level" value={form.level} onChange={e => setForm({ ...form, level: parseInt(e.target.value) || 1 })} min={1} />
                   <Select value={form.currency} onValueChange={v => setForm({ ...form, currency: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="EUR">EUR</SelectItem><SelectItem value="EGP">EGP</SelectItem></SelectContent>
+                    <SelectContent><SelectItem value="EGP">EGP</SelectItem><SelectItem value="EUR">EUR</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent>
                   </Select>
                   <Input type="number" placeholder="Opening Balance" value={form.opening_balance} onChange={e => setForm({ ...form, opening_balance: e.target.value })} />
                 </div>

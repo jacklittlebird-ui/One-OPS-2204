@@ -168,11 +168,11 @@ export default function BulletinsPage() {
               </Select>
               <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="High">High</SelectItem><SelectItem value="Medium">Medium</SelectItem><SelectItem value="Low">Low</SelectItem></SelectContent>
+                <SelectContent><SelectItem value="High">High</SelectItem><SelectItem value="Low">Low</SelectItem><SelectItem value="Medium">Medium</SelectItem></SelectContent>
               </Select>
               <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Active">Active</SelectItem><SelectItem value="Expired">Expired</SelectItem><SelectItem value="Superseded">Superseded</SelectItem></SelectContent>
+                <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Expired">Expired</SelectItem><SelectItem value="Superseded">Superseded</SelectItem></SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-3 gap-2">
