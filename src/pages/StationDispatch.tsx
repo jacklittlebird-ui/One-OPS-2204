@@ -20,6 +20,7 @@ type FlightRow = {
   departure_date: string | null;
   aircraft_type: string;
   registration: string;
+  authority: string;
 };
 
 type DispatchRow = {
@@ -154,8 +155,10 @@ export default function StationDispatchPage() {
   const stationFlights = useMemo(() => {
     return flights.filter(f => {
       const routeMatch = (f.route || "").toUpperCase().includes(stationFilter);
+      const authorityMatch = (f.authority || "").toUpperCase() === stationFilter;
+      const stationMatch = routeMatch || authorityMatch;
       const dateMatch = f.arrival_date === dateFilter || f.departure_date === dateFilter;
-      return routeMatch && dateMatch;
+      return stationMatch && dateMatch;
     });
   }, [flights, stationFilter, dateFilter]);
 
