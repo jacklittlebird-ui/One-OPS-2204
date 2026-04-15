@@ -91,7 +91,7 @@ export default function BulletinsPage() {
             <input type="text" placeholder="Search bulletins…" value={search} onChange={e => setSearch(e.target.value)} className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-52 focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground"><option>All</option>{TYPES.map(t => <option key={t}>{t}</option>)}</select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground"><option>All</option><option>Active</option><option>Expired</option><option>Draft</option><option>Superseded</option></select>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground"><option>All</option><option>Active</option><option>Draft</option><option>Expired</option><option>Superseded</option></select>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

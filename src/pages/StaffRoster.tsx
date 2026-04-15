@@ -187,7 +187,7 @@ export default function StaffRosterPage() {
             <div className="grid grid-cols-3 gap-2">
               <Select value={form.shift} onValueChange={v => setForm({ ...form, shift: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Morning">Morning</SelectItem><SelectItem value="Afternoon">Afternoon</SelectItem><SelectItem value="Night">Night</SelectItem><SelectItem value="Split">Split</SelectItem><SelectItem value="Off">Off</SelectItem></SelectContent>
+                <SelectContent><SelectItem value="Afternoon">Afternoon</SelectItem><SelectItem value="Morning">Morning</SelectItem><SelectItem value="Night">Night</SelectItem><SelectItem value="Off">Off</SelectItem><SelectItem value="Split">Split</SelectItem></SelectContent>
               </Select>
               <Input type="time" placeholder="Shift Start" value={form.shift_start} onChange={e => setForm({ ...form, shift_start: e.target.value })} />
               <Input type="time" placeholder="Shift End" value={form.shift_end} onChange={e => setForm({ ...form, shift_end: e.target.value })} />
