@@ -12,6 +12,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 
 const PAGE_SIZE = 25;
 
@@ -141,6 +142,7 @@ export default function FlightSchedulePage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<FlightRow>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const airlines = useMemo(() => [...new Set(data.map(d => d.airline))].sort(), [data]);
@@ -251,6 +253,7 @@ export default function FlightSchedulePage() {
           )}
           <button onClick={() => { setNewRow(emptyFlight()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> Add Flight</button>
           <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload</button>
+          <button onClick={() => setUploadOpen(true)} className="toolbar-btn-outline"><Upload size={14} /> Import Schedule</button>
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
         </div>
@@ -334,6 +337,8 @@ export default function FlightSchedulePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ScheduleUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </div>
   );
 }

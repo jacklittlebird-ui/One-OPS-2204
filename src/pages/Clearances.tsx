@@ -16,6 +16,7 @@ import { formatDateDMY } from "@/lib/utils";
 import { ClearanceRow, CLEARANCE_TYPES, STATUS_CONFIG, emptyForm } from "@/components/clearances/ClearanceTypes";
 import ClearanceFormDialog from "@/components/clearances/ClearanceFormDialog";
 import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog";
+import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 
 export default function ClearancesPage() {
   const { data, isLoading, refetch, add, update, remove } = useSupabaseTable<ClearanceRow>("flight_schedules");
@@ -24,6 +25,9 @@ export default function ClearancesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [stationFilter, setStationFilter] = useState("all");
+  const [registrationFilter, setRegistrationFilter] = useState("all");
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<ClearanceRow | null>(null);
   const [editItem, setEditItem] = useState<ClearanceRow | null>(null);
@@ -75,11 +79,16 @@ export default function ClearancesPage() {
 
   const airlineMap = Object.fromEntries((airlines || []).map((a: any) => [a.id, a]));
 
+  const stations = [...new Set(data.map(c => c.authority).filter(Boolean))].sort();
+  const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
+
   const filtered = data.filter(c => {
     const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
     const mst = statusFilter === "all" || c.status === statusFilter;
     const mt = typeFilter === "all" || c.clearance_type === typeFilter;
-    return ms && mst && mt;
+    const mstation = stationFilter === "all" || c.authority === stationFilter;
+    const mreg = registrationFilter === "all" || c.registration === registrationFilter;
+    return ms && mst && mt && mstation && mreg;
   });
 
   const stats = {
@@ -242,6 +251,7 @@ export default function ClearancesPage() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}><Download size={14} className="mr-1" /> Export</Button>
           <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}><Upload size={14} className="mr-1" /> Upload Excel</Button>
+          <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}><Upload size={14} className="mr-1" /> Import Schedule</Button>
           <Button size="sm" onClick={openAdd}><Plus size={14} className="mr-1" /> Add Flights</Button>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleUpload} />
         </div>
@@ -269,6 +279,18 @@ export default function ClearancesPage() {
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Pending">Pending</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Rejected">Rejected</SelectItem><SelectItem value="Expired">Expired</SelectItem></SelectContent>
         </Select>
+        {stations.length > 0 && (
+          <Select value={stationFilter} onValueChange={setStationFilter}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All Stations</SelectItem>{stations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+          </Select>
+        )}
+        {registrations.length > 0 && (
+          <Select value={registrationFilter} onValueChange={setRegistrationFilter}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All Registrations</SelectItem>{registrations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+          </Select>
+        )}
       </div>
 
       <Card>
@@ -340,6 +362,8 @@ export default function ClearancesPage() {
         onClose={() => setDetailItem(null)}
         airlineMap={airlineMap}
       />
+
+      <ScheduleUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </div>
   );
 }
