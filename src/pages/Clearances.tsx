@@ -223,7 +223,7 @@ export default function ClearancesPage() {
       "Airline": c.airline_id ? airlineMap[c.airline_id]?.name : "", "Route": c.route,
       "Arrival Flight": c.arrival_flight, "Departure Flight": c.departure_flight,
       "STA": c.sta, "STD": c.std, "Skd Type": c.skd_type,
-      "Permit No": c.permit_no, "Type": c.clearance_type,
+      "Permit No": c.permit_no, "Service Type": c.clearance_type,
       "Status": c.status, "Valid From": c.valid_from, "Valid To": c.valid_to,
       "PAX": c.passengers, "Cargo": c.cargo_kg,
     })),
