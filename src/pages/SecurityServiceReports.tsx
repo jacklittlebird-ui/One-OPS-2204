@@ -126,6 +126,21 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
   });
 
+  // Fetch flight schedules with security clearance types
+  const { data: securityFlights = [] } = useQuery({
+    queryKey: ["flight_schedules", "security-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("flight_schedules")
+        .select("*, airlines:airline_id(name, iata_code)")
+        .in("clearance_type", SECURITY_CLEARANCE_TYPES)
+        .order("arrival_date", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!session,
+  });
+
   // Update mutation for editing service report details
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<DispatchRow> & { id: string }) => {
