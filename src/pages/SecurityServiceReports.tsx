@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
-  FileBarChart2, DollarSign, MessageSquare, ExternalLink
+  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 
 const PAGE_SIZE = 15;
 
