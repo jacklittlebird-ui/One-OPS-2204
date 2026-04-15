@@ -37,7 +37,9 @@ export type ClearanceRow = {
   notes: string;
 };
 
-export const CLEARANCE_TYPES = ["Arrival Handling", "Arrival Security", "Catering Only", "Departure Handling", "Departure Security", "Fuel Only", "Full Handling", "Hotel Accommodation", "Maintenance", "Payment", "Supervision Only", "Technical Stop", "Touch & Go", "Transportation", "Turnaround Security"];
+export const CLEARANCE_TYPES = ["Arrival Handling", "Arrival Security", "Catering Only", "Departure Handling", "Departure Security", "Fuel Only", "Full Handling", "Hotel Accommodation", "Maintenance", "Maintenance Security", "Payment", "Supervision Only", "Technical Stop", "Touch & Go", "Transportation", "Turnaround Security"];
+
+export const SECURITY_CLEARANCE_TYPES = ["Arrival Security", "Departure Security", "Maintenance Security", "Turnaround Security"];
 export const PURPOSES = ["Cargo", "Charter", "Diplomatic", "Ferry", "Medical Evacuation", "Scheduled", "Technical Stop", "VIP"];
 export const SKD_TYPES = ["Cargo", "Charter", "General Aviation", "Meet and Assist", "Military", "Schedule", "State", "Transportation", "VIP Lounge"];
 export const HANDLING_OPTIONS = ["Ferry", "Full Handling", "Ramp Only", "Technical", "Transit", "VIP Hall"];
