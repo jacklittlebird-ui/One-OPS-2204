@@ -236,7 +236,7 @@ function resolveStationFromRoute(route: string) {
   return "";
 }
 
-export default function ServiceReportPage() {
+function HandlingServiceReportContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -872,6 +872,34 @@ export default function ServiceReportPage() {
           onCancel={() => setEditId(null)}
         />
       )}
+    </div>
+  );
+}
+
+// --- Wrapper with Security / Handling tabs ---
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Shield, Wrench } from "lucide-react";
+import SecurityServiceReportsPage from "@/pages/SecurityServiceReports";
+
+export default function ServiceReportPage() {
+  return (
+    <div className="p-6 space-y-4">
+      <Tabs defaultValue="handling" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="security" className="gap-1.5">
+            <Shield size={14} /> Security
+          </TabsTrigger>
+          <TabsTrigger value="handling" className="gap-1.5">
+            <Wrench size={14} /> Handling
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="security">
+          <SecurityServiceReportsPage />
+        </TabsContent>
+        <TabsContent value="handling">
+          <HandlingServiceReportContent />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
