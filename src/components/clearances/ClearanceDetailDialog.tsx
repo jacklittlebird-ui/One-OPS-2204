@@ -71,7 +71,7 @@ export default function ClearanceDetailDialog({ item, onClose, airlineMap }: Pro
             <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Clearance Info</h4>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Permit No" value={item.permit_no} />
-              <Field label="Type" value={item.clearance_type} />
+              <Field label="Service Type" value={item.clearance_type} />
               <Field label="Status" value={item.status} />
               <Field label="Requested Date" value={formatDateDMY(item.requested_date)} />
               <Field label="Valid From" value={formatDateDMY(item.valid_from)} />
