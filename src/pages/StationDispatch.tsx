@@ -117,6 +117,7 @@ export default function StationDispatchPage() {
   const [dateFrom, setDateFrom] = useState(monthStart);
   const [dateTo, setDateTo] = useState(monthEnd);
   const [search, setSearch] = useState("");
+  const [airlineFilter, setAirlineFilter] = useState("");
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
