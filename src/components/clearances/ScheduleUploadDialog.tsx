@@ -165,7 +165,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
             <Button onClick={() => fileRef.current?.click()}>
               <Upload size={14} className="mr-2" /> Select File
             </Button>
-            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv,.docx,.pdf,.txt,.tsv" className="hidden" onChange={handleFile} />
           </div>
         )}
 
