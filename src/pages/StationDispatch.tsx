@@ -7,6 +7,7 @@ import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SECURITY_CLEARANCE_TYPES, getServiceCategory, type ServiceCategory } from "@/components/clearances/ClearanceTypes";
 
 type FlightRow = {
   id: string;
@@ -81,7 +82,9 @@ const STATIONS = [
 ];
 
 const DISPATCH_STATUSES = ["Pending", "Dispatched", "In Progress", "Completed", "Cancelled"];
-const SERVICE_TYPES = ["Arrival", "Departure", "Turnaround", "Maintenance", "ADHOC", "Transportation"];
+const SERVICE_TYPES_HANDLING = ["Arrival", "Departure", "Turnaround", "Maintenance", "ADHOC", "Transportation"];
+const SERVICE_TYPES_SECURITY = ["Arrival Security", "Departure Security", "Maintenance Security", "Turnaround Security"];
+const SERVICE_TYPES = [...SERVICE_TYPES_HANDLING, ...SERVICE_TYPES_SECURITY];
 
 const PAGE_SIZE = 15;
 
@@ -203,6 +206,7 @@ export default function StationDispatchPage() {
   const [viewId, setViewId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [calMonth, setCalMonth] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
+  const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("handling");
 
   const airlineMap = useMemo(() => {
     const m: Record<string, { name: string; iata: string }> = {};
