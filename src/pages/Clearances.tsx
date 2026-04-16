@@ -92,12 +92,24 @@ export default function ClearancesPage() {
     return ms && mst && mt && mstation && mreg;
   });
 
+  const pendingApproval = data.filter(c => c.status === "Pending" && c.remarks?.includes("Added from Station Dispatch"));
+
   const stats = {
     total: data.length,
     pending: data.filter(c => c.status === "Pending").length,
     approved: data.filter(c => c.status === "Approved").length,
     expiringSoon: data.filter(c => c.status === "Approved" && c.valid_to && (new Date(c.valid_to).getTime() - Date.now()) / 86400000 <= 7 && (new Date(c.valid_to).getTime() - Date.now()) > 0).length,
     totalPax: data.filter(c => c.status === "Approved").reduce((s, c) => s + (c.passengers || 0), 0),
+  };
+
+  const handleApprove = async (c: ClearanceRow) => {
+    await update({ id: c.id, status: "Approved" as any });
+    toast({ title: "✅ Approved", description: `Flight ${c.flight_no} has been approved.` });
+  };
+
+  const handleReject = async (c: ClearanceRow) => {
+    await update({ id: c.id, status: "Rejected" as any });
+    toast({ title: "❌ Rejected", description: `Flight ${c.flight_no} has been rejected.` });
   };
 
   const openAdd = () => { setEditItem(null); setForm(emptyForm); setDialogOpen(true); };
