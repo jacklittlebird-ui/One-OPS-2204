@@ -856,13 +856,13 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground whitespace-nowrap">{r.operator}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flightNo}</td>
-                  <td className="px-3 py-2.5">
+                  <td className="px-3 py-2.5 whitespace-nowrap">
                     {r.isLinked ? (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${statusColor[r.handlingType] || "bg-muted text-muted-foreground"}`}>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${statusColor[r.handlingType] || "bg-muted text-muted-foreground"}`}>
                         {r.handlingType}
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">—</span>
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">—</span>
                     )}
                   </td>
                   <td className="px-3 py-2.5 text-foreground text-xs">{r.skdType || "—"}</td>
