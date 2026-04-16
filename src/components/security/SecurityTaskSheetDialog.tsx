@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Shield, Printer, Download } from "lucide-react";
-import { SKD_TYPES } from "@/components/clearances/ClearanceTypes";
+import { SKD_TYPES, SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
 
 interface TaskSheetData {
@@ -85,6 +85,7 @@ interface Props {
   atd?: string;
   skdType?: string;
   serviceType?: string;
+  isNew?: boolean;
 }
 
 const FLIGHT_TYPES = SKD_TYPES;
@@ -93,16 +94,17 @@ const inputCls = "text-sm border border-border rounded px-2.5 py-2 bg-card text-
 const readOnlyCls = "text-sm border border-border rounded px-2.5 py-2 bg-muted/50 text-foreground w-full cursor-default";
 const sectionHeaderCls = "bg-primary/10 text-primary font-bold text-sm px-3 py-2 rounded-t border border-primary/20";
 
-export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType }: Props) {
+export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, isNew }: Props) {
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
+  const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (row) {
+      setEditableRow({ ...row });
       const saved = row.task_sheet_data as Record<string, any> | null;
       if (saved && typeof saved === "object") {
         const restored = { ...emptyTaskSheet(), ...saved } as TaskSheetData;
-        // If skdType from flight schedule and not already saved, use it
         if (!restored.flight_type && skdType) restored.flight_type = skdType;
         setSheet(restored);
       } else {
@@ -117,14 +119,20 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     }
   }, [row, skdType]);
 
-  if (!row) return null;
+  if (!row || !editableRow) return null;
+
+  const currentRow = isNew ? editableRow : row;
+
+  const updateRow = (field: string, value: any) => {
+    setEditableRow(prev => prev ? { ...prev, [field]: value } : prev);
+  };
 
   const update = (field: keyof TaskSheetData, value: string) => {
     setSheet(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = () => {
-    onSave(row, sheet);
+    onSave(isNew ? editableRow : row, sheet);
   };
 
   const formatDate = (d: string) => {
@@ -278,11 +286,37 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         {/* Title bar styled like the PDF header */}
         <div className="bg-primary/5 border-b px-6 py-4">
           <DialogTitle className="text-center text-lg font-bold uppercase tracking-wide text-foreground">
-            {row.airline} AIRLINES SECURITY TASK SHEET
+            {isNew ? "NEW" : currentRow.airline} AIRLINES SECURITY TASK SHEET
           </DialogTitle>
         </div>
 
         <div className="px-6 py-4 space-y-4" ref={printRef}>
+          {/* Airline & Station (editable for new) */}
+          {isNew && (
+            <div className="border rounded overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/60">
+                    <th className="px-3 py-2 text-left font-semibold text-foreground border-r">Airline</th>
+                    <th className="px-3 py-2 text-left font-semibold text-foreground border-r">Station</th>
+                    <th className="px-3 py-2 text-left font-semibold text-foreground">Service Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="px-3 py-2 border-r"><input className={inputCls} value={editableRow.airline} onChange={e => updateRow("airline", e.target.value)} placeholder="Airline" /></td>
+                    <td className="px-3 py-2 border-r"><input className={inputCls} value={editableRow.station} onChange={e => updateRow("station", e.target.value)} placeholder="CAI" /></td>
+                    <td className="px-3 py-2">
+                      <select className={inputCls} value={editableRow.service_type} onChange={e => updateRow("service_type", e.target.value)}>
+                        {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
           {/* Flight Info Table */}
           <div className="border rounded overflow-hidden">
             <table className="w-full text-sm">
@@ -296,10 +330,21 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </thead>
               <tbody>
                 <tr>
-                  <td className="px-3 py-2 font-bold text-foreground border-r">{row.flight_no}</td>
-                  <td className="px-3 py-2 text-foreground border-r">{formatDate(row.flight_date)}</td>
-                  <td className="px-3 py-2 font-mono text-foreground border-r">{registration || "—"}</td>
-                  <td className="px-3 py-2 text-foreground">{route || "—"}</td>
+                  {isNew ? (
+                    <>
+                      <td className="px-3 py-2 border-r"><input className={inputCls} value={editableRow.flight_no} onChange={e => updateRow("flight_no", e.target.value)} placeholder="Flight No" /></td>
+                      <td className="px-3 py-2 border-r"><input className={inputCls} type="date" value={editableRow.flight_date} onChange={e => updateRow("flight_date", e.target.value)} /></td>
+                      <td className="px-3 py-2 border-r"><input className={inputCls} value={registration || ""} placeholder="Registration" readOnly /></td>
+                      <td className="px-3 py-2"><input className={inputCls} value={route || ""} placeholder="Route" readOnly /></td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-3 py-2 font-bold text-foreground border-r">{currentRow.flight_no}</td>
+                      <td className="px-3 py-2 text-foreground border-r">{formatDate(currentRow.flight_date)}</td>
+                      <td className="px-3 py-2 font-mono text-foreground border-r">{registration || "—"}</td>
+                      <td className="px-3 py-2 text-foreground">{route || "—"}</td>
+                    </>
+                  )}
                 </tr>
               </tbody>
             </table>
@@ -311,22 +356,37 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               <tbody>
                 <tr className="border-b">
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-16">STA</td>
-                  <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{sta || "—"}</td>
+                  <td className="px-3 py-2 text-foreground border-r w-20 font-mono">
+                    {isNew ? <input className={inputCls} value={editableRow.scheduled_start} onChange={e => updateRow("scheduled_start", e.target.value)} placeholder="HH:MM" maxLength={5} /> : (sta || "—")}
+                  </td>
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-16">ATA</td>
-                  <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{ata || row.actual_start || "—"}</td>
+                  <td className="px-3 py-2 text-foreground border-r w-20 font-mono">
+                    {isNew ? <input className={inputCls} value={editableRow.actual_start} onChange={e => updateRow("actual_start", e.target.value)} placeholder="HH:MM" maxLength={5} /> : (ata || currentRow.actual_start || "—")}
+                  </td>
                    <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Skd Type</td>
                    <td className="px-3 py-2">
-                     <span className="text-xs font-semibold text-foreground">{skdType || sheet.flight_type || "—"}</span>
+                     {isNew ? (
+                       <select className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}>
+                         <option value="">Select...</option>
+                         {FLIGHT_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
+                       </select>
+                     ) : (
+                       <span className="text-xs font-semibold text-foreground">{skdType || sheet.flight_type || "—"}</span>
+                     )}
                    </td>
                 </tr>
                  <tr className="border-b">
                    <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">STD</td>
-                   <td className="px-3 py-2 text-foreground border-r font-mono">{std || "—"}</td>
+                   <td className="px-3 py-2 text-foreground border-r font-mono">
+                     {isNew ? <input className={inputCls} value={editableRow.scheduled_end} onChange={e => updateRow("scheduled_end", e.target.value)} placeholder="HH:MM" maxLength={5} /> : (std || "—")}
+                   </td>
                    <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">ATD</td>
-                   <td className="px-3 py-2 text-foreground border-r font-mono">{atd || row.actual_end || "—"}</td>
+                   <td className="px-3 py-2 text-foreground border-r font-mono">
+                     {isNew ? <input className={inputCls} value={editableRow.actual_end} onChange={e => updateRow("actual_end", e.target.value)} placeholder="HH:MM" maxLength={5} /> : (atd || currentRow.actual_end || "—")}
+                   </td>
                    <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">Service Type</td>
                    <td className="px-3 py-2">
-                     <span className="text-xs font-semibold text-foreground">{serviceType || row.service_type || "—"}</span>
+                     <span className="text-xs font-semibold text-foreground">{serviceType || currentRow.service_type || "—"}</span>
                    </td>
                  </tr>
                  <tr className="border-b">
@@ -452,7 +512,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
           {/* Security Supervisor */}
           <div className="border rounded overflow-hidden">
-            <div className={sectionHeaderCls}>{row.airline.toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</div>
+            <div className={sectionHeaderCls}>{currentRow.airline.toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</div>
             <div className="p-3">
               <input
                 className={inputCls}
@@ -465,7 +525,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
           {/* Footer matching the PDF */}
           <div className="flex justify-between items-center text-xs text-muted-foreground pt-3 border-t">
-            <span>{row.airline} Security Task Sheet</span>
+            <span>{currentRow.airline} Security Task Sheet</span>
             <span>V.03 22Jan2023</span>
           </div>
         </div>
