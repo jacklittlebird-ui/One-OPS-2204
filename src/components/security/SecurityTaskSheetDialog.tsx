@@ -217,6 +217,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="mono">${stdVal}</td>
     <td class="label">ATD</td>
     <td class="mono">${atdVal}</td>
+    <td class="label">Service Type</td>
+    <td colspan="5" class="value-cell" style="font-size:13px;font-weight:600;">${serviceType || row.service_type || "—"}</td>
+  </tr>
+  <tr>
+    <td class="label" colspan="2"></td>
+    <td colspan="2"></td>
     <td class="label">Delay</td>
     <td colspan="5" class="value-cell">${v.delay || ""}</td>
   </tr>
@@ -308,35 +314,34 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{sta || "—"}</td>
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-16">ATA</td>
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{ata || row.actual_start || "—"}</td>
-                  <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Skd Type</td>
-                  <td className="px-3 py-2">
-                    <select
-                      value={sheet.flight_type}
-                      onChange={e => update("flight_type", e.target.value)}
-                      className="text-xs border border-border rounded px-2 py-1 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">— Select —</option>
-                      {FLIGHT_TYPES.map(ft => (
-                        <option key={ft} value={ft}>{ft}</option>
-                      ))}
-                    </select>
-                  </td>
+                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Skd Type</td>
+                   <td className="px-3 py-2">
+                     <span className="text-xs font-semibold text-foreground">{skdType || sheet.flight_type || "—"}</span>
+                   </td>
                 </tr>
-                <tr className="border-b">
-                  <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">STD</td>
-                  <td className="px-3 py-2 text-foreground border-r font-mono">{std || "—"}</td>
-                  <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">ATD</td>
-                  <td className="px-3 py-2 text-foreground border-r font-mono">{atd || row.actual_end || "—"}</td>
-                  <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">Delay</td>
-                  <td className="px-3 py-2">
-                    <input
-                      className={inputCls}
-                      value={sheet.delay}
-                      onChange={e => update("delay", e.target.value)}
-                      placeholder="Delay info"
-                    />
-                  </td>
-                </tr>
+                 <tr className="border-b">
+                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">STD</td>
+                   <td className="px-3 py-2 text-foreground border-r font-mono">{std || "—"}</td>
+                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">ATD</td>
+                   <td className="px-3 py-2 text-foreground border-r font-mono">{atd || row.actual_end || "—"}</td>
+                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">Service Type</td>
+                   <td className="px-3 py-2">
+                     <span className="text-xs font-semibold text-foreground">{serviceType || row.service_type || "—"}</span>
+                   </td>
+                 </tr>
+                 <tr className="border-b">
+                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40" colSpan={2}></td>
+                   <td className="px-3 py-2 border-r" colSpan={2}></td>
+                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">Delay</td>
+                   <td className="px-3 py-2">
+                     <input
+                       className={inputCls}
+                       value={sheet.delay}
+                       onChange={e => update("delay", e.target.value)}
+                       placeholder="Delay info"
+                     />
+                   </td>
+                 </tr>
                 <tr>
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40" colSpan={2}>ARR/DEP SHIFT START</td>
                   <td className="px-3 py-2 border-r" colSpan={2}>
