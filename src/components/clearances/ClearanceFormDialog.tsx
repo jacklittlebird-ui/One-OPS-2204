@@ -155,7 +155,7 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[320px] p-0 pointer-events-auto" align="start">
+                <PopoverContent className="w-[320px] p-0 pointer-events-auto z-[9999]" align="start" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
                   <Command>
                     <CommandInput placeholder="Search airline..." />
                     <CommandList>
@@ -186,7 +186,7 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[320px] p-0 pointer-events-auto" align="start">
+                <PopoverContent className="w-[320px] p-0 pointer-events-auto z-[9999]" align="start" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
                   <Command>
                     <CommandInput placeholder="Search station..." />
                     <CommandList>
