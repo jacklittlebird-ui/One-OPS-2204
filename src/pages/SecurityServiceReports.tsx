@@ -305,13 +305,15 @@ export default function SecurityServiceReportsPage() {
     const shiftEnd = taskSheet.shift_end || row.actual_end || "";
     const duration = timeDiffHours(shiftStart, shiftEnd);
 
-    const payload = {
+    const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
       notes: taskSheet.remarks || row.notes,
       actual_start: shiftStart,
       actual_end: shiftEnd,
       actual_duration_hours: duration,
-      status: "Completed",
+      // New reports stay "Pending" until clearance approves the linked flight schedule.
+      // Existing reports keep their normal "Completed" flow on save.
+      status: isNewReport ? "Pending" : "Completed",
       station: row.station,
       airline: row.airline,
       flight_no: row.flight_no,
@@ -322,39 +324,63 @@ export default function SecurityServiceReportsPage() {
       scheduled_start: taskSheet.sta || row.scheduled_start,
       scheduled_end: taskSheet.std || row.scheduled_end,
       dispatched_by: row.dispatched_by,
-      // New reports start at "Pending Review" for clearance approval
-      ...(isNewReport ? { review_status: "Pending Review" } : {}),
+      // New reports start in Draft until clearance approval triggers Pending Review
+      ...(isNewReport ? { review_status: "Draft" } : {}),
     };
 
     if (isNewReport) {
-      createMutation.mutate(payload as any);
-      // Also create a flight_schedules record for clearance approval
-      // Look up airline_id by name
-      supabase.from("airlines").select("id").eq("name", row.airline).maybeSingle().then(({ data: airlineData }) => {
-        const clearancePayload: Record<string, any> = {
-          flight_no: row.flight_no,
-          aircraft_type: taskSheet.aircraft_type || "",
-          registration: taskSheet.registration || "",
-          route: taskSheet.route || "",
-          sta: taskSheet.sta || "",
-          std: taskSheet.std || "",
-          skd_type: taskSheet.flight_type || "",
-          clearance_type: row.service_type || "Arrival Security",
-          status: "Pending" as const,
-          authority: row.station || "CAI",
-          handling_agent: "",
-          arrival_date: row.flight_date || null,
-          departure_date: row.flight_date || null,
-          remarks: "",
-          notes: "",
-          purpose: "Security Service",
-        };
-        if (airlineData?.id) clearancePayload.airline_id = airlineData.id;
-        supabase.from("flight_schedules").insert(clearancePayload as any).then(({ error }) => {
-          if (error) console.error("Failed to create clearance record:", error.message);
-          else queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-        });
-      });
+      // Create the dispatch + clearance flight_schedule together, then link them.
+      (async () => {
+        try {
+          // 1. Look up airline_id by name
+          const { data: airlineData } = await supabase
+            .from("airlines")
+            .select("id")
+            .eq("name", row.airline)
+            .maybeSingle();
+
+          // 2. Create flight_schedule for clearance approval (Pending)
+          const clearancePayload: Record<string, any> = {
+            flight_no: row.flight_no,
+            aircraft_type: taskSheet.aircraft_type || "",
+            registration: taskSheet.registration || "",
+            route: taskSheet.route || "",
+            sta: taskSheet.sta || "",
+            std: taskSheet.std || "",
+            skd_type: taskSheet.flight_type || "",
+            clearance_type: row.service_type || "Arrival Security",
+            status: "Pending" as const,
+            authority: row.station || "CAI",
+            handling_agent: "",
+            arrival_date: row.flight_date || null,
+            departure_date: row.flight_date || null,
+            remarks: "Added from Security Service – pending clearance approval",
+            notes: "",
+            purpose: "Security Service",
+          };
+          if (airlineData?.id) clearancePayload.airline_id = airlineData.id;
+
+          const { data: createdFlight, error: flightErr } = await supabase
+            .from("flight_schedules")
+            .insert(clearancePayload as any)
+            .select("id")
+            .single();
+          if (flightErr) throw flightErr;
+
+          // 3. Insert dispatch with link to the flight_schedule
+          const dispatchInsert = { ...payload, flight_schedule_id: createdFlight?.id || null };
+          const { error: dispatchErr } = await supabase
+            .from("dispatch_assignments")
+            .insert(dispatchInsert as any);
+          if (dispatchErr) throw dispatchErr;
+
+          queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+          toast({ title: "Submitted for Clearance", description: "Report sent to Clearance for approval." });
+        } catch (e: any) {
+          toast({ title: "Error", description: e.message, variant: "destructive" });
+        }
+      })();
     } else {
       updateMutation.mutate({ id: row.id, ...payload } as any);
     }
