@@ -512,7 +512,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
           {/* Security Supervisor */}
           <div className="border rounded overflow-hidden">
-            <div className={sectionHeaderCls}>{row.airline.toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</div>
+            <div className={sectionHeaderCls}>{currentRow.airline.toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</div>
             <div className="p-3">
               <input
                 className={inputCls}
