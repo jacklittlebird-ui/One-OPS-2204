@@ -29,10 +29,10 @@ export function derivePipelineStage(opts: {
   // Ready for billing → receivables (step 4)
   if (rs === "ready_for_billing" || rs === "ready for billing") return "receivables";
 
-  // Station has completed their task sheet → operations (step 3, steps 1-2 done)
-  // This applies regardless of review status — once the station saves the task
-  // sheet (status=Completed), the Security Service step is considered complete.
-  if (ds === "completed") return "operations";
+  // Station has completed their task sheet → still on station step (step 2),
+  // but step 1 (Clearance) is considered done. Step 3 only activates after
+  // operations review/approval.
+  if (ds === "completed") return "station";
 
   // Rejected → back to clearance
   if (rs === "rejected") return "clearance";
