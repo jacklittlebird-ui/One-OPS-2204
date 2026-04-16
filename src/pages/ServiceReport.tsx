@@ -737,7 +737,7 @@ function HandlingServiceReportContent() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <FileBarChart2 size={22} className="text-primary" /> Service Report
@@ -752,6 +752,7 @@ function HandlingServiceReportContent() {
             <button onClick={() => navigate("/services")} className="text-primary hover:underline">Chart of Services</button>
           </p>
         </div>
+        <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
       </div>
 
       {/* Summary Stats */}
@@ -821,7 +822,6 @@ function HandlingServiceReportContent() {
             <button onClick={() => setViewMode("table")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><TableIcon size={13} /> Table</button>
             <button onClick={() => setViewMode("calendar")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><CalendarDays size={13} /> Calendar</button>
           </div>
-          <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> New Report</button>
           <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload Excel</button>
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
