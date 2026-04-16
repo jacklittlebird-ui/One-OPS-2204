@@ -398,6 +398,7 @@ function HandlingServiceReportContent() {
           station: resolveStationFromRoute(c.route || ""),
           arrivalDate: c.arrival_date || "",
           departureDate: c.departure_date || "",
+          clearanceStatus: c.status || "Pending",
         };
       });
   }, [dbFlights, airlineById]);
