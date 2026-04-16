@@ -842,10 +842,10 @@ function HandlingServiceReportContent() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={15} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                <tr><td colSpan={17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
               ) : pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={15} className="text-center py-16">
+                  <td colSpan={17} className="text-center py-16">
                     <FileBarChart2 size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                     <p className="font-semibold text-foreground">No Service Reports Found</p>
                     <p className="text-muted-foreground text-sm mt-1">Add a new report or upload an Excel file</p>
