@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 
 interface Props {
   open: boolean;
@@ -136,6 +137,19 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{isEdit ? "Edit Flight Schedule" : "New Flight Schedule"}</DialogTitle></DialogHeader>
+
+        {/* Pipeline stepper — shows where this record sits in the workflow */}
+        <div className="px-2 py-3 border-y bg-muted/20 flex items-center justify-center">
+          <PipelineStepper
+            currentStage={derivePipelineStage({
+              isLinked: !!form.id,
+              reviewStatus: "pending",
+              clearanceStatus: form.status,
+              dispatchStatus: "Pending",
+            })}
+          />
+        </div>
+
         <div className="space-y-4">
           {/* Service Category Tabs */}
           <Tabs value={serviceTab} onValueChange={(v) => handleCategoryChange(v as ServiceCategory)}>
