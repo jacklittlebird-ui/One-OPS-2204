@@ -113,9 +113,45 @@ interface Props {
 
 const FLIGHT_TYPES = SKD_TYPES;
 
-const inputCls = "text-sm border border-border rounded px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
-const readOnlyCls = "text-sm border border-border rounded px-2.5 py-2 bg-muted/50 text-foreground w-full cursor-default";
+const inputCls = "text-sm border border-border rounded-md px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary placeholder:text-muted-foreground w-full transition-colors";
+const readOnlyCls = "text-sm border border-border rounded-md px-2.5 py-2 bg-muted/50 text-foreground w-full cursor-default";
 const sectionHeaderCls = "bg-primary/10 text-primary font-bold text-sm px-3 py-2 rounded-t border border-primary/20";
+
+interface SectionProps {
+  title: string;
+  icon?: React.ReactNode;
+  accent?: string;
+  iconBg?: string;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+}
+
+function Section({ title, icon, accent = "text-primary", iconBg = "bg-primary/10", children, right }: SectionProps) {
+  return (
+    <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b bg-muted/30">
+        <h3 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${accent}`}>
+          {icon && <span className={`h-6 w-6 rounded-md ${iconBg} flex items-center justify-center`}>{icon}</span>}
+          {title}
+        </h3>
+        {right}
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.ReactNode; label: string; value: string; accent?: string }) {
+  return (
+    <div className={`flex items-center gap-2 rounded-lg px-3 py-1.5 ${accent} backdrop-blur-sm`}>
+      {icon && <span className="opacity-90">{icon}</span>}
+      <div className="flex flex-col leading-tight">
+        <span className="text-[10px] uppercase tracking-wider opacity-75">{label}</span>
+        <span className="text-xs font-semibold">{value || "—"}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, isNew }: Props) {
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
