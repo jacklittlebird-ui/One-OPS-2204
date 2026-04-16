@@ -394,7 +394,8 @@ export default function StationDispatchPage() {
           .select("id")
           .single();
         if (schedErr) {
-          toast({ title: "Error", description: `Could not create flight schedule: ${schedErr.message}`, variant: "destructive" });
+          const isDuplicate = schedErr.message?.includes("idx_flight_schedules_no_duplicates") || schedErr.code === "23505";
+          toast({ title: "Error", description: isDuplicate ? "Duplicate flight: a flight with the same number, route, date, and service type already exists." : `Could not create flight schedule: ${schedErr.message}`, variant: "destructive" });
           return;
         }
         scheduleId = newSchedule.id;
