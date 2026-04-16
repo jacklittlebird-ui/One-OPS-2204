@@ -86,7 +86,7 @@ interface Props {
   atd?: string;
 }
 
-const FLIGHT_TYPES = ["Maintenance", "T/A", "ARR", "DEP", "ADHOC"];
+const FLIGHT_TYPES = SKD_TYPES;
 
 const inputCls = "text-sm border border-border rounded px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
 const readOnlyCls = "text-sm border border-border rounded px-2.5 py-2 bg-muted/50 text-foreground w-full cursor-default";
