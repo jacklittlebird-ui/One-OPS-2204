@@ -4,6 +4,8 @@ import {
   CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type FlightRow = {
