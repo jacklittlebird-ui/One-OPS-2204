@@ -873,6 +873,7 @@ function HandlingServiceReportContent() {
             </div>
           </div>
         )}
+        )}
       </div>
 
       {showAdd && (
