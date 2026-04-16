@@ -85,6 +85,7 @@ interface Props {
   atd?: string;
   skdType?: string;
   serviceType?: string;
+  isNew?: boolean;
 }
 
 const FLIGHT_TYPES = SKD_TYPES;

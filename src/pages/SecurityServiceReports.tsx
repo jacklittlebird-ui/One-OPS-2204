@@ -694,6 +694,7 @@ export default function SecurityServiceReportsPage() {
         row={editRow}
         onClose={() => { setEditRow(null); setIsNewReport(false); }}
         onSave={saveTaskSheet}
+        isNew={isNewReport}
         registration={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.registration : undefined}
         route={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.route : undefined}
         sta={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.sta : undefined}
