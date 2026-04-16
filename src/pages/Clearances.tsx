@@ -191,7 +191,7 @@ export default function ClearancesPage() {
     return categoryMatch && ms && mst && mt && mstation && mreg && mairline && mdf && mdt;
   });
 
-  const pendingApproval = data.filter(c => c.status === "Pending" && (c.remarks?.includes("Added from Station Dispatch") || c.notes?.includes("Added from Security Service")));
+  const pendingApproval = data.filter(c => c.status === "Pending" && (c.remarks?.includes("Added from Station Dispatch") || c.purpose === "Security Service"));
 
   const stats = {
     total: data.length,
@@ -533,55 +533,59 @@ export default function ClearancesPage() {
           <Card>
             <CardContent className="p-0 overflow-x-auto">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Flight</TableHead>
-                    <TableHead>Airline</TableHead>
-                    <TableHead>Service Type</TableHead>
-                    <TableHead>Station</TableHead>
-                    <TableHead>STA</TableHead>
-                    <TableHead>STD</TableHead>
-                    <TableHead>Remarks</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-36">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingApproval.filter(c => getServiceCategory(c.clearance_type) === serviceCategory).map(c => (
-                    <TableRow key={c.id}>
-                      <TableCell className="text-xs">{formatDateDMY(c.arrival_date || c.departure_date)}</TableCell>
-                      <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
-                      <TableCell className="text-xs">{c.airline_id ? (airlineMap[c.airline_id]?.name || c.handling_agent || "—") : (c.handling_agent || "—")}</TableCell>
-                      <TableCell className="text-xs">{c.clearance_type}</TableCell>
-                      <TableCell className="text-xs">{c.authority || "—"}</TableCell>
-                      <TableCell className="text-xs">{c.sta || "—"}</TableCell>
-                      <TableCell className="text-xs">{c.std || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{c.remarks}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-warning/15 text-warning"><Clock size={12} />Pending</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => handleApprove(c)}>
-                            <CheckCircle2 size={13} className="mr-1" /> Approve
-                          </Button>
-                          <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handleReject(c)}>
-                            <XCircle size={13} className="mr-1" /> Reject
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(c)}>
-                            <Pencil size={13} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {pendingApproval.filter(c => getServiceCategory(c.clearance_type) === serviceCategory).length === 0 && (
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No flights pending approval</TableCell>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Flight</TableHead>
+                      <TableHead>Airline</TableHead>
+                      <TableHead>Reg No</TableHead>
+                      <TableHead>Route</TableHead>
+                      <TableHead>Service Type</TableHead>
+                      <TableHead>Station</TableHead>
+                      <TableHead>STA</TableHead>
+                      <TableHead>STD</TableHead>
+                      <TableHead>Remarks</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-36">Actions</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingApproval.filter(c => getServiceCategory(c.clearance_type) === serviceCategory).map(c => (
+                      <TableRow key={c.id}>
+                        <TableCell className="text-xs">{formatDateDMY(c.arrival_date || c.departure_date)}</TableCell>
+                        <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
+                        <TableCell className="text-xs">{c.airline_id ? (airlineMap[c.airline_id]?.name || c.handling_agent || "—") : (c.handling_agent || "—")}</TableCell>
+                        <TableCell className="text-xs font-mono">{c.registration || "—"}</TableCell>
+                        <TableCell className="text-xs font-mono">{c.route || "—"}</TableCell>
+                        <TableCell className="text-xs">{c.clearance_type}</TableCell>
+                        <TableCell className="text-xs">{c.authority || "—"}</TableCell>
+                        <TableCell className="text-xs">{c.sta || "—"}</TableCell>
+                        <TableCell className="text-xs">{c.std || "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{c.remarks || "—"}</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-warning/15 text-warning"><Clock size={12} />Pending</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => handleApprove(c)}>
+                              <CheckCircle2 size={13} className="mr-1" /> Approve
+                            </Button>
+                            <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handleReject(c)}>
+                              <XCircle size={13} className="mr-1" /> Reject
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(c)}>
+                              <Pencil size={13} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {pendingApproval.filter(c => getServiceCategory(c.clearance_type) === serviceCategory).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">No flights pending approval</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
               </Table>
             </CardContent>
           </Card>
