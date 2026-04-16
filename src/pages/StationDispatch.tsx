@@ -206,7 +206,7 @@ export default function StationDispatchPage() {
   const [viewId, setViewId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [calMonth, setCalMonth] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
-  const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("handling");
+  const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("security");
 
   const airlineMap = useMemo(() => {
     const m: Record<string, { name: string; iata: string }> = {};
@@ -441,8 +441,8 @@ export default function StationDispatchPage() {
       {/* Service Category Tabs */}
       <Tabs value={serviceCategory} onValueChange={(v) => setServiceCategory(v as ServiceCategory)}>
         <TabsList>
-          <TabsTrigger value="handling">Handling</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="handling">Handling</TabsTrigger>
         </TabsList>
       </Tabs>
 
