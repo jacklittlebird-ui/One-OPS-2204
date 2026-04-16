@@ -72,14 +72,25 @@ interface DispatchRow {
   task_sheet_data?: any;
 }
 
-function timeDiffHours(start: string, end: string): number {
+function timeDiffMinutes(start: string, end: string): number {
   if (!start || !end) return 0;
   const [h1, m1] = start.split(":").map(Number);
   const [h2, m2] = end.split(":").map(Number);
   if ([h1, m1, h2, m2].some(isNaN)) return 0;
   let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
   if (diff < 0) diff += 24 * 60;
-  return +(diff / 60).toFixed(2);
+  return diff;
+}
+
+function minutesToHMM(mins: number): number {
+  if (!mins || mins < 0) return 0;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return Math.round((h + m / 100) * 100) / 100;
+}
+
+function timeDiffHours(start: string, end: string): number {
+  return minutesToHMM(timeDiffMinutes(start, end));
 }
 
 export default function SecurityServiceReportsPage() {
@@ -303,7 +314,13 @@ export default function SecurityServiceReportsPage() {
   const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
     const shiftStart = taskSheet.shift_start || row.actual_start || "";
     const shiftEnd = taskSheet.shift_end || row.actual_end || "";
-    const duration = timeDiffHours(shiftStart, shiftEnd);
+    const actualMins = timeDiffMinutes(shiftStart, shiftEnd);
+    const duration = minutesToHMM(actualMins);
+    const contractMins = Math.round((row.contract_duration_hours || 0) * 60);
+    const overtimeMins = Math.max(0, actualMins - contractMins);
+    const overtimeHours = minutesToHMM(overtimeMins);
+    const overtimeCharge = (overtimeMins / 60) * (row.overtime_rate || 0) * (row.staff_count || 1);
+    const totalCharge = (row.base_fee || 0) + (row.service_rate || 0) + overtimeCharge;
 
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
@@ -311,6 +328,9 @@ export default function SecurityServiceReportsPage() {
       actual_start: shiftStart,
       actual_end: shiftEnd,
       actual_duration_hours: duration,
+      overtime_hours: overtimeHours,
+      overtime_charge: Math.round(overtimeCharge * 100) / 100,
+      total_charge: Math.round(totalCharge * 100) / 100,
       // New reports stay "Pending" until clearance approves the linked flight schedule.
       // Existing reports keep their normal "Completed" flow on save.
       status: isNewReport ? "Pending" : "Completed",
@@ -591,11 +611,14 @@ export default function SecurityServiceReportsPage() {
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                           {r.actual_start && r.actual_end ? `${r.actual_start}–${r.actual_end}` : "—"}
                         </td>
-                        <td className="px-3 py-2.5 text-foreground">{r.actual_duration_hours ? `${r.actual_duration_hours}h` : "—"}</td>
+                        <td className="px-3 py-2.5 text-foreground">{r.actual_start && r.actual_end ? `${timeDiffHours(r.actual_start, r.actual_end)}h` : (r.actual_duration_hours ? `${r.actual_duration_hours}h` : "—")}</td>
                         <td className="px-3 py-2.5">
-                          {r.overtime_hours > 0 ? (
-                            <span className="text-warning font-semibold">{r.overtime_hours}h</span>
-                          ) : "—"}
+                          {(() => {
+                            const overtimeDisplay = r.actual_start && r.actual_end
+                              ? minutesToHMM(Math.max(0, timeDiffMinutes(r.actual_start, r.actual_end) - Math.round((r.contract_duration_hours || 0) * 60)))
+                              : r.overtime_hours;
+                            return overtimeDisplay > 0 ? <span className="text-warning font-semibold">{overtimeDisplay}h</span> : "—";
+                          })()}
                         </td>
                         <td className="px-3 py-2.5 font-semibold text-success">{r.total_charge > 0 ? `$${r.total_charge.toLocaleString()}` : "—"}</td>
                         <td className="px-3 py-2.5">
