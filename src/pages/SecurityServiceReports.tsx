@@ -69,6 +69,7 @@ interface DispatchRow {
   irregularity_id: string | null;
   created_at: string;
   updated_at: string;
+  task_sheet_data?: any;
 }
 
 function timeDiffHours(start: string, end: string): number {
