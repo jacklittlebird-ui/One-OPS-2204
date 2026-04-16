@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { format, parse } from "date-fns";
-import { CalendarIcon, ChevronsUpDown, Check } from "lucide-react";
+import { format } from "date-fns";
+import { CalendarIcon, ChevronsUpDown, Check, Plane, MapPin, ShieldCheck, CalendarRange, FileText, Building2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { CLEARANCE_TYPES, SKD_TYPES, SECURITY_CLEARANCE_TYPES, getServiceCategory, getClearanceTypesByCategory, type ServiceCategory } from "./ClearanceTypes";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -133,13 +133,46 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
   };
   const selectedDays = form.week_days ? form.week_days.split(",") : [];
 
+  const validateAndSave = () => {
+    const missing: string[] = [];
+    if (!form.airline_id) missing.push("Account (Airline)");
+    if (!form.skd_type) missing.push("Skd Type");
+    if (!form.authority) missing.push("Station");
+    if (!form.flight_no) missing.push("Flight");
+    if (!form.route) missing.push("Route");
+    if (!form.arrival_date) missing.push("Arrival Date");
+    if (!form.departure_date) missing.push("Departure Date");
+    if (!form.sta) missing.push("STA (24h)");
+    if (!form.std) missing.push("STD (24h)");
+    if (!form.clearance_type) missing.push("Service Type");
+    if (missing.length > 0) {
+      toast({ title: "Missing Required Fields", description: missing.join(", "), variant: "destructive" });
+      return;
+    }
+    onSave();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{isEdit ? "Edit Flight Schedule" : "New Flight Schedule"}</DialogTitle></DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col">
+        {/* Gradient header */}
+        <DialogHeader className="px-6 py-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b">
+          <DialogTitle className="flex items-center gap-2.5 text-base">
+            <div className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
+              <Plane size={18} />
+            </div>
+            <div>
+              <div className="text-base font-bold text-foreground">{isEdit ? "Edit Flight Schedule" : "New Flight Schedule"}</div>
+              <div className="text-xs font-normal text-muted-foreground mt-0.5">
+                {form.flight_no ? <span className="font-mono font-semibold text-primary">{form.flight_no}</span> : "Configure a new flight clearance"}
+                {form.route && <span className="ml-2">· {form.route}</span>}
+              </div>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Pipeline stepper — shows where this record sits in the workflow */}
-        <div className="px-2 py-3 border-y bg-muted/20 flex items-center justify-center">
+        {/* Pipeline stepper */}
+        <div className="px-6 py-3 border-b bg-muted/20 flex items-center justify-center">
           <PipelineStepper
             currentStage={derivePipelineStage({
               isLinked: !!form.id,
@@ -150,103 +183,114 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
           />
         </div>
 
-        <div className="space-y-4">
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 bg-muted/10">
           {/* Service Category Tabs */}
           <Tabs value={serviceTab} onValueChange={(v) => handleCategoryChange(v as ServiceCategory)}>
-            <TabsList className="w-full">
-              <TabsTrigger value="security" className="flex-1">Security</TabsTrigger>
-              <TabsTrigger value="handling" className="flex-1">Handling</TabsTrigger>
+            <TabsList className="w-full max-w-sm mx-auto grid grid-cols-2">
+              <TabsTrigger value="security" className="gap-1.5"><ShieldCheck size={14} /> Security</TabsTrigger>
+              <TabsTrigger value="handling" className="gap-1.5"><Building2 size={14} /> Handling</TabsTrigger>
             </TabsList>
           </Tabs>
-          {/* Account & Station */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Account (Airline) <span className="text-destructive">*</span></label>
-              <Popover open={airlineOpen} onOpenChange={setAirlineOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={airlineOpen} className="w-full justify-between font-normal">
-                    {form.airline_id ? (airlines || []).find((a: any) => a.id === form.airline_id)?.name || "Select Airline" : "Select Airline"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[320px] p-0 pointer-events-auto z-[9999]" align="start" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
-                  <Command>
-                    <CommandInput placeholder="Search airline..." />
-                    <CommandList>
-                      <CommandEmpty>No airline found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem onSelect={() => { setForm({ ...form, airline_id: "" }); setAirlineOpen(false); }}>
-                          <Check className={cn("mr-2 h-4 w-4", !form.airline_id ? "opacity-100" : "opacity-0")} />
-                          No Airline
-                        </CommandItem>
-                        {(airlines || []).map((a: any) => (
-                          <CommandItem key={a.id} value={`${a.name} ${a.code}`} onSelect={() => { setForm({ ...form, airline_id: a.id }); setAirlineOpen(false); }}>
-                            <Check className={cn("mr-2 h-4 w-4", form.airline_id === a.id ? "opacity-100" : "opacity-0")} />
-                            {a.name} ({a.code})
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Station <span className="text-destructive">*</span></label>
-              <Popover open={stationOpen} onOpenChange={setStationOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={stationOpen} className="w-full justify-between font-normal">
-                    {form.authority || "Select Station"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[320px] p-0 pointer-events-auto z-[9999]" align="start" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
-                  <Command>
-                    <CommandInput placeholder="Search station..." />
-                    <CommandList>
-                      <CommandEmpty>No station found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem onSelect={() => { setForm({ ...form, authority: "" }); setStationOpen(false); }}>
-                          <Check className={cn("mr-2 h-4 w-4", !form.authority ? "opacity-100" : "opacity-0")} />
-                          —
-                        </CommandItem>
-                        {(airports || []).map((a: any) => (
-                          <CommandItem key={a.id} value={`${a.iata_code} ${a.name}`} onSelect={() => { setForm({ ...form, authority: a.iata_code }); setStationOpen(false); }}>
-                            <Check className={cn("mr-2 h-4 w-4", form.authority === a.iata_code ? "opacity-100" : "opacity-0")} />
-                            {a.iata_code} — {a.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
 
-          {/* FLIGHT DETAILS Section */}
-          <div className="border-t pt-3">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-3">Flight Details</h4>
-            <div className="grid grid-cols-2 gap-3">
+          {/* Account & Station */}
+          <section className="bg-card rounded-lg border shadow-sm overflow-hidden">
+            <header className="px-4 py-2.5 bg-muted/40 border-b flex items-center gap-2">
+              <Building2 size={14} className="text-primary" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Account & Station</h4>
+            </header>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-muted-foreground">Flight <span className="text-destructive">*</span></label>
-                <Input placeholder="Flight No" value={form.flight_no} onChange={e => setForm({ ...form, flight_no: e.target.value.toUpperCase() })} />
+                <label className="text-xs font-medium text-muted-foreground">Account (Airline) <span className="text-destructive">*</span></label>
+                <Popover open={airlineOpen} onOpenChange={setAirlineOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={airlineOpen} className="w-full justify-between font-normal mt-1">
+                      {form.airline_id ? (airlines || []).find((a: any) => a.id === form.airline_id)?.name || "Select Airline" : "Select Airline"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[320px] p-0 pointer-events-auto z-[9999]" align="start" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
+                    <Command>
+                      <CommandInput placeholder="Search airline..." />
+                      <CommandList>
+                        <CommandEmpty>No airline found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem onSelect={() => { setForm({ ...form, airline_id: "" }); setAirlineOpen(false); }}>
+                            <Check className={cn("mr-2 h-4 w-4", !form.airline_id ? "opacity-100" : "opacity-0")} />
+                            No Airline
+                          </CommandItem>
+                          {(airlines || []).map((a: any) => (
+                            <CommandItem key={a.id} value={`${a.name} ${a.code}`} onSelect={() => { setForm({ ...form, airline_id: a.id }); setAirlineOpen(false); }}>
+                              <Check className={cn("mr-2 h-4 w-4", form.airline_id === a.id ? "opacity-100" : "opacity-0")} />
+                              {a.name} ({a.code})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
+                <label className="text-xs font-medium text-muted-foreground">Station <span className="text-destructive">*</span></label>
+                <Popover open={stationOpen} onOpenChange={setStationOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={stationOpen} className="w-full justify-between font-normal mt-1">
+                      <span className="flex items-center gap-1.5"><MapPin size={13} className="text-muted-foreground" />{form.authority || "Select Station"}</span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[320px] p-0 pointer-events-auto z-[9999]" align="start" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
+                    <Command>
+                      <CommandInput placeholder="Search station..." />
+                      <CommandList>
+                        <CommandEmpty>No station found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem onSelect={() => { setForm({ ...form, authority: "" }); setStationOpen(false); }}>
+                            <Check className={cn("mr-2 h-4 w-4", !form.authority ? "opacity-100" : "opacity-0")} />
+                            —
+                          </CommandItem>
+                          {(airports || []).map((a: any) => (
+                            <CommandItem key={a.id} value={`${a.iata_code} ${a.name}`} onSelect={() => { setForm({ ...form, authority: a.iata_code }); setStationOpen(false); }}>
+                              <Check className={cn("mr-2 h-4 w-4", form.authority === a.iata_code ? "opacity-100" : "opacity-0")} />
+                              {a.iata_code} — {a.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </section>
+
+          {/* FLIGHT DETAILS Section */}
+          <section className="bg-card rounded-lg border shadow-sm overflow-hidden">
+            <header className="px-4 py-2.5 bg-muted/40 border-b flex items-center gap-2">
+              <Plane size={14} className="text-info" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Flight Details</h4>
+            </header>
+            <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground">Flight <span className="text-destructive">*</span></label>
+                <Input placeholder="Flight No" value={form.flight_no} onChange={e => setForm({ ...form, flight_no: e.target.value.toUpperCase() })} className="font-mono" />
+              </div>
+              <div className="col-span-2">
                 <label className="text-xs text-muted-foreground">Route <span className="text-destructive">*</span></label>
-                <Input placeholder="e.g. CAI-JFK-CAI" value={form.route} onChange={e => setForm({ ...form, route: e.target.value.toUpperCase() })} />
+                <Input placeholder="e.g. CAI-JFK-CAI" value={form.route} onChange={e => setForm({ ...form, route: e.target.value.toUpperCase() })} className="font-mono" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Reg No</label>
-                <Input placeholder="Registration" value={form.registration} onChange={e => setForm({ ...form, registration: e.target.value.toUpperCase() })} />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Config</label>
-                <Input type="number" placeholder="0" value={form.config} onChange={e => setForm({ ...form, config: e.target.value })} />
+                <Input placeholder="Registration" value={form.registration} onChange={e => setForm({ ...form, registration: e.target.value.toUpperCase() })} className="font-mono" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">A/C Type</label>
                 <Input placeholder="Aircraft Type" value={form.aircraft_type} onChange={e => setForm({ ...form, aircraft_type: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Config</label>
+                <Input type="number" placeholder="0" value={form.config} onChange={e => setForm({ ...form, config: e.target.value })} />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Departure Flight</label>
@@ -256,13 +300,25 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <label className="text-xs text-muted-foreground">Arrival Flight</label>
                 <Input placeholder="Arrival Flight" value={form.arrival_flight} onChange={e => setForm({ ...form, arrival_flight: e.target.value.toUpperCase() })} />
               </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Skd Type <span className="text-destructive">*</span></label>
+                <Select value={form.skd_type || "none"} onValueChange={v => setForm({ ...form, skd_type: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
+                  <SelectContent><SelectItem value="none">—</SelectItem>{SKD_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
               <DatePickerField label="Arrival Date *" value={form.arrival_date} onChange={v => setForm({ ...form, arrival_date: v })} />
               <DatePickerField label="Departure Date *" value={form.departure_date} onChange={v => setForm({ ...form, departure_date: v })} />
+              <div className="flex items-center gap-2 pt-5 px-2 rounded-md bg-muted/40 border border-dashed">
+                <Checkbox checked={form.royalty} onCheckedChange={v => setForm({ ...form, royalty: !!v })} />
+                <label className="text-sm font-medium">Royalty</label>
+              </div>
               <div>
                 <label className="text-xs text-muted-foreground">STA (24h) <span className="text-destructive">*</span></label>
                 <Input
                   placeholder="HH:MM"
                   maxLength={5}
+                  className="font-mono"
                   value={form.sta}
                   onChange={e => {
                     let v = e.target.value.replace(/[^0-9:]/g, "");
@@ -277,6 +333,7 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <Input
                   placeholder="HH:MM"
                   maxLength={5}
+                  className="font-mono"
                   value={form.std}
                   onChange={e => {
                     let v = e.target.value.replace(/[^0-9:]/g, "");
@@ -286,57 +343,58 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                   }}
                 />
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Skd Type <span className="text-destructive">*</span></label>
-                <Select value={form.skd_type || "none"} onValueChange={v => setForm({ ...form, skd_type: v === "none" ? "" : v })}>
-                  <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
-                  <SelectContent><SelectItem value="none">—</SelectItem>{SKD_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2 pt-5">
-                <Checkbox checked={form.royalty} onCheckedChange={v => setForm({ ...form, royalty: !!v })} />
-                <label className="text-sm">Royalty</label>
-              </div>
             </div>
-          </div>
+          </section>
 
           {/* DAY OF WEEK & PERIOD */}
-          <div className="grid grid-cols-2 gap-6 border-t pt-3">
-            <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Day of Week</h4>
-              <div className="flex flex-wrap gap-1">
-                <button type="button" onClick={() => {
-                  const allSelected = WEEK_DAYS.every(d => selectedDays.includes(d));
-                  setForm({ ...form, week_days: allSelected ? "" : WEEK_DAYS.join(",") });
-                }}
-                  className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${WEEK_DAYS.every(d => selectedDays.includes(d)) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-muted-foreground hover:bg-accent"}`}>
-                  All
-                </button>
-                {WEEK_DAYS.map(d => (
-                  <button key={d} type="button" onClick={() => toggleDay(d)}
-                    className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${selectedDays.includes(d) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-muted-foreground hover:bg-accent"}`}>
-                    {d}
+          <section className="bg-card rounded-lg border shadow-sm overflow-hidden">
+            <header className="px-4 py-2.5 bg-muted/40 border-b flex items-center gap-2">
+              <CalendarRange size={14} className="text-violet" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Recurrence & Period</h4>
+            </header>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Days of Week</label>
+                <div className="flex flex-wrap gap-1.5">
+                  <button type="button" onClick={() => {
+                    const allSelected = WEEK_DAYS.every(d => selectedDays.includes(d));
+                    setForm({ ...form, week_days: allSelected ? "" : WEEK_DAYS.join(",") });
+                  }}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${WEEK_DAYS.every(d => selectedDays.includes(d)) ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                    All
                   </button>
-                ))}
+                  {WEEK_DAYS.map(d => (
+                    <button key={d} type="button" onClick={() => toggleDay(d)}
+                      className={`w-10 py-1 rounded-md text-xs font-semibold border transition-colors ${selectedDays.includes(d) ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-background border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+                {selectedDays.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">{selectedDays.length} day{selectedDays.length > 1 ? "s" : ""} selected</p>
+                )}
               </div>
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Period of Schedule</h4>
               <div className="space-y-2">
                 <DatePickerField label="From" value={form.period_from} onChange={v => setForm({ ...form, period_from: v })} />
                 <DatePickerField label="To" value={form.period_to} onChange={v => setForm({ ...form, period_to: v })} />
-                <div><label className="text-xs text-muted-foreground">No of Flights (auto)</label><Input type="number" value={form.no_of_flights} readOnly className="bg-muted" /></div>
+                <div>
+                  <label className="text-xs text-muted-foreground">No of Flights (auto)</label>
+                  <Input type="number" value={form.no_of_flights} readOnly className="bg-muted font-semibold text-primary" />
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Clearance-specific */}
-          <div className="border-t pt-3">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-3">Clearance Info</h4>
-            <div className="grid grid-cols-2 gap-3">
+          {/* Clearance Info */}
+          <section className="bg-card rounded-lg border shadow-sm overflow-hidden">
+            <header className="px-4 py-2.5 bg-muted/40 border-b flex items-center gap-2">
+              <ShieldCheck size={14} className="text-success" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Clearance Info</h4>
+            </header>
+            <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs text-muted-foreground">Permit No</label>
-                <Input placeholder="Permit No" value={form.permit_no} onChange={e => setForm({ ...form, permit_no: e.target.value })} />
+                <Input placeholder="Permit No" value={form.permit_no} onChange={e => setForm({ ...form, permit_no: e.target.value })} className="font-mono" />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Service Type <span className="text-destructive">*</span></label>
@@ -374,45 +432,44 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <Input type="number" placeholder="0" value={form.cargo_kg} onChange={e => setForm({ ...form, cargo_kg: e.target.value })} />
               </div>
             </div>
-          </div>
+          </section>
 
           {/* OTHER INFO */}
-          <div className="border-t pt-3">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-3">Other Info</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground">Ref#</label>
-                <Input placeholder="Reference" value={form.ref_no} onChange={e => setForm({ ...form, ref_no: e.target.value })} />
+          <section className="bg-card rounded-lg border shadow-sm overflow-hidden">
+            <header className="px-4 py-2.5 bg-muted/40 border-b flex items-center gap-2">
+              <FileText size={14} className="text-amber" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">Other Info</h4>
+            </header>
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Ref#</label>
+                  <Input placeholder="Reference" value={form.ref_no} onChange={e => setForm({ ...form, ref_no: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Notes</label>
+                  <Input placeholder="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+                </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Notes</label>
-                <Input placeholder="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+                <label className="text-xs text-muted-foreground">Remarks</label>
+                <Input placeholder="Remarks" value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} />
               </div>
             </div>
-            <div className="mt-3">
-              <label className="text-xs text-muted-foreground">Remarks</label>
-              <Input placeholder="Remarks" value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} />
-            </div>
-          </div>
+          </section>
+        </div>
 
-          <Button className="w-full" onClick={() => {
-            const missing: string[] = [];
-            if (!form.airline_id) missing.push("Account (Airline)");
-            if (!form.skd_type) missing.push("Skd Type");
-            if (!form.authority) missing.push("Station");
-            if (!form.flight_no) missing.push("Flight");
-            if (!form.route) missing.push("Route");
-            if (!form.arrival_date) missing.push("Arrival Date");
-            if (!form.departure_date) missing.push("Departure Date");
-            if (!form.sta) missing.push("STA (24h)");
-            if (!form.std) missing.push("STD (24h)");
-            if (!form.clearance_type) missing.push("Service Type");
-            if (missing.length > 0) {
-              toast({ title: "Missing Required Fields", description: missing.join(", "), variant: "destructive" });
-              return;
-            }
-            onSave();
-          }}>{isEdit ? "Update" : "Submit"}</Button>
+        {/* Sticky footer */}
+        <div className="px-6 py-3 border-t bg-card flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            <span className="text-destructive">*</span> Required fields
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button onClick={validateAndSave} className="min-w-[120px]">
+              {isEdit ? "Update" : "Submit"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
