@@ -995,7 +995,7 @@ function HandlingServiceReportContent() {
 
 // --- Wrapper with Security / Handling tabs ---
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import SecurityServiceReportsPage from "@/pages/SecurityServiceReports";
+import { Shield, Wrench } from "lucide-react";
 import DispatchContent from "@/components/dispatch/DispatchContent";
 
 export default function ServiceReportPage() {
