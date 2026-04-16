@@ -365,24 +365,31 @@ export default function StationDispatchPage() {
       if (!scheduleId) {
         // Look up airline_id from airline name
         const matchedAirline = airlines.find(a => a.name === formData.airline);
+        const flightDate = formData.flight_date || null;
+        const svcType = formData.service_type || "Arrival";
+        // Build a reasonable route from station
+        const stationCode = formData.station || "";
         const { data: newSchedule, error: schedErr } = await supabase
           .from("flight_schedules")
           .insert({
             flight_no: formData.flight_no || "",
-            route: `${formData.station || ""}`,
+            route: stationCode,
             aircraft_type: "",
             registration: "",
-            clearance_type: formData.service_type || "Arrival",
+            clearance_type: svcType === "Arrival" ? "Full Handling" : svcType === "Departure" ? "Full Handling" : svcType,
             status: "Pending" as any,
-            authority: formData.station || "",
+            authority: stationCode,
             purpose: "Scheduled",
             airline_id: matchedAirline?.id || null,
             handling_agent: formData.airline || "",
-            arrival_date: formData.flight_date || null,
-            departure_date: formData.flight_date || null,
+            arrival_date: flightDate,
+            departure_date: flightDate,
+            arrival_flight: svcType === "Arrival" ? (formData.flight_no || "") : "",
+            departure_flight: svcType === "Departure" ? (formData.flight_no || "") : "",
             sta: formData.scheduled_start || "",
             std: formData.scheduled_end || "",
-            remarks: "Added from Station Dispatch – pending clearance approval",
+            requested_date: flightDate,
+            remarks: `Added from Station Dispatch – ${svcType} – pending clearance approval`,
           })
           .select("id")
           .single();
