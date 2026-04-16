@@ -997,7 +997,6 @@ function HandlingServiceReportContent() {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Shield, Wrench } from "lucide-react";
 import SecurityServiceReportsPage from "@/pages/SecurityServiceReports";
-import DispatchContent from "@/components/dispatch/DispatchContent";
 
 export default function ServiceReportPage() {
   return (
@@ -1015,15 +1014,7 @@ export default function ServiceReportPage() {
           <SecurityServiceReportsPage />
         </TabsContent>
         <TabsContent value="handling">
-          <div className="space-y-6">
-            <HandlingServiceReportContent />
-            <div className="border-t pt-6">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
-                <Building2 size={20} className="text-primary" /> Dispatch & Station Flights
-              </h2>
-              <DispatchContent serviceCategory="handling" />
-            </div>
-          </div>
+          <HandlingServiceReportContent />
         </TabsContent>
       </Tabs>
     </div>
