@@ -162,7 +162,84 @@ export default function SecurityServiceReportsPage() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Build a lookup for flight schedule status by id
+  // Create mutation for new service reports
+  const createMutation = useMutation({
+    mutationFn: async (data: Partial<DispatchRow>) => {
+      const { id, created_at, updated_at, ...rest } = data as any;
+      const { error } = await supabase.from("dispatch_assignments").insert(rest);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+      toast({ title: "Created", description: "New security service report created." });
+      setShowNewForm(false);
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  function calcDuration(start: string, end: string) {
+    if (!start || !end) return 0;
+    const [h1, m1] = start.split(":").map(Number);
+    const [h2, m2] = end.split(":").map(Number);
+    if ([h1, m1, h2, m2].some(isNaN)) return 0;
+    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff < 0) diff += 24 * 60;
+    return +(diff / 60).toFixed(2);
+  }
+
+  const openNewForm = () => {
+    setNewFormData({
+      station: "CAI",
+      airline: "",
+      flight_no: "",
+      flight_date: new Date().toISOString().slice(0, 10),
+      service_type: "Arrival Security",
+      staff_names: "",
+      staff_count: 0,
+      scheduled_start: "",
+      scheduled_end: "",
+      actual_start: "",
+      actual_end: "",
+      contract_duration_hours: 0,
+      actual_duration_hours: 0,
+      overtime_hours: 0,
+      overtime_rate: 0,
+      base_fee: 0,
+      service_rate: 0,
+      overtime_charge: 0,
+      total_charge: 0,
+      status: "Pending",
+      notes: "",
+      dispatched_by: session?.user?.email || "",
+    });
+    setShowNewForm(true);
+  };
+
+  const updateNewFormField = (key: string, val: any) => {
+    const updated = { ...newFormData, [key]: val };
+    if (key === "actual_start" || key === "actual_end") {
+      const actualHrs = calcDuration(updated.actual_start || "", updated.actual_end || "");
+      const contractHrs = updated.contract_duration_hours || 0;
+      const overtime = Math.max(0, actualHrs - contractHrs);
+      const overtimeCharge = overtime * (updated.overtime_rate || 0) * (updated.staff_count || 1);
+      const total = (updated.base_fee || 0) + (updated.service_rate || 0) + overtimeCharge;
+      updated.actual_duration_hours = actualHrs;
+      updated.overtime_hours = overtime;
+      updated.overtime_charge = Math.round(overtimeCharge * 100) / 100;
+      updated.total_charge = Math.round(total * 100) / 100;
+    }
+    setNewFormData(updated);
+  };
+
+  const STATIONS = [
+    { code: "CAI", name: "Cairo International" },
+    { code: "HRG", name: "Hurghada International" },
+    { code: "SSH", name: "Sharm El Sheikh" },
+    { code: "LXR", name: "Luxor International" },
+    { code: "ASW", name: "Aswan International" },
+  ];
+
+
   const flightStatusById = useMemo(() => {
     const map = new Map<string, string>();
     securityFlights.forEach((f: any) => map.set(f.id, f.status || "Pending"));
