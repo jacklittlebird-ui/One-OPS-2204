@@ -93,7 +93,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                         }`}
                       >
                         {section.icon}
-                        <span className="flex-1 text-left font-medium text-xs uppercase tracking-wider">
+                        <span className="flex-1 text-left font-medium text-sm uppercase tracking-wider">
                           {section.label}
                         </span>
                         {expanded[section.label] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -105,7 +105,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                               key={child.label}
                               to={child.path}
                               onClick={onNavigate}
-                              className={`block px-3 py-1.5 rounded text-sm transition-colors ${
+                              className={`block px-3 py-1.5 rounded text-base transition-colors ${
                                 isActive(child.path)
                                   ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
                                   : "text-sidebar-foreground hover:bg-sidebar-accent"
@@ -147,7 +147,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                   }`}
                 >
                   {section.icon}
-                  <span className="text-xs uppercase tracking-wider font-medium">{section.label}</span>
+                  <span className="text-sm uppercase tracking-wider font-medium">{section.label}</span>
                 </Link>
               )}
             </div>
