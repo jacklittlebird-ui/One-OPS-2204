@@ -2,7 +2,7 @@ import { ShieldCheck, Building2, ClipboardCheck, Receipt } from "lucide-react";
 
 const STEPS = [
   { key: "clearance", label: "Clearance", icon: ShieldCheck },
-  { key: "station", label: "Station", icon: Building2 },
+  { key: "station", label: "Security Service", icon: Building2 },
   { key: "operations", label: "Operations", icon: ClipboardCheck },
   { key: "receivables", label: "Receivables", icon: Receipt },
 ] as const;
