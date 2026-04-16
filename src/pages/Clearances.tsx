@@ -203,11 +203,27 @@ export default function ClearancesPage() {
 
   const handleApprove = async (c: ClearanceRow) => {
     await update({ id: c.id, status: "Approved" as any });
+    // If this clearance was added from a Security Service report, mark the
+    // linked dispatch as Completed and move it to Pending Review (step 2 done).
+    if (c.purpose === "Security Service") {
+      const { error } = await supabase
+        .from("dispatch_assignments")
+        .update({ status: "Completed", review_status: "Pending Review" } as any)
+        .eq("flight_schedule_id", c.id);
+      if (error) console.error("Failed to update linked service report:", error.message);
+    }
     toast({ title: "✅ Approved", description: `Flight ${c.flight_no} has been approved.` });
   };
 
   const handleReject = async (c: ClearanceRow) => {
     await update({ id: c.id, status: "Rejected" as any });
+    if (c.purpose === "Security Service") {
+      const { error } = await supabase
+        .from("dispatch_assignments")
+        .update({ review_status: "Rejected" } as any)
+        .eq("flight_schedule_id", c.id);
+      if (error) console.error("Failed to update linked service report:", error.message);
+    }
     toast({ title: "❌ Rejected", description: `Flight ${c.flight_no} has been rejected.` });
   };
 
