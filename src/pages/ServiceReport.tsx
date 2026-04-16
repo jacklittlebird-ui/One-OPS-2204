@@ -427,6 +427,7 @@ function HandlingServiceReportContent() {
             isLinked: true,
             flightScheduleId: source.id,
             sourceType: source.sourceType,
+            clearanceStatus: source.clearanceStatus,
           });
         });
         return;
@@ -452,6 +453,7 @@ function HandlingServiceReportContent() {
         isLinked: false,
         flightScheduleId: source.id,
         sourceType: source.sourceType,
+        clearanceStatus: source.clearanceStatus,
       });
     });
 
