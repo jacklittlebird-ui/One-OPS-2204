@@ -374,7 +374,25 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
             </div>
           </div>
 
-          <Button className="w-full" onClick={onSave}>{isEdit ? "Update" : "Submit"}</Button>
+          <Button className="w-full" onClick={() => {
+            const missing: string[] = [];
+            if (!form.airline_id) missing.push("Account (Airline)");
+            if (!form.skd_type) missing.push("Skd Type");
+            if (!form.authority) missing.push("Station");
+            if (!form.flight_no) missing.push("Flight");
+            if (!form.route) missing.push("Route");
+            if (!form.arrival_date) missing.push("Arrival Date");
+            if (!form.departure_date) missing.push("Departure Date");
+            if (!form.sta) missing.push("STA (24h)");
+            if (!form.std) missing.push("STD (24h)");
+            if (!form.clearance_type) missing.push("Service Type");
+            if (missing.length > 0) {
+              const { toast } = require("@/hooks/use-toast");
+              toast({ title: "Missing Required Fields", description: missing.join(", "), variant: "destructive" });
+              return;
+            }
+            onSave();
+          }}>{isEdit ? "Update" : "Submit"}</Button>
         </div>
       </DialogContent>
     </Dialog>
