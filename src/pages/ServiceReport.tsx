@@ -403,6 +403,8 @@ function HandlingServiceReportContent() {
           arrivalDate: c.arrival_date || "",
           departureDate: c.departure_date || "",
           clearanceStatus: c.status || "Pending",
+          skdType: c.skd_type || "",
+          serviceType: c.clearance_type || "",
         };
       });
   }, [dbFlights, airlineById]);
