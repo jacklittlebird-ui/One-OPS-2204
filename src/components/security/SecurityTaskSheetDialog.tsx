@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Shield, Printer, Download } from "lucide-react";
+import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { SKD_TYPES, SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
@@ -328,6 +329,17 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           <DialogTitle className="text-center text-lg font-bold uppercase tracking-wide text-foreground">
             {isNew ? "NEW" : currentRow.airline} AIRLINES SECURITY TASK SHEET
           </DialogTitle>
+        </div>
+
+        {/* Pipeline stepper - hidden in print/download */}
+        <div className="px-6 py-3 border-b bg-muted/20 flex items-center justify-center print:hidden no-print">
+          <PipelineStepper
+            currentStage={derivePipelineStage({
+              isLinked: !isNew,
+              reviewStatus: (currentRow as any)?.review_status || "pending",
+              dispatchStatus: (currentRow as any)?.status || "Pending",
+            })}
+          />
         </div>
 
         <div className="px-6 py-4 space-y-4" ref={printRef}>
