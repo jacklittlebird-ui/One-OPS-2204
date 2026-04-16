@@ -204,8 +204,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="mono" style="width:75px;">${staVal}</td>
     <td class="label" style="width:55px;">ATA</td>
     <td class="mono" style="width:75px;">${ataVal}</td>
-    <td class="label" style="width:85px;">Flight Type</td>
-    ${ftChecks.replace(/font-size:11px/g, 'font-size:13px;font-weight:600')}
+     <td class="label" style="width:85px;">Skd Type</td>
+     <td colspan="${FLIGHT_TYPES.length}" class="value-cell" style="font-size:13px;font-weight:600;">${v.flight_type || "—"}</td>
   </tr>
   <tr>
     <td class="label">STD</td>
