@@ -544,9 +544,8 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto p-6 bg-muted/10">
           {activeTab === "flight" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2"><Plane size={14} />Flight Info</h3>
+            <div className="space-y-4">
+              <Section title="Flight Info" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <FormField label="Account / Operator"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
@@ -577,15 +576,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                     </select>
                   </FormField>
                 </div>
-              </div>
-              {/* Services & Tags */}
-              <div>
-                <h3 className="text-sm font-bold text-accent uppercase tracking-wider mb-3">Services & Tags</h3>
+              </Section>
+              <Section title="Services & Tags" accent="text-accent" iconBg="bg-accent/10">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <FormField label="Project Tags"><input className={inputCls} value={data.projectTags || ""} onChange={e => set("projectTags", e.target.value)} /></FormField>
                   <FormField label="Check-In System"><input className={inputCls} value={data.checkInSystem || ""} onChange={e => set("checkInSystem", e.target.value)} /></FormField>
                 </div>
-              </div>
+              </Section>
             </div>
           )}
 
