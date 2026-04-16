@@ -438,6 +438,14 @@ export default function StationDispatchPage() {
         <p className="text-muted-foreground text-sm mt-1">Assign staff to flights, log service times & track overtime</p>
       </div>
 
+      {/* Service Category Tabs */}
+      <Tabs value={serviceCategory} onValueChange={(v) => setServiceCategory(v as ServiceCategory)}>
+        <TabsList>
+          <TabsTrigger value="handling">Handling</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="stat-card"><div className="stat-card-icon bg-primary"><Plane size={20} /></div><div><div className="text-xl font-bold text-foreground">{todayDispatches.length}</div><div className="text-xs text-muted-foreground">Dispatched Today</div></div></div>
