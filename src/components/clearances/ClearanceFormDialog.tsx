@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { format, parse } from "date-fns";
-import { CalendarIcon, ChevronsUpDown, Check } from "lucide-react";
+import { format } from "date-fns";
+import { CalendarIcon, ChevronsUpDown, Check, Plane, MapPin, ShieldCheck, CalendarRange, FileText, Building2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,11 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { CLEARANCE_TYPES, SKD_TYPES, SECURITY_CLEARANCE_TYPES, getServiceCategory, getClearanceTypesByCategory, type ServiceCategory } from "./ClearanceTypes";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 
 interface Props {
