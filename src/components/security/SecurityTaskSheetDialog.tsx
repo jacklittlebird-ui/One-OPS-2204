@@ -322,7 +322,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="px-3 py-2 border-r"><input className={inputCls} value={editableRow.airline} onChange={e => updateRow("airline", e.target.value)} placeholder="Airline" /></td>
+                    <td className="px-3 py-2 border-r">
+                      <select className={inputCls} value={editableRow.airline} onChange={e => updateRow("airline", e.target.value)}>
+                        <option value="">Select Airline</option>
+                        {airlines.map((a: any) => (
+                          <option key={a.id} value={a.name}>{a.name} ({a.iata_code || a.code})</option>
+                        ))}
+                      </select>
+                    </td>
                     <td className="px-3 py-2 border-r"><input className={inputCls} value={editableRow.station} onChange={e => updateRow("station", e.target.value)} placeholder="CAI" /></td>
                     <td className="px-3 py-2">
                       <select className={inputCls} value={editableRow.service_type} onChange={e => updateRow("service_type", e.target.value)}>
