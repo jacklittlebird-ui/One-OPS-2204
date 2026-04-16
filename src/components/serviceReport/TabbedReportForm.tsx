@@ -721,98 +721,16 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
           )}
 
           {activeTab === "catering" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                  <UtensilsCrossed size={14} />Catering
-                </h3>
-                <span className="text-sm font-semibold text-foreground">Grand Total: {(data.cateringCharge || 0).toFixed(2)}</span>
-              </div>
-              <p className="text-xs text-primary font-semibold">{data.flightNo} / {data.route}</p>
-              <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="data-table-header px-4 py-2.5 text-left">Catering Item</th>
-                      <th className="data-table-header px-4 py-2.5 text-left">Supplier</th>
-                      <th className="data-table-header px-4 py-2.5 text-left w-24">Quantity</th>
-                      <th className="data-table-header px-4 py-2.5 text-left w-28">Price / Unit</th>
-                      <th className="data-table-header px-4 py-2.5 text-left w-28">Total</th>
-                      <th className="data-table-header px-4 py-2.5 w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data.cateringItems || []).map((item, i) => (
-                      <tr key={i} className="data-table-row">
-                        <td className="px-4 py-2"><input className={inputCls} value={item.catering_item} onChange={e => setCateringLine(i, "catering_item", e.target.value)} /></td>
-                        <td className="px-4 py-2"><input className={inputCls} value={item.supplier} onChange={e => setCateringLine(i, "supplier", e.target.value)} /></td>
-                        <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setCateringLine(i, "quantity", +e.target.value)} /></td>
-                        <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_unit} onChange={e => setCateringLine(i, "price_per_unit", +e.target.value)} /></td>
-                        <td className="px-4 py-2 font-semibold text-foreground">{item.total.toFixed(2)}</td>
-                        <td className="px-4 py-2"><button onClick={() => removeCateringLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <button onClick={addCateringLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
-            </div>
-          )}
-
-          {activeTab === "hotac" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                  <BedDouble size={14} />HOTAC
-                </h3>
-                <span className="text-sm font-semibold text-foreground">Grand Total: {(data.hotacCharge || 0).toFixed(2)}</span>
-              </div>
-              <p className="text-xs text-primary font-semibold">{data.flightNo} / {data.route}</p>
-              <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="data-table-header px-4 py-2.5 text-left">Hotel Name</th>
-                      <th className="data-table-header px-4 py-2.5 text-left">Room Classification</th>
-                      <th className="data-table-header px-4 py-2.5 text-left">Type of Service</th>
-                      <th className="data-table-header px-4 py-2.5 text-left w-24">Quantity</th>
-                      <th className="data-table-header px-4 py-2.5 text-left w-28">Price / Night</th>
-                      <th className="data-table-header px-4 py-2.5 text-left w-28">Total</th>
-                      <th className="data-table-header px-4 py-2.5 w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data.hotacItems || []).map((item, i) => (
-                      <tr key={i} className="data-table-row">
-                        <td className="px-4 py-2"><input className={inputCls} value={item.hotel_name} onChange={e => setHotacLine(i, "hotel_name", e.target.value)} /></td>
-                        <td className="px-4 py-2"><input className={inputCls} value={item.room_classification} onChange={e => setHotacLine(i, "room_classification", e.target.value)} /></td>
-                        <td className="px-4 py-2"><input className={inputCls} value={item.type_of_service} onChange={e => setHotacLine(i, "type_of_service", e.target.value)} /></td>
-                        <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setHotacLine(i, "quantity", +e.target.value)} /></td>
-                        <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_night} onChange={e => setHotacLine(i, "price_per_night", +e.target.value)} /></td>
-                        <td className="px-4 py-2 font-semibold text-foreground">{item.total.toFixed(2)}</td>
-                        <td className="px-4 py-2"><button onClick={() => removeHotacLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <button onClick={addHotacLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
-            </div>
-          )}
-
-          {activeTab === "fuel-handling" && (
-            <div className="space-y-6">
-              {/* Fuel */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><Fuel size={14} />Fuel</h3>
-                  <span className="text-sm font-semibold text-foreground">Fuel Total: {(data.fuelCharge || 0).toFixed(2)}</span>
-                </div>
+            <Section title="Catering" icon={<UtensilsCrossed size={14} />}
+              right={<span className="text-sm font-bold text-success">{data.currency || "USD"} {(data.cateringCharge || 0).toFixed(2)}</span>}
+            >
+              <div className="space-y-3">
+                <p className="text-xs text-primary font-semibold">{data.flightNo} / {data.route}</p>
                 <div className="overflow-x-auto rounded-lg border">
                   <table className="w-full text-sm">
                     <thead>
                       <tr>
-                        <th className="data-table-header px-4 py-2.5 text-left">Fuel Type</th>
+                        <th className="data-table-header px-4 py-2.5 text-left">Catering Item</th>
                         <th className="data-table-header px-4 py-2.5 text-left">Supplier</th>
                         <th className="data-table-header px-4 py-2.5 text-left w-24">Quantity</th>
                         <th className="data-table-header px-4 py-2.5 text-left w-28">Price / Unit</th>
@@ -821,25 +739,111 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                       </tr>
                     </thead>
                     <tbody>
-                      {(data.fuelItems || []).map((item, i) => (
+                      {(data.cateringItems || []).length === 0 && (
+                        <tr><td colSpan={6} className="px-4 py-6 text-center text-xs text-muted-foreground italic">No items yet. Click "Add a line" to get started.</td></tr>
+                      )}
+                      {(data.cateringItems || []).map((item, i) => (
                         <tr key={i} className="data-table-row">
-                          <td className="px-4 py-2"><input className={inputCls} value={item.fuel_type} onChange={e => setFuelLine(i, "fuel_type", e.target.value)} /></td>
-                          <td className="px-4 py-2"><input className={inputCls} value={item.supplier} onChange={e => setFuelLine(i, "supplier", e.target.value)} /></td>
-                          <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setFuelLine(i, "quantity", +e.target.value)} /></td>
-                          <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_unit} onChange={e => setFuelLine(i, "price_per_unit", +e.target.value)} /></td>
+                          <td className="px-4 py-2"><input className={inputCls} value={item.catering_item} onChange={e => setCateringLine(i, "catering_item", e.target.value)} /></td>
+                          <td className="px-4 py-2"><input className={inputCls} value={item.supplier} onChange={e => setCateringLine(i, "supplier", e.target.value)} /></td>
+                          <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setCateringLine(i, "quantity", +e.target.value)} /></td>
+                          <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_unit} onChange={e => setCateringLine(i, "price_per_unit", +e.target.value)} /></td>
                           <td className="px-4 py-2 font-semibold text-foreground">{item.total.toFixed(2)}</td>
-                          <td className="px-4 py-2"><button onClick={() => removeFuelLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
+                          <td className="px-4 py-2"><button onClick={() => removeCateringLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <button onClick={addFuelLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
+                <button onClick={addCateringLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
               </div>
+            </Section>
+          )}
 
-              {/* Handling */}
-              <div>
-                <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-2 border-b pb-2"><DollarSign size={14} />Handling & Totals</h3>
+          {activeTab === "hotac" && (
+            <Section title="HOTAC" icon={<BedDouble size={14} />}
+              right={<span className="text-sm font-bold text-success">{data.currency || "USD"} {(data.hotacCharge || 0).toFixed(2)}</span>}
+            >
+              <div className="space-y-3">
+                <p className="text-xs text-primary font-semibold">{data.flightNo} / {data.route}</p>
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="data-table-header px-4 py-2.5 text-left">Hotel Name</th>
+                        <th className="data-table-header px-4 py-2.5 text-left">Room Classification</th>
+                        <th className="data-table-header px-4 py-2.5 text-left">Type of Service</th>
+                        <th className="data-table-header px-4 py-2.5 text-left w-24">Quantity</th>
+                        <th className="data-table-header px-4 py-2.5 text-left w-28">Price / Night</th>
+                        <th className="data-table-header px-4 py-2.5 text-left w-28">Total</th>
+                        <th className="data-table-header px-4 py-2.5 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data.hotacItems || []).length === 0 && (
+                        <tr><td colSpan={7} className="px-4 py-6 text-center text-xs text-muted-foreground italic">No items yet. Click "Add a line" to get started.</td></tr>
+                      )}
+                      {(data.hotacItems || []).map((item, i) => (
+                        <tr key={i} className="data-table-row">
+                          <td className="px-4 py-2"><input className={inputCls} value={item.hotel_name} onChange={e => setHotacLine(i, "hotel_name", e.target.value)} /></td>
+                          <td className="px-4 py-2"><input className={inputCls} value={item.room_classification} onChange={e => setHotacLine(i, "room_classification", e.target.value)} /></td>
+                          <td className="px-4 py-2"><input className={inputCls} value={item.type_of_service} onChange={e => setHotacLine(i, "type_of_service", e.target.value)} /></td>
+                          <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setHotacLine(i, "quantity", +e.target.value)} /></td>
+                          <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_night} onChange={e => setHotacLine(i, "price_per_night", +e.target.value)} /></td>
+                          <td className="px-4 py-2 font-semibold text-foreground">{item.total.toFixed(2)}</td>
+                          <td className="px-4 py-2"><button onClick={() => removeHotacLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <button onClick={addHotacLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
+              </div>
+            </Section>
+          )}
+
+          {activeTab === "fuel-handling" && (
+            <div className="space-y-4">
+              <Section title="Fuel" icon={<Fuel size={14} />}
+                right={<span className="text-sm font-bold text-success">{data.currency || "USD"} {(data.fuelCharge || 0).toFixed(2)}</span>}
+              >
+                <div className="space-y-3">
+                  <div className="overflow-x-auto rounded-lg border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr>
+                          <th className="data-table-header px-4 py-2.5 text-left">Fuel Type</th>
+                          <th className="data-table-header px-4 py-2.5 text-left">Supplier</th>
+                          <th className="data-table-header px-4 py-2.5 text-left w-24">Quantity</th>
+                          <th className="data-table-header px-4 py-2.5 text-left w-28">Price / Unit</th>
+                          <th className="data-table-header px-4 py-2.5 text-left w-28">Total</th>
+                          <th className="data-table-header px-4 py-2.5 w-10"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(data.fuelItems || []).length === 0 && (
+                          <tr><td colSpan={6} className="px-4 py-6 text-center text-xs text-muted-foreground italic">No items yet. Click "Add a line" to get started.</td></tr>
+                        )}
+                        {(data.fuelItems || []).map((item, i) => (
+                          <tr key={i} className="data-table-row">
+                            <td className="px-4 py-2"><input className={inputCls} value={item.fuel_type} onChange={e => setFuelLine(i, "fuel_type", e.target.value)} /></td>
+                            <td className="px-4 py-2"><input className={inputCls} value={item.supplier} onChange={e => setFuelLine(i, "supplier", e.target.value)} /></td>
+                            <td className="px-4 py-2"><input type="number" className={inputCls} value={item.quantity} onChange={e => setFuelLine(i, "quantity", +e.target.value)} /></td>
+                            <td className="px-4 py-2"><input type="number" step="0.01" className={inputCls} value={item.price_per_unit} onChange={e => setFuelLine(i, "price_per_unit", +e.target.value)} /></td>
+                            <td className="px-4 py-2 font-semibold text-foreground">{item.total.toFixed(2)}</td>
+                            <td className="px-4 py-2"><button onClick={() => removeFuelLine(i)} className="text-destructive hover:text-destructive/80"><Trash2 size={14} /></button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <button onClick={addFuelLine} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus size={12} /> Add a line</button>
+                </div>
+              </Section>
+
+              <Section title="Handling & Totals" icon={<DollarSign size={14} />} accent="text-success" iconBg="bg-success/10"
+                right={<span className="text-sm font-bold text-success">{data.currency || "USD"} {totalCostPreview}</span>}
+              >
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <FormField label="Handling Fee ($)"><input type="number" step="0.01" className={inputCls} value={data.handlingFee || ""} onChange={e => set("handlingFee", +e.target.value)} /></FormField>
                   <FormField label="Civil Aviation ($)"><input type="number" className={readOnlyCls} value={data.civilAviationFee || ""} readOnly /></FormField>
@@ -848,21 +852,24 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="HOTAC ($)"><input type="number" className={readOnlyCls} value={data.hotacCharge || ""} readOnly /></FormField>
                   <FormField label="Fuel ($)"><input type="number" className={readOnlyCls} value={data.fuelCharge || ""} readOnly /></FormField>
                   <FormField label="Total Cost ($)">
-                    <input type="number" className={readOnlyCls + " font-bold text-success"} value={
-                      ((data.civilAviationFee || 0) + (data.handlingFee || 0) + (data.airportCharge || 0)
-                      + (data.fuelCharge || 0) + (data.cateringCharge || 0) + (data.hotacCharge || 0)).toFixed(2)
-                    } readOnly />
+                    <input type="number" className={readOnlyCls + " font-bold text-success"} value={totalCostPreview} readOnly />
                   </FormField>
                 </div>
-              </div>
+              </Section>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="bg-card border-t px-6 py-4 flex gap-3 justify-end">
-          <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
-          <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+        <div className="bg-card border-t px-6 py-3 flex flex-wrap gap-3 items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+            <span>Auto-calculated • <strong className="text-foreground">{data.currency || "USD"} {totalCostPreview}</strong> total</span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
+            <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+          </div>
         </div>
       </div>
     </div>
