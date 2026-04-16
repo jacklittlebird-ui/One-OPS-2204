@@ -171,23 +171,15 @@ export default function SecurityServiceReportsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
       toast({ title: "Created", description: "New security service report created." });
-      setShowNewForm(false);
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  function calcDuration(start: string, end: string) {
-    if (!start || !end) return 0;
-    const [h1, m1] = start.split(":").map(Number);
-    const [h2, m2] = end.split(":").map(Number);
-    if ([h1, m1, h2, m2].some(isNaN)) return 0;
-    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
-    if (diff < 0) diff += 24 * 60;
-    return +(diff / 60).toFixed(2);
-  }
-
   const openNewForm = () => {
-    setNewFormData({
+    const blankRow: DispatchRow = {
+      id: "new",
+      flight_schedule_id: null,
+      contract_id: null,
       station: "CAI",
       airline: "",
       flight_no: "",
@@ -210,33 +202,17 @@ export default function SecurityServiceReportsPage() {
       status: "Pending",
       notes: "",
       dispatched_by: session?.user?.email || "",
-    });
-    setShowNewForm(true);
+      review_status: "Draft",
+      review_comment: "",
+      reviewed_by: "",
+      reviewed_at: null,
+      irregularity_id: null,
+      created_at: "",
+      updated_at: "",
+    };
+    setIsNewReport(true);
+    setEditRow(blankRow);
   };
-
-  const updateNewFormField = (key: string, val: any) => {
-    const updated = { ...newFormData, [key]: val };
-    if (key === "actual_start" || key === "actual_end") {
-      const actualHrs = calcDuration(updated.actual_start || "", updated.actual_end || "");
-      const contractHrs = updated.contract_duration_hours || 0;
-      const overtime = Math.max(0, actualHrs - contractHrs);
-      const overtimeCharge = overtime * (updated.overtime_rate || 0) * (updated.staff_count || 1);
-      const total = (updated.base_fee || 0) + (updated.service_rate || 0) + overtimeCharge;
-      updated.actual_duration_hours = actualHrs;
-      updated.overtime_hours = overtime;
-      updated.overtime_charge = Math.round(overtimeCharge * 100) / 100;
-      updated.total_charge = Math.round(total * 100) / 100;
-    }
-    setNewFormData(updated);
-  };
-
-  const STATIONS = [
-    { code: "CAI", name: "Cairo International" },
-    { code: "HRG", name: "Hurghada International" },
-    { code: "SSH", name: "Sharm El Sheikh" },
-    { code: "LXR", name: "Luxor International" },
-    { code: "ASW", name: "Aswan International" },
-  ];
 
 
   const flightStatusById = useMemo(() => {
