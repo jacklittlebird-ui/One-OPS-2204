@@ -894,6 +894,7 @@ function HandlingServiceReportContent() {
                               arrivalDate: r.arrivalDate,
                               departureDate: r.departureDate,
                             });
+                            setActiveClearanceStatus(r.clearanceStatus || "");
                             setShowAdd(true);
                           }}
                           className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
