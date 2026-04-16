@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
-import { useReadOnly } from "@/hooks/useReadOnly";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +24,7 @@ type CountryRow = { id: string; name: string; code: string; };
 const PAGE_SIZE = 20;
 
 export default function AirportsPage() {
-  const readOnly = useReadOnly();
+  const readOnly = false;
   const { data, isLoading, add, update, remove } = useSupabaseTable<AirportRow>("airports", { orderBy: "name", ascending: true });
   const { data: countries } = useQuery({
     queryKey: ["countries"],
