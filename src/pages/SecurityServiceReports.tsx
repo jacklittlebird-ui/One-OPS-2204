@@ -319,8 +319,8 @@ export default function SecurityServiceReportsPage() {
       service_type: row.service_type,
       staff_names: row.staff_names,
       staff_count: row.staff_count,
-      scheduled_start: row.scheduled_start,
-      scheduled_end: row.scheduled_end,
+      scheduled_start: taskSheet.sta || row.scheduled_start,
+      scheduled_end: taskSheet.std || row.scheduled_end,
       dispatched_by: row.dispatched_by,
       // New reports start at "Pending Review" for clearance approval
       ...(isNewReport ? { review_status: "Pending Review" } : {}),
