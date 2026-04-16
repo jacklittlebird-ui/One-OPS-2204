@@ -303,7 +303,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{sta || "—"}</td>
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-16">ATA</td>
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{ata || row.actual_start || "—"}</td>
-                  <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Flight Type</td>
+                  <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Skd Type</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-3 flex-wrap">
                       {FLIGHT_TYPES.map(ft => (
