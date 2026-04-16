@@ -578,6 +578,7 @@ export default function SecurityServiceReportsPage() {
                               isLinked: r.status === "Completed",
                               reviewStatus: r.review_status,
                               clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+                              dispatchStatus: r.status,
                             })}
                             compact
                           />
