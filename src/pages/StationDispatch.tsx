@@ -125,6 +125,8 @@ export default function StationDispatchPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<DispatchRow>>({});
   const [viewId, setViewId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
+  const [calMonth, setCalMonth] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
 
   const airlineMap = useMemo(() => {
     const m: Record<string, { name: string; iata: string }> = {};
