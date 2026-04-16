@@ -1001,7 +1001,7 @@ import SecurityServiceReportsPage from "@/pages/SecurityServiceReports";
 export default function ServiceReportPage() {
   return (
     <div className="p-6 space-y-4">
-      <Tabs defaultValue="handling" className="w-full">
+      <Tabs defaultValue="security" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="security" className="gap-1.5">
             <Shield size={14} /> Security
