@@ -185,16 +185,28 @@ function StationManagementTab() {
 
 // ─── System Preferences Tab ──────────────────────────────
 function SystemPreferencesTab() {
-  const [timezone, setTimezone] = useState("Africa/Cairo");
-  const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
-  const [timeFormat, setTimeFormat] = useState("24h");
-  const [language, setLanguage] = useState("en");
-  const [autoLogout, setAutoLogout] = useState("30");
-  const [paginationSize, setPaginationSize] = useState("25");
-  const [enableAnimations, setEnableAnimations] = useState(true);
-  const [compactMode, setCompactMode] = useState(false);
+  const initial = (() => {
+    try {
+      const raw = localStorage.getItem("app:system");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
+  const [timezone, setTimezone] = useState(initial?.timezone || "Africa/Cairo");
+  const [dateFormat, setDateFormat] = useState(initial?.dateFormat || "DD/MM/YYYY");
+  const [timeFormat, setTimeFormat] = useState(initial?.timeFormat || "24h");
+  const [language, setLanguage] = useState(initial?.language || "en");
+  const [autoLogout, setAutoLogout] = useState(initial?.autoLogout || "30");
+  const [paginationSize, setPaginationSize] = useState(initial?.paginationSize || "25");
+  const [enableAnimations, setEnableAnimations] = useState(initial?.enableAnimations ?? true);
+  const [compactMode, setCompactMode] = useState(initial?.compactMode ?? false);
 
-  const handleSave = () => toast.success("System preferences saved");
+  const handleSave = () => {
+    const payload = { timezone, dateFormat, timeFormat, language, autoLogout, paginationSize, enableAnimations, compactMode };
+    localStorage.setItem("app:system", JSON.stringify(payload));
+    document.documentElement.classList.toggle("no-animations", !enableAnimations);
+    document.documentElement.classList.toggle("compact", compactMode);
+    toast.success("System preferences saved");
+  };
 
   return (
     <div className="space-y-6">
@@ -628,29 +640,31 @@ const accentColors = [
 ];
 
 function ThemeAppearanceTab() {
-  const [mode, setMode] = useState<"light" | "dark">(() => {
-    return document.documentElement.classList.contains("dark") ? "dark" : "light";
-  });
-  const [selectedPrimary, setSelectedPrimary] = useState("243 55% 25%");
-  const [selectedAccent, setSelectedAccent] = useState("152 60% 45%");
-  const [borderRadius, setBorderRadius] = useState("0.5");
+  const initial = (() => {
+    try {
+      const raw = localStorage.getItem("app:theme");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
 
-  // Read current values on mount
-  useEffect(() => {
-    const root = document.documentElement;
-    const currentPrimary = getComputedStyle(root).getPropertyValue("--primary").trim();
-    const currentAccent = getComputedStyle(root).getPropertyValue("--accent").trim();
-    const currentRadius = getComputedStyle(root).getPropertyValue("--radius").trim();
-    if (currentPrimary) setSelectedPrimary(currentPrimary);
-    if (currentAccent) setSelectedAccent(currentAccent);
-    if (currentRadius) setBorderRadius(currentRadius.replace("rem", ""));
-  }, []);
+  const [mode, setMode] = useState<"light" | "dark">(
+    initial?.mode || (document.documentElement.classList.contains("dark") ? "dark" : "light")
+  );
+  const [selectedPrimary, setSelectedPrimary] = useState(initial?.primary || "243 55% 25%");
+  const [selectedAccent, setSelectedAccent] = useState(initial?.accent || "152 60% 45%");
+  const [borderRadius, setBorderRadius] = useState(initial?.radius || "0.5");
+
+  const persist = (next: Partial<{ mode: "light" | "dark"; primary: string; accent: string; radius: string }>) => {
+    const current = { mode, primary: selectedPrimary, accent: selectedAccent, radius: borderRadius, ...next };
+    localStorage.setItem("app:theme", JSON.stringify(current));
+  };
 
   const applyPrimary = (val: string) => {
     setSelectedPrimary(val);
     document.documentElement.style.setProperty("--primary", val);
     document.documentElement.style.setProperty("--ring", val);
     document.documentElement.style.setProperty("--sidebar-background", val.replace(/\d+%$/, (m) => `${Math.max(0, parseInt(m) - 7)}%`));
+    persist({ primary: val });
   };
 
   const applyAccent = (val: string) => {
@@ -658,16 +672,19 @@ function ThemeAppearanceTab() {
     document.documentElement.style.setProperty("--accent", val);
     document.documentElement.style.setProperty("--sidebar-primary", val);
     document.documentElement.style.setProperty("--success", val);
+    persist({ accent: val });
   };
 
   const applyMode = (m: "light" | "dark") => {
     setMode(m);
     document.documentElement.classList.toggle("dark", m === "dark");
+    persist({ mode: m });
   };
 
   const applyRadius = (val: string) => {
     setBorderRadius(val);
     document.documentElement.style.setProperty("--radius", `${val}rem`);
+    persist({ radius: val });
   };
 
   const handleReset = () => {
@@ -683,6 +700,7 @@ function ThemeAppearanceTab() {
     setSelectedAccent("152 60% 45%");
     setBorderRadius("0.5");
     setMode("light");
+    localStorage.removeItem("app:theme");
     toast.success("Theme reset to defaults");
   };
 
