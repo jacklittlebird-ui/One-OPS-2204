@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import {
-  Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
+  Search, Plus, Download, Shield, Plane, Building2, Clock, Users, X,
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
   FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays
 } from "lucide-react";
@@ -99,6 +99,8 @@ export default function SecurityServiceReportsPage() {
   const [reviewComment, setReviewComment] = useState("");
   const [activeMainTab, setActiveMainTab] = useState<"reports" | "flights">("reports");
   const [flightsPage, setFlightsPage] = useState(1);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newFormData, setNewFormData] = useState<Partial<DispatchRow>>({});
 
   // Fetch dispatch assignments (completed ones = service reports)
   const { data: dispatches = [], isLoading } = useQuery({
