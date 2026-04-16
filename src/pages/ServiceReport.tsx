@@ -213,6 +213,7 @@ interface MergedRow extends ReportFormData {
   isLinked: boolean;
   flightScheduleId?: string;
   sourceType?: "flight_schedules" | "clearances";
+  clearanceStatus?: string;
 }
 
 interface ScheduleSourceRow {
