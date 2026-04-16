@@ -866,6 +866,7 @@ export type Database = {
           staff_names: string
           station: string
           status: string
+          task_sheet_data: Json | null
           total_charge: number
           updated_at: string
         }
@@ -900,6 +901,7 @@ export type Database = {
           staff_names?: string
           station?: string
           status?: string
+          task_sheet_data?: Json | null
           total_charge?: number
           updated_at?: string
         }
@@ -934,6 +936,7 @@ export type Database = {
           staff_names?: string
           station?: string
           status?: string
+          task_sheet_data?: Json | null
           total_charge?: number
           updated_at?: string
         }
