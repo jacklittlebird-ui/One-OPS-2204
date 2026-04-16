@@ -146,10 +146,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
     const obsSection = (title: string, rows: [string, string][]) => {
       const rowsHtml = rows.map(([label, val]) =>
-        `<tr><td style="border:1px solid #333;padding:4px 8px;width:30px;text-align:center;font-weight:bold;background:#f5f5f5;">${label}</td><td style="border:1px solid #333;padding:4px 8px;">${val || ""}</td></tr>`
+        `<tr><td class="obs-label">${label}</td><td class="obs-val">${val || ""}</td></tr>`
       ).join("");
       return `<table style="width:100%;border-collapse:collapse;margin-bottom:0;">
-        <tr><td colspan="2" style="border:1px solid #333;padding:5px 8px;font-weight:bold;background:#d0d8e8;font-size:11px;">${title}</td></tr>
+        <tr><td colspan="2" class="obs-title">${title}</td></tr>
         ${rowsHtml}</table>`;
     };
 
@@ -157,57 +157,68 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 <title>${row.airline} Security Task Sheet - ${row.flight_no}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; padding: 30px 40px; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #000; padding: 30px 40px; }
   table { width:100%; border-collapse:collapse; }
-  td, th { border:1px solid #333; padding:5px 8px; text-align:left; font-size:12px; }
-  .title { text-align:center; font-size:15px; font-weight:bold; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:14px; padding:10px 0; }
-  .label { background:#f0f0f0; font-weight:bold; }
-  .section { background:#d0d8e8; font-weight:bold; font-size:11px; }
-  .obs-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0; }
-  .footer { display:flex; justify-content:space-between; font-size:10px; color:#666; border-top:1px solid #999; padding-top:8px; margin-top:20px; }
-  @media print { body { padding:15px 25px; } @page { margin:15mm; } }
+  td, th { border:2px solid #222; padding:7px 10px; text-align:left; font-size:13px; }
+  .title { text-align:center; font-size:18px; font-weight:900; text-transform:uppercase; letter-spacing:2px; margin-bottom:16px; padding:12px 0; border-bottom:3px solid #000; }
+  .label { background:#e8e8e8; font-weight:bold; font-size:13px; }
+  .section { background:#b8c8e0; font-weight:bold; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; }
+  .obs-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0; }
+  .footer { display:flex; justify-content:space-between; font-size:11px; color:#444; border-top:2px solid #666; padding-top:10px; margin-top:24px; font-weight:600; }
+  .header-row th { background:#c0c8d8; font-weight:bold; font-size:13px; text-transform:uppercase; letter-spacing:0.3px; }
+  .value-cell { font-size:14px; font-weight:600; min-height:28px; }
+  .mono { font-family: 'Courier New', Courier, monospace; font-weight:700; font-size:14px; letter-spacing:1px; }
+  .ft-cell { text-align:center; font-size:13px; font-weight:600; }
+  .obs-title { border:2px solid #222; padding:6px 10px; font-weight:bold; background:#b8c8e0; font-size:13px; text-transform:uppercase; }
+  .obs-label { border:2px solid #222; padding:6px 10px; width:35px; text-align:center; font-weight:bold; background:#e8e8e8; font-size:14px; }
+  .obs-val { border:2px solid #222; padding:6px 10px; font-size:14px; font-weight:500; min-height:28px; }
+  .remark-cell { min-height:60px; padding:10px; font-size:14px; line-height:1.5; }
+  @media print {
+    body { padding:15px 25px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page { margin:12mm; }
+  }
 </style>
 </head><body>
 
 <div class="title">${row.airline} AIRLINES SECURITY TASK SHEET</div>
 
-<table style="margin-bottom:8px;">
-  <tr>
-    <th style="background:#e0e0e0;">Flight Number</th>
-    <th style="background:#e0e0e0;">Date</th>
-    <th style="background:#e0e0e0;">Registration</th>
-    <th style="background:#e0e0e0;">Route</th>
+<table style="margin-bottom:10px;">
+  <tr class="header-row">
+    <th>Flight Number</th>
+    <th>Date</th>
+    <th>Registration</th>
+    <th>Route</th>
   </tr>
   <tr>
-    <td style="font-weight:bold;">${row.flight_no}</td>
-    <td>${flightDate}</td>
-    <td style="font-family:monospace;">${reg}</td>
-    <td>${rt}</td>
+    <td class="value-cell" style="font-weight:800;font-size:15px;">${row.flight_no}</td>
+    <td class="value-cell">${flightDate}</td>
+    <td class="value-cell mono">${reg}</td>
+    <td class="value-cell">${rt}</td>
   </tr>
 </table>
 
-<table style="margin-bottom:8px;">
+<table style="margin-bottom:10px;">
   <tr>
-    <td class="label" style="width:50px;">STA</td>
-    <td style="width:70px;font-family:monospace;">${staVal}</td>
-    <td class="label" style="width:50px;">ATA</td>
-    <td style="width:70px;font-family:monospace;">${ataVal}</td>
-    <td class="label" style="width:80px;">Flight Type</td>
-    ${ftChecks}
+    <td class="label" style="width:55px;">STA</td>
+    <td class="mono" style="width:75px;">${staVal}</td>
+    <td class="label" style="width:55px;">ATA</td>
+    <td class="mono" style="width:75px;">${ataVal}</td>
+    <td class="label" style="width:85px;">Flight Type</td>
+    ${ftChecks.replace(/font-size:11px/g, 'font-size:13px;font-weight:600')}
   </tr>
   <tr>
     <td class="label">STD</td>
-    <td style="font-family:monospace;">${stdVal}</td>
+    <td class="mono">${stdVal}</td>
     <td class="label">ATD</td>
-    <td style="font-family:monospace;">${atdVal}</td>
+    <td class="mono">${atdVal}</td>
     <td class="label">Delay</td>
-    <td colspan="5">${v.delay || ""}</td>
+    <td colspan="5" class="value-cell">${v.delay || ""}</td>
   </tr>
   <tr>
     <td class="label" colspan="2">ARR/DEP SHIFT START</td>
-    <td colspan="2" style="font-family:monospace;">${v.shift_start || ""}</td>
+    <td colspan="2" class="mono">${v.shift_start || ""}</td>
     <td class="label">ARR/DEP SHIFT END</td>
-    <td colspan="5" style="font-family:monospace;">${v.shift_end || ""}</td>
+    <td colspan="5" class="mono">${v.shift_end || ""}</td>
   </tr>
 </table>
 
@@ -219,21 +230,21 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   ${obsSection("Aircraft Ramp Observer", [["1", v.aircraft_ramp_observer_1]])}
 </div>
 
-<table style="margin-bottom:8px;">
+<table style="margin-bottom:10px;">
   <tr><td colspan="2" class="section">CARGO AND BAGGAGE & CATERING ACCOMPANIED BY:</td></tr>
-  <tr><td class="label" style="width:100px;">Catering</td><td>${v.catering_accompanied || ""}</td></tr>
-  <tr><td class="label">Cargo</td><td>${v.cargo_accompanied || ""}</td></tr>
-  <tr><td class="label">Baggage</td><td>${v.baggage_accompanied || ""}</td></tr>
+  <tr><td class="label" style="width:110px;">Catering</td><td class="value-cell">${v.catering_accompanied || ""}</td></tr>
+  <tr><td class="label">Cargo</td><td class="value-cell">${v.cargo_accompanied || ""}</td></tr>
+  <tr><td class="label">Baggage</td><td class="value-cell">${v.baggage_accompanied || ""}</td></tr>
 </table>
 
-<table style="margin-bottom:8px;">
+<table style="margin-bottom:10px;">
   <tr><td class="section">REMARKS</td></tr>
-  <tr><td style="min-height:40px;padding:8px;">${v.remarks || ""}</td></tr>
+  <tr><td class="remark-cell">${v.remarks || ""}</td></tr>
 </table>
 
-<table style="margin-bottom:8px;">
+<table style="margin-bottom:10px;">
   <tr><td class="section">${row.airline.toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</td></tr>
-  <tr><td style="padding:8px;">${v.security_supervisor || ""}</td></tr>
+  <tr><td class="value-cell" style="padding:10px;">${v.security_supervisor || ""}</td></tr>
 </table>
 
 <div class="footer">
@@ -242,7 +253,6 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 </div>
 
 </body></html>`;
-
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     printWindow.document.write(html);
