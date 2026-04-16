@@ -507,6 +507,7 @@ export default function ClearancesPage() {
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Flight</TableHead>
+                    <TableHead>Airline</TableHead>
                     <TableHead>Service Type</TableHead>
                     <TableHead>Station</TableHead>
                     <TableHead>STA</TableHead>
@@ -521,6 +522,7 @@ export default function ClearancesPage() {
                     <TableRow key={c.id}>
                       <TableCell className="text-xs">{formatDateDMY(c.arrival_date || c.departure_date)}</TableCell>
                       <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
+                      <TableCell className="text-xs">{c.airline_id ? (airlineMap[c.airline_id]?.name || c.handling_agent || "—") : (c.handling_agent || "—")}</TableCell>
                       <TableCell className="text-xs">{c.clearance_type}</TableCell>
                       <TableCell className="text-xs">{c.authority || "—"}</TableCell>
                       <TableCell className="text-xs">{c.sta || "—"}</TableCell>
@@ -546,7 +548,7 @@ export default function ClearancesPage() {
                   ))}
                   {pendingApproval.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No flights pending approval</TableCell>
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No flights pending approval</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
