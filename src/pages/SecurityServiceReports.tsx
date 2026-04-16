@@ -314,7 +314,13 @@ export default function SecurityServiceReportsPage() {
   const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
     const shiftStart = taskSheet.shift_start || row.actual_start || "";
     const shiftEnd = taskSheet.shift_end || row.actual_end || "";
-    const duration = timeDiffHours(shiftStart, shiftEnd);
+    const actualMins = timeDiffMinutes(shiftStart, shiftEnd);
+    const duration = minutesToHMM(actualMins);
+    const contractMins = Math.round((row.contract_duration_hours || 0) * 60);
+    const overtimeMins = Math.max(0, actualMins - contractMins);
+    const overtimeHours = minutesToHMM(overtimeMins);
+    const overtimeCharge = (overtimeMins / 60) * (row.overtime_rate || 0) * (row.staff_count || 1);
+    const totalCharge = (row.base_fee || 0) + (row.service_rate || 0) + overtimeCharge;
 
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
@@ -322,6 +328,9 @@ export default function SecurityServiceReportsPage() {
       actual_start: shiftStart,
       actual_end: shiftEnd,
       actual_duration_hours: duration,
+      overtime_hours: overtimeHours,
+      overtime_charge: Math.round(overtimeCharge * 100) / 100,
+      total_charge: Math.round(totalCharge * 100) / 100,
       // New reports stay "Pending" until clearance approves the linked flight schedule.
       // Existing reports keep their normal "Completed" flow on save.
       status: isNewReport ? "Pending" : "Completed",
