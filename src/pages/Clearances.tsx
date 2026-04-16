@@ -172,7 +172,7 @@ export default function ClearancesPage() {
 
   const airlineMap = Object.fromEntries((airlines || []).map((a: any) => [a.id, a]));
 
-  const stations = [...new Set(data.map(c => c.authority).filter(Boolean))].sort();
+  const stations = ["CAI", "HRG", "SSH"];
   const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
 
   const filtered = data.filter(c => {
@@ -409,12 +409,10 @@ export default function ClearancesPage() {
               <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Pending">Pending</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Rejected">Rejected</SelectItem><SelectItem value="Expired">Expired</SelectItem></SelectContent>
             </Select>
-            {stations.length > 0 && (
-              <Select value={stationFilter} onValueChange={setStationFilter}>
-                <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="all">All Stations</SelectItem>{stations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-              </Select>
-            )}
+            <Select value={stationFilter} onValueChange={setStationFilter}>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="all">All Stations</SelectItem>{stations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
             {registrations.length > 0 && (
               <Select value={registrationFilter} onValueChange={setRegistrationFilter}>
                 <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
