@@ -242,27 +242,18 @@ export default function SecurityServiceReportsPage() {
   const flightsTotalPages = Math.max(1, Math.ceil(filteredFlights.length / PAGE_SIZE));
   const flightsPageData = filteredFlights.slice((flightsPage - 1) * PAGE_SIZE, flightsPage * PAGE_SIZE);
 
-  const saveEdit = () => {
-    if (!editRow) return;
-    const actualHrs = timeDiffHours(editRow.actual_start, editRow.actual_end);
-    const overtimeHrs = Math.max(0, actualHrs - editRow.contract_duration_hours);
-    const overtimeCharge = overtimeHrs * editRow.overtime_rate * editRow.staff_count;
-    const totalCharge = editRow.base_fee + (editRow.service_rate * editRow.staff_count) + overtimeCharge;
+  const saveEdit = () => {};
 
+  const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
     updateMutation.mutate({
-      id: editRow.id,
-      staff_names: editRow.staff_names,
-      staff_count: editRow.staff_count,
-      actual_start: editRow.actual_start,
-      actual_end: editRow.actual_end,
-      actual_duration_hours: actualHrs,
-      overtime_hours: overtimeHrs,
-      overtime_charge: overtimeCharge,
-      total_charge: totalCharge,
-      notes: editRow.notes,
+      id: row.id,
+      task_sheet_data: taskSheet,
+      notes: taskSheet.remarks || row.notes,
+      actual_start: taskSheet.shift_start || row.actual_start,
+      actual_end: taskSheet.shift_end || row.actual_end,
+      actual_duration_hours: timeDiffHours(taskSheet.shift_start || row.actual_start, taskSheet.shift_end || row.actual_end),
       status: "Completed",
-      review_status: editRow.review_status === "Draft" ? "Draft" : editRow.review_status,
-    });
+    } as any);
     setEditRow(null);
   };
 
