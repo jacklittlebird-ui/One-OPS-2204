@@ -98,13 +98,24 @@ const statusColors: Record<string, string> = {
 const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
 const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
 
-function calcDurationHours(start: string, end: string): number {
+// Returns duration in minutes between two HH:MM strings (handles wraparound)
+function calcDurationMinutes(start: string, end: string): number {
   if (!start || !end) return 0;
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
   let mins = (eh * 60 + em) - (sh * 60 + sm);
   if (mins < 0) mins += 1440;
-  return Math.round((mins / 60) * 100) / 100;
+  return mins;
+}
+// Format minutes as H.MM (hours.minutes) — e.g. 124min → 2.04
+function minutesToHMM(mins: number): number {
+  if (!mins || mins < 0) return 0;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return Math.round((h + m / 100) * 100) / 100;
+}
+function calcDurationHours(start: string, end: string): number {
+  return minutesToHMM(calcDurationMinutes(start, end));
 }
 
 function DispatchCalendarView({ dispatches, month, onMonthChange, onEdit }: {
