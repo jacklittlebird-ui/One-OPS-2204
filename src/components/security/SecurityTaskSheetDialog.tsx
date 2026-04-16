@@ -109,6 +109,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
+  const { data: airlines = [] } = useQuery({
+    queryKey: ["airlines-for-task-sheet"],
+    queryFn: async () => {
+      const { data } = await supabase.from("airlines").select("id,name,iata_code,code").order("name");
+      return data || [];
+    },
+  });
+
   useEffect(() => {
     if (row) {
       setEditableRow({ ...row });
