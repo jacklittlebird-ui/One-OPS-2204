@@ -282,7 +282,36 @@ export default function StationDispatchPage() {
       const { id, created_at, ...rest } = formData as any;
       await update({ id: editId, ...rest });
     } else {
-      await add(formData as any);
+      // If no linked flight_schedule, auto-create one with Pending status for clearance approval
+      let scheduleId = formData.flight_schedule_id || null;
+      if (!scheduleId) {
+        const { data: newSchedule, error: schedErr } = await supabase
+          .from("flight_schedules")
+          .insert({
+            flight_no: formData.flight_no || "",
+            route: "",
+            aircraft_type: "",
+            registration: "",
+            clearance_type: formData.service_type || "Arrival",
+            status: "Pending" as any,
+            authority: formData.station || "",
+            purpose: "Scheduled",
+            arrival_date: formData.flight_date || null,
+            departure_date: formData.flight_date || null,
+            sta: formData.scheduled_start || "",
+            std: formData.scheduled_end || "",
+            remarks: "Added from Station Dispatch – pending clearance approval",
+          })
+          .select("id")
+          .single();
+        if (schedErr) {
+          toast({ title: "Error", description: `Could not create flight schedule: ${schedErr.message}`, variant: "destructive" });
+          return;
+        }
+        scheduleId = newSchedule.id;
+        toast({ title: "Flight Schedule Created", description: "A pending clearance record was created for approval." });
+      }
+      await add({ ...formData, flight_schedule_id: scheduleId } as any);
     }
     setShowForm(false);
     setEditId(null);
