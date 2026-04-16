@@ -11,18 +11,23 @@ export type PipelineStage = "clearance" | "station" | "operations" | "receivable
 
 /**
  * Derives the current pipeline stage from report data:
- * - No linked report → clearance (step 1)
- * - Linked but review pending → station (step 2)
+ * - Clearance not approved → clearance (step 1)
+ * - Clearance approved but no linked report / review pending → station (step 2)  
+ *   After clearance approval, steps 1 & 2 are considered done → operations (step 3)
  * - Review approved → operations (step 3)
  * - Ready for billing / invoiced → receivables (step 4)
  */
 export function derivePipelineStage(opts: {
   isLinked: boolean;
   reviewStatus: string;
+  clearanceStatus?: string;
 }): PipelineStage {
-  if (!opts.isLinked) return "clearance";
+  const isApproved = opts.clearanceStatus === "Approved";
+
+  if (!isApproved && !opts.isLinked) return "clearance";
+  if (isApproved && !opts.isLinked) return "operations";
   if (opts.reviewStatus === "rejected") return "station";
-  if (opts.reviewStatus === "pending") return "station";
+  if (opts.reviewStatus === "pending") return isApproved ? "operations" : "station";
   if (opts.reviewStatus === "approved") return "operations";
   return "receivables"; // ready_for_billing or invoiced
 }
