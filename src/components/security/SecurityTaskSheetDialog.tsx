@@ -24,6 +24,8 @@ interface TaskSheetData {
   std: string;
   ata: string;
   atd: string;
+  registration: string;
+  route: string;
   cargo_observer_1: string;
   cargo_observer_2: string;
   hold_baggage_observer_1: string;
@@ -48,6 +50,8 @@ const emptyTaskSheet = (): TaskSheetData => ({
   std: "",
   ata: "",
   atd: "",
+  registration: "",
+  route: "",
   cargo_observer_1: "",
   cargo_observer_2: "",
   hold_baggage_observer_1: "",
@@ -132,11 +136,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       if (saved && typeof saved === "object") {
         const restored = { ...emptyTaskSheet(), ...saved } as TaskSheetData;
         if (!restored.flight_type && skdType) restored.flight_type = skdType;
-        // Populate sta/std from props if not already saved
         if (!restored.sta && sta) restored.sta = sta;
         if (!restored.std && std) restored.std = std;
         if (!restored.ata && ata) restored.ata = ata;
         if (!restored.atd && atd) restored.atd = atd;
+        if (!restored.registration && registration) restored.registration = registration;
+        if (!restored.route && route) restored.route = route;
         setSheet(restored);
       } else {
         setSheet({
@@ -146,11 +151,13 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           std: std || "",
           ata: ata || "",
           atd: atd || "",
+          registration: registration || "",
+          route: route || "",
           remarks: row.notes || "",
         });
       }
     }
-  }, [row, skdType, sta, std, ata, atd]);
+  }, [row, skdType, sta, std, ata, atd, registration, route]);
 
   if (!row || !editableRow) return null;
 
@@ -165,12 +172,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   };
 
   const handleSave = () => {
-    const enrichedSheet = {
-      ...sheet,
-      registration: editableRow.registration || registration || "",
-      route: editableRow.route || route || "",
-    };
-    onSave(isNew ? editableRow : row, enrichedSheet);
+    onSave(isNew ? editableRow : row, sheet);
   };
 
   const formatDate = (d: string) => {
@@ -185,8 +187,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     if (!row) return;
     const v = sheet;
     const flightDate = formatDate(row.flight_date);
-    const reg = editableRow?.registration || registration || "—";
-    const rt = editableRow?.route || route || "—";
+    const reg = v.registration || registration || "—";
+    const rt = v.route || route || "—";
     const staVal = v.sta || sta || "—";
     const stdVal = v.std || std || "—";
     const ataVal = v.ata || ata || "—";
@@ -379,15 +381,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                     <>
                        <td className="px-3 py-2 border-r"><input className={inputCls} value={editableRow.flight_no} onChange={e => updateRow("flight_no", e.target.value.toUpperCase())} placeholder="Flight No" /></td>
                        <td className="px-3 py-2 border-r"><input className={inputCls} type="date" value={editableRow.flight_date} onChange={e => updateRow("flight_date", e.target.value)} /></td>
-                       <td className="px-3 py-2 border-r"><input className={inputCls} value={editableRow.registration || ""} onChange={e => updateRow("registration", e.target.value.toUpperCase())} placeholder="Registration" /></td>
-                       <td className="px-3 py-2"><input className={inputCls} value={editableRow.route || ""} onChange={e => updateRow("route", e.target.value.toUpperCase())} placeholder="e.g. CAI-JFK-CAI" /></td>
+                       <td className="px-3 py-2 border-r"><input className={inputCls} value={sheet.registration} onChange={e => update("registration", e.target.value.toUpperCase())} placeholder="Registration" /></td>
+                       <td className="px-3 py-2"><input className={inputCls} value={sheet.route} onChange={e => update("route", e.target.value.toUpperCase())} placeholder="e.g. CAI-JFK-CAI" /></td>
                     </>
                   ) : (
                     <>
                       <td className="px-3 py-2 font-bold text-foreground border-r">{currentRow.flight_no}</td>
                       <td className="px-3 py-2 text-foreground border-r">{formatDate(currentRow.flight_date)}</td>
-                      <td className="px-3 py-2 font-mono text-foreground border-r">{registration || "—"}</td>
-                      <td className="px-3 py-2 text-foreground">{route || "—"}</td>
+                      <td className="px-3 py-2 font-mono text-foreground border-r">{sheet.registration || registration || "—"}</td>
+                      <td className="px-3 py-2 text-foreground">{sheet.route || route || "—"}</td>
                     </>
                   )}
                 </tr>
