@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import {
   Building2, Plane, Plus, Search, Clock, Users, AlertTriangle,
-  CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye
+  CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye, CalendarDays, TableIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
