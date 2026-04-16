@@ -6,7 +6,7 @@ import { SKD_TYPES } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
 
 interface TaskSheetData {
-  flight_type: string; // Maintenance | T/A | ARR | DEP | ADHOC
+  flight_type: string; // SKD Type value
   delay: string;
   shift_start: string;
   shift_end: string;
