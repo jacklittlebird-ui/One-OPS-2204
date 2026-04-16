@@ -520,6 +520,7 @@ function HandlingServiceReportContent() {
     if (handlingFilter !== "All Types") r = r.filter(x => x.handlingType === handlingFilter);
     if (stationFilter !== "All Stations") r = r.filter(x => x.station === stationFilter);
     if (reviewFilter !== "All Review") r = r.filter(x => x.reviewStatus === reviewFilter);
+    if (airlineFilter !== "All Airlines") r = r.filter(x => x.operator === airlineFilter);
     if (dateFrom) r = r.filter(x => x.arrivalDate >= dateFrom);
     if (dateTo) r = r.filter(x => x.arrivalDate <= dateTo);
     if (search) {
@@ -531,7 +532,7 @@ function HandlingServiceReportContent() {
       );
     }
     return r;
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, dateFrom, dateTo, search]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
