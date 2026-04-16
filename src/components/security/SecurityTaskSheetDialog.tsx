@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Printer } from "lucide-react";
+import { Shield, Printer, Download } from "lucide-react";
 import { Json } from "@/integrations/supabase/types";
 
 interface TaskSheetData {
@@ -93,6 +93,7 @@ const sectionHeaderCls = "bg-primary/10 text-primary font-bold text-sm px-3 py-2
 
 export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd }: Props) {
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (row) {
@@ -128,6 +129,32 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     } catch { return d; }
   };
 
+  const handlePrint = () => {
+    const content = printRef.current;
+    if (!content) return;
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <html><head><title>${row.airline} Security Task Sheet - ${row.flight_no}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+        th { background: #e8e8e8; font-weight: bold; }
+        .section-header { background: #d0d8e8; font-weight: bold; padding: 6px 8px; border: 1px solid #333; }
+        .title { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .footer { margin-top: 16px; display: flex; justify-content: space-between; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 6px; }
+        input, textarea { border: none; background: transparent; font-size: 12px; font-family: inherit; width: 100%; }
+        @media print { body { padding: 10px; } }
+      </style></head><body>${content.innerHTML}
+      </body></html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+  };
+
   return (
     <Dialog open={!!row} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0">
@@ -138,7 +165,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           </DialogTitle>
         </div>
 
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-6 py-4 space-y-4" ref={printRef}>
           {/* Flight Info Table */}
           <div className="border rounded overflow-hidden">
             <table className="w-full text-sm">
@@ -324,8 +351,24 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2 border-t">
+          {/* Footer matching the PDF */}
+          <div className="flex justify-between items-center text-xs text-muted-foreground pt-3 border-t">
+            <span>{row.airline} Security Task Sheet</span>
+            <span>V.03 22Jan2023</span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-between items-center gap-2 px-6 pb-4">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrint}>
+              <Printer size={14} className="mr-1" /> Print
+            </Button>
+            <Button variant="outline" size="sm" onClick={handlePrint}>
+              <Download size={14} className="mr-1" /> Download PDF
+            </Button>
+          </div>
+          <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSave}>Save Task Sheet</Button>
           </div>
