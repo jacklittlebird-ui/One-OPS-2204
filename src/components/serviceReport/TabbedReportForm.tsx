@@ -217,6 +217,7 @@ interface Props {
   onSave: () => void;
   onCancel: () => void;
   title: string;
+  clearanceStatus?: string;
 }
 
 const tabIcons: Record<ReportTab, React.ReactNode> = {
@@ -229,7 +230,7 @@ const tabIcons: Record<ReportTab, React.ReactNode> = {
   "fuel-handling": <Fuel size={14} />,
 };
 
-export default function TabbedReportForm({ data, onChange, onSave, onCancel, title }: Props) {
+export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus }: Props) {
   const [activeTab, setActiveTab] = useState<ReportTab>("flight");
 
   type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
