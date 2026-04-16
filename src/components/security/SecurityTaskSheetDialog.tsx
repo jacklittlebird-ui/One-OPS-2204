@@ -402,11 +402,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <tr className="border-b">
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-16">STA</td>
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">
-                    {isNew ? <input className={inputCls} value={editableRow.scheduled_start} onChange={e => updateRow("scheduled_start", formatTimeInput(e.target.value, editableRow.scheduled_start))} placeholder="HH:MM" maxLength={5} /> : (sta || "—")}
+                    <input className={inputCls} value={sheet.sta} onChange={e => update("sta", formatTimeInput(e.target.value, sheet.sta))} placeholder="HH:MM" maxLength={5} />
                   </td>
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-16">ATA</td>
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">
-                    {isNew ? <input className={inputCls} value={editableRow.actual_start} onChange={e => updateRow("actual_start", formatTimeInput(e.target.value, editableRow.actual_start))} placeholder="HH:MM" maxLength={5} /> : (ata || currentRow.actual_start || "—")}
+                    <input className={inputCls} value={sheet.ata} onChange={e => update("ata", formatTimeInput(e.target.value, sheet.ata))} placeholder="HH:MM" maxLength={5} />
                   </td>
                    <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Skd Type</td>
                    <td className="px-3 py-2">
@@ -423,11 +423,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                  <tr className="border-b">
                    <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">STD</td>
                    <td className="px-3 py-2 text-foreground border-r font-mono">
-                     {isNew ? <input className={inputCls} value={editableRow.scheduled_end} onChange={e => updateRow("scheduled_end", formatTimeInput(e.target.value, editableRow.scheduled_end))} placeholder="HH:MM" maxLength={5} /> : (std || "—")}
+                     <input className={inputCls} value={sheet.std} onChange={e => update("std", formatTimeInput(e.target.value, sheet.std))} placeholder="HH:MM" maxLength={5} />
                    </td>
                    <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">ATD</td>
                    <td className="px-3 py-2 text-foreground border-r font-mono">
-                     {isNew ? <input className={inputCls} value={editableRow.actual_end} onChange={e => updateRow("actual_end", formatTimeInput(e.target.value, editableRow.actual_end))} placeholder="HH:MM" maxLength={5} /> : (atd || currentRow.actual_end || "—")}
+                     <input className={inputCls} value={sheet.atd} onChange={e => update("atd", formatTimeInput(e.target.value, sheet.atd))} placeholder="HH:MM" maxLength={5} />
                    </td>
                    <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40">Service Type</td>
                    <td className="px-3 py-2">
