@@ -45,9 +45,9 @@ const channelNavs: Record<Channel, NavSection[]> = {
   station: [
     { label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/" },
     {
-      label: "DISPATCH", icon: <Building2 size={18} />, collapsible: true,
+      label: "SERVICE REPORT", icon: <FileBarChart2 size={18} />, collapsible: true,
       children: [
-        { label: "Station Dispatch", path: "/station-dispatch" },
+        { label: "Service Reports", path: "/service-report" },
       ],
     },
     {
@@ -109,7 +109,6 @@ const channelNavs: Record<Channel, NavSection[]> = {
       children: [
         { label: "Service Reports", path: "/service-report" },
         { label: "Flight Schedules", path: "/clearances" },
-        { label: "Station Dispatch", path: "/station-dispatch" },
       ],
     },
     {
@@ -193,7 +192,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
     {
       label: "OPERATION", icon: <Plane size={18} />, collapsible: true,
       children: [
-        { label: "Station Dispatch", path: "/station-dispatch" },
+        { label: "Service Reports", path: "/service-report" },
         { label: "Countries", path: "/countries" },
         { label: "Airports", path: "/airports" },
         { label: "Airlines", path: "/airlines" },
