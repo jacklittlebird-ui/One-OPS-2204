@@ -363,17 +363,21 @@ export default function StationDispatchPage() {
       // If no linked flight_schedule, auto-create one with Pending status for clearance approval
       let scheduleId = formData.flight_schedule_id || null;
       if (!scheduleId) {
+        // Look up airline_id from airline name
+        const matchedAirline = airlines.find(a => a.name === formData.airline);
         const { data: newSchedule, error: schedErr } = await supabase
           .from("flight_schedules")
           .insert({
             flight_no: formData.flight_no || "",
-            route: "",
+            route: `${formData.station || ""}`,
             aircraft_type: "",
             registration: "",
             clearance_type: formData.service_type || "Arrival",
             status: "Pending" as any,
             authority: formData.station || "",
             purpose: "Scheduled",
+            airline_id: matchedAirline?.id || null,
+            handling_agent: formData.airline || "",
             arrival_date: formData.flight_date || null,
             departure_date: formData.flight_date || null,
             sta: formData.scheduled_start || "",
