@@ -55,7 +55,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
 
         {!collapsed && <ChannelSwitcher />}
 
-        <nav className="flex-1 px-1.5 py-2 space-y-0.5 overflow-y-auto text-sm">
+        <nav className="flex-1 px-1.5 py-2 space-y-0.5 overflow-y-auto text-base">
           {navSections.map((section) => (
             <div key={section.label}>
               {section.collapsible ? (
