@@ -90,8 +90,14 @@ function DatePickerField({ label, value, onChange }: { label: string; value: str
 }
 
 export default function ClearanceFormDialog({ open, onOpenChange, form, setForm, airlines, isEdit, onSave }: Props) {
-  const currentCategory = getServiceCategory(form.clearance_type || "Full Handling");
+  const currentCategory = getServiceCategory(form.clearance_type || "Arrival Security");
   const [serviceTab, setServiceTab] = useState<ServiceCategory>(currentCategory);
+
+  useEffect(() => {
+    if (open) {
+      setServiceTab(getServiceCategory(form.clearance_type || "Arrival Security"));
+    }
+  }, [open, form.clearance_type]);
 
   const handleCategoryChange = (cat: ServiceCategory) => {
     setServiceTab(cat);

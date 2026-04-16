@@ -66,7 +66,7 @@ export const STATUS_CONFIG: Record<string, { cls: string }> = {
 
 export const emptyForm = {
   airline_id: "", permit_no: "", flight_no: "", aircraft_type: "", registration: "",
-  route: "", clearance_type: "Full Handling", requested_date: new Date().toISOString().slice(0, 10),
+  route: "", clearance_type: "Arrival Security", requested_date: new Date().toISOString().slice(0, 10),
   valid_from: "", valid_to: "", status: "Pending", authority: "", remarks: "",
   purpose: "Scheduled", passengers: 0, cargo_kg: 0, handling_agent: "",
   config: 0, departure_flight: "", arrival_flight: "",
