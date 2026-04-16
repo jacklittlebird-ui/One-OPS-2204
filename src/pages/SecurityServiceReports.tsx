@@ -329,25 +329,30 @@ export default function SecurityServiceReportsPage() {
     if (isNewReport) {
       createMutation.mutate(payload as any);
       // Also create a flight_schedules record for clearance approval
-      const clearancePayload = {
-        flight_no: row.flight_no,
-        aircraft_type: taskSheet.aircraft_type || "",
-        registration: taskSheet.registration || "",
-        route: taskSheet.route || "",
-        sta: taskSheet.sta || "",
-        std: taskSheet.std || "",
-        clearance_type: row.service_type || "Arrival Security",
-        status: "Pending" as const,
-        authority: row.station || "CAI",
-        handling_agent: row.airline || "",
-        arrival_date: row.flight_date || null,
-        departure_date: row.flight_date || null,
-        remarks: "Added from Security Service",
-        purpose: "Security Service",
-      };
-      supabase.from("flight_schedules").insert(clearancePayload).then(({ error }) => {
-        if (error) console.error("Failed to create clearance record:", error.message);
-        else queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+      // Look up airline_id by name
+      supabase.from("airlines").select("id").eq("name", row.airline).maybeSingle().then(({ data: airlineData }) => {
+        const clearancePayload: Record<string, any> = {
+          flight_no: row.flight_no,
+          aircraft_type: taskSheet.aircraft_type || "",
+          registration: taskSheet.registration || "",
+          route: taskSheet.route || "",
+          sta: taskSheet.sta || "",
+          std: taskSheet.std || "",
+          skd_type: taskSheet.flight_type || "",
+          clearance_type: row.service_type || "Arrival Security",
+          status: "Pending" as const,
+          authority: row.station || "CAI",
+          handling_agent: "",
+          arrival_date: row.flight_date || null,
+          departure_date: row.flight_date || null,
+          remarks: "Added from Security Service",
+          purpose: "Security Service",
+        };
+        if (airlineData?.id) clearancePayload.airline_id = airlineData.id;
+        supabase.from("flight_schedules").insert(clearancePayload as any).then(({ error }) => {
+          if (error) console.error("Failed to create clearance record:", error.message);
+          else queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+        });
       });
     } else {
       updateMutation.mutate({ id: row.id, ...payload } as any);
