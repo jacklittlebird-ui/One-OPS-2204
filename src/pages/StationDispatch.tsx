@@ -317,7 +317,7 @@ export default function StationDispatchPage() {
 
   const openNewManual = () => {
     setFormData({
-      station: stationFilter,
+      station: stationFilter || "CAI",
       airline: "",
       flight_no: "",
       flight_date: dateFrom,
