@@ -25,13 +25,18 @@ export function derivePipelineStage(opts: {
 }): PipelineStage {
   const rs = opts.reviewStatus?.toLowerCase() || "";
   const ds = opts.dispatchStatus?.toLowerCase() || "";
+  const cs = opts.clearanceStatus?.toLowerCase() || "";
 
   // Ready for billing → receivables (step 4)
   if (rs === "ready_for_billing" || rs === "ready for billing") return "receivables";
 
-  // Station has completed their task sheet → still on station step (step 2),
-  // but step 1 (Clearance) is considered done. Step 3 only activates after
-  // operations review/approval.
+  // Clearance not yet approved → step 1 (Clearance) is the active stage
+  if (cs && cs !== "approved") return "clearance";
+
+  // Clearance approved + station task completed → step 2 done, move to step 3 (Operations)
+  if (cs === "approved" && ds === "completed") return "operations";
+
+  // Station has completed their task sheet (no clearance link) → still on station step (step 2)
   if (ds === "completed") return "station";
 
   // Rejected → back to clearance
