@@ -26,7 +26,7 @@ interface TaskSheetData {
 }
 
 const emptyTaskSheet = (): TaskSheetData => ({
-  flight_type: "T/A",
+  flight_type: "",
   delay: "",
   shift_start: "",
   shift_end: "",
