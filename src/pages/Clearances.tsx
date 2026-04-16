@@ -118,7 +118,7 @@ export default function ClearancesPage() {
   const [airlineFilter, setAirlineFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("handling");
+  const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("security");
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [uploadOpen, setUploadOpen] = useState(false);
