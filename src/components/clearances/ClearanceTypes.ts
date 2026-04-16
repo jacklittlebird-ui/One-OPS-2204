@@ -40,6 +40,18 @@ export type ClearanceRow = {
 export const CLEARANCE_TYPES = ["Arrival Handling", "Arrival Security", "Catering Only", "Departure Handling", "Departure Security", "Fuel Only", "Full Handling", "Hotel Accommodation", "Maintenance", "Maintenance Security", "Payment", "Supervision Only", "Technical Stop", "Touch & Go", "Transportation", "Turnaround Security"];
 
 export const SECURITY_CLEARANCE_TYPES = ["Arrival Security", "Departure Security", "Maintenance Security", "Turnaround Security"];
+export const HANDLING_CLEARANCE_TYPES = CLEARANCE_TYPES.filter(t => !SECURITY_CLEARANCE_TYPES.includes(t));
+
+export type ServiceCategory = "handling" | "security";
+
+export function getServiceCategory(clearanceType: string): ServiceCategory {
+  return SECURITY_CLEARANCE_TYPES.includes(clearanceType) ? "security" : "handling";
+}
+
+export function getClearanceTypesByCategory(category: ServiceCategory): string[] {
+  return category === "security" ? SECURITY_CLEARANCE_TYPES : HANDLING_CLEARANCE_TYPES;
+}
+
 export const PURPOSES = ["Cargo", "Charter", "Diplomatic", "Ferry", "Medical Evacuation", "Scheduled", "Technical Stop", "VIP"];
 export const SKD_TYPES = ["Cargo", "Charter", "General Aviation", "Meet and Assist", "Military", "Schedule", "State", "Transportation", "VIP Lounge"];
 export const HANDLING_OPTIONS = ["Ferry", "Full Handling", "Ramp Only", "Technical", "Transit", "VIP Hall"];
