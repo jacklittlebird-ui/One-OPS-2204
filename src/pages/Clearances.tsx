@@ -399,11 +399,11 @@ export default function ClearancesPage() {
       {/* Service Category Tabs */}
       <Tabs value={serviceCategory} onValueChange={(v) => { setServiceCategory(v as ServiceCategory); setTypeFilter("all"); }} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="handling" className="gap-1.5">
-            <ShieldCheck size={14} /> Handling
-          </TabsTrigger>
           <TabsTrigger value="security" className="gap-1.5">
             <ShieldCheck size={14} /> Security
+          </TabsTrigger>
+          <TabsTrigger value="handling" className="gap-1.5">
+            <ShieldCheck size={14} /> Handling
           </TabsTrigger>
         </TabsList>
 
