@@ -443,7 +443,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                     <input
                       className={inputCls}
                       value={sheet.shift_end}
-                      onChange={e => update("shift_end", e.target.value)}
+                      onChange={e => update("shift_end", formatTimeInput(e.target.value, sheet.shift_end))}
                       placeholder="HH:MM"
                       maxLength={5}
                     />
