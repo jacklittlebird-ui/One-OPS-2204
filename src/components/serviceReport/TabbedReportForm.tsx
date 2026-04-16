@@ -455,10 +455,11 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
 
         {/* Pipeline stepper */}
         <div className="px-6 py-3 border-b bg-muted/20 flex items-center justify-center">
-          <PipelineStepper
+           <PipelineStepper
             currentStage={derivePipelineStage({
               isLinked: !!data.id,
               reviewStatus: data.reviewStatus || "pending",
+              clearanceStatus: clearanceStatus,
             })}
           />
         </div>
