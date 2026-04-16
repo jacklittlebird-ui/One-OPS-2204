@@ -95,12 +95,11 @@ export default function SecurityServiceReportsPage() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [editRow, setEditRow] = useState<DispatchRow | null>(null);
+  const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
   const [activeMainTab, setActiveMainTab] = useState<"reports" | "flights">("reports");
   const [flightsPage, setFlightsPage] = useState(1);
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [newFormData, setNewFormData] = useState<Partial<DispatchRow>>({});
 
   // Fetch dispatch assignments (completed ones = service reports)
   const { data: dispatches = [], isLoading } = useQuery({
