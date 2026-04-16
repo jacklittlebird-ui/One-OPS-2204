@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Shield, Printer, Download } from "lucide-react";
+import { SKD_TYPES } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
 
 interface TaskSheetData {
-  flight_type: string; // Maintenance | T/A | ARR | DEP | ADHOC
+  flight_type: string; // SKD Type value
   delay: string;
   shift_start: string;
   shift_end: string;
@@ -25,7 +26,7 @@ interface TaskSheetData {
 }
 
 const emptyTaskSheet = (): TaskSheetData => ({
-  flight_type: "T/A",
+  flight_type: "",
   delay: "",
   shift_start: "",
   shift_end: "",
@@ -85,7 +86,7 @@ interface Props {
   atd?: string;
 }
 
-const FLIGHT_TYPES = ["Maintenance", "T/A", "ARR", "DEP", "ADHOC"];
+const FLIGHT_TYPES = SKD_TYPES;
 
 const inputCls = "text-sm border border-border rounded px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
 const readOnlyCls = "text-sm border border-border rounded px-2.5 py-2 bg-muted/50 text-foreground w-full cursor-default";
@@ -203,8 +204,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="mono" style="width:75px;">${staVal}</td>
     <td class="label" style="width:55px;">ATA</td>
     <td class="mono" style="width:75px;">${ataVal}</td>
-    <td class="label" style="width:85px;">Flight Type</td>
-    ${ftChecks.replace(/font-size:11px/g, 'font-size:13px;font-weight:600')}
+     <td class="label" style="width:85px;">Skd Type</td>
+     <td colspan="${FLIGHT_TYPES.length}" class="value-cell" style="font-size:13px;font-weight:600;">${v.flight_type || "—"}</td>
   </tr>
   <tr>
     <td class="label">STD</td>
@@ -293,7 +294,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             </table>
           </div>
 
-          {/* Timing & Flight Type Row */}
+          {/* Timing & Skd Type Row */}
           <div className="border rounded overflow-hidden">
             <table className="w-full text-sm">
               <tbody>
@@ -302,22 +303,18 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{sta || "—"}</td>
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-16">ATA</td>
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{ata || row.actual_start || "—"}</td>
-                  <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Flight Type</td>
+                  <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Skd Type</td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center gap-3 flex-wrap">
+                    <select
+                      value={sheet.flight_type}
+                      onChange={e => update("flight_type", e.target.value)}
+                      className="text-xs border border-border rounded px-2 py-1 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">— Select —</option>
                       {FLIGHT_TYPES.map(ft => (
-                        <label key={ft} className="flex items-center gap-1 text-xs cursor-pointer">
-                          <input
-                            type="radio"
-                            name="flight_type"
-                            checked={sheet.flight_type === ft}
-                            onChange={() => update("flight_type", ft)}
-                            className="accent-primary"
-                          />
-                          {ft}
-                        </label>
+                        <option key={ft} value={ft}>{ft}</option>
                       ))}
-                    </div>
+                    </select>
                   </td>
                 </tr>
                 <tr className="border-b">
