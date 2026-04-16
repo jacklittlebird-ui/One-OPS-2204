@@ -48,7 +48,6 @@ const channelNavs: Record<Channel, NavSection[]> = {
       label: "DISPATCH", icon: <Building2 size={18} />, collapsible: true,
       children: [
         { label: "Station Dispatch", path: "/station-dispatch" },
-        { label: "Flight Schedules", path: "/clearances" },
       ],
     },
     {
