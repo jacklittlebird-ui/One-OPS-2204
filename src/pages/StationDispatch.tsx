@@ -606,7 +606,7 @@ export default function StationDispatchPage() {
                   </select></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Service Type</label>
                   <select className={selectCls} value={formData.service_type || "Arrival"} onChange={e => updateFormField("service_type", e.target.value)}>
-                    {SERVICE_TYPES.map(t => <option key={t}>{t}</option>)}
+                    {(serviceCategory === "security" ? SERVICE_TYPES_SECURITY : SERVICE_TYPES_HANDLING).map(t => <option key={t}>{t}</option>)}
                   </select></div>
               </div>
 
