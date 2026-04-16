@@ -229,6 +229,8 @@ interface ScheduleSourceRow {
   arrivalDate: string;
   departureDate: string;
   clearanceStatus: string;
+  skdType: string;
+  serviceType: string;
 }
 
 function resolveStationFromRoute(route: string) {
