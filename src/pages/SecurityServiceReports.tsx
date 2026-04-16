@@ -758,6 +758,112 @@ export default function SecurityServiceReportsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* New Service Report Form Modal */}
+      {showNewForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
+          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto m-4">
+            <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
+              <h2 className="font-bold text-foreground text-lg flex items-center gap-2"><Shield size={18} /> New Security Service Report</h2>
+              <button onClick={() => setShowNewForm(false)} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="text-xs font-semibold text-muted-foreground">Flight No <span className="text-destructive">*</span></label>
+                  <input className={inputCls} value={newFormData.flight_no || ""} onChange={e => updateNewFormField("flight_no", e.target.value)} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Airline <span className="text-destructive">*</span></label>
+                  <input className={inputCls} value={newFormData.airline || ""} onChange={e => updateNewFormField("airline", e.target.value)} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Service Type</label>
+                  <select className={inputCls} value={newFormData.service_type || "Arrival Security"} onChange={e => updateNewFormField("service_type", e.target.value)}>
+                    {SECURITY_CLEARANCE_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select></div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="text-xs font-semibold text-muted-foreground">Station</label>
+                  <select className={inputCls} value={newFormData.station || "CAI"} onChange={e => updateNewFormField("station", e.target.value)}>
+                    {STATIONS.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
+                  </select></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Date <span className="text-destructive">*</span></label>
+                  <input type="date" className={inputCls} value={newFormData.flight_date || ""} onChange={e => updateNewFormField("flight_date", e.target.value)} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Status</label>
+                  <select className={inputCls} value={newFormData.status || "Pending"} onChange={e => updateNewFormField("status", e.target.value)}>
+                    {["Pending", "Dispatched", "Completed"].map(s => <option key={s}>{s}</option>)}
+                  </select></div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Users size={14} /> Staff Assignment</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="text-xs font-semibold text-muted-foreground">Staff Count</label>
+                    <input type="number" className={inputCls} value={newFormData.staff_count || 0} onChange={e => updateNewFormField("staff_count", +e.target.value)} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Dispatched By</label>
+                    <input className={inputCls} value={newFormData.dispatched_by || ""} onChange={e => updateNewFormField("dispatched_by", e.target.value)} /></div>
+                </div>
+                <div className="mt-3"><label className="text-xs font-semibold text-muted-foreground">Staff Names (comma-separated)</label>
+                  <input className={inputCls} value={newFormData.staff_names || ""} onChange={e => updateNewFormField("staff_names", e.target.value)} placeholder="Ahmed Hassan, Omar Ali, ..." /></div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Clock size={14} /> Time Tracking</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="text-xs font-semibold text-muted-foreground">Scheduled Start</label>
+                    <input type="time" className={inputCls} value={newFormData.scheduled_start || ""} onChange={e => updateNewFormField("scheduled_start", e.target.value)} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Scheduled End</label>
+                    <input type="time" className={inputCls} value={newFormData.scheduled_end || ""} onChange={e => updateNewFormField("scheduled_end", e.target.value)} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Actual Start</label>
+                    <input type="time" className={inputCls} value={newFormData.actual_start || ""} onChange={e => updateNewFormField("actual_start", e.target.value)} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Actual End</label>
+                    <input type="time" className={inputCls} value={newFormData.actual_end || ""} onChange={e => updateNewFormField("actual_end", e.target.value)} /></div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-3">
+                  <div><label className="text-xs font-semibold text-muted-foreground">Contract Duration (hrs)</label>
+                    <input type="number" step="0.5" className={inputCls} value={newFormData.contract_duration_hours || 0} onChange={e => updateNewFormField("contract_duration_hours", +e.target.value)} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Actual Duration</label>
+                    <input type="number" className={inputCls} value={newFormData.actual_duration_hours || 0} readOnly /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Overtime Hours</label>
+                    <input type="number" className={inputCls + ((newFormData.overtime_hours || 0) > 0 ? " text-warning font-bold" : "")} value={newFormData.overtime_hours || 0} readOnly /></div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-bold text-foreground mb-2">Charges</h3>
+                <div className="grid grid-cols-4 gap-4">
+                  <div><label className="text-xs font-semibold text-muted-foreground">Base Fee</label>
+                    <input type="number" className={inputCls} value={newFormData.base_fee || 0} onChange={e => updateNewFormField("base_fee", +e.target.value)} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Service Rate</label>
+                    <input type="number" className={inputCls} value={newFormData.service_rate || 0} onChange={e => updateNewFormField("service_rate", +e.target.value)} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">OT Rate</label>
+                    <input type="number" className={inputCls} value={newFormData.overtime_rate || 0} onChange={e => updateNewFormField("overtime_rate", +e.target.value)} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Total Charge</label>
+                    <input type="number" className={inputCls + " font-bold text-success"} value={newFormData.total_charge || 0} readOnly /></div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <label className="text-xs font-semibold text-muted-foreground">Notes</label>
+                <textarea className={inputCls + " min-h-[60px] resize-none"} value={newFormData.notes || ""} onChange={e => updateNewFormField("notes", e.target.value)} placeholder="Add notes..." />
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="outline" onClick={() => setShowNewForm(false)}>Cancel</Button>
+                <Button
+                  onClick={() => {
+                    if (!newFormData.flight_no || !newFormData.airline || !newFormData.flight_date) {
+                      toast({ title: "Missing Fields", description: "Flight No, Airline, and Date are required.", variant: "destructive" });
+                      return;
+                    }
+                    createMutation.mutate(newFormData);
+                  }}
+                  disabled={createMutation.isPending}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <Plus size={14} className="mr-1" /> {createMutation.isPending ? "Saving…" : "Create Service Report"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
