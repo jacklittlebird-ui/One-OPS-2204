@@ -282,83 +282,153 @@ export default function ClearancesPage() {
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} /><Input placeholder="Search flights…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Types</SelectItem>{CLEARANCE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Pending">Pending</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Rejected">Rejected</SelectItem><SelectItem value="Expired">Expired</SelectItem></SelectContent>
-        </Select>
-        {stations.length > 0 && (
-          <Select value={stationFilter} onValueChange={setStationFilter}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="all">All Stations</SelectItem>{stations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-          </Select>
-        )}
-        {registrations.length > 0 && (
-          <Select value={registrationFilter} onValueChange={setRegistrationFilter}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="all">All Registrations</SelectItem>{registrations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-          </Select>
-        )}
-      </div>
+      <Tabs defaultValue="all" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="all">All Flights</TabsTrigger>
+          <TabsTrigger value="pending-approval" className="gap-1">
+            Pending Approval
+            {pendingApproval.length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 text-xs px-1.5">{pendingApproval.length}</Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Arrival Date</TableHead>
-                <TableHead>Departure Date</TableHead>
-                <TableHead>Flight</TableHead>
-                <TableHead>Reg No</TableHead>
-                <TableHead>A/C Type</TableHead>
-                <TableHead>Account</TableHead>
-                <TableHead>Station</TableHead>
-                <TableHead>Route</TableHead>
-                <TableHead>STA</TableHead>
-                <TableHead>STD</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(c => {
-                const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.Pending;
-                const statusIcon = c.status === "Pending" ? <Clock size={12} /> : c.status === "Approved" ? <CheckCircle2 size={12} /> : c.status === "Rejected" ? <XCircle size={12} /> : <AlertTriangle size={12} />;
-                return (
-                  <TableRow key={c.id}>
-                    <TableCell className="text-xs">{formatDateDMY(c.arrival_date)}</TableCell>
-                    <TableCell className="text-xs">{formatDateDMY(c.departure_date)}</TableCell>
-                    <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
-                    <TableCell className="text-xs font-mono">{c.registration || "—"}</TableCell>
-                    <TableCell className="text-xs">{c.aircraft_type || "—"}</TableCell>
-                    <TableCell>{c.airline_id ? (airlineMap[c.airline_id]?.code || "—") : "—"}</TableCell>
-                    <TableCell className="text-xs">{c.authority || "—"}</TableCell>
-                    <TableCell className="text-sm font-mono">{c.route || "—"}</TableCell>
-                    <TableCell className="text-xs">{c.sta || "—"}</TableCell>
-                    <TableCell className="text-xs">{c.std || "—"}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>{statusIcon}{c.status}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => setDetailItem(c)}><Eye size={14} /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
-                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(c.id)}><Trash2 size={14} /></Button>
-                      </div>
-                    </TableCell>
+        <TabsContent value="all">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} /><Input placeholder="Search flights…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="all">All Types</SelectItem>{CLEARANCE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Pending">Pending</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Rejected">Rejected</SelectItem><SelectItem value="Expired">Expired</SelectItem></SelectContent>
+            </Select>
+            {stations.length > 0 && (
+              <Select value={stationFilter} onValueChange={setStationFilter}>
+                <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="all">All Stations</SelectItem>{stations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+            )}
+            {registrations.length > 0 && (
+              <Select value={registrationFilter} onValueChange={setRegistrationFilter}>
+                <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="all">All Registrations</SelectItem>{registrations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <Card>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Arrival Date</TableHead>
+                    <TableHead>Departure Date</TableHead>
+                    <TableHead>Flight</TableHead>
+                    <TableHead>Reg No</TableHead>
+                    <TableHead>A/C Type</TableHead>
+                    <TableHead>Account</TableHead>
+                    <TableHead>Station</TableHead>
+                    <TableHead>Route</TableHead>
+                    <TableHead>STA</TableHead>
+                    <TableHead>STD</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
-                );
-              })}
-              {filtered.length === 0 && <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map(c => {
+                    const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.Pending;
+                    const statusIcon = c.status === "Pending" ? <Clock size={12} /> : c.status === "Approved" ? <CheckCircle2 size={12} /> : c.status === "Rejected" ? <XCircle size={12} /> : <AlertTriangle size={12} />;
+                    return (
+                      <TableRow key={c.id}>
+                        <TableCell className="text-xs">{formatDateDMY(c.arrival_date)}</TableCell>
+                        <TableCell className="text-xs">{formatDateDMY(c.departure_date)}</TableCell>
+                        <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
+                        <TableCell className="text-xs font-mono">{c.registration || "—"}</TableCell>
+                        <TableCell className="text-xs">{c.aircraft_type || "—"}</TableCell>
+                        <TableCell>{c.airline_id ? (airlineMap[c.airline_id]?.code || "—") : "—"}</TableCell>
+                        <TableCell className="text-xs">{c.authority || "—"}</TableCell>
+                        <TableCell className="text-sm font-mono">{c.route || "—"}</TableCell>
+                        <TableCell className="text-xs">{c.sta || "—"}</TableCell>
+                        <TableCell className="text-xs">{c.std || "—"}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>{statusIcon}{c.status}</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button size="icon" variant="ghost" onClick={() => setDetailItem(c)}><Eye size={14} /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
+                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(c.id)}><Trash2 size={14} /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {filtered.length === 0 && <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pending-approval">
+          <Card>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Flight</TableHead>
+                    <TableHead>Service Type</TableHead>
+                    <TableHead>Station</TableHead>
+                    <TableHead>STA</TableHead>
+                    <TableHead>STD</TableHead>
+                    <TableHead>Remarks</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-36">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingApproval.map(c => (
+                    <TableRow key={c.id}>
+                      <TableCell className="text-xs">{formatDateDMY(c.arrival_date || c.departure_date)}</TableCell>
+                      <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
+                      <TableCell className="text-xs">{c.clearance_type}</TableCell>
+                      <TableCell className="text-xs">{c.authority || "—"}</TableCell>
+                      <TableCell className="text-xs">{c.sta || "—"}</TableCell>
+                      <TableCell className="text-xs">{c.std || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{c.remarks}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-warning/15 text-warning"><Clock size={12} />Pending</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => handleApprove(c)}>
+                            <CheckCircle2 size={13} className="mr-1" /> Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handleReject(c)}>
+                            <XCircle size={13} className="mr-1" /> Reject
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(c)}>
+                            <Pencil size={13} />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {pendingApproval.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No flights pending approval</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <ClearanceFormDialog
         open={dialogOpen}
