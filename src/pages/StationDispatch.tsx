@@ -228,7 +228,13 @@ export default function StationDispatchPage() {
 
   // Filtered dispatches
   const filtered = useMemo(() => {
+    const secTypes = SERVICE_TYPES_SECURITY.map(s => s.toLowerCase());
     let r = [...dispatches];
+    // Filter by service category
+    r = r.filter(d => {
+      const isSec = secTypes.includes(d.service_type.toLowerCase()) || SECURITY_CLEARANCE_TYPES.includes(d.service_type);
+      return serviceCategory === "security" ? isSec : !isSec;
+    });
     if (stationFilter) r = r.filter(d => d.station === stationFilter);
     if (dateFrom) r = r.filter(d => d.flight_date >= dateFrom);
     if (dateTo) r = r.filter(d => d.flight_date <= dateTo);
@@ -238,7 +244,7 @@ export default function StationDispatchPage() {
       r = r.filter(d => d.flight_no.toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
     }
     return r;
-  }, [dispatches, stationFilter, dateFrom, dateTo, airlineFilter, search]);
+  }, [dispatches, stationFilter, dateFrom, dateTo, airlineFilter, search, serviceCategory]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -246,6 +252,9 @@ export default function StationDispatchPage() {
   // Station flights for the date range
   const stationFlights = useMemo(() => {
     return flights.filter(f => {
+      // Filter by service category
+      const catMatch = getServiceCategory(f.clearance_type) === serviceCategory;
+      if (!catMatch) return false;
       if (stationFilter) {
         const routeMatch = (f.route || "").toUpperCase().includes(stationFilter);
         const authorityMatch = (f.authority || "").toUpperCase() === stationFilter;
