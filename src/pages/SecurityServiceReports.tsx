@@ -301,12 +301,16 @@ export default function SecurityServiceReportsPage() {
   const saveEdit = () => {};
 
   const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
+    const shiftStart = taskSheet.shift_start || row.actual_start || "";
+    const shiftEnd = taskSheet.shift_end || row.actual_end || "";
+    const duration = timeDiffHours(shiftStart, shiftEnd);
+
     const payload = {
       task_sheet_data: taskSheet,
       notes: taskSheet.remarks || row.notes,
-      actual_start: taskSheet.shift_start || row.actual_start,
-      actual_end: taskSheet.shift_end || row.actual_end,
-      actual_duration_hours: timeDiffHours(taskSheet.shift_start || row.actual_start, taskSheet.shift_end || row.actual_end),
+      actual_start: shiftStart,
+      actual_end: shiftEnd,
+      actual_duration_hours: duration,
       status: "Completed",
       station: row.station,
       airline: row.airline,
@@ -318,6 +322,8 @@ export default function SecurityServiceReportsPage() {
       scheduled_start: row.scheduled_start,
       scheduled_end: row.scheduled_end,
       dispatched_by: row.dispatched_by,
+      // New reports start at "Pending Review" for clearance approval
+      ...(isNewReport ? { review_status: "Pending Review" } : {}),
     };
 
     if (isNewReport) {
@@ -551,7 +557,7 @@ export default function SecurityServiceReportsPage() {
                           <PipelineStepper
                             currentStage={derivePipelineStage({
                               isLinked: r.status === "Completed",
-                              reviewStatus: r.review_status === "Approved" ? "approved" : r.review_status === "Ready for Billing" ? "ready_for_billing" : r.review_status === "Rejected" ? "rejected" : "pending",
+                              reviewStatus: r.review_status,
                               clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
                             })}
                             compact

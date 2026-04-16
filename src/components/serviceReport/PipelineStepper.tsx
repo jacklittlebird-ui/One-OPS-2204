@@ -22,14 +22,23 @@ export function derivePipelineStage(opts: {
   reviewStatus: string;
   clearanceStatus?: string;
 }): PipelineStage {
-  const isApproved = opts.clearanceStatus === "Approved";
+  const rs = opts.reviewStatus?.toLowerCase() || "";
 
-  if (!isApproved && !opts.isLinked) return "clearance";
-  if (isApproved && !opts.isLinked) return "operations";
-  if (opts.reviewStatus === "rejected") return "station";
-  if (opts.reviewStatus === "pending") return isApproved ? "operations" : "station";
-  if (opts.reviewStatus === "approved") return "operations";
-  return "receivables"; // ready_for_billing or invoiced
+  // New reports start at clearance for approval
+  // "pending" / "Pending Review" → clearance (step 1)
+  if (rs === "pending" || rs === "pending review" || rs === "draft") return "clearance";
+
+  // After clearance approval → operations (step 2)
+  if (rs === "approved") return "operations";
+
+  // Rejected → back to clearance
+  if (rs === "rejected") return "clearance";
+
+  // Ready for billing → receivables (step 4)
+  if (rs === "ready_for_billing" || rs === "ready for billing") return "receivables";
+
+  // Fallback
+  return "station";
 }
 
 interface PipelineStepperProps {
