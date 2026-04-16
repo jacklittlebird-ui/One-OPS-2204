@@ -133,8 +133,8 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
           {/* Service Category Tabs */}
           <Tabs value={serviceTab} onValueChange={(v) => handleCategoryChange(v as ServiceCategory)}>
             <TabsList className="w-full">
-              <TabsTrigger value="handling" className="flex-1">Handling</TabsTrigger>
               <TabsTrigger value="security" className="flex-1">Security</TabsTrigger>
+              <TabsTrigger value="handling" className="flex-1">Handling</TabsTrigger>
             </TabsList>
           </Tabs>
           {/* Account & Station */}
