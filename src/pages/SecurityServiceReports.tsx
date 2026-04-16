@@ -349,7 +349,7 @@ export default function SecurityServiceReportsPage() {
           purpose: "Security Service",
         };
         if (airlineData?.id) clearancePayload.airline_id = airlineData.id;
-        supabase.from("flight_schedules").insert(clearancePayload).then(({ error }) => {
+        supabase.from("flight_schedules").insert(clearancePayload as any).then(({ error }) => {
           if (error) console.error("Failed to create clearance record:", error.message);
           else queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
         });
