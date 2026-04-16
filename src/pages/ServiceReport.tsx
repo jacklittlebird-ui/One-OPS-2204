@@ -329,6 +329,7 @@ function HandlingServiceReportContent() {
   const [newReport, setNewReport] = useState<Partial<ReportFormData>>(emptyReport());
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<ReportFormData>>({});
+  const [activeClearanceStatus, setActiveClearanceStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: dbReports = [], isLoading: isLoadingReports } = useQuery({
