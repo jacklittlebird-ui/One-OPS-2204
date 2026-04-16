@@ -587,25 +587,22 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
           )}
 
           {activeTab === "passengers" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 border-b pb-2">Foreign Passengers</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Section title="Foreign Passengers" icon={<Users size={14} />}>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField label="Foreign Pax IN"><input type="number" className={inputCls} value={data.foreignPaxIn || ""} onChange={e => set("foreignPaxIn", +e.target.value)} /></FormField>
                     <FormField label="Foreign Pax OUT"><input type="number" className={inputCls} value={data.foreignPaxOut || ""} onChange={e => set("foreignPaxOut", +e.target.value)} /></FormField>
                   </div>
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-3 border-b pb-2">Egyptian Passengers</h3>
+                </Section>
+                <Section title="Egyptian Passengers" icon={<Users size={14} />} accent="text-accent" iconBg="bg-accent/10">
                   <div className="grid grid-cols-2 gap-4">
                     <FormField label="Egyptian Pax IN"><input type="number" className={inputCls} value={data.egyptianPaxIn || ""} onChange={e => set("egyptianPaxIn", +e.target.value)} /></FormField>
                     <FormField label="Egyptian Pax OUT"><input type="number" className={inputCls} value={data.egyptianPaxOut || ""} onChange={e => set("egyptianPaxOut", +e.target.value)} /></FormField>
                   </div>
-                </div>
+                </Section>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 border-b pb-2">Other</h3>
+              <Section title="Other" accent="text-muted-foreground" iconBg="bg-muted">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <FormField label="Infant In"><input type="number" className={inputCls} value={data.infantIn || ""} onChange={e => set("infantIn", +e.target.value)} /></FormField>
                   <FormField label="Infant Out"><input type="number" className={inputCls} value={data.infantOut || ""} onChange={e => set("infantOut", +e.target.value)} /></FormField>
@@ -614,9 +611,8 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Total on Board"><input type="number" className={readOnlyCls} value={data.totalDepartingPax || ""} readOnly /></FormField>
                   <FormField label="Total Foreign Pax OUT"><input type="number" className={readOnlyCls} value={data.totalForeignPaxOut || ""} readOnly /></FormField>
                 </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-success uppercase tracking-wider mb-3 border-b pb-2">Estimated Billing (Preview Only)</h3>
+              </Section>
+              <Section title="Estimated Billing (Preview Only)" icon={<DollarSign size={14} />} accent="text-success" iconBg="bg-success/10">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <FormField label="Estimated Foreign Pax Bill (USD)"><input type="number" step="0.01" className={readOnlyCls} value={data.estimatedForeignBill || ""} readOnly /></FormField>
                   <FormField label="Estimated Local Pax Bill (EGP)"><input type="number" step="0.01" className={readOnlyCls} value={data.estimatedLocalBill || ""} readOnly /></FormField>
@@ -626,14 +622,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="State Resource Dev. Fees (EGP)"><input type="number" step="0.01" className={readOnlyCls} value={data.stateResourceDevFee || ""} readOnly /></FormField>
                   <FormField label="Police Service Fees (EGP)"><input type="number" step="0.01" className={readOnlyCls} value={data.policeServiceFee || ""} readOnly /></FormField>
                 </div>
-              </div>
+              </Section>
             </div>
           )}
 
           {activeTab === "timing" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-bold text-info uppercase tracking-wider mb-3 flex items-center gap-2"><Clock size={14} />Aircraft Movement Timings</h3>
+            <div className="space-y-4">
+              <Section title="Aircraft Movement Timings" icon={<Clock size={14} />} accent="text-info" iconBg="bg-info/10">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <TimeField label="STA (Read-Only)" value={data.sta || ""} readOnly />
                   <TimeField label="STD (Read-Only)" value={data.std || ""} readOnly />
@@ -642,9 +637,8 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <TimeField label="Chocks Off (O/B)" value={data.ob || ""} onChange={v => set("ob", v)} />
                   <TimeField label="Take Off (T/O)" value={data.to || ""} onChange={v => set("to", v)} />
                 </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-3">Parking / Housing Duration</h3>
+              </Section>
+              <Section title="Parking / Housing Duration" accent="text-warning" iconBg="bg-warning/10">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <FormField label="Landing Time">
                     <input className={readOnlyCls} value={autoDayNight(data.td || "", data.arrivalDate || "") === "D" ? "Day Landing" : "Night Landing"} readOnly />
@@ -662,10 +656,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Total Parking Time (Hrs)"><input className={readOnlyCls} value={(() => { const gt = data.groundTime || calcGroundTime(data.co || "", data.ob || ""); if (!gt) return ""; const [h, m] = gt.split(":").map(Number); if (isNaN(h) || isNaN(m)) return ""; const totalMin = Math.max(0, h * 60 + m - 120); return `${Math.floor(totalMin / 60)}:${String(totalMin % 60).padStart(2, "0")}`; })()} readOnly /></FormField>
                   <FormField label="Housing (Days)"><input type="number" step="0.01" className={readOnlyCls} value={data.housingDays || ""} readOnly /></FormField>
                 </div>
-              </div>
-              {/* Delay Codes */}
-              <div>
-                <h3 className="text-sm font-bold text-destructive uppercase tracking-wider mb-3">Delay Codes (up to 4)</h3>
+              </Section>
+              <Section title="Delay Codes (up to 4)" accent="text-destructive" iconBg="bg-destructive/10"
+                right={delays.length < 4 ? (
+                  <button onClick={() => onChange({ ...data, delays: [...delays, { code: "", timing: 0, explanation: "" }] })} className="toolbar-btn-outline text-xs"><Plus size={12} /> Add Delay</button>
+                ) : null}
+              >
+                {delays.length === 0 && <p className="text-xs text-muted-foreground italic">No delays recorded.</p>}
                 {delays.map((d, i) => (
                   <div key={i} className="grid grid-cols-[1fr_80px_2fr_auto] gap-2 mb-2 items-end">
                     <FormField label={`DLY Code ${i + 1}`}>
@@ -685,10 +682,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                     <button onClick={() => onChange({ ...data, delays: delays.filter((_, idx) => idx !== i) })} className="p-1.5 text-destructive hover:text-destructive/80 mb-0.5"><X size={14} /></button>
                   </div>
                 ))}
-                {delays.length < 4 && (
-                  <button onClick={() => onChange({ ...data, delays: [...delays, { code: "", timing: 0, explanation: "" }] })} className="toolbar-btn-outline text-xs mt-1"><Plus size={12} /> Add Delay</button>
-                )}
-              </div>
+              </Section>
             </div>
           )}
 
