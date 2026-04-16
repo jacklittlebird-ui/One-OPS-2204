@@ -5,6 +5,55 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function ensureUser(
+  supabaseAdmin: any,
+  adminList: any,
+  email: string,
+  password: string,
+  fullName: string,
+  roles: string[],
+  station: string = "CAI"
+) {
+  const results: any[] = [];
+  let userId: string | null = null;
+
+  const existing = adminList?.users?.find((u: any) => u.email === email);
+  if (existing) {
+    userId = existing.id;
+    await supabaseAdmin.auth.admin.updateUserById(userId!, { password });
+    results.push({ email, action: "already exists, password updated" });
+  } else {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: fullName },
+    });
+    if (error) {
+      results.push({ email, error: error.message });
+      return results;
+    }
+    userId = data.user?.id || null;
+    results.push({ email, action: "created" });
+  }
+
+  if (userId) {
+    for (const role of roles) {
+      await supabaseAdmin.from("user_roles").upsert(
+        { user_id: userId, role },
+        { onConflict: "user_id,role" }
+      );
+    }
+    await supabaseAdmin.from("profiles").upsert(
+      { user_id: userId, full_name: fullName, station },
+      { onConflict: "user_id" }
+    );
+    results.push({ email, action: `roles assigned: ${roles.join(", ")}` });
+  }
+
+  return results;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -13,10 +62,10 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  const results = [];
+  const { data: adminList } = await supabaseAdmin.auth.admin.listUsers();
+  const results: any[] = [];
 
   // 1) Ensure admin@linkagency.com has the admin role
-  const { data: adminList } = await supabaseAdmin.auth.admin.listUsers();
   const adminUser = adminList?.users?.find((u: any) => u.email === "admin@linkagency.com");
   if (adminUser) {
     await supabaseAdmin.from("user_roles").upsert(
@@ -26,84 +75,40 @@ Deno.serve(async (req) => {
     results.push({ email: "admin@linkagency.com", action: "ensured admin role" });
   }
 
-  // 2) Create test@linkagency.com with ALL roles
-  const testEmail = "test@linkagency.com";
-  const testPassword = "Test12345";
-  let testUserId: string | null = null;
+  // 2) test@linkagency.com — ALL roles
+  const testResults = await ensureUser(supabaseAdmin, adminList,
+    "test@linkagency.com", "Test12345", "Test User",
+    ["admin", "station_manager", "station_ops", "employee", "clearance", "contracts", "operations", "receivables", "payables"]
+  );
+  results.push(...testResults);
 
-  const existingTest = adminList?.users?.find((u: any) => u.email === testEmail);
-  if (existingTest) {
-    testUserId = existingTest.id;
-    // Update password
-    await supabaseAdmin.auth.admin.updateUserById(testUserId!, { password: testPassword });
-    results.push({ email: testEmail, action: "already exists, password updated" });
-  } else {
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email: testEmail,
-      password: testPassword,
-      email_confirm: true,
-      user_metadata: { full_name: "Test User" },
-    });
-    if (error) {
-      results.push({ email: testEmail, error: error.message });
-    } else {
-      testUserId = data.user?.id || null;
-      results.push({ email: testEmail, action: "created" });
-    }
-  }
+  // 3) clearance@one.com — clearance only
+  const clearanceResults = await ensureUser(supabaseAdmin, adminList,
+    "clearance@one.com", "Clear12345", "Clearance User",
+    ["clearance"]
+  );
+  results.push(...clearanceResults);
 
-  if (testUserId) {
-    const allRoles = ["admin", "station_manager", "station_ops", "employee", "clearance", "contracts", "operations", "receivables", "payables"];
-    for (const role of allRoles) {
-      await supabaseAdmin.from("user_roles").upsert(
-        { user_id: testUserId, role },
-        { onConflict: "user_id,role" }
-      );
-    }
-    // Also create profile
-    await supabaseAdmin.from("profiles").upsert(
-      { user_id: testUserId, full_name: "Test User", station: "CAI" },
-      { onConflict: "user_id" }
-    );
-    results.push({ email: testEmail, action: "all roles assigned" });
-  }
+  // 4) Clearance Portal: clearance@linkagency.com
+  const clearancePortalResults = await ensureUser(supabaseAdmin, adminList,
+    "clearance@linkagency.com", "Clear#54321", "Clearance Portal",
+    ["clearance"]
+  );
+  results.push(...clearancePortalResults);
 
-  // 3) Create clearance@one.com with clearance role only
-  const clearanceEmail = "clearance@one.com";
-  const clearancePassword = "Clear12345";
-  let clearanceUserId: string | null = null;
+  // 5) Operations Portal: operations@linkagency.com
+  const opsPortalResults = await ensureUser(supabaseAdmin, adminList,
+    "operations@linkagency.com", "Ops#12345", "Operations Portal",
+    ["operations"]
+  );
+  results.push(...opsPortalResults);
 
-  const existingClearance = adminList?.users?.find((u: any) => u.email === clearanceEmail);
-  if (existingClearance) {
-    clearanceUserId = existingClearance.id;
-    await supabaseAdmin.auth.admin.updateUserById(clearanceUserId!, { password: clearancePassword });
-    results.push({ email: clearanceEmail, action: "already exists, password updated" });
-  } else {
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email: clearanceEmail,
-      password: clearancePassword,
-      email_confirm: true,
-      user_metadata: { full_name: "Clearance User" },
-    });
-    if (error) {
-      results.push({ email: clearanceEmail, error: error.message });
-    } else {
-      clearanceUserId = data.user?.id || null;
-      results.push({ email: clearanceEmail, action: "created" });
-    }
-  }
-
-  if (clearanceUserId) {
-    await supabaseAdmin.from("user_roles").upsert(
-      { user_id: clearanceUserId, role: "clearance" },
-      { onConflict: "user_id,role" }
-    );
-    await supabaseAdmin.from("profiles").upsert(
-      { user_id: clearanceUserId, full_name: "Clearance User", station: "CAI" },
-      { onConflict: "user_id" }
-    );
-    results.push({ email: clearanceEmail, action: "clearance role assigned" });
-  }
+  // 6) Accounts Receivable Portal: accrec@linkagency.com
+  const accrecPortalResults = await ensureUser(supabaseAdmin, adminList,
+    "accrec@linkagency.com", "Accrec#12345", "Accounts Receivable Portal",
+    ["receivables"]
+  );
+  results.push(...accrecPortalResults);
 
   return new Response(JSON.stringify({ results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
