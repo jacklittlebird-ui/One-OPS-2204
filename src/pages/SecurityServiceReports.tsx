@@ -568,7 +568,6 @@ export default function SecurityServiceReportsPage() {
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); setFlightsPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); setFlightsPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
-          <button onClick={openNewForm} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
         </div>
 
         {activeMainTab === "reports" ? (
