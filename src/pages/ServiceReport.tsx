@@ -352,7 +352,7 @@ function HandlingServiceReportContent() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("flight_schedules")
-        .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent, arrival_date, departure_date")
+        .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
