@@ -305,20 +305,16 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                   <td className="px-3 py-2 text-foreground border-r w-20 font-mono">{ata || row.actual_start || "—"}</td>
                   <td className="px-3 py-2 font-semibold text-foreground border-r bg-muted/40 w-24">Skd Type</td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center gap-3 flex-wrap">
+                    <select
+                      value={sheet.flight_type}
+                      onChange={e => update("flight_type", e.target.value)}
+                      className="text-xs border border-border rounded px-2 py-1 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">— Select —</option>
                       {FLIGHT_TYPES.map(ft => (
-                        <label key={ft} className="flex items-center gap-1 text-xs cursor-pointer">
-                          <input
-                            type="radio"
-                            name="flight_type"
-                            checked={sheet.flight_type === ft}
-                            onChange={() => update("flight_type", ft)}
-                            className="accent-primary"
-                          />
-                          {ft}
-                        </label>
+                        <option key={ft} value={ft}>{ft}</option>
                       ))}
-                    </div>
+                    </select>
                   </td>
                 </tr>
                 <tr className="border-b">
