@@ -130,29 +130,124 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   };
 
   const handlePrint = () => {
-    const content = printRef.current;
-    if (!content) return;
+    if (!row) return;
+    const v = sheet;
+    const flightDate = formatDate(row.flight_date);
+    const reg = registration || "—";
+    const rt = route || "—";
+    const staVal = sta || "—";
+    const stdVal = std || "—";
+    const ataVal = ata || row.actual_start || "—";
+    const atdVal = atd || row.actual_end || "—";
+
+    const ftChecks = FLIGHT_TYPES.map(ft =>
+      `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === v.flight_type ? "☒" : "☐"} ${ft}</td>`
+    ).join("");
+
+    const obsSection = (title: string, rows: [string, string][]) => {
+      const rowsHtml = rows.map(([label, val]) =>
+        `<tr><td style="border:1px solid #333;padding:4px 8px;width:30px;text-align:center;font-weight:bold;background:#f5f5f5;">${label}</td><td style="border:1px solid #333;padding:4px 8px;">${val || ""}</td></tr>`
+      ).join("");
+      return `<table style="width:100%;border-collapse:collapse;margin-bottom:0;">
+        <tr><td colspan="2" style="border:1px solid #333;padding:5px 8px;font-weight:bold;background:#d0d8e8;font-size:11px;">${title}</td></tr>
+        ${rowsHtml}</table>`;
+    };
+
+    const html = `<!DOCTYPE html><html><head>
+<title>${row.airline} Security Task Sheet - ${row.flight_no}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; padding: 30px 40px; }
+  table { width:100%; border-collapse:collapse; }
+  td, th { border:1px solid #333; padding:5px 8px; text-align:left; font-size:12px; }
+  .title { text-align:center; font-size:15px; font-weight:bold; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:14px; padding:10px 0; }
+  .label { background:#f0f0f0; font-weight:bold; }
+  .section { background:#d0d8e8; font-weight:bold; font-size:11px; }
+  .obs-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0; }
+  .footer { display:flex; justify-content:space-between; font-size:10px; color:#666; border-top:1px solid #999; padding-top:8px; margin-top:20px; }
+  @media print { body { padding:15px 25px; } @page { margin:15mm; } }
+</style>
+</head><body>
+
+<div class="title">${row.airline} AIRLINES SECURITY TASK SHEET</div>
+
+<table style="margin-bottom:8px;">
+  <tr>
+    <th style="background:#e0e0e0;">Flight Number</th>
+    <th style="background:#e0e0e0;">Date</th>
+    <th style="background:#e0e0e0;">Registration</th>
+    <th style="background:#e0e0e0;">Route</th>
+  </tr>
+  <tr>
+    <td style="font-weight:bold;">${row.flight_no}</td>
+    <td>${flightDate}</td>
+    <td style="font-family:monospace;">${reg}</td>
+    <td>${rt}</td>
+  </tr>
+</table>
+
+<table style="margin-bottom:8px;">
+  <tr>
+    <td class="label" style="width:50px;">STA</td>
+    <td style="width:70px;font-family:monospace;">${staVal}</td>
+    <td class="label" style="width:50px;">ATA</td>
+    <td style="width:70px;font-family:monospace;">${ataVal}</td>
+    <td class="label" style="width:80px;">Flight Type</td>
+    ${ftChecks}
+  </tr>
+  <tr>
+    <td class="label">STD</td>
+    <td style="font-family:monospace;">${stdVal}</td>
+    <td class="label">ATD</td>
+    <td style="font-family:monospace;">${atdVal}</td>
+    <td class="label">Delay</td>
+    <td colspan="5">${v.delay || ""}</td>
+  </tr>
+  <tr>
+    <td class="label" colspan="2">ARR/DEP SHIFT START</td>
+    <td colspan="2" style="font-family:monospace;">${v.shift_start || ""}</td>
+    <td class="label">ARR/DEP SHIFT END</td>
+    <td colspan="5" style="font-family:monospace;">${v.shift_end || ""}</td>
+  </tr>
+</table>
+
+<div class="obs-grid">
+  ${obsSection("Cargo Observer", [["1", v.cargo_observer_1], ["2", v.cargo_observer_2]])}
+  ${obsSection("Hold Baggage Observer", [["1", v.hold_baggage_observer_1], ["2", v.hold_baggage_observer_2]])}
+  ${obsSection("Gate Door Observer", [["1", v.gate_door_observer_1]])}
+  ${obsSection("Aircraft Door Observer", [["1", v.aircraft_door_observer_1], ["2", v.aircraft_door_observer_2]])}
+  ${obsSection("Aircraft Ramp Observer", [["1", v.aircraft_ramp_observer_1]])}
+</div>
+
+<table style="margin-bottom:8px;">
+  <tr><td colspan="2" class="section">CARGO AND BAGGAGE & CATERING ACCOMPANIED BY:</td></tr>
+  <tr><td class="label" style="width:100px;">Catering</td><td>${v.catering_accompanied || ""}</td></tr>
+  <tr><td class="label">Cargo</td><td>${v.cargo_accompanied || ""}</td></tr>
+  <tr><td class="label">Baggage</td><td>${v.baggage_accompanied || ""}</td></tr>
+</table>
+
+<table style="margin-bottom:8px;">
+  <tr><td class="section">REMARKS</td></tr>
+  <tr><td style="min-height:40px;padding:8px;">${v.remarks || ""}</td></tr>
+</table>
+
+<table style="margin-bottom:8px;">
+  <tr><td class="section">${row.airline.toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</td></tr>
+  <tr><td style="padding:8px;">${v.security_supervisor || ""}</td></tr>
+</table>
+
+<div class="footer">
+  <span>${row.airline} Security Task Sheet</span>
+  <span>V.03 22Jan2023</span>
+</div>
+
+</body></html>`;
+
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>${row.airline} Security Task Sheet - ${row.flight_no}</title>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        td, th { border: 1px solid #333; padding: 6px 8px; text-align: left; }
-        th { background: #e8e8e8; font-weight: bold; }
-        .section-header { background: #d0d8e8; font-weight: bold; padding: 6px 8px; border: 1px solid #333; }
-        .title { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .footer { margin-top: 16px; display: flex; justify-content: space-between; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 6px; }
-        input, textarea { border: none; background: transparent; font-size: 12px; font-family: inherit; width: 100%; }
-        @media print { body { padding: 10px; } }
-      </style></head><body>${content.innerHTML}
-      </body></html>
-    `);
+    printWindow.document.write(html);
     printWindow.document.close();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 400);
   };
 
   return (
