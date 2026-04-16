@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
   DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, Receipt,
-  CheckCircle2, XCircle, Clock, MessageSquare, AlertCircle
+  CheckCircle2, XCircle, Clock, MessageSquare, AlertCircle, CalendarDays, TableIcon
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -236,6 +236,77 @@ function resolveStationFromRoute(route: string) {
   return "";
 }
 
+// ─── Service Report Calendar View ───
+function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit }: {
+  reports: any[];
+  month: Date;
+  onMonthChange: (d: Date) => void;
+  onEdit: (r: any) => void;
+}) {
+  const year = month.getFullYear();
+  const mo = month.getMonth();
+  const firstDay = new Date(year, mo, 1).getDay();
+  const daysInMonth = new Date(year, mo + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const byDate = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    reports.forEach(r => {
+      const d = r.arrivalDate || r.departureDate || "";
+      if (d) { if (!map[d]) map[d] = []; map[d].push(r); }
+    });
+    return map;
+  }, [reports]);
+
+  const prev = () => onMonthChange(new Date(year, mo - 1, 1));
+  const next = () => onMonthChange(new Date(year, mo + 1, 1));
+  const monthLabel = month.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const sc = (r: any) => r.isLinked ? "bg-success/20 text-success border-success/30" : "bg-muted/60 text-muted-foreground border-muted";
+
+  return (
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={prev} className="p-1.5 rounded hover:bg-muted"><ChevronLeft size={16} /></button>
+        <h3 className="text-sm font-semibold">{monthLabel}</h3>
+        <button onClick={next} className="p-1.5 rounded hover:bg-muted"><ChevronRight size={16} /></button>
+      </div>
+      <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
+        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
+          <div key={d} className="bg-muted/50 text-center text-xs font-semibold text-muted-foreground py-2">{d}</div>
+        ))}
+        {cells.map((day, i) => {
+          if (day === null) return <div key={`e${i}`} className="bg-card min-h-[90px]" />;
+          const dateStr = `${year}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+          const dayReports = byDate[dateStr] || [];
+          const isToday = dateStr === today;
+          return (
+            <div key={dateStr} className={`bg-card min-h-[90px] p-1 ${isToday ? "ring-2 ring-primary ring-inset" : ""}`}>
+              <div className={`text-xs font-medium mb-0.5 ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>{day}</div>
+              <div className="space-y-0.5 max-h-[70px] overflow-y-auto">
+                {dayReports.slice(0,4).map((r: any, j: number) => (
+                  <button key={r.id || j} onClick={() => r.isLinked && onEdit(r)}
+                    className={`w-full text-left px-1 py-0.5 rounded text-[10px] leading-tight truncate border ${sc(r)} hover:opacity-80 transition-opacity`}
+                    title={`${r.flightNo} – ${r.operator}`}>
+                    <span className="font-mono font-semibold">{r.flightNo}</span>
+                    <span className="ml-1 opacity-70">{r.operator?.slice(0,8)}</span>
+                  </button>
+                ))}
+                {dayReports.length > 4 && <div className="text-[10px] text-muted-foreground text-center">+{dayReports.length-4} more</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function HandlingServiceReportContent() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -248,6 +319,9 @@ function HandlingServiceReportContent() {
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [airlineFilter, setAirlineFilter] = useState("All Airlines");
+  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [newReport, setNewReport] = useState<Partial<ReportFormData>>(emptyReport());
@@ -509,6 +583,7 @@ function HandlingServiceReportContent() {
 
   const allStations = useMemo(() => [...new Set(mergedRows.filter(r => r.station).map(r => r.station))], [mergedRows]);
   const allHandlingTypes = useMemo(() => [...new Set(mergedRows.filter(r => r.handlingType).map(r => r.handlingType))], [mergedRows]);
+  const allOperators = useMemo(() => [...new Set(mergedRows.filter(r => r.operator).map(r => r.operator))].sort(), [mergedRows]);
 
   const filtered = useMemo(() => {
     let r = mergedRows;
@@ -517,6 +592,7 @@ function HandlingServiceReportContent() {
     if (handlingFilter !== "All Types") r = r.filter(x => x.handlingType === handlingFilter);
     if (stationFilter !== "All Stations") r = r.filter(x => x.station === stationFilter);
     if (reviewFilter !== "All Review") r = r.filter(x => x.reviewStatus === reviewFilter);
+    if (airlineFilter !== "All Airlines") r = r.filter(x => x.operator === airlineFilter);
     if (dateFrom) r = r.filter(x => x.arrivalDate >= dateFrom);
     if (dateTo) r = r.filter(x => x.arrivalDate <= dateTo);
     if (search) {
@@ -528,7 +604,7 @@ function HandlingServiceReportContent() {
       );
     }
     return r;
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, dateFrom, dateTo, search]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -694,6 +770,10 @@ function HandlingServiceReportContent() {
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
+          <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <option>All Airlines</option>
+            {allOperators.map(o => <option key={o}>{o}</option>)}
+          </select>
           <select value={handlingFilter} onChange={e => { setHandlingFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Types</option>
             {allHandlingTypes.map(h => <option key={h}>{h}</option>)}
@@ -713,15 +793,29 @@ function HandlingServiceReportContent() {
             <option>Completed</option>
             <option>Pending Completion</option>
           </select>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
+          <div className="flex items-center gap-1">
+            <label className="text-xs text-muted-foreground">From</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+          </div>
+          <div className="flex items-center gap-1">
+            <label className="text-xs text-muted-foreground">To</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+          </div>
+          <div className="flex border rounded-lg overflow-hidden">
+            <button onClick={() => setViewMode("table")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><TableIcon size={13} /> Table</button>
+            <button onClick={() => setViewMode("calendar")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><CalendarDays size={13} /> Calendar</button>
+          </div>
           <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> New Report</button>
           <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload Excel</button>
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
         </div>
 
-        <div className="overflow-x-auto">
+        {viewMode === "calendar" ? (
+          <ServiceReportCalendarView reports={filtered} month={calMonth} onMonthChange={setCalMonth} onEdit={startEdit} />
+        ) : (
+        <>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr>
@@ -840,17 +934,19 @@ function HandlingServiceReportContent() {
               ))}
             </tbody>
           </table>
-        </div>
-
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
           </div>
+
+          {filtered.length > 0 && (
+            <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
+              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span>
+              <div className="flex items-center gap-2">
+                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
+                <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
+                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
+              </div>
+            </div>
+          )}
+        </>
         )}
       </div>
 

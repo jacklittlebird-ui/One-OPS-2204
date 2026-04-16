@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import {
   Building2, Plane, Plus, Search, Clock, Users, AlertTriangle,
-  CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye
+  CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye, CalendarDays, TableIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
@@ -105,6 +105,82 @@ function calcDurationHours(start: string, end: string): number {
   return Math.round((mins / 60) * 100) / 100;
 }
 
+// ─── Dispatch Calendar View ───
+function DispatchCalendarView({ dispatches, month, onMonthChange, onEdit }: {
+  dispatches: DispatchRow[];
+  month: Date;
+  onMonthChange: (d: Date) => void;
+  onEdit: (d: DispatchRow) => void;
+}) {
+  const year = month.getFullYear();
+  const mo = month.getMonth();
+  const firstDay = new Date(year, mo, 1).getDay();
+  const daysInMonth = new Date(year, mo + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const byDate = useMemo(() => {
+    const map: Record<string, DispatchRow[]> = {};
+    dispatches.forEach(d => {
+      if (d.flight_date) {
+        if (!map[d.flight_date]) map[d.flight_date] = [];
+        map[d.flight_date].push(d);
+      }
+    });
+    return map;
+  }, [dispatches]);
+
+  const prev = () => onMonthChange(new Date(year, mo - 1, 1));
+  const next = () => onMonthChange(new Date(year, mo + 1, 1));
+  const monthLabel = month.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return (
+    <div className="bg-card rounded-lg border p-4">
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={prev} className="p-1.5 rounded hover:bg-muted"><ChevronLeft size={16} /></button>
+        <h3 className="text-sm font-semibold">{monthLabel}</h3>
+        <button onClick={next} className="p-1.5 rounded hover:bg-muted"><ChevronRight size={16} /></button>
+      </div>
+      <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+          <div key={d} className="bg-muted/50 text-center text-xs font-semibold text-muted-foreground py-2">{d}</div>
+        ))}
+        {cells.map((day, i) => {
+          if (day === null) return <div key={`e${i}`} className="bg-card min-h-[90px]" />;
+          const dateStr = `${year}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const dayDispatches = byDate[dateStr] || [];
+          const isToday = dateStr === today;
+          return (
+            <div key={dateStr} className={`bg-card min-h-[90px] p-1 ${isToday ? "ring-2 ring-primary ring-inset" : ""}`}>
+              <div className={`text-xs font-medium mb-0.5 ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>{day}</div>
+              <div className="space-y-0.5 max-h-[70px] overflow-y-auto">
+                {dayDispatches.slice(0, 4).map(d => (
+                  <button
+                    key={d.id}
+                    onClick={() => onEdit(d)}
+                    className={`w-full text-left px-1 py-0.5 rounded text-[10px] leading-tight truncate border ${statusColors[d.status] || "bg-muted text-muted-foreground"} hover:opacity-80 transition-opacity`}
+                    title={`${d.flight_no} – ${d.airline} (${d.status})`}
+                  >
+                    <span className="font-mono font-semibold">{d.flight_no}</span>
+                    <span className="ml-1 opacity-70">{d.service_type}</span>
+                  </button>
+                ))}
+                {dayDispatches.length > 4 && (
+                  <div className="text-[10px] text-muted-foreground text-center">+{dayDispatches.length - 4} more</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function StationDispatchPage() {
   const { data: flights, isLoading: flightsLoading } = useSupabaseTable<FlightRow>("flight_schedules");
   const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useSupabaseTable<DispatchRow>("dispatch_assignments");
@@ -125,6 +201,8 @@ export default function StationDispatchPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<DispatchRow>>({});
   const [viewId, setViewId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
+  const [calMonth, setCalMonth] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
 
   const airlineMap = useMemo(() => {
     const m: Record<string, { name: string; iata: string }> = {};
@@ -366,6 +444,10 @@ export default function StationDispatchPage() {
           <input type="text" placeholder="Search…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-48 focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
+        <div className="flex border rounded-lg overflow-hidden">
+          <button onClick={() => setViewMode("table")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><TableIcon size={13} /> Table</button>
+          <button onClick={() => setViewMode("calendar")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><CalendarDays size={13} /> Calendar</button>
+        </div>
         <button onClick={openNewManual} className="toolbar-btn-primary ml-auto"><Plus size={14} /> New Dispatch</button>
       </div>
 
@@ -377,6 +459,9 @@ export default function StationDispatchPage() {
 
         {/* Dispatch Log */}
         <TabsContent value="dispatches">
+          {viewMode === "calendar" ? (
+            <DispatchCalendarView dispatches={filtered} month={calMonth} onMonthChange={setCalMonth} onEdit={openEdit} />
+          ) : (
           <div className="bg-card rounded-lg border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -424,6 +509,7 @@ export default function StationDispatchPage() {
               </div>
             )}
           </div>
+          )}
         </TabsContent>
 
         {/* Station Flights (assign from here) */}
