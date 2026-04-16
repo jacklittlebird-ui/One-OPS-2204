@@ -93,6 +93,7 @@ const sectionHeaderCls = "bg-primary/10 text-primary font-bold text-sm px-3 py-2
 
 export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd }: Props) {
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (row) {
