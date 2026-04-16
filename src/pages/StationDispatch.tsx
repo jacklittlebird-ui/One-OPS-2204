@@ -99,13 +99,16 @@ const statusColors: Record<string, string> = {
 const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
 const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
 
+// Returns duration as H.MM (hours.minutes) — e.g. 14:31→16:35 = 2.04 (2h 04m)
 function calcDurationHours(start: string, end: string): number {
   if (!start || !end) return 0;
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
   let mins = (eh * 60 + em) - (sh * 60 + sm);
   if (mins < 0) mins += 1440;
-  return Math.round((mins / 60) * 100) / 100;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return Math.round((h + m / 100) * 100) / 100;
 }
 
 // ─── Dispatch Calendar View ───
