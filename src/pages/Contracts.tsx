@@ -140,6 +140,7 @@ export default function ContractsPage() {
     if (serviceType && serviceType !== "all") {
       nc.services = serviceType;
       nc.contract_type = serviceType === "Security" ? "Bilateral" : "SGHA";
+      (nc as any).service_category = serviceType === "Security" ? "Security" : "Handling";
     }
     setNewContract(nc);
     setNewServiceRates([]);
