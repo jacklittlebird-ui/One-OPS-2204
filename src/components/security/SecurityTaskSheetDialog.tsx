@@ -241,13 +241,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     if (!contractId && securityContracts.length === 1) setContractId(securityContracts[0].id);
   }, [securityContracts, contractId]);
 
-  if (!row || !editableRow) return null;
-
-  const currentRow = isNew ? editableRow : row;
+  const currentRow = isNew ? editableRow : (row || editableRow);
 
   // Map service_type → flight_type used in rate rows
   const flightTypeForCharges = useMemo(() => {
-    const st = (serviceType || currentRow.service_type || "").toLowerCase();
+    const st = (serviceType || currentRow?.service_type || "").toLowerCase();
     if (st.includes("turnaround") && st.includes("dep")) return "Turnaround Departure";
     if (st.includes("turnaround") && st.includes("arr")) return "Turnaround Arrival";
     if (st.includes("departure")) return "Turnaround Departure";
@@ -255,10 +253,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     if (st.includes("adhoc")) return "ADHOC";
     if (st.includes("night")) return "Night Stop";
     return sheet.flight_type || "Turnaround Departure";
-  }, [serviceType, currentRow.service_type, sheet.flight_type]);
+  }, [serviceType, currentRow?.service_type, sheet.flight_type]);
 
   const computedCharges = useMemo(() => {
-    if (!contractRates.length) return null;
+    if (!contractRates.length || !currentRow) return null;
     const gtHours = groundTimeHours(sheet.shift_start || sheet.ata || sheet.sta, sheet.shift_end || sheet.atd || sheet.std);
     return calculateSecurityCharges({
       airport: currentRow.station || "CAI",
@@ -268,9 +266,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       returnToRampWithLoadChange: returnToRamp,
       rates: contractRates,
     });
-  }, [contractRates, currentRow.station, flightTypeForCharges, sheet.shift_start, sheet.shift_end, sheet.ata, sheet.atd, sheet.sta, sheet.std, shortNotice, extraManpower, rampVehicleTrips, returnToRamp]);
+  }, [contractRates, currentRow, flightTypeForCharges, sheet.shift_start, sheet.shift_end, sheet.ata, sheet.atd, sheet.sta, sheet.std, shortNotice, extraManpower, rampVehicleTrips, returnToRamp]);
 
   const isReceivablesView = activeChannel === "receivables";
+
+  if (!row || !editableRow || !currentRow) return null;
 
   const updateRow = (field: string, value: any) => {
     setEditableRow(prev => prev ? { ...prev, [field]: value } : prev);
