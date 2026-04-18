@@ -7,6 +7,7 @@ import { SKD_TYPES, SECURITY_CLEARANCE_TYPES } from "@/components/clearances/Cle
 import { Json } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useChannel } from "@/contexts/ChannelContext";
 
 /** Auto-format time input as HH:MM */
 function formatTimeInput(value: string, prevValue: string): string {
@@ -154,6 +155,7 @@ function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.Rea
 }
 
 export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, isNew }: Props) {
+  const { activeChannel } = useChannel();
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -395,6 +397,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               isLinked: !isNew,
               reviewStatus: (currentRow as any)?.review_status || "pending",
               dispatchStatus: (currentRow as any)?.status || "Pending",
+              channel: activeChannel,
             })}
           />
         </div>
