@@ -1,6 +1,6 @@
-import { FileText, X } from "lucide-react";
+import { FileText, X, Shield } from "lucide-react";
 import type { ContractRow, ContractStatus } from "./ContractTypes";
-import { CONTRACT_TYPES, PAYMENT_TERMS, BILLING_FREQUENCIES, CURRENCIES, STATUSES } from "./ContractTypes";
+import { CONTRACT_TYPES, PAYMENT_TERMS, BILLING_FREQUENCIES, CURRENCIES, STATUSES, SERVICE_CATEGORIES } from "./ContractTypes";
 
 const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
 const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
@@ -40,7 +40,7 @@ export function ContractForm({ data, onChange, onSave, onCancel, title, isSaving
           {/* Contract Identity */}
           <div>
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Contract Identity</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <FormField label="Contract No.">
                 <input className={inputCls} value={data.contract_no || ""} onChange={e => set("contract_no", e.target.value)} />
               </FormField>
@@ -49,10 +49,21 @@ export function ContractForm({ data, onChange, onSave, onCancel, title, isSaving
                   {CONTRACT_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select>
               </FormField>
+              <FormField label="Service Category">
+                <select className={selectCls} value={data.service_category || "Handling"} onChange={e => set("service_category", e.target.value)}>
+                  {SERVICE_CATEGORIES.map(t => <option key={t}>{t}</option>)}
+                </select>
+              </FormField>
               <FormField label="SGHA Reference">
                 <input className={inputCls} value={data.sgha_ref || ""} onChange={e => set("sgha_ref", e.target.value)} placeholder="AHM 810 / Annex B" />
               </FormField>
             </div>
+            {(data.service_category === "Security" || data.service_category === "Both") && (
+              <div className="mt-3 flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-foreground">
+                <Shield size={14} className="text-primary mt-0.5" />
+                <span>This contract has <b>Security</b> coverage. Security service rates (per airport, flight type, ADHOC, manpower, ramp vehicle, etc.) are managed in the Security Rates editor on the contract detail view.</span>
+              </div>
+            )}
           </div>
 
           {/* Airline & Contact */}

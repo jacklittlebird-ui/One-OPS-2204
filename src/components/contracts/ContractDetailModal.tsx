@@ -1,8 +1,9 @@
-import { FileText, X, Mail, User, Calendar, DollarSign, Building2 } from "lucide-react";
+import { FileText, X, Mail, User, Calendar, DollarSign, Building2, Shield } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
 import type { ContractRow } from "./ContractTypes";
 import { ContractStatusBadge, ContractTypeBadge } from "./ContractStatusBadge";
 import { daysUntilExpiry } from "./ContractTypes";
+import { SecurityRatesEditor } from "./SecurityRatesEditor";
 
 type Props = {
   contract: ContractRow;
@@ -85,6 +86,15 @@ export function ContractDetailModal({ contract: c, onClose }: Props) {
               <InfoRow label="Billing Frequency" value={c.billing_frequency} />
             </div>
           </div>
+
+          {((c as any).service_category === "Security" || (c as any).service_category === "Both") && (
+            <div className="border-t pt-4">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Shield size={13} className="text-primary" /> Security Service Rates
+              </h3>
+              <SecurityRatesEditor contractId={c.id} currency={c.currency} />
+            </div>
+          )}
 
           {c.notes && (
             <div className="border-t pt-4">

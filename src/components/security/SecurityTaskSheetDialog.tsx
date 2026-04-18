@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle } from "lucide-react";
+import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign } from "lucide-react";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { SKD_TYPES, SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useChannel } from "@/contexts/ChannelContext";
+import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
+import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 
 /** Auto-format time input as HH:MM */
 function formatTimeInput(value: string, prevValue: string): string {
@@ -158,6 +160,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const { activeChannel } = useChannel();
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
+  const [contractId, setContractId] = useState<string>("");
+  const [extraManpower, setExtraManpower] = useState<number>(0);
+  const [rampVehicleTrips, setRampVehicleTrips] = useState<number>(0);
+  const [shortNotice, setShortNotice] = useState<boolean>(false);
+  const [returnToRamp, setReturnToRamp] = useState<boolean>(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: airlines = [] } = useQuery({
@@ -168,9 +175,44 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     },
   });
 
+  // Fetch security contracts for the current airline
+  const { data: securityContracts = [] } = useQuery({
+    queryKey: ["security-contracts", editableRow?.airline],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("contracts")
+        .select("id, contract_no, airline, currency, service_category, status")
+        .in("service_category", ["Security", "Both"])
+        .eq("status", "Active");
+      if (!editableRow?.airline) return data || [];
+      return (data || []).filter((c: any) => c.airline?.toLowerCase() === editableRow.airline?.toLowerCase());
+    },
+    enabled: !!editableRow?.airline,
+  });
+
+  // Fetch rates for the chosen contract
+  const { data: contractRates = [] } = useQuery({
+    queryKey: ["contract-rates", contractId],
+    queryFn: async () => {
+      if (!contractId) return [];
+      const { data } = await supabase
+        .from("contract_service_rates")
+        .select("*")
+        .eq("contract_id", contractId)
+        .order("sort_order", { ascending: true });
+      return (data || []) as SecurityRateRow[];
+    },
+    enabled: !!contractId,
+  });
+
   useEffect(() => {
     if (row) {
       setEditableRow({ ...row });
+      setContractId((row as any).contract_id || "");
+      setExtraManpower((row as any).extra_manpower_count || 0);
+      setRampVehicleTrips((row as any).ramp_vehicle_trips || 0);
+      setShortNotice((row as any).short_notice || false);
+      setReturnToRamp((row as any).return_to_ramp_with_load || false);
       const saved = row.task_sheet_data as Record<string, any> | null;
       if (saved && typeof saved === "object") {
         const restored = { ...emptyTaskSheet(), ...saved } as TaskSheetData;
@@ -186,21 +228,49 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         setSheet({
           ...emptyTaskSheet(),
           flight_type: skdType || "",
-          sta: sta || "",
-          std: std || "",
-          ata: ata || "",
-          atd: atd || "",
-          registration: registration || "",
-          route: route || "",
+          sta: sta || "", std: std || "", ata: ata || "", atd: atd || "",
+          registration: registration || "", route: route || "",
           remarks: row.notes || "",
         });
       }
     }
   }, [row, skdType, sta, std, ata, atd, registration, route]);
 
-  if (!row || !editableRow) return null;
+  // Auto-pick the first matching contract when only one exists
+  useEffect(() => {
+    if (!contractId && securityContracts.length === 1) setContractId(securityContracts[0].id);
+  }, [securityContracts, contractId]);
 
-  const currentRow = isNew ? editableRow : row;
+  const currentRow = isNew ? editableRow : (row || editableRow);
+
+  // Map service_type → flight_type used in rate rows
+  const flightTypeForCharges = useMemo(() => {
+    const st = (serviceType || currentRow?.service_type || "").toLowerCase();
+    if (st.includes("turnaround") && st.includes("dep")) return "Turnaround Departure";
+    if (st.includes("turnaround") && st.includes("arr")) return "Turnaround Arrival";
+    if (st.includes("departure")) return "Turnaround Departure";
+    if (st.includes("arrival")) return "Turnaround Arrival";
+    if (st.includes("adhoc")) return "ADHOC";
+    if (st.includes("night")) return "Night Stop";
+    return sheet.flight_type || "Turnaround Departure";
+  }, [serviceType, currentRow?.service_type, sheet.flight_type]);
+
+  const computedCharges = useMemo(() => {
+    if (!contractRates.length || !currentRow) return null;
+    const gtHours = groundTimeHours(sheet.shift_start || sheet.ata || sheet.sta, sheet.shift_end || sheet.atd || sheet.std);
+    return calculateSecurityCharges({
+      airport: currentRow.station || "CAI",
+      flightType: flightTypeForCharges,
+      groundTimeHours: gtHours,
+      shortNotice, extraManpower, rampVehicleTrips,
+      returnToRampWithLoadChange: returnToRamp,
+      rates: contractRates,
+    });
+  }, [contractRates, currentRow, flightTypeForCharges, sheet.shift_start, sheet.shift_end, sheet.ata, sheet.atd, sheet.sta, sheet.std, shortNotice, extraManpower, rampVehicleTrips, returnToRamp]);
+
+  const isReceivablesView = activeChannel === "receivables";
+
+  if (!row || !editableRow || !currentRow) return null;
 
   const updateRow = (field: string, value: any) => {
     setEditableRow(prev => prev ? { ...prev, [field]: value } : prev);
@@ -211,7 +281,18 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   };
 
   const handleSave = () => {
-    onSave(isNew ? editableRow : row, sheet);
+    const enrichedRow = {
+      ...(isNew ? editableRow : row),
+      contract_id: contractId || null,
+      extra_manpower_count: extraManpower,
+      ramp_vehicle_trips: rampVehicleTrips,
+      short_notice: shortNotice,
+      return_to_ramp_with_load: returnToRamp,
+      charges_breakdown: computedCharges?.lines || [],
+      total_security_charges: computedCharges?.total || 0,
+      charges_currency: computedCharges?.currency || "USD",
+    } as any;
+    onSave(enrichedRow, sheet);
   };
 
   const formatDate = (d: string) => {

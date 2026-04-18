@@ -140,6 +140,7 @@ export default function ContractsPage() {
     if (serviceType && serviceType !== "all") {
       nc.services = serviceType;
       nc.contract_type = serviceType === "Security" ? "Bilateral" : "SGHA";
+      (nc as any).service_category = serviceType === "Security" ? "Security" : "Handling";
     }
     setNewContract(nc);
     setNewServiceRates([]);
@@ -352,8 +353,16 @@ function ContractFormWithRates({
             </div>
           </div>
 
-          {/* Service Scope & Team */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Service Category & Scope */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-foreground">Service Category</label>
+              <select className={selectCls} value={(data as any).service_category || "Handling"} onChange={e => set("service_category", e.target.value)}>
+                <option value="Handling">Handling</option>
+                <option value="Security">Security</option>
+                <option value="Both">Both</option>
+              </select>
+            </div>
             <div>
               <label className="text-sm font-semibold text-foreground">Service Scope</label>
               <select className={selectCls} value={(data as any).service_scope || ""} onChange={e => set("service_scope", e.target.value)}>
@@ -366,6 +375,11 @@ function ContractFormWithRates({
               <input className={inputCls} value={(data as any).default_team_size || ""} onChange={e => set("default_team_size", e.target.value)} placeholder="e.g. 3-person, 5 staff" />
             </div>
           </div>
+          {((data as any).service_category === "Security" || (data as any).service_category === "Both") && (
+            <div className="text-xs text-muted-foreground bg-primary/5 border border-primary/20 rounded p-2">
+              💡 After saving, open the contract to add per-airport security rates (Turnaround, Night Stop, ADHOC, Manpower, Ramp Vehicle) using the Security Rates editor.
+            </div>
+          )}
 
           {/* Financial */}
           <div className="grid grid-cols-3 gap-4">

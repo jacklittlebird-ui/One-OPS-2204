@@ -642,34 +642,55 @@ export type Database = {
       }
       contract_service_rates: {
         Row: {
+          airport: string
           contract_id: string
           created_at: string
+          currency: string
           duration_hours: number
+          flight_type: string
           id: string
+          included_hours: number
+          notes: string
+          overtime_rate: number
           rate: number
           service_type: string
           sort_order: number
           staff_count: number
+          unit: string
         }
         Insert: {
+          airport?: string
           contract_id: string
           created_at?: string
+          currency?: string
           duration_hours?: number
+          flight_type?: string
           id?: string
+          included_hours?: number
+          notes?: string
+          overtime_rate?: number
           rate?: number
           service_type?: string
           sort_order?: number
           staff_count?: number
+          unit?: string
         }
         Update: {
+          airport?: string
           contract_id?: string
           created_at?: string
+          currency?: string
           duration_hours?: number
+          flight_type?: string
           id?: string
+          included_hours?: number
+          notes?: string
+          overtime_rate?: number
           rate?: number
           service_type?: string
           sort_order?: number
           staff_count?: number
+          unit?: string
         }
         Relationships: [
           {
@@ -701,6 +722,7 @@ export type Database = {
           notes: string | null
           overtime_rate: number
           payment_terms: string
+          service_category: string
           service_scope: string
           services: string | null
           sgha_ref: string
@@ -728,6 +750,7 @@ export type Database = {
           notes?: string | null
           overtime_rate?: number
           payment_terms?: string
+          service_category?: string
           service_scope?: string
           services?: string | null
           sgha_ref?: string
@@ -755,6 +778,7 @@ export type Database = {
           notes?: string | null
           overtime_rate?: number
           payment_terms?: string
+          service_category?: string
           service_scope?: string
           services?: string | null
           sgha_ref?: string
@@ -841,10 +865,13 @@ export type Database = {
           actual_start: string
           airline: string
           base_fee: number
+          charges_breakdown: Json
+          charges_currency: string
           contract_duration_hours: number
           contract_id: string | null
           created_at: string
           dispatched_by: string
+          extra_manpower_count: number
           flight_date: string
           flight_no: string
           flight_schedule_id: string | null
@@ -854,6 +881,8 @@ export type Database = {
           overtime_charge: number
           overtime_hours: number
           overtime_rate: number
+          ramp_vehicle_trips: number
+          return_to_ramp_with_load: boolean
           review_comment: string
           review_status: string
           reviewed_at: string | null
@@ -862,12 +891,14 @@ export type Database = {
           scheduled_start: string
           service_rate: number
           service_type: string
+          short_notice: boolean
           staff_count: number
           staff_names: string
           station: string
           status: string
           task_sheet_data: Json | null
           total_charge: number
+          total_security_charges: number
           updated_at: string
         }
         Insert: {
@@ -876,10 +907,13 @@ export type Database = {
           actual_start?: string
           airline?: string
           base_fee?: number
+          charges_breakdown?: Json
+          charges_currency?: string
           contract_duration_hours?: number
           contract_id?: string | null
           created_at?: string
           dispatched_by?: string
+          extra_manpower_count?: number
           flight_date?: string
           flight_no?: string
           flight_schedule_id?: string | null
@@ -889,6 +923,8 @@ export type Database = {
           overtime_charge?: number
           overtime_hours?: number
           overtime_rate?: number
+          ramp_vehicle_trips?: number
+          return_to_ramp_with_load?: boolean
           review_comment?: string
           review_status?: string
           reviewed_at?: string | null
@@ -897,12 +933,14 @@ export type Database = {
           scheduled_start?: string
           service_rate?: number
           service_type?: string
+          short_notice?: boolean
           staff_count?: number
           staff_names?: string
           station?: string
           status?: string
           task_sheet_data?: Json | null
           total_charge?: number
+          total_security_charges?: number
           updated_at?: string
         }
         Update: {
@@ -911,10 +949,13 @@ export type Database = {
           actual_start?: string
           airline?: string
           base_fee?: number
+          charges_breakdown?: Json
+          charges_currency?: string
           contract_duration_hours?: number
           contract_id?: string | null
           created_at?: string
           dispatched_by?: string
+          extra_manpower_count?: number
           flight_date?: string
           flight_no?: string
           flight_schedule_id?: string | null
@@ -924,6 +965,8 @@ export type Database = {
           overtime_charge?: number
           overtime_hours?: number
           overtime_rate?: number
+          ramp_vehicle_trips?: number
+          return_to_ramp_with_load?: boolean
           review_comment?: string
           review_status?: string
           reviewed_at?: string | null
@@ -932,12 +975,14 @@ export type Database = {
           scheduled_start?: string
           service_rate?: number
           service_type?: string
+          short_notice?: boolean
           staff_count?: number
           staff_names?: string
           station?: string
           status?: string
           task_sheet_data?: Json | null
           total_charge?: number
+          total_security_charges?: number
           updated_at?: string
         }
         Relationships: [
