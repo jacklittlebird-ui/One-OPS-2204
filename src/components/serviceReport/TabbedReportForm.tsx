@@ -490,7 +490,6 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Cost</span>
                 <span className="text-sm font-bold text-success">{data.currency || "USD"} {totalCostPreview}</span>
               </div>
-              <button onClick={onCancel} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground transition-colors"><X size={18} /></button>
             </div>
           </div>
         </div>
