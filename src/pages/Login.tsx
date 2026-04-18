@@ -38,8 +38,9 @@ export default function LoginPage() {
 
          <div className="relative z-10 px-12 max-w-lg text-center space-y-8">
            <div className="inline-flex items-center gap-3">
-             <span className="text-5xl font-extrabold text-white tracking-tight">Link Aero</span>
              <PlaneLanding size={44} className="text-white" strokeWidth={2.2} />
+             <span className="text-5xl font-extrabold text-white tracking-tight">Link Aero</span>
+             <PlaneTakeoff size={44} className="text-white" strokeWidth={2.2} />
            </div>
 
           <p className="text-white/80 text-lg leading-relaxed">
