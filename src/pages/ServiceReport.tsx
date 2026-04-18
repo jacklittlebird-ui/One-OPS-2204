@@ -319,6 +319,9 @@ function HandlingServiceReportContent() {
   const location = useLocation();
   const queryClient = useQueryClient();
 
+  const { activeChannel } = useChannel();
+  const isReceivablesView = activeChannel === "receivables";
+
   const [search, setSearch] = useState("");
   const [handlingFilter, setHandlingFilter] = useState("All Types");
   const [stationFilter, setStationFilter] = useState("All Stations");
