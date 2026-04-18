@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Eye, EyeOff, Shield, Globe, Clock, PlaneLanding } from "lucide-react";
+import { Loader2, Eye, EyeOff, Shield, Globe, Clock, PlaneLanding, PlaneTakeoff } from "lucide-react";
 import oneOpsLogo from "@/assets/one-ops-logo.png";
 import linkAeroVertical from "@/assets/linkaero-logo-vertical.png";
 
