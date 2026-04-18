@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useChannel } from "@/contexts/ChannelContext";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,29 @@ export default function SecurityServiceReportsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { session } = useAuth();
+  const { activeChannel } = useChannel();
+  const isReceivablesView = activeChannel === "receivables";
+
+  const tryOpenEdit = (r: DispatchRow) => {
+    if (isReceivablesView) {
+      const stage = derivePipelineStage({
+        isLinked: r.status === "Completed",
+        reviewStatus: r.review_status,
+        clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+        dispatchStatus: r.status,
+        channel: "operations",
+      });
+      if (stage !== "receivables") {
+        toast({
+          title: "Locked",
+          description: "Steps 1 (Clearance), 2 (Station) and 3 (Operations) must be completed before editing in Receivables.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    setEditRow({ ...r });
+  };
 
   const [search, setSearch] = useState("");
   const [stationFilter, setStationFilter] = useState("All Stations");
@@ -651,7 +675,7 @@ export default function SecurityServiceReportsPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-1">
-                            <button onClick={() => setEditRow({ ...r })} className="p-1 rounded hover:bg-muted" title="Edit Report">
+                            <button onClick={() => tryOpenEdit(r)} className="p-1 rounded hover:bg-muted" title="Edit Report">
                               <Pencil size={14} className="text-muted-foreground" />
                             </button>
                             {r.review_status === "Draft" && r.status === "Completed" && (
