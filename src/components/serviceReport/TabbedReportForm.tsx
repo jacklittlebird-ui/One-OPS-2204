@@ -254,6 +254,7 @@ const tabIcons: Record<ReportTab, React.ReactNode> = {
 };
 
 export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus }: Props) {
+  const { activeChannel } = useChannel();
   const [activeTab, setActiveTab] = useState<ReportTab>("flight");
 
   type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
@@ -502,6 +503,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               reviewStatus: data.reviewStatus || "pending",
               clearanceStatus: clearanceStatus,
               dispatchStatus: data.id ? "Completed" : "Pending",
+              channel: activeChannel,
             })}
           />
         </div>

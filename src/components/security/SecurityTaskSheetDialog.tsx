@@ -396,6 +396,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               isLinked: !isNew,
               reviewStatus: (currentRow as any)?.review_status || "pending",
               dispatchStatus: (currentRow as any)?.status || "Pending",
+              channel: activeChannel,
             })}
           />
         </div>
