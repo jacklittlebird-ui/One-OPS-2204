@@ -7,6 +7,7 @@ import { SKD_TYPES, SECURITY_CLEARANCE_TYPES } from "@/components/clearances/Cle
 import { Json } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useChannel } from "@/contexts/ChannelContext";
 
 /** Auto-format time input as HH:MM */
 function formatTimeInput(value: string, prevValue: string): string {
