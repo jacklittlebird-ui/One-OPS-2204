@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle } from "lucide-react";
+import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign } from "lucide-react";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { SKD_TYPES, SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useChannel } from "@/contexts/ChannelContext";
+import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
+import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 
 /** Auto-format time input as HH:MM */
 function formatTimeInput(value: string, prevValue: string): string {
