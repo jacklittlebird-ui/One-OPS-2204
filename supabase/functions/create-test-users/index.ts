@@ -110,6 +110,13 @@ Deno.serve(async (req) => {
   );
   results.push(...accrecPortalResults);
 
+  // 7) Contracts Portal: contracts@linkagency.com
+  const contractsPortalResults = await ensureUser(supabaseAdmin, adminList,
+    "contracts@linkagency.com", "Condep12345", "Contracts Portal",
+    ["contracts"]
+  );
+  results.push(...contractsPortalResults);
+
   return new Response(JSON.stringify({ results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
