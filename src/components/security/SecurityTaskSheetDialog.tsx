@@ -270,6 +270,19 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   const isReceivablesView = activeChannel === "receivables";
 
+  // Pipeline gate: receivables editing is only allowed when steps 1-3 are completed.
+  // We derive the stage from the current dispatch row; "receivables" stage means
+  // Clearance + Station + Operations are all done.
+  const pipelineStage = currentRow ? derivePipelineStage({
+    isLinked: !!(currentRow as any)?.flight_schedule_id,
+    reviewStatus: (currentRow as any)?.review_status || "",
+    clearanceStatus: (currentRow as any)?.clearance_status,
+    dispatchStatus: (currentRow as any)?.status,
+    channel: "operations",
+  }) : "clearance";
+  const receivablesUnlocked = pipelineStage === "receivables";
+  const receivablesLocked = isReceivablesView && !receivablesUnlocked;
+
   if (!row || !editableRow || !currentRow) return null;
 
   const updateRow = (field: string, value: any) => {
@@ -672,11 +685,19 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           {/* RECEIVABLES-ONLY: Security Charges Panel */}
           {isReceivablesView && (
             <Section title="Security Charges (Receivables)" icon={<DollarSign size={14} />} accent="text-success" iconBg="bg-success/10">
+              {receivablesLocked && (
+                <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs text-warning-foreground flex items-start gap-2">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  <span>
+                    Receivables editing is locked. Steps 1 (Clearance), 2 (Station) and 3 (Operations) must be completed before charges can be edited here.
+                  </span>
+                </div>
+              )}
               {/* Contract picker + operational flags */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Linked Security Contract</label>
-                  <select className={inputCls} value={contractId} onChange={e => setContractId(e.target.value)}>
+                  <select disabled={receivablesLocked} className={`${inputCls} ${receivablesLocked ? "opacity-60 cursor-not-allowed bg-muted/40" : ""}`} value={contractId} onChange={e => setContractId(e.target.value)}>
                     <option value="">— Select security contract —</option>
                     {securityContracts.map((c: any) => (
                       <option key={c.id} value={c.id}>{c.contract_no} ({c.currency})</option>
@@ -691,21 +712,21 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Extra Manpower</label>
-                    <input type="number" min={0} className={inputCls} value={extraManpower} onChange={e => setExtraManpower(+e.target.value || 0)} />
+                    <input type="number" min={0} disabled={receivablesLocked} className={`${inputCls} ${receivablesLocked ? "opacity-60 cursor-not-allowed bg-muted/40" : ""}`} value={extraManpower} onChange={e => setExtraManpower(+e.target.value || 0)} />
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Ramp Vehicle Trips</label>
-                    <input type="number" min={0} className={inputCls} value={rampVehicleTrips} onChange={e => setRampVehicleTrips(+e.target.value || 0)} />
+                    <input type="number" min={0} disabled={receivablesLocked} className={`${inputCls} ${receivablesLocked ? "opacity-60 cursor-not-allowed bg-muted/40" : ""}`} value={rampVehicleTrips} onChange={e => setRampVehicleTrips(+e.target.value || 0)} />
                   </div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-4 mb-4 text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={shortNotice} onChange={e => setShortNotice(e.target.checked)} className="rounded border-border" />
+                <label className={`flex items-center gap-2 ${receivablesLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
+                  <input type="checkbox" disabled={receivablesLocked} checked={shortNotice} onChange={e => setShortNotice(e.target.checked)} className="rounded border-border" />
                   <span className="text-foreground">Short Notice ADHOC (&lt; 6h)</span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={returnToRamp} onChange={e => setReturnToRamp(e.target.checked)} className="rounded border-border" />
+                <label className={`flex items-center gap-2 ${receivablesLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
+                  <input type="checkbox" disabled={receivablesLocked} checked={returnToRamp} onChange={e => setReturnToRamp(e.target.checked)} className="rounded border-border" />
                   <span className="text-foreground">Return to Ramp w/ Load Change (50%)</span>
                 </label>
               </div>
