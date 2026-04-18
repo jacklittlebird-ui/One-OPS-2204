@@ -344,6 +344,15 @@ export default function SecurityServiceReportsPage() {
       scheduled_start: taskSheet.sta || row.scheduled_start,
       scheduled_end: taskSheet.std || row.scheduled_end,
       dispatched_by: row.dispatched_by,
+      // Security contract linkage + auto-calculated charges (from dialog)
+      contract_id: (row as any).contract_id || null,
+      extra_manpower_count: (row as any).extra_manpower_count ?? 0,
+      ramp_vehicle_trips: (row as any).ramp_vehicle_trips ?? 0,
+      short_notice: (row as any).short_notice ?? false,
+      return_to_ramp_with_load: (row as any).return_to_ramp_with_load ?? false,
+      charges_breakdown: (row as any).charges_breakdown ?? [],
+      total_security_charges: (row as any).total_security_charges ?? 0,
+      charges_currency: (row as any).charges_currency || "USD",
       // New reports start in Draft until clearance approval triggers Pending Review
       ...(isNewReport ? { review_status: "Draft" } : {}),
     };
