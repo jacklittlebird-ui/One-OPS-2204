@@ -22,16 +22,36 @@ export function derivePipelineStage(opts: {
   reviewStatus: string;
   clearanceStatus?: string;
   dispatchStatus?: string;
+  /**
+   * Channel context where the report is being viewed/edited.
+   * - "station": editing in station view marks step 2 (Station) as the furthest progress.
+   *   Current stage shown = "operations" (steps 1 & 2 done, step 3 active, step 3 NOT completed).
+   * - "operations": editing in operations view marks step 3 (Operations) as completed.
+   *   Current stage shown = "receivables" (steps 1, 2, 3 done, step 4 active).
+   */
+  channel?: "station" | "operations" | string;
 }): PipelineStage {
   const rs = opts.reviewStatus?.toLowerCase() || "";
   const ds = opts.dispatchStatus?.toLowerCase() || "";
   const cs = opts.clearanceStatus?.toLowerCase() || "";
+  const ch = opts.channel?.toLowerCase();
 
   // Ready for billing → receivables (step 4)
   if (rs === "ready_for_billing" || rs === "ready for billing") return "receivables";
 
   // Clearance not yet approved → step 1 (Clearance) is the active stage
   if (cs && cs !== "approved") return "clearance";
+
+  // Channel-aware progression for an existing/linked report:
+  // When viewing/editing inside the Operations channel and the station task is completed,
+  // mark step 3 (Operations) as completed → current stage = "receivables".
+  if (ch === "operations" && opts.isLinked && ds === "completed") return "receivables";
+
+  // When viewing/editing inside the Station channel, the furthest completion is step 2.
+  // Show step 3 (Operations) as the active (not-yet-completed) stage.
+  if (ch === "station" && opts.isLinked && (ds === "completed" || cs === "approved" || rs === "approved")) {
+    return "operations";
+  }
 
   // Clearance approved + station task completed → step 2 done, move to step 3 (Operations)
   if (cs === "approved" && ds === "completed") return "operations";
