@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
 import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
+import { useChannel } from "@/contexts/ChannelContext";
 import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
@@ -317,6 +318,9 @@ function HandlingServiceReportContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+
+  const { activeChannel } = useChannel();
+  const isReceivablesView = activeChannel === "receivables";
 
   const [search, setSearch] = useState("");
   const [handlingFilter, setHandlingFilter] = useState("All Types");
@@ -637,7 +641,29 @@ function HandlingServiceReportContent() {
     setNewReport(emptyReport());
   };
 
-  const startEdit = (r: MergedRow | ReportFormData) => { setEditId(r.id!); setEditData({ ...r }); setActiveClearanceStatus((r as MergedRow).clearanceStatus || ""); };
+  const startEdit = (r: MergedRow | ReportFormData) => {
+    if (isReceivablesView) {
+      const merged = r as MergedRow;
+      const stage = derivePipelineStage({
+        isLinked: !!merged.isLinked,
+        reviewStatus: merged.reviewStatus || "",
+        clearanceStatus: merged.clearanceStatus,
+        dispatchStatus: merged.isLinked ? "Completed" : "Pending",
+        channel: "operations",
+      });
+      if (stage !== "receivables") {
+        toast({
+          title: "Locked",
+          description: "Steps 1 (Clearance), 2 (Station) and 3 (Operations) must be completed before editing in Receivables.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    setEditId(r.id!);
+    setEditData({ ...r });
+    setActiveClearanceStatus((r as MergedRow).clearanceStatus || "");
+  };
   const saveEdit = () => {
     if (!editId) return;
     updateMutation.mutate({ ...editData, id: editId } as any);
