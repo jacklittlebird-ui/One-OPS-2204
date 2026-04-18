@@ -669,6 +669,94 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             />
           </Section>
 
+          {/* RECEIVABLES-ONLY: Security Charges Panel */}
+          {isReceivablesView && (
+            <Section title="Security Charges (Receivables)" icon={<DollarSign size={14} />} accent="text-success" iconBg="bg-success/10">
+              {/* Contract picker + operational flags */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Linked Security Contract</label>
+                  <select className={inputCls} value={contractId} onChange={e => setContractId(e.target.value)}>
+                    <option value="">— Select security contract —</option>
+                    {securityContracts.map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.contract_no} ({c.currency})</option>
+                    ))}
+                  </select>
+                  {securityContracts.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                      <AlertTriangle size={11} /> No active security contract found for {currentRow.airline}.
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Extra Manpower</label>
+                    <input type="number" min={0} className={inputCls} value={extraManpower} onChange={e => setExtraManpower(+e.target.value || 0)} />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Ramp Vehicle Trips</label>
+                    <input type="number" min={0} className={inputCls} value={rampVehicleTrips} onChange={e => setRampVehicleTrips(+e.target.value || 0)} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4 mb-4 text-sm">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={shortNotice} onChange={e => setShortNotice(e.target.checked)} className="rounded border-border" />
+                  <span className="text-foreground">Short Notice ADHOC (&lt; 6h)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={returnToRamp} onChange={e => setReturnToRamp(e.target.checked)} className="rounded border-border" />
+                  <span className="text-foreground">Return to Ramp w/ Load Change (50%)</span>
+                </label>
+              </div>
+
+              {/* Charges breakdown */}
+              {computedCharges && computedCharges.lines.length > 0 ? (
+                <div className="rounded-lg border bg-card overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40">
+                      <tr className="text-muted-foreground text-xs uppercase tracking-wider">
+                        <th className="text-left px-3 py-2 font-semibold">Charge</th>
+                        <th className="text-right px-3 py-2 font-semibold">Qty</th>
+                        <th className="text-left px-3 py-2 font-semibold">Unit</th>
+                        <th className="text-right px-3 py-2 font-semibold">Rate</th>
+                        <th className="text-right px-3 py-2 font-semibold">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {computedCharges.lines.map((l: ChargeLine, i: number) => (
+                        <tr key={i} className="border-t">
+                          <td className="px-3 py-2 text-foreground">
+                            {l.label}
+                            {l.notes && <div className="text-[11px] text-muted-foreground">{l.notes}</div>}
+                          </td>
+                          <td className="px-3 py-2 text-right text-foreground">{l.qty}</td>
+                          <td className="px-3 py-2 text-foreground">{l.unit}</td>
+                          <td className="px-3 py-2 text-right font-mono text-foreground">{computedCharges.currency} {l.rate.toFixed(2)}</td>
+                          <td className="px-3 py-2 text-right font-mono font-semibold text-foreground">{computedCharges.currency} {l.amount.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-success/10 border-t-2 border-success/30">
+                      <tr>
+                        <td colSpan={4} className="px-3 py-2.5 text-right font-bold uppercase text-xs tracking-wider text-success">Total Security Charges</td>
+                        <td className="px-3 py-2.5 text-right font-mono font-bold text-success">
+                          {computedCharges.currency} {computedCharges.total.toFixed(2)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              ) : (
+                <div className="rounded-lg border bg-muted/20 p-4 text-center text-sm text-muted-foreground">
+                  {!contractId
+                    ? "Select a security contract to compute charges."
+                    : "No charges computed yet — verify shift times, flight type, and rates."}
+                </div>
+              )}
+            </Section>
+          )}
+
           {/* Footer matching the PDF */}
           <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-3 border-t">
             <span className="flex items-center gap-1.5"><Shield size={12} /> {currentRow.airline} Security Task Sheet</span>
