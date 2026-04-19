@@ -159,6 +159,11 @@ function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.Rea
 
 export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, isNew }: Props) {
   const { activeChannel } = useChannel();
+  const queryClient = useQueryClient();
+  const isOperationsView = activeChannel === "operations";
+  const reviewMode = isOperationsView && !isNew;
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
   const [contractId, setContractId] = useState<string>("");
