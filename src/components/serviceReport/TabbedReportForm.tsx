@@ -531,6 +531,14 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
           ))}
         </div>
 
+        {/* Review Mode Banner */}
+        {reviewMode && (
+          <div className="px-6 py-3 bg-info/10 border-b border-info/30 flex items-center gap-2 text-sm text-info">
+            <Clock size={16} className="shrink-0" />
+            <span><strong>Review Mode:</strong> All fields are read-only. Use the panel at the bottom to approve or reject this report.</span>
+          </div>
+        )}
+
         {/* Tab navigation */}
         <div className="px-4 pt-2 border-b flex flex-wrap gap-1 bg-card overflow-x-auto">
           {REPORT_TABS.map(t => (
@@ -549,14 +557,9 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
           ))}
         </div>
 
-        {/* Tab content */}
-        <div className={`flex-1 overflow-y-auto p-6 bg-muted/10 ${reviewMode ? "[&_input]:pointer-events-none [&_select]:pointer-events-none [&_textarea]:pointer-events-none [&_button]:pointer-events-none [&_input]:bg-muted/50 [&_select]:bg-muted/50" : ""}`}>
-          {reviewMode && (
-            <div className="mb-4 px-4 py-3 rounded-lg bg-info/10 border border-info/30 flex items-center gap-2 text-sm text-info pointer-events-auto">
-              <Clock size={16} />
-              <span><strong>Review Mode:</strong> Fields are read-only. Approve or reject this report below.</span>
-            </div>
-          )}
+        {/* Tab content - wrapped in fieldset so all inputs become truly disabled */}
+        <fieldset disabled={reviewMode} className={`flex-1 overflow-y-auto p-6 bg-muted/10 min-w-0 ${reviewMode ? "[&_input]:!bg-muted/40 [&_select]:!bg-muted/40 [&_textarea]:!bg-muted/40 [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed [&_textarea]:cursor-not-allowed" : ""}`}>
+          
           {activeTab === "flight" && (
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
