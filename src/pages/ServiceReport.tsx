@@ -614,8 +614,17 @@ function HandlingServiceReportContent() {
   const allHandlingTypes = useMemo(() => [...new Set(mergedRows.filter(r => r.handlingType).map(r => r.handlingType))], [mergedRows]);
   const allOperators = useMemo(() => [...new Set(mergedRows.filter(r => r.operator).map(r => r.operator))].sort(), [mergedRows]);
 
+  const rejectedCount = useMemo(
+    () => mergedRows.filter(r => r.isLinked && r.reviewStatus === "rejected").length,
+    [mergedRows]
+  );
+
   const filtered = useMemo(() => {
     let r = mergedRows;
+    // Operations view: only show linked/completed reports awaiting or under review
+    if (isOperationsView) r = r.filter(x => x.isLinked);
+    // Station view: when "Rejected" tab is active, only show rejected reports
+    if (isStationView && stationTab === "rejected") r = r.filter(x => x.isLinked && x.reviewStatus === "rejected");
     if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
     if (statusFilter === "Pending Completion") r = r.filter(x => !x.isLinked);
     if (handlingFilter !== "All Types") r = r.filter(x => x.handlingType === handlingFilter);
@@ -633,7 +642,7 @@ function HandlingServiceReportContent() {
       );
     }
     return r;
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
