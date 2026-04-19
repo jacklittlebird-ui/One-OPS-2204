@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign } from "lucide-react";
+import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign, CheckCircle2, XCircle } from "lucide-react";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { SKD_TYPES, SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { useChannel } from "@/contexts/ChannelContext";
 import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
@@ -158,6 +159,11 @@ function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.Rea
 
 export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, isNew }: Props) {
   const { activeChannel } = useChannel();
+  const queryClient = useQueryClient();
+  const isOperationsView = activeChannel === "operations";
+  const reviewMode = isOperationsView && !isNew;
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
   const [contractId, setContractId] = useState<string>("");
@@ -208,6 +214,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   useEffect(() => {
     if (row) {
       setEditableRow({ ...row });
+      setReviewComment(row.review_comment || "");
       setContractId((row as any).contract_id || "");
       setExtraManpower((row as any).extra_manpower_count || 0);
       setRampVehicleTrips((row as any).ramp_vehicle_trips || 0);
@@ -496,6 +503,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           />
         </div>
 
+        {reviewMode && (
+          <div className="px-6 py-2.5 border-b bg-warning/10 border-warning/30 flex items-center gap-2 text-warning-foreground text-xs">
+            <Eye size={14} className="text-warning" />
+            <span className="font-semibold uppercase tracking-wider text-warning">Review Mode</span>
+            <span className="text-muted-foreground">— Form is read-only. Approve or reject the report below.</span>
+          </div>
+        )}
+
+        <fieldset disabled={reviewMode} className="contents">
         <div className="px-6 py-4 space-y-4 bg-muted/10" ref={printRef}>
           {/* Airline & Station (editable for new) */}
           {isNew && (
@@ -784,6 +800,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             <span className="font-mono">V.03 22Jan2023</span>
           </div>
         </div>
+        </fieldset>
 
         {/* Sticky action bar */}
         <div className="sticky bottom-0 flex flex-wrap justify-between items-center gap-2 px-6 py-3 border-t bg-card/95 backdrop-blur-sm">
@@ -795,12 +812,74 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               <Download size={14} className="mr-1" /> Download PDF
             </Button>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button onClick={handleSave} className="shadow-sm">
-              <Shield size={14} className="mr-1" /> Save Task Sheet
-            </Button>
-          </div>
+          {reviewMode ? (
+            <div className="flex flex-1 items-end gap-2 justify-end flex-wrap">
+              <div className="flex-1 min-w-[200px] max-w-md">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
+                  Review Comment {(<span className="text-destructive">(required for rejection)</span>)}
+                </label>
+                <textarea
+                  value={reviewComment}
+                  onChange={e => setReviewComment(e.target.value)}
+                  placeholder="Add review comment..."
+                  className="w-full text-sm border rounded px-2.5 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  rows={2}
+                />
+              </div>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button
+                variant="destructive"
+                disabled={reviewSubmitting}
+                onClick={async () => {
+                  if (!reviewComment.trim()) {
+                    toast({ title: "Comment required", description: "Please add a reason before rejecting.", variant: "destructive" });
+                    return;
+                  }
+                  setReviewSubmitting(true);
+                  const { error } = await supabase.from("dispatch_assignments").update({
+                    review_status: "Rejected",
+                    review_comment: reviewComment,
+                    reviewed_by: "Operations",
+                    reviewed_at: new Date().toISOString(),
+                  } as any).eq("id", currentRow.id);
+                  setReviewSubmitting(false);
+                  if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+                  queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+                  toast({ title: "❌ Rejected", description: "Sent back to Station with comments." });
+                  onClose();
+                }}
+              >
+                <XCircle size={14} className="mr-1" /> Reject & Return to Station
+              </Button>
+              <Button
+                disabled={reviewSubmitting}
+                className="bg-success hover:bg-success/90 text-success-foreground"
+                onClick={async () => {
+                  setReviewSubmitting(true);
+                  const { error } = await supabase.from("dispatch_assignments").update({
+                    review_status: "Approved",
+                    review_comment: reviewComment || "",
+                    reviewed_by: "Operations",
+                    reviewed_at: new Date().toISOString(),
+                  } as any).eq("id", currentRow.id);
+                  setReviewSubmitting(false);
+                  if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+                  queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+                  toast({ title: "✅ Approved", description: "Report approved." });
+                  onClose();
+                }}
+              >
+                <CheckCircle2 size={14} className="mr-1" /> Approve
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button onClick={handleSave} className="shadow-sm">
+                <Shield size={14} className="mr-1" /> Save Task Sheet
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

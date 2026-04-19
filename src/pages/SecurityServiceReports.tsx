@@ -100,6 +100,10 @@ export default function SecurityServiceReportsPage() {
   const { session } = useAuth();
   const { activeChannel } = useChannel();
   const isReceivablesView = activeChannel === "receivables";
+  const isOperationsView = activeChannel === "operations";
+  const isStationView = activeChannel === "station";
+  const canCreateNew = !isReceivablesView && !isOperationsView;
+  const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
@@ -278,6 +282,10 @@ export default function SecurityServiceReportsPage() {
 
   const filtered = useMemo(() => {
     let rows = dispatches;
+    // Operations: only linked/completed reports
+    if (isOperationsView) rows = rows.filter(r => r.status === "Completed" || r.review_status === "Pending Review" || r.review_status === "Rejected");
+    // Station "Rejected" tab
+    if (isStationView && stationTab === "rejected") rows = rows.filter(r => r.review_status === "Rejected");
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
     if (reviewFilter !== "All") rows = rows.filter(r => r.review_status === reviewFilter);
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
@@ -293,7 +301,7 @@ export default function SecurityServiceReportsPage() {
       );
     }
     return rows;
-  }, [dispatches, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search]);
+  }, [dispatches, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -513,8 +521,42 @@ export default function SecurityServiceReportsPage() {
             <button onClick={() => navigate("/invoices")} className="text-primary hover:underline">Finance</button>
           </p>
         </div>
-        <button onClick={openNewForm} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
+        {canCreateNew && (
+          <button onClick={openNewForm} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
+        )}
       </div>
+
+      {/* Station-only sub-tabs (All vs Rejected) */}
+      {isStationView && (
+        <div className="flex items-center gap-2 border-b">
+          <button
+            onClick={() => { setStationTab("all"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+              stationTab === "all"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            All Reports
+          </button>
+          <button
+            onClick={() => { setStationTab("rejected"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              stationTab === "rejected"
+                ? "text-destructive border-destructive"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <AlertTriangle size={14} />
+            Rejected Service Reports
+            {dispatches.filter(d => d.review_status === "Rejected").length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                {dispatches.filter(d => d.review_status === "Rejected").length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
