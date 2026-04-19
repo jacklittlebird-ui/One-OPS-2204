@@ -322,6 +322,9 @@ function HandlingServiceReportContent() {
 
   const { activeChannel } = useChannel();
   const isReceivablesView = activeChannel === "receivables";
+  const isOperationsView = activeChannel === "operations";
+  const isStationView = activeChannel === "station";
+  const canCreateNew = !isReceivablesView && !isOperationsView;
 
   const [search, setSearch] = useState("");
   const [handlingFilter, setHandlingFilter] = useState("All Types");
