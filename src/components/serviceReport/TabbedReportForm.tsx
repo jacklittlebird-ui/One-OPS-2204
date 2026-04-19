@@ -875,7 +875,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               </Section>
             </div>
           )}
-        </div>
+        </fieldset>
 
         {/* Footer */}
         {reviewMode ? (
