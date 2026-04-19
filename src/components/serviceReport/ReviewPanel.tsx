@@ -82,22 +82,19 @@ export default function ReviewPanel({ reportId, currentStatus, reviewComment, re
                 {reviewedAt && ` on ${formatDateDMY(reviewedAt)}`}
               </div>
             )}
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase">Comment</label>
-              <textarea
-                className="w-full mt-1 text-sm border rounded px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                rows={3}
-                placeholder="Add review comment (required for rejection)..."
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                className="flex-1 text-sm border rounded px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Review Comment (required for rejection)"
                 value={comment}
                 onChange={e => setComment(e.target.value)}
               />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="destructive" size="sm" onClick={() => handleReview("rejected")} disabled={submitting || (!comment && currentStatus !== "approved")}>
-                <XCircle size={14} className="mr-1" /> Reject
+              <Button variant="outline" size="sm" onClick={() => setOpen(false)} disabled={submitting}>
+                Cancel
               </Button>
-              <Button variant="default" size="sm" onClick={() => handleReview("approved")} disabled={submitting} className="bg-success hover:bg-success/90 text-success-foreground">
-                <CheckCircle2 size={14} className="mr-1" /> Approve
+              <Button variant="destructive" size="sm" onClick={() => handleReview("rejected")} disabled={submitting || (!comment && currentStatus !== "approved")} className="whitespace-nowrap">
+                <XCircle size={14} className="mr-1" /> Reject & Return to Station
               </Button>
             </div>
           </div>
