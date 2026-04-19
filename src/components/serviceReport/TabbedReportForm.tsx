@@ -241,6 +241,11 @@ interface Props {
   onCancel: () => void;
   title: string;
   clearanceStatus?: string;
+  /** When true, all fields are read-only and Save is hidden. Used by Operations review. */
+  reviewMode?: boolean;
+  /** Operations review actions */
+  onApprove?: (comment: string) => void;
+  onReject?: (comment: string) => void;
 }
 
 const tabIcons: Record<ReportTab, React.ReactNode> = {
@@ -253,9 +258,10 @@ const tabIcons: Record<ReportTab, React.ReactNode> = {
   "fuel-handling": <Fuel size={14} />,
 };
 
-export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus }: Props) {
+export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus, reviewMode = false, onApprove, onReject }: Props) {
   const { activeChannel } = useChannel();
   const [activeTab, setActiveTab] = useState<ReportTab>("flight");
+  const [reviewComment, setReviewComment] = useState<string>(data.reviewComment || "");
 
   type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
   const { data: delayCodes } = useSupabaseTable<DelayCodeRow>("delay_codes", { orderBy: "code", ascending: true });
@@ -544,7 +550,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-muted/10">
+        <div className={`flex-1 overflow-y-auto p-6 bg-muted/10 ${reviewMode ? "[&_input]:pointer-events-none [&_select]:pointer-events-none [&_textarea]:pointer-events-none [&_button]:pointer-events-none [&_input]:bg-muted/50 [&_select]:bg-muted/50" : ""}`}>
+          {reviewMode && (
+            <div className="mb-4 px-4 py-3 rounded-lg bg-info/10 border border-info/30 flex items-center gap-2 text-sm text-info pointer-events-auto">
+              <Clock size={16} />
+              <span><strong>Review Mode:</strong> Fields are read-only. Approve or reject this report below.</span>
+            </div>
+          )}
           {activeTab === "flight" && (
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
@@ -863,16 +875,55 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Footer */}
-        <div className="bg-card border-t px-6 py-3 flex flex-wrap gap-3 items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            <span>Auto-calculated • <strong className="text-foreground">{data.currency || "USD"} {totalCostPreview}</strong> total</span>
+        {reviewMode ? (
+          <div className="bg-card border-t px-6 py-4 space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                Review Comment {data.reviewStatus === "rejected" ? "(visible to station)" : "(required for rejection)"}
+              </label>
+              <textarea
+                className="w-full text-sm border rounded-md px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                rows={2}
+                placeholder="Add a comment for the station team..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                {data.reviewStatus && <span>Current status: <strong className="text-foreground capitalize">{data.reviewStatus}</strong></span>}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={onCancel} className="toolbar-btn-outline">Close</button>
+                <button
+                  onClick={() => onReject?.(reviewComment)}
+                  disabled={!reviewComment.trim()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-semibold hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={!reviewComment.trim() ? "Add a comment to reject" : "Send back to station"}
+                >
+                  <X size={14} /> Reject & Return to Station
+                </button>
+                <button
+                  onClick={() => onApprove?.(reviewComment)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-success text-success-foreground text-sm font-semibold hover:bg-success/90"
+                >
+                  ✓ Approve
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
-            <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+        ) : (
+          <div className="bg-card border-t px-6 py-3 flex flex-wrap gap-3 items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+              <span>Auto-calculated • <strong className="text-foreground">{data.currency || "USD"} {totalCostPreview}</strong> total</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
+              <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

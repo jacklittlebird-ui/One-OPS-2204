@@ -39,13 +39,16 @@ export function derivePipelineStage(opts: {
   // Ready for billing → receivables (step 4)
   if (rs === "ready_for_billing" || rs === "ready for billing") return "receivables";
 
+  // Operations channel: when reviewing a linked report, show step 3 (Operations) as the
+  // active stage with steps 1 (Clearance) and 2 (Station) marked completed.
+  // Only after the operations user approves does the report move forward to receivables.
+  if (ch === "operations" && opts.isLinked) {
+    if (rs === "approved") return "receivables";
+    return "operations";
+  }
+
   // Clearance not yet approved → step 1 (Clearance) is the active stage
   if (cs && cs !== "approved") return "clearance";
-
-  // Channel-aware progression for an existing/linked report:
-  // When viewing/editing inside the Operations channel and the station task is completed,
-  // mark step 3 (Operations) as completed → current stage = "receivables".
-  if (ch === "operations" && opts.isLinked && ds === "completed") return "receivables";
 
   // When viewing/editing inside the Station channel, the furthest completion is step 2.
   // Show step 3 (Operations) as the active (not-yet-completed) stage.

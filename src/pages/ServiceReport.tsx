@@ -322,6 +322,9 @@ function HandlingServiceReportContent() {
 
   const { activeChannel } = useChannel();
   const isReceivablesView = activeChannel === "receivables";
+  const isOperationsView = activeChannel === "operations";
+  const isStationView = activeChannel === "station";
+  const canCreateNew = !isReceivablesView && !isOperationsView;
 
   const [search, setSearch] = useState("");
   const [handlingFilter, setHandlingFilter] = useState("All Types");
@@ -332,6 +335,7 @@ function HandlingServiceReportContent() {
   const [dateTo, setDateTo] = useState("");
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
+  const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
@@ -610,8 +614,17 @@ function HandlingServiceReportContent() {
   const allHandlingTypes = useMemo(() => [...new Set(mergedRows.filter(r => r.handlingType).map(r => r.handlingType))], [mergedRows]);
   const allOperators = useMemo(() => [...new Set(mergedRows.filter(r => r.operator).map(r => r.operator))].sort(), [mergedRows]);
 
+  const rejectedCount = useMemo(
+    () => mergedRows.filter(r => r.isLinked && r.reviewStatus === "rejected").length,
+    [mergedRows]
+  );
+
   const filtered = useMemo(() => {
     let r = mergedRows;
+    // Operations view: only show linked/completed reports awaiting or under review
+    if (isOperationsView) r = r.filter(x => x.isLinked);
+    // Station view: when "Rejected" tab is active, only show rejected reports
+    if (isStationView && stationTab === "rejected") r = r.filter(x => x.isLinked && x.reviewStatus === "rejected");
     if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
     if (statusFilter === "Pending Completion") r = r.filter(x => !x.isLinked);
     if (handlingFilter !== "All Types") r = r.filter(x => x.handlingType === handlingFilter);
@@ -629,7 +642,7 @@ function HandlingServiceReportContent() {
       );
     }
     return r;
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -783,8 +796,42 @@ function HandlingServiceReportContent() {
             <button onClick={() => navigate("/services")} className="text-primary hover:underline">Chart of Services</button>
           </p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
+        {canCreateNew && (
+          <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
+        )}
       </div>
+
+      {/* Station-only sub-tabs (All vs Rejected) */}
+      {isStationView && (
+        <div className="flex items-center gap-2 border-b">
+          <button
+            onClick={() => { setStationTab("all"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+              stationTab === "all"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            All Reports
+          </button>
+          <button
+            onClick={() => { setStationTab("rejected"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              stationTab === "rejected"
+                ? "text-destructive border-destructive"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <AlertCircle size={14} />
+            Rejected Service Reports
+            {rejectedCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                {rejectedCount}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1012,12 +1059,38 @@ function HandlingServiceReportContent() {
       )}
       {editId && (
         <TabbedReportForm
-          title="Edit Service Report"
+          title={isOperationsView ? "Review Service Report" : "Edit Service Report"}
           data={editData}
           onChange={setEditData}
           onSave={saveEdit}
           onCancel={() => setEditId(null)}
           clearanceStatus={activeClearanceStatus}
+          reviewMode={isOperationsView}
+          onApprove={async (comment) => {
+            const { error } = await supabase.from("service_reports").update({
+              review_status: "approved",
+              review_comment: comment || "",
+              reviewed_by: "Operations",
+              reviewed_at: new Date().toISOString(),
+            } as any).eq("id", editId);
+            if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+            toast({ title: "✅ Report Approved", description: comment || "Moved to Receivables." });
+            setEditId(null);
+          }}
+          onReject={async (comment) => {
+            if (!comment.trim()) { toast({ title: "Comment required", description: "Add a reason before rejecting.", variant: "destructive" }); return; }
+            const { error } = await supabase.from("service_reports").update({
+              review_status: "rejected",
+              review_comment: comment,
+              reviewed_by: "Operations",
+              reviewed_at: new Date().toISOString(),
+            } as any).eq("id", editId);
+            if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+            toast({ title: "❌ Report Rejected", description: "Sent back to Station with comments." });
+            setEditId(null);
+          }}
         />
       )}
     </div>

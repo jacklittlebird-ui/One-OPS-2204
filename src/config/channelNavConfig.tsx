@@ -59,14 +59,6 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Delay Codes", path: "/delay-codes" },
       ],
     },
-    {
-      label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
-      children: [
-        { label: "Airlines", path: "/airlines" },
-        { label: "Services Catalog", path: "/services-catalog" },
-        { label: "Staff Roster", path: "/staff-roster" },
-      ],
-    },
     { label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications" },
   ],
 
