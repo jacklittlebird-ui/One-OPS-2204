@@ -550,7 +550,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-muted/10">
+        <div className={`flex-1 overflow-y-auto p-6 bg-muted/10 ${reviewMode ? "[&_input]:pointer-events-none [&_select]:pointer-events-none [&_textarea]:pointer-events-none [&_button]:pointer-events-none [&_input]:bg-muted/50 [&_select]:bg-muted/50" : ""}`}>
+          {reviewMode && (
+            <div className="mb-4 px-4 py-3 rounded-lg bg-info/10 border border-info/30 flex items-center gap-2 text-sm text-info pointer-events-auto">
+              <Clock size={16} />
+              <span><strong>Review Mode:</strong> Fields are read-only. Approve or reject this report below.</span>
+            </div>
+          )}
           {activeTab === "flight" && (
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
