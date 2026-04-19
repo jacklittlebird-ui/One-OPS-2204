@@ -30,8 +30,8 @@ export const COMPANY_KEY = "app:company";
 
 export const DEFAULT_THEME: ThemeSettings = {
   mode: "light",
-  primary: "243 55% 25%",
-  accent: "152 60% 45%",
+  primary: "205 85% 35%",
+  accent: "190 80% 45%",
   radius: "0.5",
 };
 
