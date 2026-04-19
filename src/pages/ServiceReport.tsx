@@ -1059,12 +1059,38 @@ function HandlingServiceReportContent() {
       )}
       {editId && (
         <TabbedReportForm
-          title="Edit Service Report"
+          title={isOperationsView ? "Review Service Report" : "Edit Service Report"}
           data={editData}
           onChange={setEditData}
           onSave={saveEdit}
           onCancel={() => setEditId(null)}
           clearanceStatus={activeClearanceStatus}
+          reviewMode={isOperationsView}
+          onApprove={async (comment) => {
+            const { error } = await supabase.from("service_reports").update({
+              review_status: "approved",
+              review_comment: comment || "",
+              reviewed_by: "Operations",
+              reviewed_at: new Date().toISOString(),
+            } as any).eq("id", editId);
+            if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+            toast({ title: "✅ Report Approved", description: comment || "Moved to Receivables." });
+            setEditId(null);
+          }}
+          onReject={async (comment) => {
+            if (!comment.trim()) { toast({ title: "Comment required", description: "Add a reason before rejecting.", variant: "destructive" }); return; }
+            const { error } = await supabase.from("service_reports").update({
+              review_status: "rejected",
+              review_comment: comment,
+              reviewed_by: "Operations",
+              reviewed_at: new Date().toISOString(),
+            } as any).eq("id", editId);
+            if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+            toast({ title: "❌ Report Rejected", description: "Sent back to Station with comments." });
+            setEditId(null);
+          }}
         />
       )}
     </div>
