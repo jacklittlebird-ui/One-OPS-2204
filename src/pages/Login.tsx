@@ -37,10 +37,10 @@ export default function LoginPage() {
         <div className="absolute top-1/3 right-20 w-40 h-40 rounded-full bg-white/[0.03]" />
 
          <div className="relative z-10 px-12 max-w-lg text-center space-y-8">
-           <div className="inline-flex items-center gap-3">
-             <PlaneLanding size={44} className="text-white" strokeWidth={2.2} />
+           <div className="inline-flex items-center gap-4">
+             <PlaneLanding size={64} className="text-white" strokeWidth={2.2} />
              <span className="text-5xl font-extrabold text-white tracking-tight">Link Aero</span>
-             <PlaneTakeoff size={44} className="text-white" strokeWidth={2.2} />
+             <PlaneTakeoff size={64} className="text-white" strokeWidth={2.2} />
            </div>
 
           <p className="text-white/80 text-lg leading-relaxed">
@@ -54,7 +54,7 @@ export default function LoginPage() {
               { icon: Clock, label: "Real-Time Ops" },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-white/[0.08] backdrop-blur-sm">
-                <Icon size={20} className="text-white/90" />
+                <Icon size={28} className="text-white/90" />
                 <span className="text-[11px] font-medium text-white/70 uppercase tracking-wider">{label}</span>
               </div>
             ))}
