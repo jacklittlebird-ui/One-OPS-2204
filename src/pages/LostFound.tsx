@@ -30,7 +30,7 @@ const statusCfg: Record<LFStatus, { cls: string; icon: React.ReactNode }> = {
 const CATEGORIES = ["Bag", "Clothing", "Documents", "Electronics", "Jewelry", "Medical", "Other"];
 
 export default function LostFoundPage() {
-  const { data: items, isLoading, add, update, remove } = useSupabaseTable<LFRow>("lost_found");
+  const { data: items, isLoading, add, update, remove } = useSupabaseTable<LFRow>("lost_found", { stationFilter: true });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");

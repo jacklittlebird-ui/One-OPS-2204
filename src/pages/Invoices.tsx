@@ -133,8 +133,8 @@ const PAGE_SIZE = 15;
 
 export default function InvoicesPage() {
   const queryClient = useQueryClient();
-  const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices");
-  const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments");
+  const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices", { stationFilter: true });
+  const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");

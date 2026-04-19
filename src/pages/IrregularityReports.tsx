@@ -62,7 +62,7 @@ const emptyReport = (): Partial<IrregularityRow> => ({
 const PAGE_SIZE = 15;
 
 export default function IrregularityReportsPage() {
-  const { data: reports, isLoading, add, update, remove, isAdding } = useSupabaseTable<IrregularityRow>("irregularity_reports");
+  const { data: reports, isLoading, add, update, remove, isAdding } = useSupabaseTable<IrregularityRow>("irregularity_reports", { stationFilter: true });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [showFilters, setShowFilters] = useState(false);

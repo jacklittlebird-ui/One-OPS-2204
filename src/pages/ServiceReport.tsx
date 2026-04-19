@@ -15,6 +15,7 @@ import { Constants } from "@/integrations/supabase/types";
 import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useUserStation } from "@/contexts/UserStationContext";
 import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
@@ -340,10 +341,14 @@ function HandlingServiceReportContent() {
   const [activeClearanceStatus, setActiveClearanceStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { station: userStation, isStationScoped } = useUserStation();
+
   const { data: dbReports = [], isLoading: isLoadingReports } = useQuery({
-    queryKey: ["service_reports"],
+    queryKey: ["service_reports", isStationScoped ? userStation : null],
     queryFn: async () => {
-      const { data, error } = await supabase.from("service_reports").select("*").order("created_at", { ascending: false });
+      let q = supabase.from("service_reports").select("*").order("created_at", { ascending: false });
+      if (isStationScoped && userStation) q = (q as any).eq("station", userStation);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserStation } from "@/contexts/UserStationContext";
 
 type TableName = 
   | "flight_schedules" | "service_reports" | "service_report_delays"
@@ -17,17 +18,18 @@ type TableName =
 
 export function useSupabaseTable<T extends Record<string, any>>(
   table: TableName,
-  options?: { orderBy?: string; ascending?: boolean }
+  options?: { orderBy?: string; ascending?: boolean; stationFilter?: boolean }
 ) {
   const queryClient = useQueryClient();
   const { session } = useAuth();
+  const { station, isStationScoped } = useUserStation();
   const orderCol = options?.orderBy || "created_at";
   const asc = options?.ascending ?? false;
+  const applyStationFilter = !!options?.stationFilter && isStationScoped && !!station;
 
   const query = useQuery({
-    queryKey: [table, session?.user?.id],
+    queryKey: [table, session?.user?.id, applyStationFilter ? station : null],
     queryFn: async () => {
-      // Double-check we have a valid session before querying
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       if (!currentSession) {
         throw new Error("No active session");
@@ -38,11 +40,15 @@ export function useSupabaseTable<T extends Record<string, any>>(
       let from = 0;
       let hasMore = true;
       while (hasMore) {
-        const { data, error } = await supabase
+        let q = supabase
           .from(table)
           .select("*")
           .order(orderCol, { ascending: asc })
           .range(from, from + PAGE_SIZE - 1);
+        if (applyStationFilter) {
+          q = (q as any).eq("station", station as string);
+        }
+        const { data, error } = await q;
         if (error) throw error;
         allData = allData.concat(data || []);
         hasMore = (data?.length || 0) === PAGE_SIZE;

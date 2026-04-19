@@ -5,6 +5,7 @@ import GlobalSearch from "@/components/GlobalSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUserStation } from "@/contexts/UserStationContext";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -14,6 +15,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const { station, isStationScoped } = useUserStation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
@@ -62,6 +64,17 @@ export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar 
         <button onClick={onToggleSidebar} className="p-2 rounded-full hover:bg-muted transition-colors mr-1" title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
           {sidebarCollapsed ? <PanelLeft size={20} className="text-foreground" /> : <PanelLeftClose size={20} className="text-foreground" />}
         </button>
+      )}
+
+      {/* Station scope badge */}
+      {isStationScoped && station && (
+        <div
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold border border-primary/20 shrink-0"
+          title={`Scoped to station ${station}`}
+        >
+          <span className="opacity-70">Station</span>
+          <span>{station}</span>
+        </div>
       )}
 
       {/* Global Search */}

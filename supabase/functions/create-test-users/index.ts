@@ -117,6 +117,13 @@ Deno.serve(async (req) => {
   );
   results.push(...contractsPortalResults);
 
+  // 8) HBE Station Portal: hbestn@linkagency.com (Borg El Arab)
+  const hbeStationResults = await ensureUser(supabaseAdmin, adminList,
+    "hbestn@linkagency.com", "Hbesec12345", "HBE Station - Borg El Arab",
+    ["station_ops"], "HBE"
+  );
+  results.push(...hbeStationResults);
+
   return new Response(JSON.stringify({ results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
