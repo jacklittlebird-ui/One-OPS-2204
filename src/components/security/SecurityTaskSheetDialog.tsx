@@ -803,8 +803,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         </fieldset>
 
         {/* Sticky action bar */}
-        <div className="sticky bottom-0 flex flex-wrap justify-between items-center gap-2 px-6 py-3 border-t bg-card/95 backdrop-blur-sm">
-          <div className="flex gap-2">
+        <div className="sticky bottom-0 flex justify-between items-center gap-2 px-6 py-3 border-t bg-card/95 backdrop-blur-sm">
+          <div className="flex gap-2 shrink-0">
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer size={14} className="mr-1" /> Print
             </Button>
@@ -813,23 +813,20 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             </Button>
           </div>
           {reviewMode ? (
-            <div className="flex flex-1 items-end gap-2 justify-end flex-wrap">
-              <div className="flex-1 min-w-[200px] max-w-md">
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">
-                  Review Comment {(<span className="text-destructive">(required for rejection)</span>)}
-                </label>
-                <textarea
-                  value={reviewComment}
-                  onChange={e => setReviewComment(e.target.value)}
-                  placeholder="Add review comment..."
-                  className="w-full text-sm border rounded px-2.5 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  rows={2}
-                />
-              </div>
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <div className="flex flex-1 items-center gap-2 justify-end min-w-0">
+              <input
+                type="text"
+                value={reviewComment}
+                onChange={e => setReviewComment(e.target.value)}
+                placeholder="Review comment (required for rejection)"
+                className="flex-1 min-w-0 text-sm border rounded px-2.5 h-9 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <Button variant="outline" size="sm" onClick={onClose} className="shrink-0">Cancel</Button>
               <Button
                 variant="destructive"
+                size="sm"
                 disabled={reviewSubmitting}
+                className="shrink-0 whitespace-nowrap"
                 onClick={async () => {
                   if (!reviewComment.trim()) {
                     toast({ title: "Comment required", description: "Please add a reason before rejecting.", variant: "destructive" });
@@ -852,8 +849,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <XCircle size={14} className="mr-1" /> Reject & Return to Station
               </Button>
               <Button
+                size="sm"
                 disabled={reviewSubmitting}
-                className="bg-success hover:bg-success/90 text-success-foreground"
+                className="bg-success hover:bg-success/90 text-success-foreground shrink-0"
                 onClick={async () => {
                   setReviewSubmitting(true);
                   const { error } = await supabase.from("dispatch_assignments").update({
