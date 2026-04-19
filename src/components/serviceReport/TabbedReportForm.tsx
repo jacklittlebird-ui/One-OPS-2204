@@ -875,16 +875,55 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Footer */}
-        <div className="bg-card border-t px-6 py-3 flex flex-wrap gap-3 items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            <span>Auto-calculated • <strong className="text-foreground">{data.currency || "USD"} {totalCostPreview}</strong> total</span>
+        {reviewMode ? (
+          <div className="bg-card border-t px-6 py-4 space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                Review Comment {data.reviewStatus === "rejected" ? "(visible to station)" : "(required for rejection)"}
+              </label>
+              <textarea
+                className="w-full text-sm border rounded-md px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                rows={2}
+                placeholder="Add a comment for the station team..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                {data.reviewStatus && <span>Current status: <strong className="text-foreground capitalize">{data.reviewStatus}</strong></span>}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={onCancel} className="toolbar-btn-outline">Close</button>
+                <button
+                  onClick={() => onReject?.(reviewComment)}
+                  disabled={!reviewComment.trim()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-semibold hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={!reviewComment.trim() ? "Add a comment to reject" : "Send back to station"}
+                >
+                  <X size={14} /> Reject & Return to Station
+                </button>
+                <button
+                  onClick={() => onApprove?.(reviewComment)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-success text-success-foreground text-sm font-semibold hover:bg-success/90"
+                >
+                  ✓ Approve
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
-            <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+        ) : (
+          <div className="bg-card border-t px-6 py-3 flex flex-wrap gap-3 items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+              <span>Auto-calculated • <strong className="text-foreground">{data.currency || "USD"} {totalCostPreview}</strong> total</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
+              <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
