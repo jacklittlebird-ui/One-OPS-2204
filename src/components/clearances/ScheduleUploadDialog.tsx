@@ -81,7 +81,7 @@ function pairTurnaroundFlights(rows: ParsedRow[]): ParsedRow[] {
       ...cur,
       flight_number: mergeFlightNumbers(cur.flight_number, nxt.flight_number),
       route: mergeRoutes(cur.route, nxt.route),
-      std: nxt.sta || cur.std,
+      std: nxt.std || cur.std,
       departure_date: nxt.departure_date || nxt.arrival_date || cur.departure_date,
       departure_flight: nxt.flight_number || nxt.departure_flight || cur.departure_flight,
     });
