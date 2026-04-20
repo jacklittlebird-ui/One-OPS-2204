@@ -1,0 +1,1 @@
+UPDATE public.flight_schedules SET status = 'Pending' WHERE clearance_type IN ('Arrival Security','Departure Security','Turnaround Security','Transit Security') AND status = 'Approved';
