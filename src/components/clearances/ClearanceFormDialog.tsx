@@ -134,6 +134,9 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
   const selectedDays = form.week_days ? form.week_days.split(",") : [];
 
   const validateAndSave = () => {
+    const ct = form.clearance_type || "";
+    const staLocked = ct === "Departure Security";
+    const stdLocked = ct === "Arrival Security";
     const missing: string[] = [];
     if (!form.airline_id) missing.push("Account (Airline)");
     if (!form.skd_type) missing.push("Skd Type");
@@ -142,13 +145,16 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
     if (!form.route) missing.push("Route");
     if (!form.arrival_date) missing.push("Arrival Date");
     if (!form.departure_date) missing.push("Departure Date");
-    if (!form.sta) missing.push("STA (24h)");
-    if (!form.std) missing.push("STD (24h)");
+    if (!staLocked && !form.sta) missing.push("STA (24h)");
+    if (!stdLocked && !form.std) missing.push("STD (24h)");
     if (!form.clearance_type) missing.push("Service Type");
     if (missing.length > 0) {
       toast({ title: "Missing Required Fields", description: missing.join(", "), variant: "destructive" });
       return;
     }
+    // Clear locked time fields before saving
+    if (staLocked && form.sta) setForm({ ...form, sta: "" });
+    if (stdLocked && form.std) setForm({ ...form, std: "" });
     onSave();
   };
 
