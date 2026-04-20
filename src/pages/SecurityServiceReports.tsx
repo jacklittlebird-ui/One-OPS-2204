@@ -675,10 +675,10 @@ export default function SecurityServiceReportsPage() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={15} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
                   ) : pageData.length === 0 ? (
                      <tr>
-                      <td colSpan={15} className="text-center py-16">
+                      <td colSpan={17} className="text-center py-16">
                         <Shield size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                         <p className="font-semibold text-foreground">No Security Service Reports</p>
                         <p className="text-muted-foreground text-sm mt-1">Security service reports will appear here once created</p>
@@ -688,6 +688,12 @@ export default function SecurityServiceReportsPage() {
                     const sc = dispatchStatusConfig[r.status] || dispatchStatusConfig["Pending"];
                     const hasIrregularity = r.irregularity_id && linkedIrregularities.has(r.irregularity_id);
                     const isPending = (r as any).isPending === true;
+                    const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+                    const meta = (r as any).flightMeta;
+                    const arrDate = fd?.arrival_date || meta?.arrival_date || "";
+                    const depDate = fd?.departure_date || meta?.departure_date || "";
+                    const route = fd?.route || meta?.route || "";
+                    const acType = fd?.aircraft_type || meta?.aircraft_type || "";
                     return (
                       <tr key={r.id} className={`data-table-row ${isPending ? "bg-muted/30" : ""}`}>
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
@@ -699,9 +705,12 @@ export default function SecurityServiceReportsPage() {
                           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{r.service_type}</span>
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs">
-                          {r.flight_schedule_id ? (flightDetailsById.get(r.flight_schedule_id)?.skd_type || (r as any).flightMeta?.skd_type || "—") : "—"}
+                          {fd?.skd_type || meta?.skd_type || "—"}
                         </td>
-                        <td className="px-3 py-2.5 text-foreground">{isPending ? "—" : r.staff_count}</td>
+                        <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{arrDate || "—"}</td>
+                        <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{depDate || "—"}</td>
+                        <td className="px-3 py-2.5 text-foreground text-xs">{route || "—"}</td>
+                        <td className="px-3 py-2.5 text-foreground text-xs">{acType || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                           {r.actual_start && r.actual_end ? `${r.actual_start}–${r.actual_end}` : "—"}
                         </td>
@@ -714,7 +723,6 @@ export default function SecurityServiceReportsPage() {
                             return overtimeDisplay > 0 ? <span className="text-warning font-semibold">{overtimeDisplay}h</span> : "—";
                           })()}
                         </td>
-                        <td className="px-3 py-2.5 font-semibold text-success">{r.total_charge > 0 ? `$${r.total_charge.toLocaleString()}` : "—"}</td>
                         <td className="px-3 py-2.5">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc}`}>{r.status}</span>
                           {hasIrregularity && (
