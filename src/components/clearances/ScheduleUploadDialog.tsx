@@ -19,6 +19,72 @@ interface Props {
   defaultCategory?: ServiceCategory;
 }
 
+// Merge route segments: "SSH/HBE" + "HBE/SSH" -> "SSH/HBE/SSH"
+function mergeRoutes(a: string, b: string): string {
+  const segA = (a || "").split("/").map(s => s.trim()).filter(Boolean);
+  const segB = (b || "").split("/").map(s => s.trim()).filter(Boolean);
+  if (!segA.length) return segB.join("/");
+  if (!segB.length) return segA.join("/");
+  // If last of A === first of B, drop the duplicate
+  if (segA[segA.length - 1].toUpperCase() === segB[0].toUpperCase()) {
+    return [...segA, ...segB.slice(1)].join("/");
+  }
+  return [...segA, ...segB].join("/");
+}
+
+// Merge flight numbers: "SM 0034" + "SM 0035" -> "SM 0034/0035"
+function mergeFlightNumbers(a: string, b: string): string {
+  const A = (a || "").trim();
+  const B = (b || "").trim();
+  if (!A) return B;
+  if (!B) return A;
+  // Try to detect carrier prefix (letters/digits then space)
+  const matchA = A.match(/^([A-Z0-9]{2,3})\s*(.+)$/i);
+  const matchB = B.match(/^([A-Z0-9]{2,3})\s*(.+)$/i);
+  if (matchA && matchB && matchA[1].toUpperCase() === matchB[1].toUpperCase()) {
+    return `${matchA[1]} ${matchA[2]}/${matchB[2]}`;
+  }
+  return `${A}/${B}`;
+}
+
+// For Turnaround Security: pair each row with the next row (same date when possible),
+// merging flight#, route, taking next.sta as current.std, and removing the next row.
+function pairTurnaroundFlights(rows: ParsedRow[]): ParsedRow[] {
+  const result: ParsedRow[] = [];
+  const consumed = new Set<number>();
+  for (let i = 0; i < rows.length; i++) {
+    if (consumed.has(i)) continue;
+    const cur = rows[i];
+    if (cur.service_type !== "Turnaround Security") {
+      result.push(cur);
+      continue;
+    }
+    // Find next unconsumed turnaround row (prefer same arrival date)
+    let nextIdx = -1;
+    for (let j = i + 1; j < rows.length; j++) {
+      if (consumed.has(j)) continue;
+      if (rows[j].service_type !== "Turnaround Security") continue;
+      nextIdx = j;
+      if ((rows[j].arrival_date || "") === (cur.arrival_date || "")) break;
+    }
+    if (nextIdx === -1) {
+      result.push(cur);
+      continue;
+    }
+    const nxt = rows[nextIdx];
+    consumed.add(nextIdx);
+    result.push({
+      ...cur,
+      flight_number: mergeFlightNumbers(cur.flight_number, nxt.flight_number),
+      route: mergeRoutes(cur.route, nxt.route),
+      std: nxt.sta || cur.std,
+      departure_date: nxt.arrival_date || cur.departure_date,
+      departure_flight: nxt.flight_number || cur.departure_flight,
+    });
+  }
+  return result;
+}
+
 export default function ScheduleUploadDialog({ open, onOpenChange, defaultCategory = "handling" }: Props) {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -70,7 +136,8 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
         // If parsed type doesn't match the active tab category, force the default
         return cat === defaultCategory ? r : { ...r, service_type: defaultType };
       });
-      setFlights(normalized);
+      const paired = pairTurnaroundFlights(normalized);
+      setFlights(paired);
       setIsTrafficReport(result.isTrafficReport);
       setStep("preview");
     } catch (err: any) {
