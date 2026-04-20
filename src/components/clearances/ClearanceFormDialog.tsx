@@ -360,6 +360,7 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                   </>
                 );
               })()}
+            </div>
           </section>
 
           {/* DAY OF WEEK & PERIOD */}
