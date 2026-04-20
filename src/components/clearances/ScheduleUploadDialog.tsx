@@ -130,14 +130,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
         toast({ title: "Empty file", description: "No data rows found. Check the file format.", variant: "destructive" });
         return;
       }
-      const defaultType = defaultCategory === "security" ? "Turnaround Security" : "Full Handling";
-      const normalized = result.rows.map(r => {
-        const cat = getServiceCategory(r.service_type as any);
-        // If parsed type doesn't match the active tab category, force the default
-        return cat === defaultCategory ? r : { ...r, service_type: defaultType };
-      });
-      const paired = defaultCategory === "security" ? pairTurnaroundFlights(normalized) : normalized;
-      setFlights(paired);
+      setFlights(result.rows);
       setIsTrafficReport(result.isTrafficReport);
       setStep("preview");
     } catch (err: any) {
@@ -173,7 +166,8 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
     setStep("importing");
 
     try {
-      const records = flights.map(f => {
+      const processed = pairTurnaroundFlights(flights);
+      const records = processed.map(f => {
         const ct = f.service_type || "Full Handling";
         const clearSta = ct === "Departure Security";
         const clearStd = ct === "Arrival Security";
