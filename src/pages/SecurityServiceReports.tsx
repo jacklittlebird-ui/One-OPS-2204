@@ -137,8 +137,6 @@ export default function SecurityServiceReportsPage() {
   const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
-  const [activeMainTab, setActiveMainTab] = useState<"reports" | "flights">("reports");
-  const [flightsPage, setFlightsPage] = useState(1);
 
   // Fetch dispatch assignments (completed ones = service reports)
   const { data: dispatches = [], isLoading } = useQuery({
