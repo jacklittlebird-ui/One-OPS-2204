@@ -76,35 +76,59 @@ export function normalizeServiceType(val: string): ServiceType {
 
 export function parseDate(val: any): string {
   if (!val) return "";
-  if (val instanceof Date || (typeof val === "object" && val.getFullYear)) {
+
+  if (val instanceof Date || (typeof val === "object" && typeof val.getUTCFullYear === "function")) {
     const d = val as Date;
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
+    if (!year || !month || !day) return "";
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
+
   if (typeof val === "number") {
     const date = XLSX.SSF.parse_date_code(val);
+    if (!date?.y || !date?.m || !date?.d) return "";
     return `${date.y}-${String(date.m).padStart(2, "0")}-${String(date.d).padStart(2, "0")}`;
   }
+
   const str = String(val).trim();
-  // ISO format yyyy-mm-dd already
-  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
-  const parts = str.split(/[\/\-\.]/);
+  const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${y}-${m}-${d}`;
+  }
+
+  const dmy = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (dmy) {
+    let [, d, m, y] = dmy;
+    let yearNum = parseInt(y, 10);
+    if (yearNum < 100) yearNum += 2000;
+
+    const dayNum = parseInt(d, 10);
+    const monthNum = parseInt(m, 10);
+    if (monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31) return "";
+
+    const result = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
+    if (result.getUTCDate() !== dayNum || result.getUTCMonth() !== monthNum - 1 || result.getUTCFullYear() !== yearNum) return "";
+
+    return `${yearNum}-${String(monthNum).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+  }
+
+  const parts = str.split(/[\/\-.]/);
   if (parts.length === 3) {
     let [a, b, c] = parts.map((p) => parseInt(p, 10));
-    // yyyy-mm-dd or yyyy/mm/dd
-    if (a > 1900) {
-      return `${a}-${String(b).padStart(2, "0")}-${String(c).padStart(2, "0")}`;
-    }
-    // Two-digit year handling
-    if (c < 100) c = c + (c < 50 ? 2000 : 1900);
-    // Default to DD/MM/YYYY (aviation standard, IATA SSIM).
-    // If first part > 12, must be DD/MM/YYYY. If second part > 12, must be MM/DD/YYYY.
-    let day = a, month = b;
-    if (a > 12 && b <= 12) { day = a; month = b; }
-    else if (b > 12 && a <= 12) { day = b; month = a; }
-    // Otherwise default day-first
+    if ([a, b, c].some((n) => Number.isNaN(n))) return "";
+    if (a > 1900) return `${a}-${String(b).padStart(2, "0")}-${String(c).padStart(2, "0")}`;
+    if (c < 100) c += 2000;
+    const day = b > 12 && a <= 12 ? b : a;
+    const month = b > 12 && a <= 12 ? a : b;
+    const result = new Date(Date.UTC(c, month - 1, day));
+    if (result.getUTCDate() !== day || result.getUTCMonth() !== month - 1 || result.getUTCFullYear() !== c) return "";
     return `${c}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
-  return str;
+
+  return "";
 }
 
 export function parseTime(val: any): string {
@@ -220,7 +244,7 @@ function findHeaderRow(ws: XLSX.WorkSheet): number {
 
 export function parseExcel(buffer: ArrayBuffer): { rows: ParsedRow[]; stationCol: string; isTrafficReport: boolean } {
   const data = new Uint8Array(buffer);
-  const wb = XLSX.read(data, { type: "array", cellDates: true });
+  const wb = XLSX.read(data, { type: "array", cellDates: false });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const headerRowIdx = findHeaderRow(ws);
   const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "", range: headerRowIdx });

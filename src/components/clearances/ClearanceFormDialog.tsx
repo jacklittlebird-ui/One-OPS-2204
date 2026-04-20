@@ -34,9 +34,12 @@ function calcNoOfFlights(periodFrom: string, periodTo: string, weekDays: string)
   const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   const selectedDays = weekDays.split(",").filter(Boolean).map(d => dayMap[d]).filter(n => n !== undefined);
   if (selectedDays.length === 0) return 0;
+  const startMatch = periodFrom.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const endMatch = periodTo.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!startMatch || !endMatch) return 0;
   let count = 0;
-  const start = new Date(periodFrom);
-  const end = new Date(periodTo);
+  const start = new Date(Number(startMatch[1]), Number(startMatch[2]) - 1, Number(startMatch[3]));
+  const end = new Date(Number(endMatch[1]), Number(endMatch[2]) - 1, Number(endMatch[3]));
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     if (selectedDays.includes(d.getDay())) count++;
   }

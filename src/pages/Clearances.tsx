@@ -256,12 +256,15 @@ export default function ClearancesPage() {
       if (!form.period_from || !form.period_to || !form.week_days) return null;
       const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
       const selectedDays = form.week_days.split(",").filter(Boolean).map((d: string) => dayMap[d]).filter((n: number) => n !== undefined);
-      const start = new Date(form.period_from);
-      const end = new Date(form.period_to);
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end || selectedDays.length === 0) return null;
+      const startMatch = String(form.period_from).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const endMatch = String(form.period_to).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!startMatch || !endMatch || selectedDays.length === 0) return null;
+      const start = new Date(Number(startMatch[1]), Number(startMatch[2]) - 1, Number(startMatch[3]));
+      const end = new Date(Number(endMatch[1]), Number(endMatch[2]) - 1, Number(endMatch[3]));
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return null;
       const dates: string[] = [];
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        if (selectedDays.includes(d.getDay())) dates.push(d.toISOString().slice(0, 10));
+        if (selectedDays.includes(d.getDay())) dates.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
       }
       return dates;
     };

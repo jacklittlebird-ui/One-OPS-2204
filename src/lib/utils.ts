@@ -5,28 +5,40 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format a date string (ISO yyyy-mm-dd or DD/MM/YYYY) to DD/MM/YYYY for display.
- *  Parses date parts directly to avoid timezone shifts from `new Date(...)`. */
-export function formatDateDMY(value: string | null | undefined): string {
-  if (!value) return "—";
+/** Parse a date string safely without timezone shifts. Supports ISO and DD/MM/YYYY. */
+export function parseDateSafe(value: string | null | undefined): { year: number; month: number; day: number } | null {
+  if (!value) return null;
   const str = String(value).trim();
-  // ISO yyyy-mm-dd (optionally with time component)
-  const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
-  // Already DD/MM/YYYY or DD-MM-YYYY
-  const dmy = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-  if (dmy) {
-    let [, d, m, y] = dmy;
-    if (y.length === 2) y = (parseInt(y) < 50 ? "20" : "19") + y;
-    return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+
+  const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const year = Number(iso[1]);
+    const month = Number(iso[2]);
+    const day = Number(iso[3]);
+    const dt = new Date(Date.UTC(year, month - 1, day));
+    if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) return null;
+    return { year, month, day };
   }
-  // Fallback: use Date but read UTC parts to avoid TZ shift
-  const dt = new Date(str);
-  if (isNaN(dt.getTime())) return str;
-  const dd = String(dt.getUTCDate()).padStart(2, "0");
-  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
-  const yyyy = dt.getUTCFullYear();
-  return `${dd}/${mm}/${yyyy}`;
+
+  const dmy = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (dmy) {
+    let year = Number(dmy[3]);
+    if (year < 100) year += 2000;
+    const day = Number(dmy[1]);
+    const month = Number(dmy[2]);
+    const dt = new Date(Date.UTC(year, month - 1, day));
+    if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) return null;
+    return { year, month, day };
+  }
+
+  return null;
+}
+
+/** Format a date string (ISO yyyy-mm-dd or DD/MM/YYYY) to DD/MM/YYYY for display. */
+export function formatDateDMY(value: string | null | undefined): string {
+  const parsed = parseDateSafe(value);
+  if (!parsed) return value ? String(value).trim() : "—";
+  return `${String(parsed.day).padStart(2, "0")}/${String(parsed.month).padStart(2, "0")}/${parsed.year}`;
 }
 
 /** Format a timestamp to DD/MM/YYYY for display */
