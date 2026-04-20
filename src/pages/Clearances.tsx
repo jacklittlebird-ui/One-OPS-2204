@@ -148,12 +148,14 @@ export default function ClearancesPage() {
 
   const pendingApproval = data.filter(c => c.status === "Pending" && (c.remarks?.includes("Added from Station Dispatch") || c.purpose === "Security Service"));
 
+  // Stats are scoped to the active service category (Security or Handling)
+  const categoryData = data.filter(c => getServiceCategory(c.clearance_type) === serviceCategory);
   const stats = {
-    total: data.length,
-    pending: data.filter(c => c.status === "Pending").length,
-    approved: data.filter(c => c.status === "Approved").length,
-    expiringSoon: data.filter(c => c.status === "Approved" && c.valid_to && (new Date(c.valid_to).getTime() - Date.now()) / 86400000 <= 7 && (new Date(c.valid_to).getTime() - Date.now()) > 0).length,
-    totalPax: data.filter(c => c.status === "Approved").reduce((s, c) => s + (c.passengers || 0), 0),
+    total: categoryData.length,
+    pending: categoryData.filter(c => c.status === "Pending").length,
+    approved: categoryData.filter(c => c.status === "Approved").length,
+    expiringSoon: categoryData.filter(c => c.status === "Approved" && c.valid_to && (new Date(c.valid_to).getTime() - Date.now()) / 86400000 <= 7 && (new Date(c.valid_to).getTime() - Date.now()) > 0).length,
+    totalPax: categoryData.filter(c => c.status === "Approved").reduce((s, c) => s + (c.passengers || 0), 0),
   };
 
   const handleApprove = async (c: ClearanceRow) => {

@@ -438,8 +438,14 @@ export default function StationDispatchPage() {
   const isLoading = flightsLoading || dispLoading;
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
-  // KPIs
-  const todayDispatches = dispatches.filter(d => d.flight_date >= dateFrom && d.flight_date <= dateTo && (!stationFilter || d.station === stationFilter));
+  // KPIs — scoped to the active service category (Security or Handling)
+  const secTypesLower = SERVICE_TYPES_SECURITY.map(s => s.toLowerCase());
+  const todayDispatches = dispatches.filter(d => {
+    if (d.flight_date < dateFrom || d.flight_date > dateTo) return false;
+    if (stationFilter && d.station !== stationFilter) return false;
+    const isSec = secTypesLower.includes(d.service_type.toLowerCase()) || SECURITY_CLEARANCE_TYPES.includes(d.service_type);
+    return serviceCategory === "security" ? isSec : !isSec;
+  });
   const completedCount = todayDispatches.filter(d => d.status === "Completed").length;
   const overtimeTotal = todayDispatches.reduce((s, d) => s + (d.overtime_hours || 0), 0);
   const revenueTotal = todayDispatches.reduce((s, d) => s + (d.total_charge || 0), 0);
