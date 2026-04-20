@@ -145,6 +145,13 @@ export default function ClearancesPage() {
     const mdf = !dateFrom || flightDate >= dateFrom;
     const mdt = !dateTo || flightDate <= dateTo;
     return categoryMatch && ms && mst && mt && mstation && mreg && mairline && mdf && mdt;
+  }).sort((a, b) => {
+    const da = a.arrival_date || a.departure_date || "";
+    const db = b.arrival_date || b.departure_date || "";
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da.localeCompare(db);
   });
 
   const pendingApproval = data.filter(c => c.status === "Pending" && (c.remarks?.includes("Added from Station Dispatch") || c.purpose === "Security Service"));
