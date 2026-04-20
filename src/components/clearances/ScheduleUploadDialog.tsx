@@ -166,7 +166,8 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
     setStep("importing");
 
     try {
-      const records = flights.map(f => {
+      const processed = pairTurnaroundFlights(flights);
+      const records = processed.map(f => {
         const ct = f.service_type || "Full Handling";
         const clearSta = ct === "Departure Security";
         const clearStd = ct === "Arrival Security";
