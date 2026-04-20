@@ -313,37 +313,53 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <Checkbox checked={form.royalty} onCheckedChange={v => setForm({ ...form, royalty: !!v })} />
                 <label className="text-sm font-medium">Royalty</label>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">STA (24h) <span className="text-destructive">*</span></label>
-                <Input
-                  placeholder="HH:MM"
-                  maxLength={5}
-                  className="font-mono"
-                  value={form.sta}
-                  onChange={e => {
-                    let v = e.target.value.replace(/[^0-9:]/g, "");
-                    if (v.length === 2 && !v.includes(":") && form.sta?.length !== 3) v += ":";
-                    if (v.length > 5) v = v.slice(0, 5);
-                    setForm({ ...form, sta: v });
-                  }}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">STD (24h) <span className="text-destructive">*</span></label>
-                <Input
-                  placeholder="HH:MM"
-                  maxLength={5}
-                  className="font-mono"
-                  value={form.std}
-                  onChange={e => {
-                    let v = e.target.value.replace(/[^0-9:]/g, "");
-                    if (v.length === 2 && !v.includes(":") && form.std?.length !== 3) v += ":";
-                    if (v.length > 5) v = v.slice(0, 5);
-                    setForm({ ...form, std: v });
-                  }}
-                />
-              </div>
-            </div>
+              {(() => {
+                const ct = form.clearance_type || "";
+                // Arrival Security: STA editable, STD locked & cleared
+                // Departure Security: STD editable, STA locked & cleared
+                const staLocked = ct === "Departure Security";
+                const stdLocked = ct === "Arrival Security";
+                return (
+                  <>
+                    <div>
+                      <label className="text-xs text-muted-foreground">STA (24h) {!staLocked && <span className="text-destructive">*</span>}</label>
+                      <Input
+                        placeholder={staLocked ? "—" : "HH:MM"}
+                        maxLength={5}
+                        readOnly={staLocked}
+                        disabled={staLocked}
+                        className={cn("font-mono", staLocked && "bg-muted text-muted-foreground")}
+                        value={staLocked ? "" : (form.sta || "")}
+                        onChange={e => {
+                          if (staLocked) return;
+                          let v = e.target.value.replace(/[^0-9:]/g, "");
+                          if (v.length === 2 && !v.includes(":") && form.sta?.length !== 3) v += ":";
+                          if (v.length > 5) v = v.slice(0, 5);
+                          setForm({ ...form, sta: v });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">STD (24h) {!stdLocked && <span className="text-destructive">*</span>}</label>
+                      <Input
+                        placeholder={stdLocked ? "—" : "HH:MM"}
+                        maxLength={5}
+                        readOnly={stdLocked}
+                        disabled={stdLocked}
+                        className={cn("font-mono", stdLocked && "bg-muted text-muted-foreground")}
+                        value={stdLocked ? "" : (form.std || "")}
+                        onChange={e => {
+                          if (stdLocked) return;
+                          let v = e.target.value.replace(/[^0-9:]/g, "");
+                          if (v.length === 2 && !v.includes(":") && form.std?.length !== 3) v += ":";
+                          if (v.length > 5) v = v.slice(0, 5);
+                          setForm({ ...form, std: v });
+                        }}
+                      />
+                    </div>
+                  </>
+                );
+              })()}
           </section>
 
           {/* DAY OF WEEK & PERIOD */}
