@@ -99,14 +99,18 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
     setStep("importing");
 
     try {
-      const records = flights.map(f => ({
+      const records = flights.map(f => {
+        const ct = f.service_type || "Full Handling";
+        const clearSta = ct === "Departure Security";
+        const clearStd = ct === "Arrival Security";
+        return {
         flight_no: f.flight_number || f.arrival_flight || f.departure_flight,
         airline_id: selectedAirline || null,
         route: f.route,
         aircraft_type: f.aircraft_type,
         registration: f._ac_reg || f.config,
-        sta: f.sta || null,
-        std: f.std || null,
+        sta: clearSta ? null : (f.sta || null),
+        std: clearStd ? null : (f.std || null),
         arrival_date: f.arrival_date || null,
         departure_date: f.departure_date || null,
         arrival_flight: f.arrival_flight || null,
@@ -115,7 +119,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
         cargo_kg: 0,
         week_days: f.week_days?.join(",") || null,
         skd_type: "Schedule",
-        clearance_type: f.service_type || "Full Handling",
+        clearance_type: ct,
         permit_no: "",
         handling_agent: "",
         config: parseInt(f.config) || null,
@@ -127,7 +131,8 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
         no_of_flights: f.number_of_flights || null,
         ref_no: f.ref_number || null,
         notes: f.notes || null,
-      }));
+      };
+      });
 
       // Remove duplicates: delete existing records matching same airline + station + flight_no + dates
       const uniqueKeys = [...new Set(records.map(r => r.flight_no).filter(Boolean))];
