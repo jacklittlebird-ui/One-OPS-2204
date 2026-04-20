@@ -10,69 +10,73 @@ const STEPS = [
 export type PipelineStage = "clearance" | "station" | "operations" | "receivables";
 
 /**
- * Derives the current pipeline stage from report data:
- * - Clearance not approved → clearance (step 1)
- * - Clearance approved but no linked report / review pending → station (step 2)  
- *   After clearance approval, steps 1 & 2 are considered done → operations (step 3)
- * - Review approved → operations (step 3)
- * - Ready for billing / invoiced → receivables (step 4)
+ * Derives the current pipeline stage. The "current" stage is the first not-yet-completed step.
+ *
+ * Step completion rules (record/list view):
+ *  1) Clearance — completed when clearance is approved (or when a dispatch is linked,
+ *     which implies the flight passed clearance).
+ *  2) Station   — completed when the station task sheet has been saved
+ *     (dispatch.status === "Completed").
+ *  3) Operations — completed when operations approves the report
+ *     (review_status === "Approved" or "Ready for Billing").
+ *  4) Receivables — final step (active once 1-3 are done).
+ *
+ * Form-view overrides ({ formView: true }):
+ *  - In the station channel: force step 1 as done; step 2 is the active stage
+ *    until the user saves (then record-view rules naturally advance it).
+ *  - In the operations channel: force steps 1 & 2 as done; step 3 is the
+ *    active stage until the operations user approves.
  */
 export function derivePipelineStage(opts: {
   isLinked: boolean;
   reviewStatus: string;
   clearanceStatus?: string;
   dispatchStatus?: string;
-  /**
-   * Channel context where the report is being viewed/edited.
-   * - "station": editing in station view marks step 2 (Station) as the furthest progress.
-   *   Current stage shown = "operations" (steps 1 & 2 done, step 3 active, step 3 NOT completed).
-   * - "operations": editing in operations view marks step 3 (Operations) as completed.
-   *   Current stage shown = "receivables" (steps 1, 2, 3 done, step 4 active).
-   */
   channel?: "station" | "operations" | string;
+  /** True when rendering the stepper inside the open form/dialog (not the table row). */
+  formView?: boolean;
 }): PipelineStage {
-  const rs = opts.reviewStatus?.toLowerCase() || "";
-  const ds = opts.dispatchStatus?.toLowerCase() || "";
-  const cs = opts.clearanceStatus?.toLowerCase() || "";
-  const ch = opts.channel?.toLowerCase();
+  const rs = (opts.reviewStatus || "").toLowerCase();
+  const ds = (opts.dispatchStatus || "").toLowerCase();
+  const cs = (opts.clearanceStatus || "").toLowerCase();
+  const ch = (opts.channel || "").toLowerCase();
 
-  // Ready for billing → receivables (step 4)
-  if (rs === "ready_for_billing" || rs === "ready for billing") return "receivables";
+  // --- Step completion flags (record-view truth) ---
+  // Step 1 done when clearance is approved OR a dispatch already exists (linked).
+  let step1Done = cs === "approved" || (opts.isLinked && cs !== "pending" && cs !== "rejected");
+  if (!cs && opts.isLinked) step1Done = true;
 
-  // Operations channel: when reviewing a linked report, show step 3 (Operations) as the
-  // active stage with steps 1 (Clearance) and 2 (Station) marked completed.
-  // Only after the operations user approves does the report move forward to receivables.
-  if (ch === "operations" && opts.isLinked) {
-    if (rs === "approved") return "receivables";
-    return "operations";
+  // Step 2 done when the task sheet is saved (dispatch completed).
+  let step2Done = ds === "completed";
+
+  // Step 3 done when operations approved (or already moved to billing).
+  let step3Done =
+    rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing";
+
+  // --- Form-view overrides ---
+  if (opts.formView) {
+    if (ch === "station") {
+      // Opening the form in station = step 1 already complete; step 2 is the active step.
+      step1Done = true;
+      step2Done = false;
+      step3Done = false;
+    } else if (ch === "operations") {
+      // Opening the form in operations = steps 1 & 2 complete; step 3 is the active step.
+      step1Done = true;
+      step2Done = true;
+      step3Done = false;
+    }
   }
 
-  // Clearance not yet approved → step 1 (Clearance) is the active stage
-  if (cs && cs !== "approved") return "clearance";
-
-  // When viewing/editing inside the Station channel, the furthest completion is step 2.
-  // Show step 3 (Operations) as the active (not-yet-completed) stage.
-  if (ch === "station" && opts.isLinked && (ds === "completed" || cs === "approved" || rs === "approved")) {
-    return "operations";
+  // Rejected reports fall back to the station step for rework.
+  if (!opts.formView && rs === "rejected") {
+    return "station";
   }
 
-  // Clearance approved + station task completed → step 2 done, move to step 3 (Operations)
-  if (cs === "approved" && ds === "completed") return "operations";
-
-  // Station has completed their task sheet (no clearance link) → still on station step (step 2)
-  if (ds === "completed") return "station";
-
-  // Rejected → back to clearance
-  if (rs === "rejected") return "clearance";
-
-  // New reports start at clearance for approval
-  if (rs === "pending" || rs === "pending review" || rs === "draft") return "clearance";
-
-  // After clearance approval but station not yet completed → station (step 2)
-  if (rs === "approved") return "station";
-
-  // Fallback
-  return "station";
+  if (!step1Done) return "clearance";
+  if (!step2Done) return "station";
+  if (!step3Done) return "operations";
+  return "receivables";
 }
 
 interface PipelineStepperProps {
