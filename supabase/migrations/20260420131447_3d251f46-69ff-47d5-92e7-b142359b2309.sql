@@ -1,0 +1,1 @@
+DELETE FROM public.dispatch_assignments WHERE id IN ('db3e2dc3-04d6-4fd7-a479-948cc8dc866f','31808c46-651e-43bd-b18a-5d3fb1765309','b94ae223-c76a-4a98-bbfe-ae8c087b1198','39f9ccdf-de6b-47f6-ac66-c87e619f408b','e925fa85-677d-4508-8934-9289ff90c4d8');

@@ -137,8 +137,6 @@ export default function SecurityServiceReportsPage() {
   const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
-  const [activeMainTab, setActiveMainTab] = useState<"reports" | "flights">("reports");
-  const [flightsPage, setFlightsPage] = useState(1);
 
   // Fetch dispatch assignments (completed ones = service reports)
   const { data: dispatches = [], isLoading } = useQuery({
@@ -280,39 +278,87 @@ export default function SecurityServiceReportsPage() {
   const allStations = useMemo(() => [...new Set(dispatches.map(d => d.station))].sort(), [dispatches]);
   const allServiceTypes = useMemo(() => [...new Set(dispatches.map(d => d.service_type))].sort(), [dispatches]);
 
+  // Build merged list: completed/in-progress dispatches + clearance flights without a dispatch (pending completion)
+  type MergedSecurityRow = DispatchRow & { isPending?: boolean; flightMeta?: any };
+
+  const mergedRows: MergedSecurityRow[] = useMemo(() => {
+    const dispatchedFlightIds = new Set(
+      dispatches.map(d => d.flight_schedule_id).filter(Boolean) as string[]
+    );
+    const pendingRows: MergedSecurityRow[] = (securityFlights as any[])
+      .filter((f: any) => !dispatchedFlightIds.has(f.id))
+      .map((f: any) => ({
+        id: `pending-${f.id}`,
+        flight_schedule_id: f.id,
+        contract_id: null,
+        station: f.authority || "CAI",
+        airline: f.airlines?.name || f.airlines?.iata_code || f.handling_agent || "",
+        flight_no: f.flight_no || "",
+        flight_date: f.arrival_date || f.departure_date || "",
+        service_type: f.clearance_type || "Arrival Security",
+        staff_names: "",
+        staff_count: 0,
+        scheduled_start: f.sta || "",
+        scheduled_end: f.std || "",
+        actual_start: "",
+        actual_end: "",
+        contract_duration_hours: 0,
+        actual_duration_hours: 0,
+        overtime_hours: 0,
+        overtime_rate: 0,
+        base_fee: 0,
+        service_rate: 0,
+        overtime_charge: 0,
+        total_charge: 0,
+        status: "Pending",
+        notes: "",
+        dispatched_by: "",
+        review_status: "Draft",
+        review_comment: "",
+        reviewed_by: "",
+        reviewed_at: null,
+        irregularity_id: null,
+        created_at: "",
+        updated_at: "",
+        isPending: true,
+        flightMeta: f,
+      }));
+    return [...dispatches, ...pendingRows];
+  }, [dispatches, securityFlights]);
+
   const filtered = useMemo(() => {
-    let rows = dispatches;
-    // Operations: only linked/completed reports
-    if (isOperationsView) rows = rows.filter(r => r.status === "Completed" || r.review_status === "Pending Review" || r.review_status === "Rejected");
+    let rows: MergedSecurityRow[] = mergedRows;
+    // Operations: only linked/completed reports (skip un-dispatched pending flights)
+    if (isOperationsView) rows = rows.filter(r => !r.isPending && (r.status === "Completed" || r.review_status === "Pending Review" || r.review_status === "Rejected"));
     // Station "Rejected" tab
     if (isStationView && stationTab === "rejected") rows = rows.filter(r => r.review_status === "Rejected");
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
     if (reviewFilter !== "All") rows = rows.filter(r => r.review_status === reviewFilter);
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
-    if (dateFrom) rows = rows.filter(r => r.flight_date >= dateFrom);
-    if (dateTo) rows = rows.filter(r => r.flight_date <= dateTo);
+    if (dateFrom) rows = rows.filter(r => (r.flight_date || "") >= dateFrom);
+    if (dateTo) rows = rows.filter(r => (r.flight_date || "") <= dateTo);
     if (search) {
       const s = search.toLowerCase();
       rows = rows.filter(r =>
-        r.airline.toLowerCase().includes(s) ||
-        r.flight_no.toLowerCase().includes(s) ||
-        r.staff_names.toLowerCase().includes(s) ||
-        r.station.toLowerCase().includes(s)
+        (r.airline || "").toLowerCase().includes(s) ||
+        (r.flight_no || "").toLowerCase().includes(s) ||
+        (r.staff_names || "").toLowerCase().includes(s) ||
+        (r.station || "").toLowerCase().includes(s)
       );
     }
     return rows;
-  }, [dispatches, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
+  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // KPIs
+  // KPIs (computed from the merged/filtered list)
   const totalReports = filtered.length;
   const completedReports = filtered.filter(r => r.status === "Completed").length;
   const approvedReports = filtered.filter(r => r.review_status === "Approved" || r.review_status === "Ready for Billing").length;
-  const totalRevenue = filtered.reduce((s, r) => s + r.total_charge, 0);
-  const totalOvertimeHrs = filtered.reduce((s, r) => s + r.overtime_hours, 0);
-  const totalStaffDeployed = filtered.reduce((s, r) => s + r.staff_count, 0);
+  const totalRevenue = filtered.reduce((s, r) => s + (r.total_charge || 0), 0);
+  const totalOvertimeHrs = filtered.reduce((s, r) => s + (r.overtime_hours || 0), 0);
+  const totalStaffDeployed = filtered.reduce((s, r) => s + (r.staff_count || 0), 0);
   const pendingReview = filtered.filter(r => r.review_status === "Pending Review").length;
   const readyForBilling = filtered.filter(r => r.review_status === "Ready for Billing").length;
 
@@ -321,25 +367,6 @@ export default function SecurityServiceReportsPage() {
     irregularities.forEach(ir => map.set(ir.id, ir));
     return map;
   }, [irregularities]);
-
-  // Filter security flights
-  const filteredFlights = useMemo(() => {
-    let rows = securityFlights;
-    if (search) {
-      const s = search.toLowerCase();
-      rows = rows.filter((r: any) =>
-        r.flight_no?.toLowerCase().includes(s) ||
-        r.route?.toLowerCase().includes(s) ||
-        (r.airlines?.name || "").toLowerCase().includes(s)
-      );
-    }
-    if (dateFrom) rows = rows.filter((r: any) => (r.arrival_date || r.departure_date || "") >= dateFrom);
-    if (dateTo) rows = rows.filter((r: any) => (r.arrival_date || r.departure_date || "") <= dateTo);
-    return rows;
-  }, [securityFlights, search, dateFrom, dateTo]);
-
-  const flightsTotalPages = Math.max(1, Math.ceil(filteredFlights.length / PAGE_SIZE));
-  const flightsPageData = filteredFlights.slice((flightsPage - 1) * PAGE_SIZE, flightsPage * PAGE_SIZE);
 
   const saveEdit = () => {};
 
@@ -516,7 +543,9 @@ export default function SecurityServiceReportsPage() {
             Security service documentation · Pipeline:{" "}
             <button onClick={() => navigate("/clearances")} className="text-primary hover:underline">Schedule</button>
             {" → "}
-            <span className="font-semibold text-foreground">Security Service</span>
+            <span className="font-semibold text-foreground">Station</span>
+            {" → "}
+            <span className="font-semibold text-foreground">Operations</span>
             {" → "}
             <button onClick={() => navigate("/invoices")} className="text-primary hover:underline">Finance</button>
           </p>
@@ -598,55 +627,40 @@ export default function SecurityServiceReportsPage() {
         </div>
       </div>
 
-      {/* Main Tabs: Reports vs Scheduled Flights */}
+      {/* Service Reports list (clearance flights merged in) */}
       <div className="bg-card rounded-lg border overflow-hidden">
         <div className="p-4 border-b flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 mr-auto">
-            <button
-              onClick={() => { setActiveMainTab("reports"); setPage(1); }}
-              className={`px-3 py-1.5 rounded-md text-sm font-semibold transition ${activeMainTab === "reports" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-            >
-              <FileBarChart2 size={14} className="inline mr-1" /> Service Reports ({filtered.length})
-            </button>
-            <button
-              onClick={() => { setActiveMainTab("flights"); setFlightsPage(1); }}
-              className={`px-3 py-1.5 rounded-md text-sm font-semibold transition ${activeMainTab === "flights" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-            >
-              <CalendarDays size={14} className="inline mr-1" /> Scheduled Flights ({filteredFlights.length})
-            </button>
-          </div>
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2 mr-auto">
+            <FileBarChart2 size={16} className="text-primary" /> Service Reports
+            <span className="text-xs font-normal text-muted-foreground">({filtered.length})</span>
+          </h2>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text" placeholder="Search airline, flight, staff…"
-              value={search} onChange={e => { setSearch(e.target.value); setPage(1); setFlightsPage(1); }}
+              value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          {activeMainTab === "reports" && (
-            <>
-              <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
-                <option>All Stations</option>
-                {allStations.map(s => <option key={s}>{s}</option>)}
-              </select>
-              <select value={serviceFilter} onChange={e => { setServiceFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
-                <option>All Types</option>
-                {allServiceTypes.map(s => <option key={s}>{s}</option>)}
-              </select>
-              <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
-                <option>All</option>
-                {REVIEW_STATUSES.map(s => <option key={s}>{s}</option>)}
-                <option>Rejected</option>
-              </select>
-            </>
-          )}
-          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); setFlightsPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
-          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); setFlightsPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
+          <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <option>All Stations</option>
+            {allStations.map(s => <option key={s}>{s}</option>)}
+          </select>
+          <select value={serviceFilter} onChange={e => { setServiceFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <option>All Types</option>
+            {allServiceTypes.map(s => <option key={s}>{s}</option>)}
+          </select>
+          <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <option>All</option>
+            {REVIEW_STATUSES.map(s => <option key={s}>{s}</option>)}
+            <option>Rejected</option>
+          </select>
+          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
+          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
         </div>
 
-        {activeMainTab === "reports" ? (
-          <>
+        <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -668,23 +682,23 @@ export default function SecurityServiceReportsPage() {
                       </td>
                     </tr>
                   ) : pageData.map((r, i) => {
-                    const rc = reviewStatusConfig[r.review_status] || reviewStatusConfig["Draft"];
                     const sc = dispatchStatusConfig[r.status] || dispatchStatusConfig["Pending"];
                     const hasIrregularity = r.irregularity_id && linkedIrregularities.has(r.irregularity_id);
+                    const isPending = (r as any).isPending === true;
                     return (
-                      <tr key={r.id} className="data-table-row">
+                      <tr key={r.id} className={`data-table-row ${isPending ? "bg-muted/30" : ""}`}>
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
-                        <td className="px-3 py-2.5 text-foreground">{r.airline}</td>
+                        <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flight_no}</td>
-                        <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.flight_date}</td>
+                        <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.flight_date || "—"}</td>
                         <td className="px-3 py-2.5">
                           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{r.service_type}</span>
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs">
-                          {r.flight_schedule_id ? (flightDetailsById.get(r.flight_schedule_id)?.skd_type || "—") : "—"}
+                          {r.flight_schedule_id ? (flightDetailsById.get(r.flight_schedule_id)?.skd_type || (r as any).flightMeta?.skd_type || "—") : "—"}
                         </td>
-                        <td className="px-3 py-2.5 text-foreground">{r.staff_count}</td>
+                        <td className="px-3 py-2.5 text-foreground">{isPending ? "—" : r.staff_count}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                           {r.actual_start && r.actual_end ? `${r.actual_start}–${r.actual_end}` : "—"}
                         </td>
@@ -717,23 +731,37 @@ export default function SecurityServiceReportsPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-1">
-                            <button onClick={() => tryOpenEdit(r)} className="p-1 rounded hover:bg-muted" title="Edit Report">
-                              <Pencil size={14} className="text-muted-foreground" />
-                            </button>
-                            {r.review_status === "Draft" && r.status === "Completed" && (
-                              <button onClick={() => submitForReview(r)} className="p-1 rounded hover:bg-muted" title="Submit for Review">
-                                <ExternalLink size={14} className="text-primary" />
-                              </button>
-                            )}
-                            {r.review_status === "Pending Review" && (
-                              <button onClick={() => { setReviewRow(r); setReviewComment(r.review_comment); }} className="p-1 rounded hover:bg-muted" title="Review">
-                                <MessageSquare size={14} className="text-warning" />
-                              </button>
-                            )}
-                            {r.review_status === "Approved" && (
-                              <button onClick={() => markReadyForBilling(r)} className="p-1 rounded hover:bg-muted" title="Mark Ready for Billing">
-                                <DollarSign size={14} className="text-success" />
-                              </button>
+                            {isPending ? (
+                              canCreateNew && (
+                                <button
+                                  onClick={() => { setIsNewReport(true); setEditRow({ ...r, id: "new" } as DispatchRow); }}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                                  title="Complete Service Report"
+                                >
+                                  <Pencil size={12} /> Complete
+                                </button>
+                              )
+                            ) : (
+                              <>
+                                <button onClick={() => tryOpenEdit(r)} className="p-1 rounded hover:bg-muted" title="Edit Report">
+                                  <Pencil size={14} className="text-muted-foreground" />
+                                </button>
+                                {r.review_status === "Draft" && r.status === "Completed" && (
+                                  <button onClick={() => submitForReview(r)} className="p-1 rounded hover:bg-muted" title="Submit for Review">
+                                    <ExternalLink size={14} className="text-primary" />
+                                  </button>
+                                )}
+                                {r.review_status === "Pending Review" && (
+                                  <button onClick={() => { setReviewRow(r); setReviewComment(r.review_comment); }} className="p-1 rounded hover:bg-muted" title="Review">
+                                    <MessageSquare size={14} className="text-warning" />
+                                  </button>
+                                )}
+                                {r.review_status === "Approved" && (
+                                  <button onClick={() => markReadyForBilling(r)} className="p-1 rounded hover:bg-muted" title="Mark Ready for Billing">
+                                    <DollarSign size={14} className="text-success" />
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>
@@ -768,83 +796,6 @@ export default function SecurityServiceReportsPage() {
               </div>
             )}
           </>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                     {["#", "AIRLINE", "FLIGHT NO", "ROUTE", "A/C TYPE", "REG", "SERVICE TYPE", "SKD TYPE", "ARR DATE", "STA", "DEP DATE", "STD", "STATUS"].map(h => (
-                      <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredFlights.length === 0 ? (
-                    <tr>
-                      <td colSpan={13} className="text-center py-16">
-                        <CalendarDays size={40} className="mx-auto text-muted-foreground/30 mb-3" />
-                        <p className="font-semibold text-foreground">No Security Flights</p>
-                        <p className="text-muted-foreground text-sm mt-1">
-                          Flights with security clearance types (Arrival Security, Departure Security, Maintenance Security, Turnaround Security) will appear here
-                        </p>
-                      </td>
-                    </tr>
-                  ) : flightsPageData.map((f: any, i: number) => {
-                    const statusCls = f.status === "Approved" ? "bg-success/15 text-success" : f.status === "Rejected" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning";
-                    return (
-                      <tr key={f.id} className="data-table-row">
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs">{(flightsPage - 1) * PAGE_SIZE + i + 1}</td>
-                        <td className="px-3 py-2.5 text-foreground font-semibold">
-                          {f.airlines?.iata_code ? `${f.airlines.iata_code} — ` : ""}{f.airlines?.name || "—"}
-                        </td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no}</td>
-                        <td className="px-3 py-2.5 text-foreground">{f.route}</td>
-                        <td className="px-3 py-2.5 text-foreground">{f.aircraft_type}</td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.registration}</td>
-                        <td className="px-3 py-2.5">
-                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{f.clearance_type}</span>
-                        </td>
-                        <td className="px-3 py-2.5 text-foreground text-xs">{f.skd_type || "—"}</td>
-                        <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{f.arrival_date || "—"}</td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.sta || "—"}</td>
-                        <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{f.departure_date || "—"}</td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.std || "—"}</td>
-                        <td className="px-3 py-2.5">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusCls}`}>{f.status}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {flightsTotalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <span className="text-xs text-muted-foreground">
-                  Showing {(flightsPage - 1) * PAGE_SIZE + 1}–{Math.min(flightsPage * PAGE_SIZE, filteredFlights.length)} of {filteredFlights.length}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => setFlightsPage(p => Math.max(1, p - 1))} disabled={flightsPage === 1} className="p-1 rounded hover:bg-muted disabled:opacity-30">
-                    <ChevronLeft size={16} />
-                  </button>
-                  {Array.from({ length: Math.min(5, flightsTotalPages) }, (_, i) => {
-                    const p = Math.max(1, Math.min(flightsPage - 2, flightsTotalPages - 4)) + i;
-                    if (p > flightsTotalPages) return null;
-                    return (
-                      <button key={p} onClick={() => setFlightsPage(p)} className={`w-7 h-7 rounded text-xs font-semibold ${p === flightsPage ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"}`}>
-                        {p}
-                      </button>
-                    );
-                  })}
-                  <button onClick={() => setFlightsPage(p => Math.min(flightsTotalPages, p + 1))} disabled={flightsPage === flightsTotalPages} className="p-1 rounded hover:bg-muted disabled:opacity-30">
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </div>
 
       {/* Security Task Sheet Dialog */}
