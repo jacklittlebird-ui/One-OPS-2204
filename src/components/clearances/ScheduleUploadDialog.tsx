@@ -76,7 +76,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
     } catch (err: any) {
       toast({ title: "Parse Error", description: err.message, variant: "destructive" });
     }
-  }, [selectedAirline, selectedStation]);
+  }, [selectedAirline, selectedStation, defaultCategory]);
 
   const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
