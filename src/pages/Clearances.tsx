@@ -596,7 +596,7 @@ export default function ClearancesPage() {
         airlineMap={airlineMap}
       />
 
-      <ScheduleUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+      <ScheduleUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} defaultCategory={serviceCategory} />
     </div>
   );
 }

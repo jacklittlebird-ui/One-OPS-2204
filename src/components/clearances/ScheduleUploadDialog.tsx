@@ -11,14 +11,15 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ParsedRow, parseScheduleFile } from "@/lib/scheduleParser";
-import { CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
+import { CLEARANCE_TYPES, SECURITY_CLEARANCE_TYPES, getServiceCategory, type ServiceCategory } from "@/components/clearances/ClearanceTypes";
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  defaultCategory?: ServiceCategory;
 }
 
-export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
+export default function ScheduleUploadDialog({ open, onOpenChange, defaultCategory = "handling" }: Props) {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<"upload" | "preview" | "importing">("upload");
@@ -63,13 +64,19 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
         toast({ title: "Empty file", description: "No data rows found. Check the file format.", variant: "destructive" });
         return;
       }
-      setFlights(result.rows);
+      const defaultType = defaultCategory === "security" ? "Arrival Security" : "Full Handling";
+      const normalized = result.rows.map(r => {
+        const cat = getServiceCategory(r.service_type as any);
+        // If parsed type doesn't match the active tab category, force the default
+        return cat === defaultCategory ? r : { ...r, service_type: defaultType };
+      });
+      setFlights(normalized);
       setIsTrafficReport(result.isTrafficReport);
       setStep("preview");
     } catch (err: any) {
       toast({ title: "Parse Error", description: err.message, variant: "destructive" });
     }
-  }, [selectedAirline, selectedStation]);
+  }, [selectedAirline, selectedStation, defaultCategory]);
 
   const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -305,7 +312,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange }: Props) {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {CLEARANCE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            {(defaultCategory === "security" ? SECURITY_CLEARANCE_TYPES : CLEARANCE_TYPES.filter(t => !SECURITY_CLEARANCE_TYPES.includes(t as any))).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </TableCell>
