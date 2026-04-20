@@ -70,7 +70,8 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
         // If parsed type doesn't match the active tab category, force the default
         return cat === defaultCategory ? r : { ...r, service_type: defaultType };
       });
-      setFlights(normalized);
+      const paired = pairTurnaroundFlights(normalized);
+      setFlights(paired);
       setIsTrafficReport(result.isTrafficReport);
       setStep("preview");
     } catch (err: any) {
