@@ -450,6 +450,8 @@ export default function ClearancesPage() {
                       <TableHead>Route</TableHead>
                       <TableHead>STA</TableHead>
                       <TableHead>STD</TableHead>
+                      <TableHead>Service Type</TableHead>
+                      <TableHead>Skd Type</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-24">Actions</TableHead>
                     </TableRow>
@@ -465,11 +467,13 @@ export default function ClearancesPage() {
                           <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
                           <TableCell className="text-xs font-mono">{c.registration || "—"}</TableCell>
                           <TableCell className="text-xs">{c.aircraft_type || "—"}</TableCell>
-                          <TableCell>{c.airline_id ? (airlineMap[c.airline_id]?.code || "—") : "—"}</TableCell>
+                          <TableCell>{c.airline_id ? (airlineMap[c.airline_id]?.name || airlineMap[c.airline_id]?.code || "—") : "—"}</TableCell>
                           <TableCell className="text-xs">{c.authority || "—"}</TableCell>
                           <TableCell className="text-sm font-mono">{c.route || "—"}</TableCell>
                           <TableCell className="text-xs">{c.sta || "—"}</TableCell>
                           <TableCell className="text-xs">{c.std || "—"}</TableCell>
+                          <TableCell className="text-xs">{c.clearance_type || "—"}</TableCell>
+                          <TableCell className="text-xs">{c.skd_type || "—"}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>{statusIcon}{c.status}</span>
                           </TableCell>
@@ -483,7 +487,7 @@ export default function ClearancesPage() {
                         </TableRow>
                       );
                     })}
-                    {filtered.length === 0 && <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
+                    {filtered.length === 0 && <TableRow><TableCell colSpan={14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
