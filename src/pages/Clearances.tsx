@@ -108,6 +108,7 @@ function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdi
 export default function ClearancesPage() {
   const { data, isLoading, refetch, add, update, remove } = useSupabaseTable<ClearanceRow>("flight_schedules");
   const { data: airlines } = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("id,name,code"); return data || []; } });
+  const { data: airportsList } = useQuery({ queryKey: ["airports-iata"], queryFn: async () => { const { data } = await supabase.from("airports").select("iata_code,name").order("iata_code"); return data || []; } });
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
