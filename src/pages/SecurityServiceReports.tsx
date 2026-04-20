@@ -258,9 +258,9 @@ export default function SecurityServiceReportsPage() {
     return map;
   }, [securityFlights]);
 
-  // Build lookup for flight schedule details (registration, route, sta, std)
+  // Build lookup for flight schedule details (registration, route, sta, std, dates, aircraft type)
   const flightDetailsById = useMemo(() => {
-    const map = new Map<string, { registration: string; route: string; sta: string; std: string; ata: string; atd: string; skd_type: string; clearance_type: string }>();
+    const map = new Map<string, { registration: string; route: string; sta: string; std: string; ata: string; atd: string; skd_type: string; clearance_type: string; arrival_date: string; departure_date: string; aircraft_type: string }>();
     securityFlights.forEach((f: any) => map.set(f.id, {
       registration: f.registration || "",
       route: f.route || "",
@@ -270,6 +270,9 @@ export default function SecurityServiceReportsPage() {
       atd: "",
       skd_type: f.skd_type || "",
       clearance_type: f.clearance_type || "",
+      arrival_date: f.arrival_date || "",
+      departure_date: f.departure_date || "",
+      aircraft_type: f.aircraft_type || "",
     }));
     return map;
   }, [securityFlights]);
@@ -381,6 +384,10 @@ export default function SecurityServiceReportsPage() {
     const overtimeCharge = (overtimeMins / 60) * (row.overtime_rate || 0) * (row.staff_count || 1);
     const totalCharge = (row.base_fee || 0) + (row.service_rate || 0) + overtimeCharge;
 
+    // Detect "completing a clearance flight" case: new dispatch but row already
+    // has a flight_schedule_id (came from a pending clearance row).
+    const isCompletingClearanceFlight = isNewReport && !!(row as any).flight_schedule_id;
+
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
       notes: taskSheet.remarks || row.notes,
@@ -390,9 +397,10 @@ export default function SecurityServiceReportsPage() {
       overtime_hours: overtimeHours,
       overtime_charge: Math.round(overtimeCharge * 100) / 100,
       total_charge: Math.round(totalCharge * 100) / 100,
-      // New reports stay "Pending" until clearance approves the linked flight schedule.
-      // Existing reports keep their normal "Completed" flow on save.
-      status: isNewReport ? "Pending" : "Completed",
+      // Brand-new reports (no clearance link yet) stay "Pending" until clearance
+      // approves the linked flight schedule. Completing a clearance flight or
+      // editing an existing report → mark "Completed" so step 2 (Station) is done.
+      status: (isNewReport && !isCompletingClearanceFlight) ? "Pending" : "Completed",
       station: row.station,
       airline: row.airline,
       flight_no: row.flight_no,
@@ -412,11 +420,27 @@ export default function SecurityServiceReportsPage() {
       charges_breakdown: (row as any).charges_breakdown ?? [],
       total_security_charges: (row as any).total_security_charges ?? 0,
       charges_currency: (row as any).charges_currency || "USD",
-      // New reports start in Draft until clearance approval triggers Pending Review
-      ...(isNewReport ? { review_status: "Draft" } : {}),
+      // New reports start in Draft; completing a clearance flight goes straight to Pending Review
+      ...(isNewReport ? { review_status: isCompletingClearanceFlight ? "Pending Review" : "Draft" } : {}),
     };
 
-    if (isNewReport) {
+    if (isCompletingClearanceFlight) {
+      // Reuse the existing clearance flight schedule — just create the dispatch
+      // record linked to it. Step 2 (Station) is now complete.
+      (async () => {
+        try {
+          const dispatchInsert = { ...payload, flight_schedule_id: (row as any).flight_schedule_id };
+          const { error: dispatchErr } = await supabase
+            .from("dispatch_assignments")
+            .insert(dispatchInsert as any);
+          if (dispatchErr) throw dispatchErr;
+          queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+          toast({ title: "Task Sheet Saved", description: "Step 2 (Station) complete — sent for Operations review." });
+        } catch (e: any) {
+          toast({ title: "Error", description: e.message, variant: "destructive" });
+        }
+      })();
+    } else if (isNewReport) {
       // Create the dispatch + clearance flight_schedule together, then link them.
       (async () => {
         try {
@@ -665,17 +689,17 @@ export default function SecurityServiceReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr>
-                     {["#", "STATION", "AIRLINE", "FLIGHT", "DATE", "TYPE", "SKD TYPE", "STAFF", "ACTUAL TIME", "DURATION", "OT (h)", "CHARGE ($)", "STATUS", "PIPELINE", "ACTIONS"].map(h => (
+                     {["#", "STATION", "AIRLINE", "FLIGHT", "DATE", "TYPE", "SKD TYPE", "ARR DATE", "DEP DATE", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", "STATUS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={15} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
                   ) : pageData.length === 0 ? (
                      <tr>
-                      <td colSpan={15} className="text-center py-16">
+                      <td colSpan={17} className="text-center py-16">
                         <Shield size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                         <p className="font-semibold text-foreground">No Security Service Reports</p>
                         <p className="text-muted-foreground text-sm mt-1">Security service reports will appear here once created</p>
@@ -685,6 +709,12 @@ export default function SecurityServiceReportsPage() {
                     const sc = dispatchStatusConfig[r.status] || dispatchStatusConfig["Pending"];
                     const hasIrregularity = r.irregularity_id && linkedIrregularities.has(r.irregularity_id);
                     const isPending = (r as any).isPending === true;
+                    const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+                    const meta = (r as any).flightMeta;
+                    const arrDate = fd?.arrival_date || meta?.arrival_date || "";
+                    const depDate = fd?.departure_date || meta?.departure_date || "";
+                    const route = fd?.route || meta?.route || "";
+                    const acType = fd?.aircraft_type || meta?.aircraft_type || "";
                     return (
                       <tr key={r.id} className={`data-table-row ${isPending ? "bg-muted/30" : ""}`}>
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
@@ -696,9 +726,12 @@ export default function SecurityServiceReportsPage() {
                           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{r.service_type}</span>
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs">
-                          {r.flight_schedule_id ? (flightDetailsById.get(r.flight_schedule_id)?.skd_type || (r as any).flightMeta?.skd_type || "—") : "—"}
+                          {fd?.skd_type || meta?.skd_type || "—"}
                         </td>
-                        <td className="px-3 py-2.5 text-foreground">{isPending ? "—" : r.staff_count}</td>
+                        <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{arrDate || "—"}</td>
+                        <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{depDate || "—"}</td>
+                        <td className="px-3 py-2.5 text-foreground text-xs">{route || "—"}</td>
+                        <td className="px-3 py-2.5 text-foreground text-xs">{acType || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                           {r.actual_start && r.actual_end ? `${r.actual_start}–${r.actual_end}` : "—"}
                         </td>
@@ -711,7 +744,6 @@ export default function SecurityServiceReportsPage() {
                             return overtimeDisplay > 0 ? <span className="text-warning font-semibold">{overtimeDisplay}h</span> : "—";
                           })()}
                         </td>
-                        <td className="px-3 py-2.5 font-semibold text-success">{r.total_charge > 0 ? `$${r.total_charge.toLocaleString()}` : "—"}</td>
                         <td className="px-3 py-2.5">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc}`}>{r.status}</span>
                           {hasIrregularity && (
@@ -725,6 +757,7 @@ export default function SecurityServiceReportsPage() {
                               reviewStatus: r.review_status,
                               clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
                               dispatchStatus: r.status,
+                              channel: activeChannel,
                             })}
                             compact
                           />

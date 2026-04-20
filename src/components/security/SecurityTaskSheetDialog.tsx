@@ -181,6 +181,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     },
   });
 
+  const { data: airportsList = [] } = useQuery({
+    queryKey: ["airports-for-task-sheet"],
+    queryFn: async () => {
+      const { data } = await supabase.from("airports").select("id,name,iata_code,city").order("iata_code");
+      return data || [];
+    },
+  });
+
   // Fetch security contracts for the current airline
   const { data: securityContracts = [] } = useQuery({
     queryKey: ["security-contracts", editableRow?.airline],
@@ -528,7 +536,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Station</label>
-                  <input className={inputCls} value={editableRow.station} onChange={e => updateRow("station", e.target.value)} placeholder="CAI" />
+                  <select className={inputCls} value={editableRow.station} onChange={e => updateRow("station", e.target.value)}>
+                    <option value="">Select Station</option>
+                    {airportsList.map((a: any) => (
+                      <option key={a.id} value={a.iata_code || a.name}>
+                        {a.iata_code ? `${a.iata_code} — ${a.name}` : a.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Service Type</label>
