@@ -181,6 +181,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     },
   });
 
+  const { data: airportsList = [] } = useQuery({
+    queryKey: ["airports-for-task-sheet"],
+    queryFn: async () => {
+      const { data } = await supabase.from("airports").select("id,name,iata_code,city").order("iata_code");
+      return data || [];
+    },
+  });
+
   // Fetch security contracts for the current airline
   const { data: securityContracts = [] } = useQuery({
     queryKey: ["security-contracts", editableRow?.airline],
