@@ -202,7 +202,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
         handling_agent: "",
         config: parseInt(f.config) || null,
         authority: selectedStation,
-        status: "Approved" as const,
+        status: "Pending" as const,
         purpose: "Scheduled",
         period_from: f.period_from || null,
         period_to: f.period_to || null,
