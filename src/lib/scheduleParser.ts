@@ -85,11 +85,24 @@ export function parseDate(val: any): string {
     return `${date.y}-${String(date.m).padStart(2, "0")}-${String(date.d).padStart(2, "0")}`;
   }
   const str = String(val).trim();
-  const parts = str.split(/[\/\-]/);
+  // ISO format yyyy-mm-dd already
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+  const parts = str.split(/[\/\-\.]/);
   if (parts.length === 3) {
-    const [a, b, c] = parts.map(Number);
-    if (c > 100) return `${c}-${String(a).padStart(2, "0")}-${String(b).padStart(2, "0")}`;
-    if (a > 100) return `${a}-${String(b).padStart(2, "0")}-${String(c).padStart(2, "0")}`;
+    let [a, b, c] = parts.map((p) => parseInt(p, 10));
+    // yyyy-mm-dd or yyyy/mm/dd
+    if (a > 1900) {
+      return `${a}-${String(b).padStart(2, "0")}-${String(c).padStart(2, "0")}`;
+    }
+    // Two-digit year handling
+    if (c < 100) c = c + (c < 50 ? 2000 : 1900);
+    // Default to DD/MM/YYYY (aviation standard, IATA SSIM).
+    // If first part > 12, must be DD/MM/YYYY. If second part > 12, must be MM/DD/YYYY.
+    let day = a, month = b;
+    if (a > 12 && b <= 12) { day = a; month = b; }
+    else if (b > 12 && a <= 12) { day = b; month = a; }
+    // Otherwise default day-first
+    return `${c}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
   return str;
 }

@@ -67,11 +67,11 @@ export const STATUS_CONFIG: Record<string, { cls: string }> = {
 export const emptyForm = {
   airline_id: "", permit_no: "", flight_no: "", aircraft_type: "", registration: "",
   route: "", clearance_type: "Arrival Security", requested_date: new Date().toISOString().slice(0, 10),
-  valid_from: "", valid_to: "", status: "Pending", authority: "", remarks: "",
+  valid_from: "", valid_to: "", status: "Approved", authority: "", remarks: "",
   purpose: "Scheduled", passengers: 0, cargo_kg: 0, handling_agent: "",
   config: 0, departure_flight: "", arrival_flight: "",
   departure_date: "", arrival_date: "", sta: "", std: "",
-  skd_type: "", royalty: false, handling: "",
+  skd_type: "Schedule", royalty: false, handling: "",
   week_days: "", period_from: "", period_to: "", no_of_flights: 0,
   ref_no: "", notes: "",
 };
