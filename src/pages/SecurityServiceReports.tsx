@@ -716,7 +716,8 @@ export default function SecurityServiceReportsPage() {
                     const route = fd?.route || meta?.route || "";
                     const acType = fd?.aircraft_type || meta?.aircraft_type || "";
                     return (
-                      <tr key={r.id} className={`data-table-row ${isPending ? "bg-muted/30" : ""}`}>
+                      <React.Fragment key={r.id}>
+                      <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
                         <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
@@ -798,6 +799,28 @@ export default function SecurityServiceReportsPage() {
                           </div>
                         </td>
                       </tr>
+                      {isStationView && r.review_status === "Rejected" && (
+                        <tr className="bg-destructive/5 border-l-2 border-l-destructive">
+                          <td colSpan={16} className="px-4 py-2">
+                            <div className="flex items-start gap-2 text-xs">
+                              <XCircle size={14} className="text-destructive shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <span className="font-bold uppercase tracking-wider text-destructive">Rejection Reason: </span>
+                                <span className="text-foreground">
+                                  {r.review_comment?.trim() ? r.review_comment : <span className="italic text-muted-foreground">No reason provided</span>}
+                                </span>
+                                {r.reviewed_by && (
+                                  <span className="ml-2 text-muted-foreground">
+                                    — by <span className="font-semibold text-foreground">{r.reviewed_by}</span>
+                                    {(r as any).reviewed_at && ` • ${new Date((r as any).reviewed_at).toLocaleString()}`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
