@@ -552,8 +552,13 @@ function HandlingServiceReportContent() {
     mutationFn: async (data: Partial<ReportFormData> & { id: string }) => {
       const { id } = data;
       const delays = data.delays || [];
-      const dbData = formToDb(data);
-      const { error } = await supabase.from("service_reports").update(dbData as any).eq("id", id);
+      const dbData: any = formToDb(data);
+      // Station re-saving a rejected report → flip to "modified" so Operations can re-review
+      if (isStationView && data.reviewStatus === "rejected") {
+        dbData.review_status = "modified";
+        dbData.reviewed_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from("service_reports").update(dbData).eq("id", id);
       if (error) throw error;
       await supabase.from("service_report_delays").delete().eq("report_id", id);
       if (delays.length > 0) {
