@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plane, DollarSign, Activity, Calendar, MapPin, Clock, ShieldCheck, Building2, FileText, Eye, Receipt, CreditCard, Shield, Users, AlertTriangle, CheckCircle2, XCircle, TrendingUp, BarChart3, FileBarChart2 } from "lucide-react";
+import { Plane, DollarSign, Activity, Calendar, MapPin, Clock, ShieldCheck, Building2, FileText, Eye, Receipt, CreditCard, Shield, Users, AlertTriangle, CheckCircle2, XCircle, TrendingUp, BarChart3, FileBarChart2, Calculator } from "lucide-react";
 import OperationsDashboard from "./OperationsDashboard";
 import AccountantDashboard from "./AccountantDashboard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +18,7 @@ const CHANNEL_ICONS: Record<Channel, React.ReactNode> = {
   operations: <Eye size={20} />,
   receivables: <Receipt size={20} />,
   payables: <CreditCard size={20} />,
+  general_accounts: <Calculator size={20} />,
   admin: <Shield size={20} />,
 };
 
