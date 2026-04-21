@@ -105,6 +105,7 @@ export default function SecurityServiceReportsPage() {
   const isStationView = activeChannel === "station";
   const canCreateNew = !isReceivablesView && !isOperationsView;
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
+  const [opsTab, setOpsTab] = useState<"all" | "modified">("all");
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
