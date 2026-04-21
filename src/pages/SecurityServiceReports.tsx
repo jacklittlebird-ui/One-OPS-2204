@@ -520,9 +520,12 @@ export default function SecurityServiceReportsPage() {
   // Review actions
   const handleReviewAction = (action: "Approved" | "Rejected") => {
     if (!reviewRow) return;
+    // Approving a "Modified" report (resubmitted after rejection) goes straight to Ready for Billing.
+    const finalStatus =
+      action === "Approved" && reviewRow.review_status === "Modified" ? "Ready for Billing" : action;
     updateMutation.mutate({
       id: reviewRow.id,
-      review_status: action,
+      review_status: finalStatus,
       review_comment: reviewComment,
       reviewed_by: session?.user?.email || "Reviewer",
       reviewed_at: new Date().toISOString(),
