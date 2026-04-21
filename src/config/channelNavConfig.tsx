@@ -145,7 +145,6 @@ const channelNavs: Record<Channel, NavSection[]> = {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
       children: [
         { label: "Airlines", path: "/airlines" },
-        { label: "Contracts", path: "/contracts" },
       ],
     },
     { label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications" },
@@ -210,7 +209,6 @@ const channelNavs: Record<Channel, NavSection[]> = {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
       children: [
         { label: "Airlines", path: "/airlines" },
-        { label: "Contracts", path: "/contracts" },
       ],
     },
     { label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications" },
