@@ -3,7 +3,7 @@ import {
 } from "@/components/ui/select";
 import { useChannel, CHANNEL_LABELS, CHANNEL_DESCRIPTIONS, type Channel } from "@/contexts/ChannelContext";
 import { 
-  ShieldCheck, Building2, FileText, Eye, Receipt, CreditCard, Shield
+  ShieldCheck, Building2, FileText, Eye, Receipt, CreditCard, Shield, Calculator
 } from "lucide-react";
 
 const CHANNEL_ICONS: Record<Channel, React.ReactNode> = {
@@ -13,6 +13,7 @@ const CHANNEL_ICONS: Record<Channel, React.ReactNode> = {
   operations: <Eye size={14} />,
   receivables: <Receipt size={14} />,
   payables: <CreditCard size={14} />,
+  general_accounts: <Calculator size={14} />,
   admin: <Shield size={14} />,
 };
 
