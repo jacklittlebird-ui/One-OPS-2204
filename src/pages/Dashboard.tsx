@@ -324,6 +324,7 @@ function ChannelDashboardContent({ channel }: { channel: Channel }) {
     case "operations": return <OperationsChannelDashboard />;
     case "receivables": return <ReceivablesDashboard />;
     case "payables": return <PayablesDashboard />;
+    case "general_accounts": return <AccountantDashboard />;
     case "admin":
     default:
       return <AdminDashboard />;
