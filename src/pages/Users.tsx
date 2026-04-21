@@ -24,7 +24,7 @@ import {
 import { Users as UsersIcon, Plus, Shield, Trash2, Pencil } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
 
-type AppRole = "admin" | "station_manager" | "station_ops" | "employee" | "clearance" | "contracts" | "operations" | "receivables" | "payables";
+type AppRole = "admin" | "station_manager" | "station_ops" | "employee" | "clearance" | "contracts" | "operations" | "receivables" | "payables" | "general_accounts";
 
 interface UserProfile {
   id: string;
@@ -50,9 +50,10 @@ const ROLE_COLORS: Record<AppRole, string> = {
   operations: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
   receivables: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
   payables: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  general_accounts: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
 };
 
-const ALL_ROLES: AppRole[] = ["admin", "clearance", "contracts", "employee", "operations", "payables", "receivables", "station_manager", "station_ops"];
+const ALL_ROLES: AppRole[] = ["admin", "clearance", "contracts", "employee", "general_accounts", "operations", "payables", "receivables", "station_manager", "station_ops"];
 
 export default function UsersPage() {
   const { user } = useAuth();
