@@ -841,7 +841,39 @@ function HandlingServiceReportContent() {
               <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
                 {rejectedCount}
               </span>
+      )}
+
+      {/* Operations sub-tabs (All vs Modified) */}
+      {isOperationsView && (
+        <div className="flex items-center gap-2 border-b">
+          <button
+            onClick={() => { setOperationsTab("all"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+              operationsTab === "all"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            All Reports
+          </button>
+          <button
+            onClick={() => { setOperationsTab("modified"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              operationsTab === "modified"
+                ? "text-warning border-warning"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <AlertCircle size={14} />
+            Modified
+            {modifiedCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-warning text-warning-foreground text-[10px] font-bold">
+                {modifiedCount}
+              </span>
             )}
+          </button>
+        </div>
+      )}
           </button>
         </div>
       )}
