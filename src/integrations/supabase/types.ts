@@ -14,21 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _coa_parent_pairs: {
-        Row: {
-          child_code: string
-          parent_code: string
-        }
-        Insert: {
-          child_code: string
-          parent_code: string
-        }
-        Update: {
-          child_code?: string
-          parent_code?: string
-        }
-        Relationships: []
-      }
       abbreviations: {
         Row: {
           abbr: string
