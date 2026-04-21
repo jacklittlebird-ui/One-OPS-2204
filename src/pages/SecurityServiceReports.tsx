@@ -392,6 +392,8 @@ export default function SecurityServiceReportsPage() {
     // Detect "completing a clearance flight" case: new dispatch but row already
     // has a flight_schedule_id (came from a pending clearance row).
     const isCompletingClearanceFlight = isNewReport && !!(row as any).flight_schedule_id;
+    // If station is editing a previously-rejected report, mark as "Modified" (goes back to ops).
+    const isResubmittingRejected = !isNewReport && row.review_status === "Rejected";
 
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
@@ -425,8 +427,13 @@ export default function SecurityServiceReportsPage() {
       charges_breakdown: (row as any).charges_breakdown ?? [],
       total_security_charges: (row as any).total_security_charges ?? 0,
       charges_currency: (row as any).charges_currency || "USD",
-      // New reports start in Draft; completing a clearance flight goes straight to Pending Review
-      ...(isNewReport ? { review_status: isCompletingClearanceFlight ? "Pending Review" : "Draft" } : {}),
+      // New reports start in Draft; completing a clearance flight goes straight to Pending Review.
+      // Resubmitting a rejected report → "Modified" so it appears under Operations → Modified tab.
+      ...(isNewReport
+        ? { review_status: isCompletingClearanceFlight ? "Pending Review" : "Draft" }
+        : isResubmittingRejected
+          ? { review_status: "Modified" }
+          : {}),
     };
 
     if (isCompletingClearanceFlight) {
