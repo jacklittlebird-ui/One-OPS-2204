@@ -26,6 +26,7 @@ const REVIEW_STATUSES = ["Draft", "Pending Review", "Approved", "Ready for Billi
 const reviewStatusConfig: Record<string, { icon: React.ReactNode; cls: string }> = {
   "Draft": { icon: <Pencil size={11} />, cls: "bg-muted text-muted-foreground" },
   "Pending Review": { icon: <Clock size={11} />, cls: "bg-warning/15 text-warning" },
+  "Modified": { icon: <ExternalLink size={11} />, cls: "bg-info/15 text-info" },
   "Approved": { icon: <CheckCircle2 size={11} />, cls: "bg-success/15 text-success" },
   "Ready for Billing": { icon: <DollarSign size={11} />, cls: "bg-primary/15 text-primary" },
   "Rejected": { icon: <XCircle size={11} />, cls: "bg-destructive/15 text-destructive" },
@@ -104,6 +105,7 @@ export default function SecurityServiceReportsPage() {
   const isStationView = activeChannel === "station";
   const canCreateNew = !isReceivablesView && !isOperationsView;
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
+  const [opsTab, setOpsTab] = useState<"all" | "modified">("all");
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
@@ -332,7 +334,10 @@ export default function SecurityServiceReportsPage() {
   const filtered = useMemo(() => {
     let rows: MergedSecurityRow[] = mergedRows;
     // Operations: only linked/completed reports (skip un-dispatched pending flights)
-    if (isOperationsView) rows = rows.filter(r => !r.isPending && (r.status === "Completed" || r.review_status === "Pending Review" || r.review_status === "Rejected"));
+    if (isOperationsView) {
+      rows = rows.filter(r => !r.isPending && (r.status === "Completed" || r.review_status === "Pending Review" || r.review_status === "Rejected" || r.review_status === "Modified"));
+      if (opsTab === "modified") rows = rows.filter(r => r.review_status === "Modified");
+    }
     // Station "Rejected" tab
     if (isStationView && stationTab === "rejected") rows = rows.filter(r => r.review_status === "Rejected");
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
@@ -350,7 +355,7 @@ export default function SecurityServiceReportsPage() {
       );
     }
     return rows;
-  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
+  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, opsTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -387,6 +392,8 @@ export default function SecurityServiceReportsPage() {
     // Detect "completing a clearance flight" case: new dispatch but row already
     // has a flight_schedule_id (came from a pending clearance row).
     const isCompletingClearanceFlight = isNewReport && !!(row as any).flight_schedule_id;
+    // If station is editing a previously-rejected report, mark as "Modified" (goes back to ops).
+    const isResubmittingRejected = !isNewReport && row.review_status === "Rejected";
 
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
@@ -420,8 +427,13 @@ export default function SecurityServiceReportsPage() {
       charges_breakdown: (row as any).charges_breakdown ?? [],
       total_security_charges: (row as any).total_security_charges ?? 0,
       charges_currency: (row as any).charges_currency || "USD",
-      // New reports start in Draft; completing a clearance flight goes straight to Pending Review
-      ...(isNewReport ? { review_status: isCompletingClearanceFlight ? "Pending Review" : "Draft" } : {}),
+      // New reports start in Draft; completing a clearance flight goes straight to Pending Review.
+      // Resubmitting a rejected report → "Modified" so it appears under Operations → Modified tab.
+      ...(isNewReport
+        ? { review_status: isCompletingClearanceFlight ? "Pending Review" : "Draft" }
+        : isResubmittingRejected
+          ? { review_status: "Modified" }
+          : {}),
     };
 
     if (isCompletingClearanceFlight) {
@@ -508,9 +520,12 @@ export default function SecurityServiceReportsPage() {
   // Review actions
   const handleReviewAction = (action: "Approved" | "Rejected") => {
     if (!reviewRow) return;
+    // Approving a "Modified" report (resubmitted after rejection) goes straight to Ready for Billing.
+    const finalStatus =
+      action === "Approved" && reviewRow.review_status === "Modified" ? "Ready for Billing" : action;
     updateMutation.mutate({
       id: reviewRow.id,
-      review_status: action,
+      review_status: finalStatus,
       review_comment: reviewComment,
       reviewed_by: session?.user?.email || "Reviewer",
       reviewed_at: new Date().toISOString(),
@@ -605,6 +620,38 @@ export default function SecurityServiceReportsPage() {
             {dispatches.filter(d => d.review_status === "Rejected").length > 0 && (
               <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
                 {dispatches.filter(d => d.review_status === "Rejected").length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Operations-only sub-tabs (All vs Modified) */}
+      {isOperationsView && (
+        <div className="flex items-center gap-2 border-b">
+          <button
+            onClick={() => { setOpsTab("all"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+              opsTab === "all"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            All Reports
+          </button>
+          <button
+            onClick={() => { setOpsTab("modified"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              opsTab === "modified"
+                ? "text-info border-info"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <ExternalLink size={14} />
+            Modified
+            {dispatches.filter(d => d.review_status === "Modified").length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-info text-info-foreground text-[10px] font-bold">
+                {dispatches.filter(d => d.review_status === "Modified").length}
               </span>
             )}
           </button>
@@ -784,9 +831,9 @@ export default function SecurityServiceReportsPage() {
                                     <ExternalLink size={14} className="text-primary" />
                                   </button>
                                 )}
-                                {r.review_status === "Pending Review" && (
-                                  <button onClick={() => { setReviewRow(r); setReviewComment(r.review_comment); }} className="p-1 rounded hover:bg-muted" title="Review">
-                                    <MessageSquare size={14} className="text-warning" />
+                                {(r.review_status === "Pending Review" || r.review_status === "Modified") && (
+                                  <button onClick={() => { setReviewRow(r); setReviewComment(r.review_comment); }} className="p-1 rounded hover:bg-muted" title={r.review_status === "Modified" ? "Review Modified Report" : "Review"}>
+                                    <MessageSquare size={14} className={r.review_status === "Modified" ? "text-info" : "text-warning"} />
                                   </button>
                                 )}
                                 {r.review_status === "Approved" && (
@@ -906,7 +953,8 @@ export default function SecurityServiceReportsPage() {
                   <XCircle size={14} className="mr-1" /> Reject
                 </Button>
                 <Button size="sm" onClick={() => handleReviewAction("Approved")} className="bg-success hover:bg-success/90 text-success-foreground">
-                  <CheckCircle2 size={14} className="mr-1" /> Approve
+                  <CheckCircle2 size={14} className="mr-1" />
+                  {reviewRow.review_status === "Modified" ? "Approve & Mark Ready for Billing" : "Approve"}
                 </Button>
               </div>
             </div>
