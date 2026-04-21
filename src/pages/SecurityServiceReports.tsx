@@ -26,6 +26,7 @@ const REVIEW_STATUSES = ["Draft", "Pending Review", "Approved", "Ready for Billi
 const reviewStatusConfig: Record<string, { icon: React.ReactNode; cls: string }> = {
   "Draft": { icon: <Pencil size={11} />, cls: "bg-muted text-muted-foreground" },
   "Pending Review": { icon: <Clock size={11} />, cls: "bg-warning/15 text-warning" },
+  "Modified": { icon: <ExternalLink size={11} />, cls: "bg-info/15 text-info" },
   "Approved": { icon: <CheckCircle2 size={11} />, cls: "bg-success/15 text-success" },
   "Ready for Billing": { icon: <DollarSign size={11} />, cls: "bg-primary/15 text-primary" },
   "Rejected": { icon: <XCircle size={11} />, cls: "bg-destructive/15 text-destructive" },
