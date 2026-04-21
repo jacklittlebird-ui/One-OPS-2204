@@ -336,6 +336,7 @@ function HandlingServiceReportContent() {
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
+  const [operationsTab, setOperationsTab] = useState<"all" | "modified">("all");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
@@ -552,8 +553,13 @@ function HandlingServiceReportContent() {
     mutationFn: async (data: Partial<ReportFormData> & { id: string }) => {
       const { id } = data;
       const delays = data.delays || [];
-      const dbData = formToDb(data);
-      const { error } = await supabase.from("service_reports").update(dbData as any).eq("id", id);
+      const dbData: any = formToDb(data);
+      // Station re-saving a rejected report → flip to "modified" so Operations can re-review
+      if (isStationView && data.reviewStatus === "rejected") {
+        dbData.review_status = "modified";
+        dbData.reviewed_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from("service_reports").update(dbData).eq("id", id);
       if (error) throw error;
       await supabase.from("service_report_delays").delete().eq("report_id", id);
       if (delays.length > 0) {
@@ -619,10 +625,17 @@ function HandlingServiceReportContent() {
     [mergedRows]
   );
 
+  const modifiedCount = useMemo(
+    () => mergedRows.filter(r => r.isLinked && r.reviewStatus === "modified").length,
+    [mergedRows]
+  );
+
   const filtered = useMemo(() => {
     let r = mergedRows;
     // Operations view: only show linked/completed reports awaiting or under review
     if (isOperationsView) r = r.filter(x => x.isLinked);
+    // Operations sub-tab: filter to Modified reports
+    if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
     // Station view: when "Rejected" tab is active, only show rejected reports
     if (isStationView && stationTab === "rejected") r = r.filter(x => x.isLinked && x.reviewStatus === "rejected");
     if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
@@ -642,7 +655,7 @@ function HandlingServiceReportContent() {
       );
     }
     return r;
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, operationsTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -833,6 +846,38 @@ function HandlingServiceReportContent() {
         </div>
       )}
 
+      {/* Operations sub-tabs (All vs Modified) */}
+      {isOperationsView && (
+        <div className="flex items-center gap-2 border-b">
+          <button
+            onClick={() => { setOperationsTab("all"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+              operationsTab === "all"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            All Reports
+          </button>
+          <button
+            onClick={() => { setOperationsTab("modified"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              operationsTab === "modified"
+                ? "text-warning border-warning"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <AlertCircle size={14} />
+            Modified
+            {modifiedCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-warning text-warning-foreground text-[10px] font-bold">
+                {modifiedCount}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
@@ -880,6 +925,7 @@ function HandlingServiceReportContent() {
           <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Review</option>
             <option value="pending">Pending</option>
+            <option value="modified">Modified</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
@@ -994,7 +1040,7 @@ function HandlingServiceReportContent() {
                         </button>
                       ) : (
                         <>
-                          {r.reviewStatus === "pending" && (
+                          {(r.reviewStatus === "pending" || r.reviewStatus === "modified") && (
                             <>
                               <button onClick={async () => {
                                 await supabase.from("service_reports").update({ review_status: "approved", reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
