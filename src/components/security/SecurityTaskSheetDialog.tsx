@@ -538,6 +538,33 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           </div>
         )}
 
+        {/* Rejection reason banner — shown to station when Operations rejected the report */}
+        {!isNew && String((currentRow as any)?.review_status || "").toLowerCase() === "rejected" && (
+          <div className="px-6 py-3 border-b bg-destructive/10 border-destructive/30 no-print">
+            <div className="flex items-start gap-2.5">
+              <XCircle size={18} className="text-destructive shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold uppercase tracking-wider text-destructive">Report Rejected by Operations</span>
+                  {(currentRow as any)?.reviewed_by && (
+                    <span className="text-[11px] text-muted-foreground">
+                      by <span className="font-semibold text-foreground">{(currentRow as any).reviewed_by}</span>
+                      {(currentRow as any)?.reviewed_at && ` • ${new Date((currentRow as any).reviewed_at).toLocaleString()}`}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1.5 text-sm text-foreground">
+                  <span className="font-semibold text-destructive">Reason: </span>
+                  {(currentRow as any)?.review_comment?.trim()
+                    ? (currentRow as any).review_comment
+                    : <span className="italic text-muted-foreground">No reason was provided.</span>}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1.5">Please review the comments above, correct the report, and re-submit for review.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <fieldset disabled={reviewMode} className="contents">
         <div className="px-6 py-4 space-y-4 bg-muted/10" ref={printRef}>
           {/* Airline & Station (editable for new) */}
