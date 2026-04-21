@@ -162,6 +162,12 @@ const channelNavs: Record<Channel, NavSection[]> = {
       ],
     },
     {
+      label: "RECEIVABLES (READ-ONLY)", icon: <Eye size={18} />, collapsible: true,
+      children: [
+        { label: "Client Invoices", path: "/invoices" },
+      ],
+    },
+    {
       label: "PRICING", icon: <DollarSign size={18} />, collapsible: true,
       children: [
         { label: "Airport Charges", path: "/airport-charges" },
