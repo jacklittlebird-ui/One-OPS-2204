@@ -626,6 +626,38 @@ export default function SecurityServiceReportsPage() {
         </div>
       )}
 
+      {/* Operations-only sub-tabs (All vs Modified) */}
+      {isOperationsView && (
+        <div className="flex items-center gap-2 border-b">
+          <button
+            onClick={() => { setOpsTab("all"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+              opsTab === "all"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            All Reports
+          </button>
+          <button
+            onClick={() => { setOpsTab("modified"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              opsTab === "modified"
+                ? "text-info border-info"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <ExternalLink size={14} />
+            Modified
+            {dispatches.filter(d => d.review_status === "Modified").length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-info text-info-foreground text-[10px] font-bold">
+                {dispatches.filter(d => d.review_status === "Modified").length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
