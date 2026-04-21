@@ -68,9 +68,13 @@ export function derivePipelineStage(opts: {
     }
   }
 
-  // Rejected reports fall back to the station step for rework.
+  // Rejected reports stay on step 2 (station) for rework.
   if (!opts.formView && rs === "rejected") {
     return "station";
+  }
+  // Modified reports (resubmitted by station after rejection) sit at step 3 (operations review).
+  if (!opts.formView && rs === "modified") {
+    return "operations";
   }
 
   if (!step1Done) return "clearance";
