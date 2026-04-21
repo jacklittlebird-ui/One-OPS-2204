@@ -334,7 +334,10 @@ export default function SecurityServiceReportsPage() {
   const filtered = useMemo(() => {
     let rows: MergedSecurityRow[] = mergedRows;
     // Operations: only linked/completed reports (skip un-dispatched pending flights)
-    if (isOperationsView) rows = rows.filter(r => !r.isPending && (r.status === "Completed" || r.review_status === "Pending Review" || r.review_status === "Rejected"));
+    if (isOperationsView) {
+      rows = rows.filter(r => !r.isPending && (r.status === "Completed" || r.review_status === "Pending Review" || r.review_status === "Rejected" || r.review_status === "Modified"));
+      if (opsTab === "modified") rows = rows.filter(r => r.review_status === "Modified");
+    }
     // Station "Rejected" tab
     if (isStationView && stationTab === "rejected") rows = rows.filter(r => r.review_status === "Rejected");
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
@@ -352,7 +355,7 @@ export default function SecurityServiceReportsPage() {
       );
     }
     return rows;
-  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
+  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, opsTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
