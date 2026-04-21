@@ -177,6 +177,44 @@ const channelNavs: Record<Channel, NavSection[]> = {
     { label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications" },
   ],
 
+  general_accounts: [
+    { label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/" },
+    {
+      label: "PAYABLES", icon: <CreditCard size={18} />, collapsible: true,
+      children: [
+        { label: "Vendor Invoices", path: "/vendor-invoices" },
+        { label: "Service Providers", path: "/service-providers" },
+        { label: "Aging Reports", path: "/aging-reports" },
+      ],
+    },
+    {
+      label: "ACCOUNTANT", icon: <Calculator size={18} />, collapsible: true,
+      children: [
+        { label: "Chart of Accounts", path: "/chart-of-accounts" },
+        { label: "Journal Entries", path: "/journal-entries" },
+        { label: "Client Invoices", path: "/invoices" },
+        { label: "Vendor Invoices", path: "/vendor-invoices" },
+        { label: "Aging Reports", path: "/aging-reports" },
+        { label: "Financial Reports", path: "/financial-reports" },
+        { label: "Airline Incentives", path: "/airline-incentives" },
+      ],
+    },
+    {
+      label: "RECEIVABLES (READ-ONLY)", icon: <Eye size={18} />, collapsible: true,
+      children: [
+        { label: "Client Invoices", path: "/invoices" },
+        { label: "Aging Reports", path: "/aging-reports" },
+      ],
+    },
+    {
+      label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
+      children: [
+        { label: "Airlines", path: "/airlines" },
+        { label: "Contracts", path: "/contracts" },
+      ],
+    },
+    { label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications" },
+  ],
   admin: [
     { label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/" },
     {
