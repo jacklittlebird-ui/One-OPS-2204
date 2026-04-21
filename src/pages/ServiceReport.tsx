@@ -336,6 +336,7 @@ function HandlingServiceReportContent() {
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
+  const [operationsTab, setOperationsTab] = useState<"all" | "modified">("all");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
@@ -624,10 +625,17 @@ function HandlingServiceReportContent() {
     [mergedRows]
   );
 
+  const modifiedCount = useMemo(
+    () => mergedRows.filter(r => r.isLinked && r.reviewStatus === "modified").length,
+    [mergedRows]
+  );
+
   const filtered = useMemo(() => {
     let r = mergedRows;
     // Operations view: only show linked/completed reports awaiting or under review
     if (isOperationsView) r = r.filter(x => x.isLinked);
+    // Operations sub-tab: filter to Modified reports
+    if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
     // Station view: when "Rejected" tab is active, only show rejected reports
     if (isStationView && stationTab === "rejected") r = r.filter(x => x.isLinked && x.reviewStatus === "rejected");
     if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
@@ -647,7 +655,7 @@ function HandlingServiceReportContent() {
       );
     }
     return r;
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, operationsTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
