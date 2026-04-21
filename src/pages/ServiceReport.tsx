@@ -925,6 +925,7 @@ function HandlingServiceReportContent() {
           <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Review</option>
             <option value="pending">Pending</option>
+            <option value="modified">Modified</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
