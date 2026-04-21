@@ -12,6 +12,7 @@ import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { useChannel } from "@/contexts/ChannelContext";
 import InvoicePrintView from "@/components/InvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 
@@ -133,6 +134,8 @@ const PAGE_SIZE = 15;
 
 export default function InvoicesPage() {
   const queryClient = useQueryClient();
+  const { activeChannel } = useChannel();
+  const readOnly = activeChannel === "payables";
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices", { stationFilter: true });
   const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<any>("contracts");
@@ -379,13 +382,15 @@ export default function InvoicesPage() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Invoices</h1>
-          <p className="text-muted-foreground text-xs md:text-sm mt-1">IATA SIS-compliant airline invoicing</p>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2"><FileText size={22} className="text-primary" /> Invoices {readOnly && <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Read-only</span>}</h1>
+          <p className="text-muted-foreground text-xs md:text-sm mt-1">{readOnly ? "Receivables view — read-only access for Payables" : "IATA SIS-compliant airline invoicing"}</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowBillingPreview(true)} className="toolbar-btn-outline"><Zap size={14} /> Generate from Dispatches</button>
-          <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
-        </div>
+        {!readOnly && (
+          <div className="flex gap-2">
+            <button onClick={() => setShowBillingPreview(true)} className="toolbar-btn-outline"><Zap size={14} /> Generate from Dispatches</button>
+            <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
+          </div>
+        )}
       </div>
 
       {/* Enhanced KPI Cards */}
@@ -491,7 +496,7 @@ export default function InvoicesPage() {
           )}
 
           {/* Bulk Actions Bar */}
-          {selectedIds.size > 0 && (
+          {!readOnly && selectedIds.size > 0 && (
             <div className="flex items-center gap-3 pt-2 border-t">
               <span className="text-sm font-semibold text-foreground">{selectedIds.size} selected</span>
               <button onClick={() => handleBulkStatusChange("Paid")} className="text-xs px-2.5 py-1 rounded bg-success/15 text-success font-semibold hover:bg-success/25">Mark Paid</button>
@@ -545,12 +550,16 @@ export default function InvoicesPage() {
                   <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
                     <div className="flex gap-1.5">
                       <button onClick={() => setDetailInvoice(inv)} className="text-primary hover:text-primary/80" title="View Details"><Eye size={13} /></button>
-                      {inv.invoice_type !== "Final" && (
+                      {!readOnly && inv.invoice_type !== "Final" && (
                         <button onClick={() => handleFinalize(inv)} className="text-success hover:text-success/80" title="Finalize"><ShieldCheck size={13} /></button>
                       )}
                       <button onClick={() => setPrintInvoice(toPrintFormat(inv))} className="text-muted-foreground hover:text-foreground" title="Print"><Printer size={13} /></button>
-                      <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
-                      <button onClick={() => remove(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
+                      {!readOnly && (
+                        <>
+                          <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
+                          <button onClick={() => remove(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -124,6 +124,13 @@ Deno.serve(async (req) => {
   );
   results.push(...hbeStationResults);
 
+  // 9) Accounts Payable Portal: accpay@linkagency.com
+  const accpayPortalResults = await ensureUser(supabaseAdmin, adminList,
+    "accpay@linkagency.com", "Accpay#12345", "Accounts Payable Portal",
+    ["payables"]
+  );
+  results.push(...accpayPortalResults);
+
   return new Response(JSON.stringify({ results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
