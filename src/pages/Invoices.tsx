@@ -12,6 +12,7 @@ import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { useChannel } from "@/contexts/ChannelContext";
 import InvoicePrintView from "@/components/InvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 
