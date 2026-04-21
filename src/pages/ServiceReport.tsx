@@ -841,6 +841,9 @@ function HandlingServiceReportContent() {
               <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
                 {rejectedCount}
               </span>
+            )}
+          </button>
+        </div>
       )}
 
       {/* Operations sub-tabs (All vs Modified) */}
@@ -871,9 +874,6 @@ function HandlingServiceReportContent() {
                 {modifiedCount}
               </span>
             )}
-          </button>
-        </div>
-      )}
           </button>
         </div>
       )}
