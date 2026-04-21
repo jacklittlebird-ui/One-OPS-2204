@@ -1039,7 +1039,7 @@ function HandlingServiceReportContent() {
                         </button>
                       ) : (
                         <>
-                          {r.reviewStatus === "pending" && (
+                          {(r.reviewStatus === "pending" || r.reviewStatus === "modified") && (
                             <>
                               <button onClick={async () => {
                                 await supabase.from("service_reports").update({ review_status: "approved", reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
