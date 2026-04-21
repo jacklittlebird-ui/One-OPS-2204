@@ -953,7 +953,8 @@ export default function SecurityServiceReportsPage() {
                   <XCircle size={14} className="mr-1" /> Reject
                 </Button>
                 <Button size="sm" onClick={() => handleReviewAction("Approved")} className="bg-success hover:bg-success/90 text-success-foreground">
-                  <CheckCircle2 size={14} className="mr-1" /> Approve
+                  <CheckCircle2 size={14} className="mr-1" />
+                  {reviewRow.review_status === "Modified" ? "Approve & Mark Ready for Billing" : "Approve"}
                 </Button>
               </div>
             </div>
