@@ -1147,10 +1147,14 @@ function HandlingServiceReportContent() {
 
 // --- Wrapper with Security / Handling tabs ---
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, Wrench } from "lucide-react";
+import { Shield, Wrench, Plane as PlaneIcon } from "lucide-react";
 import SecurityServiceReportsPage from "@/pages/SecurityServiceReports";
+import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 
 export default function ServiceReportPage() {
+  const { activeChannel } = useChannel();
+  const showClearanceTab = activeChannel === "operations" || activeChannel === "admin";
+
   return (
     <div className="p-6 space-y-4">
       <Tabs defaultValue="security" className="w-full">
@@ -1161,6 +1165,11 @@ export default function ServiceReportPage() {
           <TabsTrigger value="handling" className="gap-1.5">
             <Wrench size={14} /> Handling
           </TabsTrigger>
+          {showClearanceTab && (
+            <TabsTrigger value="clearance-flights" className="gap-1.5">
+              <PlaneIcon size={14} /> All Clearance Flights
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="security">
           <SecurityServiceReportsPage />
@@ -1168,7 +1177,13 @@ export default function ServiceReportPage() {
         <TabsContent value="handling">
           <HandlingServiceReportContent />
         </TabsContent>
+        {showClearanceTab && (
+          <TabsContent value="clearance-flights">
+            <AllClearanceFlightsPage />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
 }
+
