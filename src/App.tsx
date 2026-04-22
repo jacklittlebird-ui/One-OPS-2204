@@ -50,6 +50,7 @@ import SettingsPage from "./pages/Settings";
 import AuditLogPage from "./pages/AuditLog";
 // StationDispatch merged into ServiceReport
 import IrregularityReportsPage from "./pages/IrregularityReports";
+import AllClearanceFlightsPage from "./pages/AllClearanceFlights";
 
 
 const queryClient = new QueryClient();
@@ -110,6 +111,7 @@ function AppRoutes() {
       <Route path="/station-dispatch" element={<Navigate to="/service-report" replace />} />
       <Route path="/irregularity-reports" element={<ProtectedRoute><AppLayout><IrregularityReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/security-service-reports" element={<Navigate to="/service-report" replace />} />
+      <Route path="/all-clearance-flights" element={<ProtectedRoute><AppLayout><AllClearanceFlightsPage /></AppLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
