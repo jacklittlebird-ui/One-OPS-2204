@@ -1167,7 +1167,7 @@ export default function ServiceReportPage() {
           </TabsTrigger>
           {showClearanceTab && (
             <TabsTrigger value="clearance-flights" className="gap-1.5">
-              <PlaneIcon size={14} /> All Clearance Flights
+              <PlaneIcon size={14} /> Modified
             </TabsTrigger>
           )}
         </TabsList>
