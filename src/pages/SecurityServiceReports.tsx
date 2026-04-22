@@ -354,8 +354,20 @@ export default function SecurityServiceReportsPage() {
         (r.station || "").toLowerCase().includes(s)
       );
     }
-    return rows;
-  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, opsTab]);
+    // Sort by Arrival Date (newest first); flights without an arrival date sink to the bottom
+    return [...rows].sort((a, b) => {
+      const aMeta = (a as any).flightMeta;
+      const bMeta = (b as any).flightMeta;
+      const aFd = a.flight_schedule_id ? flightDetailsById.get(a.flight_schedule_id) : undefined;
+      const bFd = b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined;
+      const ad = aFd?.arrival_date || aMeta?.arrival_date || a.flight_date || "";
+      const bd = bFd?.arrival_date || bMeta?.arrival_date || b.flight_date || "";
+      if (!ad && !bd) return 0;
+      if (!ad) return 1;
+      if (!bd) return -1;
+      return bd.localeCompare(ad);
+    });
+  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, opsTab, flightDetailsById]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -579,14 +591,7 @@ export default function SecurityServiceReportsPage() {
             <Shield size={22} className="text-primary" /> Security Service Reports
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Security service documentation · Pipeline:{" "}
-            <button onClick={() => navigate("/clearances")} className="text-primary hover:underline">Schedule</button>
-            {" → "}
-            <span className="font-semibold text-foreground">Station</span>
-            {" → "}
-            <span className="font-semibold text-foreground">Operations</span>
-            {" → "}
-            <button onClick={() => navigate("/invoices")} className="text-primary hover:underline">Finance</button>
+            Security service documentation across stations and operations.
           </p>
         </div>
         {canCreateNew && (
@@ -834,11 +839,6 @@ export default function SecurityServiceReportsPage() {
                                 {(r.review_status === "Pending Review" || r.review_status === "Modified") && (
                                   <button onClick={() => { setReviewRow(r); setReviewComment(r.review_comment); }} className="p-1 rounded hover:bg-muted" title={r.review_status === "Modified" ? "Review Modified Report" : "Review"}>
                                     <MessageSquare size={14} className={r.review_status === "Modified" ? "text-info" : "text-warning"} />
-                                  </button>
-                                )}
-                                {r.review_status === "Approved" && (
-                                  <button onClick={() => markReadyForBilling(r)} className="p-1 rounded hover:bg-muted" title="Mark Ready for Billing">
-                                    <DollarSign size={14} className="text-success" />
                                   </button>
                                 )}
                               </>

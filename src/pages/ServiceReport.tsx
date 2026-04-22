@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
-  DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Link2, Receipt,
+  DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Receipt,
   CheckCircle2, XCircle, Clock, MessageSquare, AlertCircle, CalendarDays, TableIcon
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -654,7 +654,15 @@ function HandlingServiceReportContent() {
         x.route.toLowerCase().includes(s)
       );
     }
-    return r;
+    // Sort by Arrival Date (newest first); rows without an arrival date sink to the bottom
+    return [...r].sort((a, b) => {
+      const ad = a.arrivalDate || "";
+      const bd = b.arrivalDate || "";
+      if (!ad && !bd) return 0;
+      if (!ad) return 1;
+      if (!bd) return -1;
+      return bd.localeCompare(ad);
+    });
   }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, operationsTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -798,15 +806,9 @@ function HandlingServiceReportContent() {
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <FileBarChart2 size={22} className="text-primary" /> Service Report
-            <Link2 size={16} className="text-primary" />
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Linked from <span className="font-semibold">Link_Service_Report.xlsx</span> ·{" "}
-            <button onClick={() => navigate("/flight-schedule")} className="text-primary hover:underline">Flight Schedule</button>
-            {" · "}
-            <button onClick={() => navigate("/airport-charges")} className="text-primary hover:underline">Airport Charges</button>
-            {" · "}
-            <button onClick={() => navigate("/services")} className="text-primary hover:underline">Chart of Services</button>
+            Flight service reports linked to schedules, charges and the chart of services.
           </p>
         </div>
         {canCreateNew && (
@@ -1010,7 +1012,7 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5 font-semibold text-success">{r.isLinked ? r.totalCost.toLocaleString() : "—"}</td>
                   <td className="px-3 py-2.5">
                     <PipelineStepper
-                      currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending" })}
+                      currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel })}
                       compact
                     />
                   </td>
