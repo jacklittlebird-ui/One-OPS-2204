@@ -100,7 +100,6 @@ const channelNavs: Record<Channel, NavSection[]> = {
       label: "REVIEW", icon: <ClipboardCheck size={18} />, collapsible: true,
       children: [
         { label: "Service Reports", path: "/service-report" },
-        { label: "All Clearance Flights", path: "/all-clearance-flights" },
       ],
     },
     {
