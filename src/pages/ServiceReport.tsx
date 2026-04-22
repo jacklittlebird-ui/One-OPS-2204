@@ -1143,8 +1143,6 @@ function HandlingServiceReportContent() {
           }}
         />
       )}
-      </>
-      )}
     </div>
   );
 }
