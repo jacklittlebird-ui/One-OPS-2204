@@ -977,7 +977,8 @@ export default function SecurityServiceReportsPage() {
           )}
         </DialogContent>
       </Dialog>
-
+      </>
+      )}
 
     </div>
   );
