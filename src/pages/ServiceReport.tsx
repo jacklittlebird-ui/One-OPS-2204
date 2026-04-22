@@ -654,7 +654,15 @@ function HandlingServiceReportContent() {
         x.route.toLowerCase().includes(s)
       );
     }
-    return r;
+    // Sort by Arrival Date (newest first); rows without an arrival date sink to the bottom
+    return [...r].sort((a, b) => {
+      const ad = a.arrivalDate || "";
+      const bd = b.arrivalDate || "";
+      if (!ad && !bd) return 0;
+      if (!ad) return 1;
+      if (!bd) return -1;
+      return bd.localeCompare(ad);
+    });
   }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, operationsTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
