@@ -355,7 +355,7 @@ export default function SecurityServiceReportsPage() {
         (r.station || "").toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date (newest first); flights without an arrival date sink to the bottom
+    // Sort by Arrival Date — station view ascending (chronological), others descending (newest first)
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
       const bMeta = (b as any).flightMeta;
@@ -366,7 +366,7 @@ export default function SecurityServiceReportsPage() {
       if (!ad && !bd) return 0;
       if (!ad) return 1;
       if (!bd) return -1;
-      return bd.localeCompare(ad);
+      return isStationView ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
   }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, opsTab, flightDetailsById]);
 

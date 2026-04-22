@@ -655,14 +655,14 @@ function HandlingServiceReportContent() {
         x.route.toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date (newest first); rows without an arrival date sink to the bottom
+    // Sort by Arrival Date (newest first by default; oldest first for station view); rows without an arrival date sink to the bottom
     return [...r].sort((a, b) => {
       const ad = a.arrivalDate || "";
       const bd = b.arrivalDate || "";
       if (!ad && !bd) return 0;
       if (!ad) return 1;
       if (!bd) return -1;
-      return bd.localeCompare(ad);
+      return isStationView ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
   }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, operationsTab]);
 
