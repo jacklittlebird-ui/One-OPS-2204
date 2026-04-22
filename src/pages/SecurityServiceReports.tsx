@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import SecurityTaskSheetDialog from "@/components/security/SecurityTaskSheetDialog";
+import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 
 const PAGE_SIZE = 15;
 
@@ -101,11 +102,11 @@ export default function SecurityServiceReportsPage() {
   const { session } = useAuth();
   const { activeChannel } = useChannel();
   const isReceivablesView = activeChannel === "receivables";
-  const isOperationsView = activeChannel === "operations";
+  const isOperationsView = activeChannel === "operations" || activeChannel === "admin";
   const isStationView = activeChannel === "station";
   const canCreateNew = !isReceivablesView && !isOperationsView;
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
-  const [opsTab, setOpsTab] = useState<"all" | "modified">("all");
+  const [opsTab, setOpsTab] = useState<"all" | "modified" | "clearance-flights">("all");
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
@@ -660,9 +661,24 @@ export default function SecurityServiceReportsPage() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => { setOpsTab("clearance-flights"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              opsTab === "clearance-flights"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <Plane size={14} />
+            All Clearance Flights
+          </button>
         </div>
       )}
 
+      {isOperationsView && opsTab === "clearance-flights" ? (
+        <AllClearanceFlightsPage />
+      ) : (
+      <>
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
@@ -961,7 +977,8 @@ export default function SecurityServiceReportsPage() {
           )}
         </DialogContent>
       </Dialog>
-
+      </>
+      )}
 
     </div>
   );
