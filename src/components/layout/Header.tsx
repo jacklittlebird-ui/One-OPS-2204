@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserStation } from "@/contexts/UserStationContext";
+import { useChannel } from "@/contexts/ChannelContext";
 
 interface HeaderProps {
   onMenuClick?: () => void;
