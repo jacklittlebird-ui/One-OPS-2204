@@ -68,8 +68,8 @@ export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar 
         </button>
       )}
 
-      {/* Station scope badge */}
-      {isStationScoped && station && (
+      {/* Station scope badge — hidden in operations channel (operations sees all stations) */}
+      {isStationScoped && station && activeChannel !== "operations" && (
         <div
           className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold border border-primary/20 shrink-0"
           title={`Scoped to station ${station}`}
@@ -79,9 +79,9 @@ export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar 
         </div>
       )}
 
-      {/* Global Search */}
+      {/* Global Search — admin only */}
       <div className="flex-1 min-w-0">
-        <GlobalSearch />
+        {isAdmin && <GlobalSearch />}
       </div>
 
       {/* Dark Mode Toggle */}
