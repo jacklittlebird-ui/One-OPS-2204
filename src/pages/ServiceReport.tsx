@@ -20,6 +20,7 @@ import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
 } from "@/components/serviceReport/ReportFormTypes";
+import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 
 const PAGE_SIZE = 15;
 
@@ -336,7 +337,7 @@ function HandlingServiceReportContent() {
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
-  const [operationsTab, setOperationsTab] = useState<"all" | "modified">("all");
+  const [operationsTab, setOperationsTab] = useState<"all" | "modified" | "clearance-flights">("all");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
@@ -848,7 +849,7 @@ function HandlingServiceReportContent() {
         </div>
       )}
 
-      {/* Operations sub-tabs (All vs Modified) */}
+      {/* Operations sub-tabs (All vs Modified vs Clearance Flights) */}
       {isOperationsView && (
         <div className="flex items-center gap-2 border-b">
           <button
@@ -877,8 +878,25 @@ function HandlingServiceReportContent() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => { setOperationsTab("clearance-flights"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              operationsTab === "clearance-flights"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <Plane size={14} />
+            All Clearance Flights
+          </button>
         </div>
       )}
+
+      {operationsTab === "clearance-flights" && isOperationsView ? (
+        <AllClearanceFlightsPage />
+      ) : (
+      <>
+
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1141,20 +1159,18 @@ function HandlingServiceReportContent() {
           }}
         />
       )}
+      </>
+      )}
     </div>
   );
 }
 
 // --- Wrapper with Security / Handling tabs ---
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, Wrench, Plane as PlaneIcon } from "lucide-react";
+import { Shield, Wrench } from "lucide-react";
 import SecurityServiceReportsPage from "@/pages/SecurityServiceReports";
-import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 
 export default function ServiceReportPage() {
-  const { activeChannel } = useChannel();
-  const showClearanceTab = activeChannel === "operations" || activeChannel === "admin";
-
   return (
     <div className="p-6 space-y-4">
       <Tabs defaultValue="security" className="w-full">
@@ -1165,11 +1181,6 @@ export default function ServiceReportPage() {
           <TabsTrigger value="handling" className="gap-1.5">
             <Wrench size={14} /> Handling
           </TabsTrigger>
-          {showClearanceTab && (
-            <TabsTrigger value="clearance-flights" className="gap-1.5">
-              <PlaneIcon size={14} /> Modified
-            </TabsTrigger>
-          )}
         </TabsList>
         <TabsContent value="security">
           <SecurityServiceReportsPage />
@@ -1177,13 +1188,9 @@ export default function ServiceReportPage() {
         <TabsContent value="handling">
           <HandlingServiceReportContent />
         </TabsContent>
-        {showClearanceTab && (
-          <TabsContent value="clearance-flights">
-            <AllClearanceFlightsPage />
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );
 }
+
 
