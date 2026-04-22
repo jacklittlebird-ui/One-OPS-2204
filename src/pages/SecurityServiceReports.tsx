@@ -661,9 +661,24 @@ export default function SecurityServiceReportsPage() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => { setOpsTab("clearance-flights"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              opsTab === "clearance-flights"
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <Plane size={14} />
+            All Clearance Flights
+          </button>
         </div>
       )}
 
+      {isOperationsView && opsTab === "clearance-flights" ? (
+        <AllClearanceFlightsPage />
+      ) : (
+      <>
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
