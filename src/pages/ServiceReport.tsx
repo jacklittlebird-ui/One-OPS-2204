@@ -798,15 +798,9 @@ function HandlingServiceReportContent() {
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <FileBarChart2 size={22} className="text-primary" /> Service Report
-            <Link2 size={16} className="text-primary" />
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Linked from <span className="font-semibold">Link_Service_Report.xlsx</span> ·{" "}
-            <button onClick={() => navigate("/flight-schedule")} className="text-primary hover:underline">Flight Schedule</button>
-            {" · "}
-            <button onClick={() => navigate("/airport-charges")} className="text-primary hover:underline">Airport Charges</button>
-            {" · "}
-            <button onClick={() => navigate("/services")} className="text-primary hover:underline">Chart of Services</button>
+            Flight service reports linked to schedules, charges and the chart of services.
           </p>
         </div>
         {canCreateNew && (
