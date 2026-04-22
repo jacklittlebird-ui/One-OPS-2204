@@ -878,24 +878,8 @@ function HandlingServiceReportContent() {
               </span>
             )}
           </button>
-          <button
-            onClick={() => { setOperationsTab("clearance-flights"); setPage(1); }}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
-              operationsTab === "clearance-flights"
-                ? "text-primary border-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            }`}
-          >
-            <Plane size={14} />
-            All Clearance Flights
-          </button>
         </div>
       )}
-
-      {operationsTab === "clearance-flights" && isOperationsView ? (
-        <AllClearanceFlightsPage />
-      ) : (
-      <>
 
 
       {/* Summary Stats */}
