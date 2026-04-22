@@ -17,6 +17,7 @@ interface HeaderProps {
 export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar }: HeaderProps) {
   const { user, signOut } = useAuth();
   const { station, isStationScoped } = useUserStation();
+  const { activeChannel, isAdmin } = useChannel();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
