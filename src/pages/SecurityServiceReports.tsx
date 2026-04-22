@@ -102,11 +102,11 @@ export default function SecurityServiceReportsPage() {
   const { session } = useAuth();
   const { activeChannel } = useChannel();
   const isReceivablesView = activeChannel === "receivables";
-  const isOperationsView = activeChannel === "operations";
+  const isOperationsView = activeChannel === "operations" || activeChannel === "admin";
   const isStationView = activeChannel === "station";
   const canCreateNew = !isReceivablesView && !isOperationsView;
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
-  const [opsTab, setOpsTab] = useState<"all" | "modified">("all");
+  const [opsTab, setOpsTab] = useState<"all" | "modified" | "clearance-flights">("all");
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
