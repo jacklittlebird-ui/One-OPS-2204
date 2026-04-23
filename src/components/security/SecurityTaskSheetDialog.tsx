@@ -606,6 +606,19 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
           {/* Flight Info */}
           <Section title="Flight Information" icon={<Plane size={14} />} accent="text-primary" iconBg="bg-primary/10">
+            {/* Read-only Airline & Station strip for existing edits */}
+            {!isNew && (
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-3 mb-3 pb-3 border-b">
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline</label>
+                  <input className={readOnlyCls} value={editableRow.airline || "—"} readOnly disabled />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Station</label>
+                  <input className={readOnlyCls} value={editableRow.station || "—"} readOnly disabled />
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Flight No</label>
@@ -616,18 +629,22 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 )}
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Date</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Arrival Date</label>
                 {isNew ? (
                   <input className={inputCls} type="date" value={editableRow.flight_date} onChange={e => updateRow("flight_date", e.target.value)} />
                 ) : (
-                  <div className="text-sm text-foreground py-2">{formatDate(currentRow.flight_date)}</div>
+                  <div className="text-sm text-foreground py-2 font-mono">{formatDateDMY(arrivalDate) || "—"}</div>
                 )}
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Departure Date</label>
+                <div className="text-sm text-foreground py-2 font-mono">{formatDateDMY(departureDate) || "—"}</div>
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Registration</label>
                 <input className={inputCls + " font-mono uppercase"} value={sheet.registration} onChange={e => update("registration", e.target.value.toUpperCase())} placeholder="Registration" />
               </div>
-              <div>
+              <div className="col-span-2 md:col-span-4">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Route</label>
                 <input className={inputCls + " uppercase"} value={sheet.route} onChange={e => update("route", e.target.value.toUpperCase())} placeholder="CAI-JFK-CAI" />
               </div>
