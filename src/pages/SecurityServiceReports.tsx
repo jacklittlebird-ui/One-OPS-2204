@@ -408,6 +408,20 @@ export default function SecurityServiceReportsPage() {
     // If station is editing a previously-rejected report, mark as "Modified" (goes back to ops).
     const isResubmittingRejected = !isNewReport && row.review_status === "Rejected";
 
+    // Detect "service type changed" on an existing linked record. When the
+    // station changes the Service Type (clearance_type) for an existing
+    // record, the flight needs to go back to Clearance for re-approval.
+    const linkedFsId = (row as any).flight_schedule_id;
+    const originalClearanceType = linkedFsId
+      ? flightDetailsById.get(linkedFsId)?.clearance_type
+      : undefined;
+    const serviceTypeChanged =
+      !isNewReport &&
+      !!linkedFsId &&
+      !!originalClearanceType &&
+      (row.service_type || "").trim().toLowerCase() !==
+        (originalClearanceType || "").trim().toLowerCase();
+
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
       notes: taskSheet.remarks || row.notes,
@@ -420,7 +434,13 @@ export default function SecurityServiceReportsPage() {
       // Brand-new reports (no clearance link yet) stay "Pending" until clearance
       // approves the linked flight schedule. Completing a clearance flight or
       // editing an existing report → mark "Completed" so step 2 (Station) is done.
-      status: (isNewReport && !isCompletingClearanceFlight) ? "Pending" : "Completed",
+      // EXCEPTION: if Service Type changed, send the dispatch back to "Pending"
+      // so the pipeline reverts to step 1 (Clearance) for re-approval.
+      status: serviceTypeChanged
+        ? "Pending"
+        : (isNewReport && !isCompletingClearanceFlight)
+          ? "Pending"
+          : "Completed",
       station: row.station,
       airline: row.airline,
       flight_no: row.flight_no,
@@ -442,11 +462,14 @@ export default function SecurityServiceReportsPage() {
       charges_currency: (row as any).charges_currency || "USD",
       // New reports start in Draft; completing a clearance flight goes straight to Pending Review.
       // Resubmitting a rejected report → "Modified" so it appears under Operations → Modified tab.
+      // Service Type change → "Draft" (returns to clearance, removes from ops queue).
       ...(isNewReport
         ? { review_status: isCompletingClearanceFlight ? "Pending Review" : "Draft" }
         : isResubmittingRejected
           ? { review_status: "Modified" }
-          : {}),
+          : serviceTypeChanged
+            ? { review_status: "Draft", reviewed_at: null, reviewed_by: "", review_comment: "" }
+            : {}),
     };
 
     if (isCompletingClearanceFlight) {
@@ -519,7 +542,59 @@ export default function SecurityServiceReportsPage() {
         }
       })();
     } else {
-      updateMutation.mutate({ id: row.id, ...payload } as any);
+      // Editing an existing dispatch. Always sync changed fields back to the
+      // linked flight_schedule (so Clearance sees up-to-date data). If the
+      // Service Type changed, also reset the clearance status to "Pending"
+      // so the flight returns to Clearance → Pending Approval.
+      (async () => {
+        try {
+          // 1. Update the dispatch
+          const { error: dispatchErr } = await supabase
+            .from("dispatch_assignments")
+            .update(payload as any)
+            .eq("id", row.id);
+          if (dispatchErr) throw dispatchErr;
+
+          // 2. Sync changes back to the linked flight_schedule (if any)
+          if (linkedFsId) {
+            const fsUpdate: Record<string, any> = {
+              flight_no: row.flight_no,
+              clearance_type: row.service_type,
+              registration: taskSheet.registration || "",
+              route: taskSheet.route || "",
+              sta: taskSheet.sta || "",
+              std: taskSheet.std || "",
+              skd_type: taskSheet.flight_type || "",
+              arrival_date: row.flight_date || null,
+              departure_date: (row as any).departure_date || row.flight_date || null,
+            };
+            // Service Type change → revert clearance to Pending (re-approval needed)
+            if (serviceTypeChanged) {
+              fsUpdate.status = "Pending";
+              fsUpdate.remarks = "Service Type changed by Station — re-approval required";
+            }
+            const { error: fsErr } = await supabase
+              .from("flight_schedules")
+              .update(fsUpdate as any)
+              .eq("id", linkedFsId);
+            if (fsErr) throw fsErr;
+          }
+
+          queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+
+          if (serviceTypeChanged) {
+            toast({
+              title: "Returned to Clearance",
+              description: "Service Type changed — flight sent back to Clearance → Pending Approval.",
+            });
+          } else {
+            toast({ title: "Task Sheet Updated", description: "Changes saved and synced to Clearance." });
+          }
+        } catch (e: any) {
+          toast({ title: "Error", description: e.message, variant: "destructive" });
+        }
+      })();
     }
     setEditRow(null);
     setIsNewReport(false);
