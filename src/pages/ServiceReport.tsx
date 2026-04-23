@@ -690,11 +690,13 @@ function HandlingServiceReportContent() {
         clearanceStatus: merged.clearanceStatus,
         dispatchStatus: merged.isLinked ? "Completed" : "Pending",
       });
-      const allDone = completed.includes("clearance") && completed.includes("station") && completed.includes("operations");
+      // Receivables can edit once Station (task sheet saved) and Operations (review approved)
+      // are complete. Clearance status is informational at billing stage.
+      const allDone = completed.includes("station") && completed.includes("operations");
       if (!allDone) {
         toast({
           title: "Locked",
-          description: "Steps 1 (Clearance), 2 (Station) and 3 (Operations) must be completed before editing in Receivables.",
+          description: "Station task sheet and Operations approval must be completed before editing in Receivables.",
           variant: "destructive",
         });
         return;
