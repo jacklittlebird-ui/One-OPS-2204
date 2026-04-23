@@ -386,17 +386,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   const isReceivablesView = activeChannel === "receivables";
 
-  // Pipeline gate: receivables editing is only allowed when steps 1-3 are completed.
-  // We derive the stage from the current dispatch row; "receivables" stage means
-  // Clearance + Station + Operations are all done.
-  const pipelineStage = currentRow ? derivePipelineStage({
-    isLinked: !!(currentRow as any)?.flight_schedule_id,
-    reviewStatus: (currentRow as any)?.review_status || "",
-    clearanceStatus: (currentRow as any)?.clearance_status,
-    dispatchStatus: (currentRow as any)?.status,
-    channel: "operations",
-  }) : "clearance";
-  const receivablesUnlocked = pipelineStage === "receivables";
+  // Pipeline gate: receivables editing is only allowed when the Station task
+  // sheet is saved and Operations has approved. Clearance status is treated
+  // as informational at the billing stage (consistent with the page-level
+  // gate in SecurityServiceReports.tsx).
+  const dispatchStatus = (currentRow as any)?.status || "";
+  const reviewStatus = String((currentRow as any)?.review_status || "").toLowerCase();
+  const stationDone = dispatchStatus === "Completed";
+  const operationsDone = reviewStatus === "approved" || reviewStatus.includes("billing");
+  const receivablesUnlocked = stationDone && operationsDone;
   const receivablesLocked = isReceivablesView && !receivablesUnlocked;
 
   if (!row || !editableRow || !currentRow) return null;
