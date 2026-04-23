@@ -24,6 +24,8 @@ function formatTimeInput(value: string, prevValue: string): string {
 interface TaskSheetData {
   flight_type: string;
   delay: string;
+  shift_start_date: string;
+  shift_end_date: string;
   shift_start: string;
   shift_end: string;
   sta: string;
