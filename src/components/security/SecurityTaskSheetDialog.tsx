@@ -494,7 +494,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   return (
     <Dialog open={!!row} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 gap-0 [&>button.absolute]:hidden">
+      <DialogContent className="max-w-[96vw] xl:max-w-7xl max-h-[92vh] overflow-y-auto p-0 gap-0 [&>button.absolute]:hidden">
         {/* Gradient hero header */}
         <div className="relative bg-gradient-to-r from-primary via-primary to-primary/80 text-primary-foreground px-6 py-5 overflow-hidden">
           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, white 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
