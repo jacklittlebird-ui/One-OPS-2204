@@ -159,7 +159,7 @@ function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.Rea
   );
 }
 
-export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, isNew }: Props) {
+export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, arrivalDate, departureDate, isNew }: Props) {
   const { activeChannel } = useChannel();
   const queryClient = useQueryClient();
   const isOperationsView = activeChannel === "operations";
