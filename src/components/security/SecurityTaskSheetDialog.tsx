@@ -933,7 +933,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             />
           </Section>
 
-          {/* RECEIVABLES-ONLY: Security Charges Panel */}
+          </fieldset>
+
+          {/* RECEIVABLES-ONLY: Security Charges Panel — stays editable even when the rest of the form is locked */}
           {isReceivablesView && (
             <Section title="Security Charges (Receivables)" icon={<DollarSign size={14} />} accent="text-success" iconBg="bg-success/10">
               {receivablesLocked && (
