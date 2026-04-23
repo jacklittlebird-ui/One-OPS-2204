@@ -806,7 +806,17 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 pt-3 border-t">
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Start Shift Date</label>
-                <input className={inputCls} type="date" value={sheet.shift_start_date} onChange={e => update("shift_start_date", e.target.value)} />
+                <input
+                  className={inputCls + " font-mono"}
+                  value={isoToDmy(sheet.shift_start_date)}
+                  onChange={e => {
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(sheet.shift_start_date));
+                    const iso = dmyToIso(formatted);
+                    update("shift_start_date", iso || formatted);
+                  }}
+                  placeholder="DD/MM/YYYY"
+                  maxLength={10}
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Start Shift Time</label>
