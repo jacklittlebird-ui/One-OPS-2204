@@ -1015,6 +1015,7 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5">
                     <PipelineStepper
                       currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel })}
+                      completedStages={derivePipelineCompletedStages({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending" })}
                       compact
                     />
                   </td>
