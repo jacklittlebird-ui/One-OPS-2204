@@ -112,6 +112,8 @@ interface Props {
   atd?: string;
   skdType?: string;
   serviceType?: string;
+  arrivalDate?: string;
+  departureDate?: string;
   isNew?: boolean;
 }
 
