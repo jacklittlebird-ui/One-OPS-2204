@@ -683,7 +683,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Service Type</label>
-                <div className="text-sm font-semibold text-foreground py-2 whitespace-nowrap">{serviceType || currentRow.service_type || "—"}</div>
+                <select
+                  className={inputCls}
+                  value={editableRow.service_type || serviceType || ""}
+                  onChange={e => updateRow("service_type", e.target.value)}
+                >
+                  <option value="">Select…</option>
+                  {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
               <div className="col-span-2">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Delay</label>
