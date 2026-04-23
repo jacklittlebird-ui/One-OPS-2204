@@ -684,14 +684,14 @@ function HandlingServiceReportContent() {
   const startEdit = (r: MergedRow | ReportFormData) => {
     if (isReceivablesView) {
       const merged = r as MergedRow;
-      const stage = derivePipelineStage({
+      const completed = derivePipelineCompletedStages({
         isLinked: !!merged.isLinked,
         reviewStatus: merged.reviewStatus || "",
         clearanceStatus: merged.clearanceStatus,
         dispatchStatus: merged.isLinked ? "Completed" : "Pending",
-        channel: "operations",
       });
-      if (stage !== "receivables") {
+      const allDone = completed.includes("clearance") && completed.includes("station") && completed.includes("operations");
+      if (!allDone) {
         toast({
           title: "Locked",
           description: "Steps 1 (Clearance), 2 (Station) and 3 (Operations) must be completed before editing in Receivables.",
