@@ -574,55 +574,73 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
         <fieldset disabled={reviewMode} className="contents">
         <div className="px-6 py-4 space-y-4 bg-muted/10" ref={printRef}>
-          {/* Airline & Station (editable for new) */}
-          {isNew && (
-            <Section title="Assignment" icon={<Plane size={14} />} accent="text-primary" iconBg="bg-primary/10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline</label>
-                  <select className={inputCls} value={editableRow.airline} onChange={e => updateRow("airline", e.target.value)}>
-                    <option value="">Select Airline</option>
-                    {airlines.map((a: any) => (
-                      <option key={a.id} value={a.name}>{a.name} ({a.iata_code || a.code})</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Station</label>
-                  <select className={inputCls} value={editableRow.station} onChange={e => updateRow("station", e.target.value)}>
-                    <option value="">Select Station</option>
-                    {airportsList.map((a: any) => (
-                      <option key={a.id} value={a.iata_code || a.name}>
-                        {a.iata_code ? `${a.iata_code} — ${a.name}` : a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Service Type</label>
-                  <select className={inputCls} value={editableRow.service_type} onChange={e => updateRow("service_type", e.target.value)}>
-                    {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
+          {/* Assignment — Airline & Station (editable for new) + Skd Type */}
+          <Section title="Assignment" icon={<Plane size={14} />} accent="text-primary" iconBg="bg-primary/10">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              {isNew ? (
+                <>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline</label>
+                    <select className={inputCls} value={editableRow.airline} onChange={e => updateRow("airline", e.target.value)}>
+                      <option value="">Select Airline</option>
+                      {airlines.map((a: any) => (
+                        <option key={a.id} value={a.name}>{a.name} ({a.iata_code || a.code})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Station</label>
+                    <select className={inputCls} value={editableRow.station} onChange={e => updateRow("station", e.target.value)}>
+                      <option value="">Select Station</option>
+                      {airportsList.map((a: any) => (
+                        <option key={a.id} value={a.iata_code || a.name}>
+                          {a.iata_code ? `${a.iata_code} — ${a.name}` : a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Service Type</label>
+                    <select className={inputCls} value={editableRow.service_type} onChange={e => updateRow("service_type", e.target.value)}>
+                      {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline</label>
+                    <input className={readOnlyCls} value={editableRow.airline || "—"} readOnly disabled />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Station</label>
+                    <input className={readOnlyCls} value={editableRow.station || "—"} readOnly disabled />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Service Type</label>
+                    <select
+                      className={inputCls}
+                      value={editableRow.service_type || serviceType || ""}
+                      onChange={e => updateRow("service_type", e.target.value)}
+                    >
+                      <option value="">Select…</option>
+                      {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Skd Type</label>
+                <select className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}>
+                  <option value="">Select...</option>
+                  {FLIGHT_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
+                </select>
               </div>
-            </Section>
-          )}
+            </div>
+          </Section>
 
           {/* Flight Info */}
           <Section title="Flight Information" icon={<Plane size={14} />} accent="text-primary" iconBg="bg-primary/10">
-            {/* Read-only Airline & Station strip for existing edits */}
-            {!isNew && (
-              <div className="grid grid-cols-2 md:grid-cols-2 gap-3 mb-3 pb-3 border-b">
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline</label>
-                  <input className={readOnlyCls} value={editableRow.airline || "—"} readOnly disabled />
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Station</label>
-                  <input className={readOnlyCls} value={editableRow.station || "—"} readOnly disabled />
-                </div>
-              </div>
-            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Flight No</label>
@@ -642,7 +660,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Departure Date</label>
-                <div className="text-sm text-foreground py-2 font-mono">{formatDateDMY(departureDate) || "—"}</div>
+                <input
+                  className={inputCls}
+                  type="date"
+                  value={editableRow.departure_date || ""}
+                  onChange={e => updateRow("departure_date", e.target.value)}
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Registration</label>
@@ -674,40 +697,26 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">ATD</label>
                 <input className={inputCls + " font-mono"} value={sheet.atd} onChange={e => update("atd", formatTimeInput(e.target.value, sheet.atd))} placeholder="HH:MM" maxLength={5} />
               </div>
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Skd Type</label>
-                {isNew ? (
-                  <select className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}>
-                    <option value="">Select...</option>
-                    {FLIGHT_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
-                  </select>
-                ) : (
-                  <div className="text-sm font-semibold text-foreground py-2">{skdType || sheet.flight_type || "—"}</div>
-                )}
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Service Type</label>
-                <select
-                  className={inputCls}
-                  value={editableRow.service_type || serviceType || ""}
-                  onChange={e => updateRow("service_type", e.target.value)}
-                >
-                  <option value="">Select…</option>
-                  {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="col-span-2">
+              <div className="col-span-2 md:col-span-4">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Delay</label>
                 <input className={inputCls} value={sheet.delay} onChange={e => update("delay", e.target.value)} placeholder="Delay info" />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 pt-3 border-t">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 pt-3 border-t">
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">ARR/DEP Shift Start</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Start Shift Date</label>
+                <input className={inputCls} type="date" value={sheet.shift_start_date} onChange={e => update("shift_start_date", e.target.value)} />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Start Shift Time</label>
                 <input className={inputCls + " font-mono"} value={sheet.shift_start} onChange={e => update("shift_start", formatTimeInput(e.target.value, sheet.shift_start))} placeholder="HH:MM" maxLength={5} />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">ARR/DEP Shift End</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">End Shift Date</label>
+                <input className={inputCls} type="date" value={sheet.shift_end_date} onChange={e => update("shift_end_date", e.target.value)} />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">End Shift Time</label>
                 <input className={inputCls + " font-mono"} value={sheet.shift_end} onChange={e => update("shift_end", formatTimeInput(e.target.value, sheet.shift_end))} placeholder="HH:MM" maxLength={5} />
               </div>
             </div>
