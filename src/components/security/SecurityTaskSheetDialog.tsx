@@ -741,19 +741,31 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Arrival Date</label>
-                {isNew ? (
-                  <input className={inputCls} type="date" value={editableRow.flight_date} onChange={e => updateRow("flight_date", e.target.value)} />
-                ) : (
-                  <div className="text-sm text-foreground py-2 font-mono">{formatDateDMY(arrivalDate) || "—"}</div>
-                )}
+                <input
+                  className={inputCls + " font-mono"}
+                  value={isoToDmy(editableRow.flight_date || (!isNew ? arrivalDate || "" : ""))}
+                  onChange={e => {
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.flight_date || ""));
+                    const iso = dmyToIso(formatted);
+                    // Store ISO when valid, else keep raw text by using flight_date for ISO and ignoring partial
+                    updateRow("flight_date", iso || formatted);
+                  }}
+                  placeholder="DD/MM/YYYY"
+                  maxLength={10}
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Departure Date</label>
                 <input
-                  className={inputCls}
-                  type="date"
-                  value={editableRow.departure_date || ""}
-                  onChange={e => updateRow("departure_date", e.target.value)}
+                  className={inputCls + " font-mono"}
+                  value={isoToDmy(editableRow.departure_date || departureDate || "")}
+                  onChange={e => {
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.departure_date || departureDate || ""));
+                    const iso = dmyToIso(formatted);
+                    updateRow("departure_date", iso || formatted);
+                  }}
+                  placeholder="DD/MM/YYYY"
+                  maxLength={10}
                 />
               </div>
               <div>
