@@ -317,7 +317,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   useEffect(() => {
     if (row) {
-      setEditableRow({ ...row });
+      // Default arrival/departure date from clearance (flight schedule) when missing
+      setEditableRow({
+        ...row,
+        flight_date: row.flight_date || arrivalDate || "",
+        departure_date: (row as any).departure_date || departureDate || "",
+      } as DispatchRow);
       setReviewComment(row.review_comment || "");
       setContractId((row as any).contract_id || "");
       setExtraManpower((row as any).extra_manpower_count || 0);
