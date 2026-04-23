@@ -386,17 +386,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   const isReceivablesView = activeChannel === "receivables";
 
-  // Pipeline gate: receivables editing is only allowed when steps 1-3 are completed.
-  // We derive the stage from the current dispatch row; "receivables" stage means
-  // Clearance + Station + Operations are all done.
-  const pipelineStage = currentRow ? derivePipelineStage({
-    isLinked: !!(currentRow as any)?.flight_schedule_id,
-    reviewStatus: (currentRow as any)?.review_status || "",
-    clearanceStatus: (currentRow as any)?.clearance_status,
-    dispatchStatus: (currentRow as any)?.status,
-    channel: "operations",
-  }) : "clearance";
-  const receivablesUnlocked = pipelineStage === "receivables";
+  // Pipeline gate: receivables editing is only allowed when the Station task
+  // sheet is saved and Operations has approved. Clearance status is treated
+  // as informational at the billing stage (consistent with the page-level
+  // gate in SecurityServiceReports.tsx).
+  const dispatchStatus = (currentRow as any)?.status || "";
+  const reviewStatus = String((currentRow as any)?.review_status || "").toLowerCase();
+  const stationDone = dispatchStatus === "Completed";
+  const operationsDone = reviewStatus === "approved" || reviewStatus.includes("billing");
+  const receivablesUnlocked = stationDone && operationsDone;
   const receivablesLocked = isReceivablesView && !receivablesUnlocked;
 
   if (!row || !editableRow || !currentRow) return null;
@@ -410,22 +408,28 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   };
 
   const handleSave = () => {
-    const required: { key: keyof TaskSheetData; label: string }[] = [
-      { key: "sta", label: "STA" },
-      { key: "ata", label: "ATA" },
-      { key: "std", label: "STD" },
-      { key: "atd", label: "ATD" },
-      { key: "shift_start", label: "Start Shift Time" },
-      { key: "shift_end", label: "End Shift Time" },
-    ];
-    const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
-    if (missing.length > 0) {
-      toast({
-        title: "Missing required fields",
-        description: `Please fill: ${missing.join(", ")}`,
-        variant: "destructive",
-      });
-      return;
+    // In receivables view the task sheet is read-only — only the Security
+    // Charges panel is editable. Skip task-sheet field validation so the
+    // billing user can save contract/charges updates without re-entering
+    // station data.
+    if (!isReceivablesView) {
+      const required: { key: keyof TaskSheetData; label: string }[] = [
+        { key: "sta", label: "STA" },
+        { key: "ata", label: "ATA" },
+        { key: "std", label: "STD" },
+        { key: "atd", label: "ATD" },
+        { key: "shift_start", label: "Start Shift Time" },
+        { key: "shift_end", label: "End Shift Time" },
+      ];
+      const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
+      if (missing.length > 0) {
+        toast({
+          title: "Missing required fields",
+          description: `Please fill: ${missing.join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
     const enrichedRow = {
       ...(isNew ? editableRow : { ...(row || {}), ...(editableRow || {}) }),
@@ -660,8 +664,17 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           </div>
         )}
 
-        <fieldset disabled={reviewMode} className="contents">
         <div className="px-6 py-4 space-y-4 bg-muted/10" ref={printRef}>
+        {isReceivablesView && (
+          <div className="rounded-lg border border-info/40 bg-info/10 px-3 py-2.5 text-xs text-foreground flex items-start gap-2 no-print">
+            <Eye size={14} className="text-info mt-0.5 shrink-0" />
+            <span>
+              <span className="font-semibold uppercase tracking-wider text-info">Receivables view</span>
+              {" "}— The task sheet below is read-only. Only the <span className="font-semibold">Security Charges</span> section can be edited to compute and finalize the billable amount for this flight.
+            </span>
+          </div>
+        )}
+        <fieldset disabled={reviewMode || isReceivablesView} className="contents">
           {/* Assignment — Airline & Station (editable for new) + Skd Type */}
           <Section title="Assignment" icon={<Plane size={14} />} accent="text-primary" iconBg="bg-primary/10">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -924,14 +937,16 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             />
           </Section>
 
-          {/* RECEIVABLES-ONLY: Security Charges Panel */}
+          </fieldset>
+
+          {/* RECEIVABLES-ONLY: Security Charges Panel — stays editable even when the rest of the form is locked */}
           {isReceivablesView && (
             <Section title="Security Charges (Receivables)" icon={<DollarSign size={14} />} accent="text-success" iconBg="bg-success/10">
               {receivablesLocked && (
                 <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs text-warning-foreground flex items-start gap-2">
                   <AlertTriangle size={14} className="mt-0.5 shrink-0" />
                   <span>
-                    Receivables editing is locked. Steps 1 (Clearance), 2 (Station) and 3 (Operations) must be completed before charges can be edited here.
+                    Receivables editing is locked. The Station task sheet must be saved and the report approved by Operations before charges can be edited here.
                   </span>
                 </div>
               )}
@@ -1026,7 +1041,6 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             <span className="font-mono">V.03 22Jan2023</span>
           </div>
         </div>
-        </fieldset>
 
         {/* Sticky action bar */}
         <div className="sticky bottom-0 flex justify-between items-center gap-2 px-6 py-3 border-t bg-card/95 backdrop-blur-sm">
@@ -1099,8 +1113,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           ) : (
             <div className="flex gap-2">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={handleSave} className="shadow-sm">
-                <Shield size={14} className="mr-1" /> Save Task Sheet
+              <Button onClick={handleSave} disabled={isReceivablesView && receivablesLocked} className="shadow-sm">
+                {isReceivablesView ? (
+                  <><DollarSign size={14} className="mr-1" /> Save Security Charges</>
+                ) : (
+                  <><Shield size={14} className="mr-1" /> Save Task Sheet</>
+                )}
               </Button>
             </div>
           )}
