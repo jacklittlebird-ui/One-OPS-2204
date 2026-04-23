@@ -719,10 +719,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               )}
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Skd Type</label>
-                <select className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}>
-                  <option value="">Select...</option>
-                  {FLIGHT_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
-                </select>
+                {isNew ? (
+                  <select className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}>
+                    <option value="">Select...</option>
+                    {FLIGHT_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
+                  </select>
+                ) : (
+                  <input className={readOnlyCls} value={sheet.flight_type || skdType || "—"} readOnly disabled />
+                )}
               </div>
             </div>
           </Section>
