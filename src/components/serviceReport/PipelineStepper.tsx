@@ -56,14 +56,13 @@ export function derivePipelineStage(opts: {
   // --- Form-view overrides ---
   if (opts.formView) {
     if (ch === "station") {
-      // Opening the form in station = step 1 already complete.
-      // Step 2 stays in-progress unless the record itself is already saved/completed
-      // (e.g. user is editing an already-saved task sheet — step 2 must show as done).
+      // Opening the new/edit form in station = step 1 already complete and step 2
+      // is the ACTIVE stage (the work the station is doing right now). We don't
+      // advance to step 3 even if the record was previously saved — operations
+      // approval still belongs to the operations channel.
       step1Done = true;
-      // Preserve actual completion (ds === "completed") so editing a saved record
-      // shows step 2 as done and advances current to step 3 (Operations).
-      step2Done = ds === "completed";
-      step3Done = step3Done && step2Done;
+      step2Done = false;
+      step3Done = false;
     } else if (ch === "operations") {
       // Opening the form in operations = steps 1 & 2 complete; step 3 is the active step
       // (unless ops has already approved, in which case keep step3Done as-is).

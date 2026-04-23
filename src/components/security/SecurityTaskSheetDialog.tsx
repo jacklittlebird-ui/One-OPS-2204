@@ -13,12 +13,101 @@ import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/li
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 import { formatDateDMY } from "@/lib/utils";
 
-/** Auto-format time input as HH:MM */
+/** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
+  // Strip non-digits/colon
   let v = value.replace(/[^0-9:]/g, "");
-  if (v.length === 2 && !v.includes(":") && prevValue?.length !== 3) v += ":";
-  if (v.length > 5) v = v.slice(0, 5);
-  return v;
+  // Allow user to clear
+  if (v === "") return "";
+
+  // Split on colon, but also handle plain digit input
+  const hasColon = v.includes(":");
+  let hh = "";
+  let mm = "";
+  if (hasColon) {
+    const [h = "", m = ""] = v.split(":");
+    hh = h.slice(0, 2);
+    mm = m.slice(0, 2);
+  } else {
+    hh = v.slice(0, 2);
+    mm = v.slice(2, 4);
+  }
+
+  // Reject hours > 23 as the user types: cap at 23
+  if (hh.length === 1) {
+    // Single digit hour — allow any 0-9, will validate after second digit
+  } else if (hh.length === 2) {
+    const hNum = parseInt(hh, 10);
+    if (isNaN(hNum) || hNum > 23) {
+      // Invalid hour — return previous value to block entry
+      return prevValue;
+    }
+  }
+
+  // Reject minutes > 59
+  if (mm.length === 2) {
+    const mNum = parseInt(mm, 10);
+    if (isNaN(mNum) || mNum > 59) {
+      return prevValue;
+    }
+  }
+
+  // Auto-insert colon after 2 digits (only when typing forward, not deleting)
+  let out = hh;
+  if (mm.length > 0 || (hh.length === 2 && value.length > prevValue.length)) {
+    out = hh + ":" + mm;
+  }
+  if (out.length > 5) out = out.slice(0, 5);
+  return out;
+}
+
+/** Convert ISO yyyy-mm-dd ⇄ DD/MM/YYYY for masked text date inputs. */
+function isoToDmy(iso: string): string {
+  if (!iso) return "";
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return iso;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+function dmyToIso(dmy: string): string {
+  if (!dmy) return "";
+  const m = dmy.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return "";
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+/** Auto-format date input as DD/MM/YYYY with validation. */
+function formatDateDmyInput(value: string, prevValue: string): string {
+  let v = value.replace(/[^0-9/]/g, "");
+  if (v === "") return "";
+  const parts = v.split("/");
+  let dd = parts[0]?.slice(0, 2) || "";
+  let mm = parts[1]?.slice(0, 2) || "";
+  let yyyy = parts[2]?.slice(0, 4) || "";
+
+  // If no slashes, slice by position
+  if (parts.length === 1 && v.length > 0) {
+    dd = v.slice(0, 2);
+    mm = v.slice(2, 4);
+    yyyy = v.slice(4, 8);
+  }
+
+  if (dd.length === 2) {
+    const d = parseInt(dd, 10);
+    if (isNaN(d) || d < 1 || d > 31) return prevValue;
+  }
+  if (mm.length === 2) {
+    const m = parseInt(mm, 10);
+    if (isNaN(m) || m < 1 || m > 12) return prevValue;
+  }
+  if (yyyy.length === 4) {
+    const y = parseInt(yyyy, 10);
+    if (isNaN(y) || y < 1900 || y > 2100) return prevValue;
+  }
+
+  let out = dd;
+  if (mm.length > 0 || (dd.length === 2 && value.length > prevValue.length)) out = dd + "/" + mm;
+  if (yyyy.length > 0 || (mm.length === 2 && value.length > prevValue.length)) out = dd + "/" + mm + "/" + yyyy;
+  if (out.length > 10) out = out.slice(0, 10);
+  return out;
 }
 
 interface TaskSheetData {
@@ -228,7 +317,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   useEffect(() => {
     if (row) {
-      setEditableRow({ ...row });
+      // Default arrival/departure date from clearance (flight schedule) when missing
+      setEditableRow({
+        ...row,
+        flight_date: row.flight_date || arrivalDate || "",
+        departure_date: (row as any).departure_date || departureDate || "",
+      } as DispatchRow);
       setReviewComment(row.review_comment || "");
       setContractId((row as any).contract_id || "");
       setExtraManpower((row as any).extra_manpower_count || 0);
@@ -256,7 +350,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         });
       }
     }
-  }, [row, skdType, sta, std, ata, atd, registration, route]);
+  }, [row, skdType, sta, std, ata, atd, registration, route, arrivalDate, departureDate]);
 
   // Auto-pick the first matching contract when only one exists
   useEffect(() => {
@@ -347,13 +441,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     onSave(enrichedRow, sheet);
   };
 
-  const formatDate = (d: string) => {
-    if (!d) return "";
-    try {
-      const dt = new Date(d);
-      return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" }).toUpperCase();
-    } catch { return d; }
-  };
+  const formatDate = (d: string) => formatDateDMY(d) || "";
 
   const handlePrint = () => {
     if (!row) return;
@@ -652,19 +740,31 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Arrival Date</label>
-                {isNew ? (
-                  <input className={inputCls} type="date" value={editableRow.flight_date} onChange={e => updateRow("flight_date", e.target.value)} />
-                ) : (
-                  <div className="text-sm text-foreground py-2 font-mono">{formatDateDMY(arrivalDate) || "—"}</div>
-                )}
+                <input
+                  className={inputCls + " font-mono"}
+                  value={isoToDmy(editableRow.flight_date || (!isNew ? arrivalDate || "" : ""))}
+                  onChange={e => {
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.flight_date || ""));
+                    const iso = dmyToIso(formatted);
+                    // Store ISO when valid, else keep raw text by using flight_date for ISO and ignoring partial
+                    updateRow("flight_date", iso || formatted);
+                  }}
+                  placeholder="DD/MM/YYYY"
+                  maxLength={10}
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Departure Date</label>
                 <input
-                  className={inputCls}
-                  type="date"
-                  value={editableRow.departure_date || ""}
-                  onChange={e => updateRow("departure_date", e.target.value)}
+                  className={inputCls + " font-mono"}
+                  value={isoToDmy(editableRow.departure_date || departureDate || "")}
+                  onChange={e => {
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.departure_date || departureDate || ""));
+                    const iso = dmyToIso(formatted);
+                    updateRow("departure_date", iso || formatted);
+                  }}
+                  placeholder="DD/MM/YYYY"
+                  maxLength={10}
                 />
               </div>
               <div>
@@ -705,7 +805,17 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 pt-3 border-t">
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Start Shift Date</label>
-                <input className={inputCls} type="date" value={sheet.shift_start_date} onChange={e => update("shift_start_date", e.target.value)} />
+                <input
+                  className={inputCls + " font-mono"}
+                  value={isoToDmy(sheet.shift_start_date)}
+                  onChange={e => {
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(sheet.shift_start_date));
+                    const iso = dmyToIso(formatted);
+                    update("shift_start_date", iso || formatted);
+                  }}
+                  placeholder="DD/MM/YYYY"
+                  maxLength={10}
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Start Shift Time</label>
@@ -713,7 +823,17 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">End Shift Date</label>
-                <input className={inputCls} type="date" value={sheet.shift_end_date} onChange={e => update("shift_end_date", e.target.value)} />
+                <input
+                  className={inputCls + " font-mono"}
+                  value={isoToDmy(sheet.shift_end_date)}
+                  onChange={e => {
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(sheet.shift_end_date));
+                    const iso = dmyToIso(formatted);
+                    update("shift_end_date", iso || formatted);
+                  }}
+                  placeholder="DD/MM/YYYY"
+                  maxLength={10}
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">End Shift Time</label>
