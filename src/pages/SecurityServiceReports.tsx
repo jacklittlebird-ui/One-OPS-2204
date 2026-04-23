@@ -928,6 +928,8 @@ export default function SecurityServiceReportsPage() {
         std={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.std : undefined}
         skdType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.skd_type : undefined}
         serviceType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.clearance_type : undefined}
+        arrivalDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.arrival_date : undefined}
+        departureDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.departure_date : undefined}
       />
       {/* Review Dialog */}
       <Dialog open={!!reviewRow} onOpenChange={(open) => !open && setReviewRow(null)}>

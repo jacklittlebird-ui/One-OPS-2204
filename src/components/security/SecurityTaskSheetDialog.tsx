@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useChannel } from "@/contexts/ChannelContext";
 import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
+import { formatDateDMY } from "@/lib/utils";
 
 /** Auto-format time input as HH:MM */
 function formatTimeInput(value: string, prevValue: string): string {
@@ -112,6 +113,8 @@ interface Props {
   atd?: string;
   skdType?: string;
   serviceType?: string;
+  arrivalDate?: string;
+  departureDate?: string;
   isNew?: boolean;
 }
 
@@ -157,7 +160,7 @@ function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.Rea
   );
 }
 
-export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, isNew }: Props) {
+export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, arrivalDate, departureDate, isNew }: Props) {
   const { activeChannel } = useChannel();
   const queryClient = useQueryClient();
   const isOperationsView = activeChannel === "operations";
@@ -260,7 +263,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   // Map service_type → flight_type used in rate rows
   const flightTypeForCharges = useMemo(() => {
-    const st = (serviceType || currentRow?.service_type || "").toLowerCase();
+    const st = (editableRow?.service_type || serviceType || currentRow?.service_type || "").toLowerCase();
     if (st.includes("turnaround") && st.includes("dep")) return "Turnaround Departure";
     if (st.includes("turnaround") && st.includes("arr")) return "Turnaround Arrival";
     if (st.includes("departure")) return "Turnaround Departure";
@@ -268,7 +271,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     if (st.includes("adhoc")) return "ADHOC";
     if (st.includes("night")) return "Night Stop";
     return sheet.flight_type || "Turnaround Departure";
-  }, [serviceType, currentRow?.service_type, sheet.flight_type]);
+  }, [editableRow?.service_type, serviceType, currentRow?.service_type, sheet.flight_type]);
 
   const computedCharges = useMemo(() => {
     if (!contractRates.length || !currentRow) return null;
@@ -510,7 +513,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <Chip icon={<Plane size={13} />} label="Flight" value={currentRow.flight_no || "—"} />
                 <Chip icon={<Clock size={13} />} label="Date" value={formatDate(currentRow.flight_date)} />
                 <Chip label="Reg" value={sheet.registration || registration || "—"} />
-                <Chip label="Service" value={serviceType || currentRow.service_type || "—"} />
+                <Chip label="Service" value={editableRow.service_type || serviceType || currentRow.service_type || "—"} />
               </div>
             </div>
           </div>
@@ -603,6 +606,19 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
           {/* Flight Info */}
           <Section title="Flight Information" icon={<Plane size={14} />} accent="text-primary" iconBg="bg-primary/10">
+            {/* Read-only Airline & Station strip for existing edits */}
+            {!isNew && (
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-3 mb-3 pb-3 border-b">
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline</label>
+                  <input className={readOnlyCls} value={editableRow.airline || "—"} readOnly disabled />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Station</label>
+                  <input className={readOnlyCls} value={editableRow.station || "—"} readOnly disabled />
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Flight No</label>
@@ -613,18 +629,22 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 )}
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Date</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Arrival Date</label>
                 {isNew ? (
                   <input className={inputCls} type="date" value={editableRow.flight_date} onChange={e => updateRow("flight_date", e.target.value)} />
                 ) : (
-                  <div className="text-sm text-foreground py-2">{formatDate(currentRow.flight_date)}</div>
+                  <div className="text-sm text-foreground py-2 font-mono">{formatDateDMY(arrivalDate) || "—"}</div>
                 )}
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Departure Date</label>
+                <div className="text-sm text-foreground py-2 font-mono">{formatDateDMY(departureDate) || "—"}</div>
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Registration</label>
                 <input className={inputCls + " font-mono uppercase"} value={sheet.registration} onChange={e => update("registration", e.target.value.toUpperCase())} placeholder="Registration" />
               </div>
-              <div>
+              <div className="col-span-2 md:col-span-4">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Route</label>
                 <input className={inputCls + " uppercase"} value={sheet.route} onChange={e => update("route", e.target.value.toUpperCase())} placeholder="CAI-JFK-CAI" />
               </div>
@@ -663,7 +683,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Service Type</label>
-                <div className="text-sm font-semibold text-foreground py-2 whitespace-nowrap">{serviceType || currentRow.service_type || "—"}</div>
+                <select
+                  className={inputCls}
+                  value={editableRow.service_type || serviceType || ""}
+                  onChange={e => updateRow("service_type", e.target.value)}
+                >
+                  <option value="">Select…</option>
+                  {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
               <div className="col-span-2">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Delay</label>
