@@ -1113,8 +1113,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           ) : (
             <div className="flex gap-2">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={handleSave} className="shadow-sm">
-                <Shield size={14} className="mr-1" /> Save Task Sheet
+              <Button onClick={handleSave} disabled={isReceivablesView && receivablesLocked} className="shadow-sm">
+                {isReceivablesView ? (
+                  <><DollarSign size={14} className="mr-1" /> Save Security Charges</>
+                ) : (
+                  <><Shield size={14} className="mr-1" /> Save Task Sheet</>
+                )}
               </Button>
             </div>
           )}
