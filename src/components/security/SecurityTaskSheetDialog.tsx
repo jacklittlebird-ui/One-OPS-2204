@@ -441,13 +441,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     onSave(enrichedRow, sheet);
   };
 
-  const formatDate = (d: string) => {
-    if (!d) return "";
-    try {
-      const dt = new Date(d);
-      return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" }).toUpperCase();
-    } catch { return d; }
-  };
+  const formatDate = (d: string) => formatDateDMY(d) || "";
 
   const handlePrint = () => {
     if (!row) return;
