@@ -110,14 +110,14 @@ export default function SecurityServiceReportsPage() {
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
-      const stage = derivePipelineStage({
+      const completed = derivePipelineCompletedStages({
         isLinked: r.status === "Completed",
         reviewStatus: r.review_status,
         clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
         dispatchStatus: r.status,
-        channel: "operations",
       });
-      if (stage !== "receivables") {
+      const allDone = completed.includes("clearance") && completed.includes("station") && completed.includes("operations");
+      if (!allDone) {
         toast({
           title: "Locked",
           description: "Steps 1 (Clearance), 2 (Station) and 3 (Operations) must be completed before editing in Receivables.",
