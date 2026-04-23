@@ -52,6 +52,8 @@ interface TaskSheetData {
 const emptyTaskSheet = (): TaskSheetData => ({
   flight_type: "",
   delay: "",
+  shift_start_date: "",
+  shift_end_date: "",
   shift_start: "",
   shift_end: "",
   sta: "",
