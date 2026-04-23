@@ -87,13 +87,13 @@ export function derivePipelineStage(opts: {
   else stage = "receivables";
 
   // Cap the pipeline display so it never advances past the channel's
-  // designated step in record/list view. Station portal max = step 2,
-  // Operations portal max = step 3. Receivables can see all stages.
+  // designated step in record/list view. Station portal max = step 2.
+  // Operations portal is NOT capped — once ops approves, step 3 should
+  // show as completed (stage advances to "receivables").
   if (!opts.formView) {
     const order: PipelineStage[] = ["clearance", "station", "operations", "receivables"];
     const cap: Record<string, PipelineStage> = {
       station: "station",
-      operations: "operations",
     };
     const maxStage = cap[ch];
     if (maxStage && order.indexOf(stage) > order.indexOf(maxStage)) {
