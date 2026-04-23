@@ -13,12 +13,101 @@ import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/li
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 import { formatDateDMY } from "@/lib/utils";
 
-/** Auto-format time input as HH:MM */
+/** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
+  // Strip non-digits/colon
   let v = value.replace(/[^0-9:]/g, "");
-  if (v.length === 2 && !v.includes(":") && prevValue?.length !== 3) v += ":";
-  if (v.length > 5) v = v.slice(0, 5);
-  return v;
+  // Allow user to clear
+  if (v === "") return "";
+
+  // Split on colon, but also handle plain digit input
+  const hasColon = v.includes(":");
+  let hh = "";
+  let mm = "";
+  if (hasColon) {
+    const [h = "", m = ""] = v.split(":");
+    hh = h.slice(0, 2);
+    mm = m.slice(0, 2);
+  } else {
+    hh = v.slice(0, 2);
+    mm = v.slice(2, 4);
+  }
+
+  // Reject hours > 23 as the user types: cap at 23
+  if (hh.length === 1) {
+    // Single digit hour — allow any 0-9, will validate after second digit
+  } else if (hh.length === 2) {
+    const hNum = parseInt(hh, 10);
+    if (isNaN(hNum) || hNum > 23) {
+      // Invalid hour — return previous value to block entry
+      return prevValue;
+    }
+  }
+
+  // Reject minutes > 59
+  if (mm.length === 2) {
+    const mNum = parseInt(mm, 10);
+    if (isNaN(mNum) || mNum > 59) {
+      return prevValue;
+    }
+  }
+
+  // Auto-insert colon after 2 digits (only when typing forward, not deleting)
+  let out = hh;
+  if (mm.length > 0 || (hh.length === 2 && value.length > prevValue.length)) {
+    out = hh + ":" + mm;
+  }
+  if (out.length > 5) out = out.slice(0, 5);
+  return out;
+}
+
+/** Convert ISO yyyy-mm-dd ⇄ DD/MM/YYYY for masked text date inputs. */
+function isoToDmy(iso: string): string {
+  if (!iso) return "";
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return iso;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+function dmyToIso(dmy: string): string {
+  if (!dmy) return "";
+  const m = dmy.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return "";
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+/** Auto-format date input as DD/MM/YYYY with validation. */
+function formatDateDmyInput(value: string, prevValue: string): string {
+  let v = value.replace(/[^0-9/]/g, "");
+  if (v === "") return "";
+  const parts = v.split("/");
+  let dd = parts[0]?.slice(0, 2) || "";
+  let mm = parts[1]?.slice(0, 2) || "";
+  let yyyy = parts[2]?.slice(0, 4) || "";
+
+  // If no slashes, slice by position
+  if (parts.length === 1 && v.length > 0) {
+    dd = v.slice(0, 2);
+    mm = v.slice(2, 4);
+    yyyy = v.slice(4, 8);
+  }
+
+  if (dd.length === 2) {
+    const d = parseInt(dd, 10);
+    if (isNaN(d) || d < 1 || d > 31) return prevValue;
+  }
+  if (mm.length === 2) {
+    const m = parseInt(mm, 10);
+    if (isNaN(m) || m < 1 || m > 12) return prevValue;
+  }
+  if (yyyy.length === 4) {
+    const y = parseInt(yyyy, 10);
+    if (isNaN(y) || y < 1900 || y > 2100) return prevValue;
+  }
+
+  let out = dd;
+  if (mm.length > 0 || (dd.length === 2 && value.length > prevValue.length)) out = dd + "/" + mm;
+  if (yyyy.length > 0 || (mm.length === 2 && value.length > prevValue.length)) out = dd + "/" + mm + "/" + yyyy;
+  if (out.length > 10) out = out.slice(0, 10);
+  return out;
 }
 
 interface TaskSheetData {
