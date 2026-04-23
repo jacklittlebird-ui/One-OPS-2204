@@ -410,22 +410,28 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   };
 
   const handleSave = () => {
-    const required: { key: keyof TaskSheetData; label: string }[] = [
-      { key: "sta", label: "STA" },
-      { key: "ata", label: "ATA" },
-      { key: "std", label: "STD" },
-      { key: "atd", label: "ATD" },
-      { key: "shift_start", label: "Start Shift Time" },
-      { key: "shift_end", label: "End Shift Time" },
-    ];
-    const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
-    if (missing.length > 0) {
-      toast({
-        title: "Missing required fields",
-        description: `Please fill: ${missing.join(", ")}`,
-        variant: "destructive",
-      });
-      return;
+    // In receivables view the task sheet is read-only — only the Security
+    // Charges panel is editable. Skip task-sheet field validation so the
+    // billing user can save contract/charges updates without re-entering
+    // station data.
+    if (!isReceivablesView) {
+      const required: { key: keyof TaskSheetData; label: string }[] = [
+        { key: "sta", label: "STA" },
+        { key: "ata", label: "ATA" },
+        { key: "std", label: "STD" },
+        { key: "atd", label: "ATD" },
+        { key: "shift_start", label: "Start Shift Time" },
+        { key: "shift_end", label: "End Shift Time" },
+      ];
+      const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
+      if (missing.length > 0) {
+        toast({
+          title: "Missing required fields",
+          description: `Please fill: ${missing.join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
     const enrichedRow = {
       ...(isNew ? editableRow : { ...(row || {}), ...(editableRow || {}) }),
