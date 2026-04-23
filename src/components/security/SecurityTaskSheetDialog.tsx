@@ -736,11 +736,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Flight No</label>
-                {isNew ? (
-                  <input className={inputCls} value={editableRow.flight_no} onChange={e => updateRow("flight_no", e.target.value.toUpperCase())} placeholder="Flight No" />
-                ) : (
-                  <div className="text-sm font-bold text-foreground py-2">{currentRow.flight_no}</div>
-                )}
+                <input
+                  className={inputCls + " uppercase font-bold"}
+                  value={editableRow.flight_no || ""}
+                  onChange={e => updateRow("flight_no", e.target.value.toUpperCase())}
+                  placeholder="Flight No"
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Arrival Date</label>
