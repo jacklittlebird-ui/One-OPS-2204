@@ -350,7 +350,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         });
       }
     }
-  }, [row, skdType, sta, std, ata, atd, registration, route]);
+  }, [row, skdType, sta, std, ata, atd, registration, route, arrivalDate, departureDate]);
 
   // Auto-pick the first matching contract when only one exists
   useEffect(() => {
