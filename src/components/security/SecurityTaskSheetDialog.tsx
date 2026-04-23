@@ -1037,7 +1037,6 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             <span className="font-mono">V.03 22Jan2023</span>
           </div>
         </div>
-        </fieldset>
 
         {/* Sticky action bar */}
         <div className="sticky bottom-0 flex justify-between items-center gap-2 px-6 py-3 border-t bg-card/95 backdrop-blur-sm">
