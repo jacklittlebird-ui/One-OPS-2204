@@ -428,7 +428,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       return;
     }
     const enrichedRow = {
-      ...(isNew ? editableRow : row),
+      ...(isNew ? editableRow : { ...(row || {}), ...(editableRow || {}) }),
       contract_id: contractId || null,
       extra_manpower_count: extraManpower,
       ramp_vehicle_trips: rampVehicleTrips,
