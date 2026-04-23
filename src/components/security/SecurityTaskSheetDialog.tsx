@@ -513,7 +513,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <Chip icon={<Plane size={13} />} label="Flight" value={currentRow.flight_no || "—"} />
                 <Chip icon={<Clock size={13} />} label="Date" value={formatDate(currentRow.flight_date)} />
                 <Chip label="Reg" value={sheet.registration || registration || "—"} />
-                <Chip label="Service" value={serviceType || currentRow.service_type || "—"} />
+                <Chip label="Service" value={editableRow.service_type || serviceType || currentRow.service_type || "—"} />
               </div>
             </div>
           </div>
