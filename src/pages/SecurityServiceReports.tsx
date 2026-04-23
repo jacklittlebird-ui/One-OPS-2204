@@ -902,6 +902,12 @@ export default function SecurityServiceReportsPage() {
                               dispatchStatus: r.status,
                               channel: activeChannel,
                             })}
+                            completedStages={derivePipelineCompletedStages({
+                              isLinked: r.status === "Completed",
+                              reviewStatus: r.review_status,
+                              clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+                              dispatchStatus: r.status,
+                            })}
                             compact
                           />
                         </td>
