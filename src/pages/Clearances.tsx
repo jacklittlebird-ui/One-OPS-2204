@@ -151,7 +151,8 @@ export default function ClearancesPage() {
     if (!da && !db) return 0;
     if (!da) return 1;
     if (!db) return -1;
-    return da.localeCompare(db);
+    // Newest first
+    return db.localeCompare(da);
   });
 
   const pendingApproval = data.filter(c => c.status === "Pending" && (c.remarks?.includes("Added from Station Dispatch") || c.purpose === "Security Service"));
