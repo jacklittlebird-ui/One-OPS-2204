@@ -946,7 +946,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-xs text-warning-foreground flex items-start gap-2">
                   <AlertTriangle size={14} className="mt-0.5 shrink-0" />
                   <span>
-                    Receivables editing is locked. Steps 1 (Clearance), 2 (Station) and 3 (Operations) must be completed before charges can be edited here.
+                    Receivables editing is locked. The Station task sheet must be saved and the report approved by Operations before charges can be edited here.
                   </span>
                 </div>
               )}
