@@ -321,8 +321,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       { key: "ata", label: "ATA" },
       { key: "std", label: "STD" },
       { key: "atd", label: "ATD" },
-      { key: "shift_start", label: "ARR/DEP Shift Start" },
-      { key: "shift_end", label: "ARR/DEP Shift End" },
+      { key: "shift_start", label: "Start Shift Time" },
+      { key: "shift_end", label: "End Shift Time" },
     ];
     const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
     if (missing.length > 0) {
