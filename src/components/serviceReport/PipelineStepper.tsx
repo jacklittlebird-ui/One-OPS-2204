@@ -103,20 +103,60 @@ export function derivePipelineStage(opts: {
   return stage;
 }
 
+/**
+ * Returns the explicit set of completed steps for a record, independent of the
+ * "current" stage. Use this when steps may complete out of order (e.g. a
+ * station saves the task sheet before clearance approves the flight, so step
+ * 2 should still display as completed).
+ */
+export function derivePipelineCompletedStages(opts: {
+  isLinked: boolean;
+  reviewStatus: string;
+  clearanceStatus?: string;
+  dispatchStatus?: string;
+}): PipelineStage[] {
+  const rs = (opts.reviewStatus || "").toLowerCase();
+  const ds = (opts.dispatchStatus || "").toLowerCase();
+  const cs = (opts.clearanceStatus || "").toLowerCase();
+
+  const done: PipelineStage[] = [];
+  // Step 1 — clearance approved (or linked with no pending/rejected status).
+  if (cs === "approved" || (opts.isLinked && cs && cs !== "pending" && cs !== "rejected")) {
+    done.push("clearance");
+  } else if (!cs && opts.isLinked) {
+    done.push("clearance");
+  }
+  // Step 2 — station saved the task sheet (dispatch completed).
+  if (ds === "completed") done.push("station");
+  // Step 3 — operations approved (or moved to billing).
+  if (rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing") {
+    done.push("operations");
+  }
+  return done;
+}
+
 interface PipelineStepperProps {
   currentStage: PipelineStage;
+  /** Optional explicit set of completed stages. When provided, it overrides
+   *  the default "all stages before currentStage are completed" behavior so
+   *  steps can complete out of order. */
+  completedStages?: PipelineStage[];
   compact?: boolean;
 }
 
-export default function PipelineStepper({ currentStage, compact = false }: PipelineStepperProps) {
+export default function PipelineStepper({ currentStage, completedStages, compact = false }: PipelineStepperProps) {
   const currentIdx = STEPS.findIndex(s => s.key === currentStage);
+  const completedSet = completedStages ? new Set(completedStages) : null;
+
+  const stepIsCompleted = (i: number, key: PipelineStage) =>
+    completedSet ? completedSet.has(key) : i < currentIdx;
 
   if (compact) {
     return (
       <div className="flex items-center gap-0.5">
         {STEPS.map((step, i) => {
-          const isCompleted = i < currentIdx;
-          const isCurrent = i === currentIdx;
+          const isCompleted = stepIsCompleted(i, step.key);
+          const isCurrent = i === currentIdx && !isCompleted;
           return (
             <div key={step.key} className="flex items-center gap-0.5">
               <div
@@ -130,7 +170,7 @@ export default function PipelineStepper({ currentStage, compact = false }: Pipel
                 {i + 1}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-3 h-0.5 ${i < currentIdx ? "bg-primary" : "bg-border"}`} />
+                <div className={`w-3 h-0.5 ${stepIsCompleted(i, step.key) ? "bg-primary" : "bg-border"}`} />
               )}
             </div>
           );
@@ -143,8 +183,8 @@ export default function PipelineStepper({ currentStage, compact = false }: Pipel
     <div className="flex items-center gap-1">
       {STEPS.map((step, i) => {
         const Icon = step.icon;
-        const isCompleted = i < currentIdx;
-        const isCurrent = i === currentIdx;
+        const isCompleted = stepIsCompleted(i, step.key);
+        const isCurrent = i === currentIdx && !isCompleted;
         return (
           <div key={step.key} className="flex items-center gap-1">
             <div className="flex flex-col items-center gap-0.5">
@@ -162,7 +202,7 @@ export default function PipelineStepper({ currentStage, compact = false }: Pipel
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`w-4 h-0.5 mb-3 ${i < currentIdx ? "bg-primary" : "bg-border"}`} />
+              <div className={`w-4 h-0.5 mb-3 ${stepIsCompleted(i, step.key) ? "bg-primary" : "bg-border"}`} />
             )}
           </div>
         );

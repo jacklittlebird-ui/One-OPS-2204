@@ -11,7 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChannel } from "@/contexts/ChannelContext";
-import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -901,6 +901,12 @@ export default function SecurityServiceReportsPage() {
                               clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
                               dispatchStatus: r.status,
                               channel: activeChannel,
+                            })}
+                            completedStages={derivePipelineCompletedStages({
+                              isLinked: r.status === "Completed",
+                              reviewStatus: r.review_status,
+                              clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+                              dispatchStatus: r.status,
                             })}
                             compact
                           />

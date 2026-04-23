@@ -13,7 +13,7 @@ import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
 import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
-import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
 import {
@@ -1015,6 +1015,7 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5">
                     <PipelineStepper
                       currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel })}
+                      completedStages={derivePipelineCompletedStages({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending" })}
                       compact
                     />
                   </td>
