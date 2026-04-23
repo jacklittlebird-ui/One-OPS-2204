@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useChannel } from "@/contexts/ChannelContext";
 import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
+import { formatDateDMY } from "@/lib/utils";
 
 /** Auto-format time input as HH:MM */
 function formatTimeInput(value: string, prevValue: string): string {
