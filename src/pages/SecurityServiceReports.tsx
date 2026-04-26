@@ -357,7 +357,8 @@ export default function SecurityServiceReportsPage() {
         (r.station || "").toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date — station view ascending (chronological), others descending (newest first)
+    // Sort by Arrival Date — station & operations views ascending (chronological), others descending (newest first)
+    const ascending = isStationView || isOperationsView;
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
       const bMeta = (b as any).flightMeta;
@@ -368,7 +369,7 @@ export default function SecurityServiceReportsPage() {
       if (!ad && !bd) return 0;
       if (!ad) return 1;
       if (!bd) return -1;
-      return isStationView ? ad.localeCompare(bd) : bd.localeCompare(ad);
+      return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
   }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, opsTab, flightDetailsById]);
 
