@@ -1,4 +1,5 @@
 import { FileText, X, Shield } from "lucide-react";
+import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import type { ContractRow, ContractStatus } from "./ContractTypes";
 import { CONTRACT_TYPES, PAYMENT_TERMS, BILLING_FREQUENCIES, CURRENCIES, STATUSES, SERVICE_CATEGORIES } from "./ContractTypes";
 
