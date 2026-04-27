@@ -8,6 +8,7 @@ export interface SecurityChargeInput {
   extraManpower?: number;          // additional security personnel
   rampVehicleTrips?: number;       // number of ramp vehicle trips
   returnToRampWithLoadChange?: boolean; // applies 50% of turnaround
+  isAdhoc?: boolean;               // SKD type = ADHOC → add ADHOC surcharge on top of base
   rates: SecurityRateRow[];        // from the linked contract
 }
 
@@ -137,6 +138,22 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
         label: `Ramp Vehicle (${input.rampVehicleTrips} trips)`,
         qty: input.rampVehicleTrips || 0,
         unit: rv.unit, rate: rv.rate, amount: amt, notes: rv.notes,
+      });
+    }
+  }
+
+  // ADHOC surcharge — when SKD type is ADHOC, add the contract's ADHOC fee on
+  // top of the regular flight-type charge (e.g. flat $10 per flight).
+  if (input.isAdhoc) {
+    const ad = findRate(rates, airport, "ADHOC");
+    if (ad && ad.rate > 0) {
+      lines.push({
+        label: `ADHOC Surcharge – ${airport}`,
+        qty: 1,
+        unit: ad.unit || "Per Flight",
+        rate: ad.rate,
+        amount: ad.rate,
+        notes: ad.notes,
       });
     }
   }

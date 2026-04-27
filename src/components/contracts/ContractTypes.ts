@@ -47,6 +47,7 @@ export const SECURITY_FLIGHT_TYPES = [
   "Departure Security",
   "Maintenance Security",
   "Turnaround",
+  "ADHOC",
 ] as const;
 
 export const RATE_UNITS = ["Per Flight", "Per Hour", "Per Trip", "Per Person"] as const;
