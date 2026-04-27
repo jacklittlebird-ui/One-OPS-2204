@@ -43,15 +43,10 @@ export const CONTRACT_TYPES = ["Schedule", "Charter", "Ad-Hoc", "Military", "Pri
 export const SERVICE_CATEGORIES: ServiceCategory[] = ["Full Handling", "Ramp Handling", "Supervision", "Security", "Both"];
 
 export const SECURITY_FLIGHT_TYPES = [
-  "Turnaround Departure",
-  "Turnaround Arrival",
-  "Night Stop",
-  "ADHOC",
-  "Short Notice ADHOC",
-  "Additional Manpower",
-  "Ramp Vehicle",
-  "Return to Ramp (Load Change)",
-  "Overtime",
+  "Arrival Security",
+  "Departure Security",
+  "Maintenance Security",
+  "Turnaround",
 ] as const;
 
 export const RATE_UNITS = ["Per Flight", "Per Hour", "Per Trip", "Per Person"] as const;
