@@ -142,6 +142,22 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
     }
   }
 
+  // ADHOC surcharge — when SKD type is ADHOC, add the contract's ADHOC fee on
+  // top of the regular flight-type charge (e.g. flat $10 per flight).
+  if (input.isAdhoc) {
+    const ad = findRate(rates, airport, "ADHOC");
+    if (ad && ad.rate > 0) {
+      lines.push({
+        label: `ADHOC Surcharge – ${airport}`,
+        qty: 1,
+        unit: ad.unit || "Per Flight",
+        rate: ad.rate,
+        amount: ad.rate,
+        notes: ad.notes,
+      });
+    }
+  }
+
   const total = lines.reduce((s, l) => s + l.amount, 0);
   return { currency, lines, total: Math.round(total * 100) / 100 };
 }
