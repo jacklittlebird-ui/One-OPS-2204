@@ -357,8 +357,8 @@ export default function SecurityServiceReportsPage() {
         (r.station || "").toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date — station & operations views ascending (chronological), others descending (newest first)
-    const ascending = isStationView || isOperationsView;
+    // Sort by Arrival Date — station, operations & receivables views ascending (chronological), others descending (newest first)
+    const ascending = isStationView || isOperationsView || isReceivablesView;
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
       const bMeta = (b as any).flightMeta;
