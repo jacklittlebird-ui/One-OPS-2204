@@ -186,6 +186,19 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
   });
 
+  // Fetch ALL security contract rates (used for receivables on-the-fly amount computation)
+  const { data: allRates = [] } = useQuery({
+    queryKey: ["contract_service_rates", "security-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contract_service_rates")
+        .select("*");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!session,
+  });
+
   // Update mutation for editing service report details
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<DispatchRow> & { id: string }) => {
