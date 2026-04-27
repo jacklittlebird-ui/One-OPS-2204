@@ -424,14 +424,20 @@ export default function SecurityServiceReportsPage() {
     const rates = (allRates as any[]).filter(x => x.contract_id === r.contract_id);
     if (!rates.length) return { amount: 0, currency: "USD" };
     const gt = r.actual_duration_hours || 0;
+    // Detect ADHOC SKD type from the linked flight schedule (or merged meta).
+    const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+    const meta = (r as any).flightMeta;
+    const skd = (fd?.skd_type || meta?.skd_type || "").toString().trim().toUpperCase();
+    const isAdhoc = skd === "ADHOC";
     const result = calculateSecurityCharges({
       airport: r.station || "CAI",
       flightType: mapServiceTypeToFlightType(r.service_type),
       groundTimeHours: gt,
+      isAdhoc,
       rates: rates as any,
     });
     return { amount: result.total, currency: result.currency };
-  }, [allRates]);
+  }, [allRates, flightDetailsById]);
 
   const saveEdit = () => {};
 
