@@ -146,7 +146,42 @@ export function ContractForm({ data, onChange, onSave, onCancel, title, isSaving
                 </FormField>
               </div>
               <FormField label="Stations (Annex B)">
-                <input className={inputCls} value={data.stations || ""} onChange={e => set("stations", e.target.value)} placeholder="CAI, HRG, SSH" />
+                <div className="space-y-2">
+                  {selectedStations.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedStations.map(code => (
+                        <span
+                          key={code}
+                          className="inline-flex items-center gap-1 text-xs font-mono bg-primary/10 text-primary border border-primary/20 rounded px-2 py-0.5"
+                        >
+                          {code}
+                          <button
+                            type="button"
+                            onClick={() => toggleStation(code)}
+                            className="hover:text-destructive"
+                            aria-label={`Remove ${code}`}
+                          >
+                            <X size={11} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <select
+                    className={selectCls}
+                    value=""
+                    onChange={e => { if (e.target.value) toggleStation(e.target.value); }}
+                  >
+                    <option value="">+ Add station…</option>
+                    {(airports || [])
+                      .filter(a => a.status !== "Inactive" && a.iata_code && !selectedStations.includes(a.iata_code.toUpperCase()))
+                      .map(a => (
+                        <option key={a.id} value={a.iata_code}>
+                          {a.iata_code} — {a.name}{a.city ? ` (${a.city})` : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
               </FormField>
             </div>
           </div>
