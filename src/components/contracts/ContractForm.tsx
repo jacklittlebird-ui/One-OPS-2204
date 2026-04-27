@@ -73,7 +73,17 @@ export function ContractForm({ data, onChange, onSave, onCancel, title, isSaving
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Airline & Contact</h3>
             <div className="grid grid-cols-2 gap-4">
               <FormField label="Airline">
-                <input className={inputCls} value={data.airline || ""} onChange={e => set("airline", e.target.value)} placeholder="Air Cairo" />
+                <select
+                  className={selectCls}
+                  value={data.airline || ""}
+                  onChange={e => {
+                    const a = airlines.find(x => x.name === e.target.value);
+                    onChange({ ...data, airline: e.target.value, airline_iata: a?.iata_code || data.airline_iata || "" });
+                  }}
+                >
+                  <option value="">Select airline</option>
+                  {airlines.map(a => <option key={a.id} value={a.name}>{a.name}{a.iata_code ? ` (${a.iata_code})` : ""}</option>)}
+                </select>
               </FormField>
               <FormField label="Airline IATA">
                 <input className={inputCls} value={data.airline_iata || ""} onChange={e => set("airline_iata", e.target.value)} placeholder="SM" maxLength={3} />
