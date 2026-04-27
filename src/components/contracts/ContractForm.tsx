@@ -26,10 +26,11 @@ type Props = {
 
 export function ContractForm({ data, onChange, onSave, onCancel, title, isSaving }: Props) {
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
+  const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines", { orderBy: "name", ascending: true });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4">
+      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto m-4">
         <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
           <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
             <FileText size={18} className="text-primary" />{title}
