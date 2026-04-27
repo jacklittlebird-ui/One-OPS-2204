@@ -359,16 +359,16 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   const currentRow = isNew ? editableRow : (row || editableRow);
 
-  // Map service_type → flight_type used in rate rows
+  // Map service_type → flight_type used in contract rate rows.
+  // Contract rates use SECURITY_FLIGHT_TYPES: Arrival Security,
+  // Departure Security, Maintenance Security, Turnaround.
   const flightTypeForCharges = useMemo(() => {
     const st = (editableRow?.service_type || serviceType || currentRow?.service_type || "").toLowerCase();
-    if (st.includes("turnaround") && st.includes("dep")) return "Turnaround Departure";
-    if (st.includes("turnaround") && st.includes("arr")) return "Turnaround Arrival";
-    if (st.includes("departure")) return "Turnaround Departure";
-    if (st.includes("arrival")) return "Turnaround Arrival";
-    if (st.includes("adhoc")) return "ADHOC";
-    if (st.includes("night")) return "Night Stop";
-    return sheet.flight_type || "Turnaround Departure";
+    if (st.includes("turnaround")) return "Turnaround";
+    if (st.includes("maintenance")) return "Maintenance Security";
+    if (st.includes("departure")) return "Departure Security";
+    if (st.includes("arrival")) return "Arrival Security";
+    return sheet.flight_type || "Turnaround";
   }, [editableRow?.service_type, serviceType, currentRow?.service_type, sheet.flight_type]);
 
   const computedCharges = useMemo(() => {

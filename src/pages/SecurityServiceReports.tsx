@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import SecurityTaskSheetDialog from "@/components/security/SecurityTaskSheetDialog";
 import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
+import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 
 const PAGE_SIZE = 15;
 
@@ -180,6 +181,19 @@ export default function SecurityServiceReportsPage() {
         .select("*, airlines:airline_id(name, iata_code)")
         .in("clearance_type", SECURITY_CLEARANCE_TYPES)
         .order("arrival_date", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!session,
+  });
+
+  // Fetch ALL security contract rates (used for receivables on-the-fly amount computation)
+  const { data: allRates = [] } = useQuery({
+    queryKey: ["contract_service_rates", "security-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contract_service_rates")
+        .select("*");
       if (error) throw error;
       return data as any[];
     },
@@ -391,6 +405,33 @@ export default function SecurityServiceReportsPage() {
     irregularities.forEach(ir => map.set(ir.id, ir));
     return map;
   }, [irregularities]);
+
+  // Map dispatch service_type → contract flight_type
+  const mapServiceTypeToFlightType = (st: string): string => {
+    const s = (st || "").toLowerCase();
+    if (s.includes("turnaround")) return "Turnaround";
+    if (s.includes("maintenance")) return "Maintenance Security";
+    if (s.includes("departure")) return "Departure Security";
+    if (s.includes("arrival")) return "Arrival Security";
+    return st || "Turnaround";
+  };
+
+  // Compute live amount/currency for a row from the linked contract's rates.
+  // Used in the receivables view to always show an up-to-date charge even
+  // when the saved record hasn't been recomputed since the contract changed.
+  const computeRowCharges = useCallback((r: DispatchRow) => {
+    if (!r.contract_id) return { amount: 0, currency: "USD" };
+    const rates = (allRates as any[]).filter(x => x.contract_id === r.contract_id);
+    if (!rates.length) return { amount: 0, currency: "USD" };
+    const gt = r.actual_duration_hours || 0;
+    const result = calculateSecurityCharges({
+      airport: r.station || "CAI",
+      flightType: mapServiceTypeToFlightType(r.service_type),
+      groundTimeHours: gt,
+      rates: rates as any,
+    });
+    return { amount: result.total, currency: result.currency };
+  }, [allRates]);
 
   const saveEdit = () => {};
 
@@ -835,17 +876,17 @@ export default function SecurityServiceReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr>
-                     {["#", "STATION", "AIRLINE", "FLIGHT", "TYPE", "SKD TYPE", "ARR DATE", "DEP DATE", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", "STATUS", "PIPELINE", "ACTIONS"].map(h => (
+                     {["#", "STATION", "AIRLINE", "FLIGHT", "TYPE", "SKD TYPE", "ARR DATE", "DEP DATE", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={isReceivablesView ? 17 : 16} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
                   ) : pageData.length === 0 ? (
                      <tr>
-                      <td colSpan={17} className="text-center py-16">
+                      <td colSpan={isReceivablesView ? 17 : 16} className="text-center py-16">
                         <Shield size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                         <p className="font-semibold text-foreground">No Security Service Reports</p>
                         <p className="text-muted-foreground text-sm mt-1">Security service reports will appear here once created</p>
@@ -890,6 +931,17 @@ export default function SecurityServiceReportsPage() {
                             return overtimeDisplay > 0 ? <span className="text-warning font-semibold">{overtimeDisplay}h</span> : "—";
                           })()}
                         </td>
+                        {isReceivablesView && (() => {
+                          const live = computeRowCharges(r);
+                          const saved = (r as any).total_security_charges || r.total_charge || 0;
+                          const amount = live.amount > 0 ? live.amount : saved;
+                          const currency = live.currency || (r as any).charges_currency || "USD";
+                          return (
+                            <td className="px-3 py-2.5 font-semibold text-foreground whitespace-nowrap">
+                              {amount > 0 ? `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground font-normal">—</span>}
+                            </td>
+                          );
+                        })()}
                         <td className="px-3 py-2.5">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc}`}>{r.status}</span>
                           {hasIrregularity && (
@@ -948,7 +1000,7 @@ export default function SecurityServiceReportsPage() {
                       </tr>
                       {isStationView && r.review_status === "Rejected" && (
                         <tr className="bg-destructive/5 border-l-2 border-l-destructive">
-                          <td colSpan={16} className="px-4 py-2">
+                          <td colSpan={isReceivablesView ? 17 : 16} className="px-4 py-2">
                             <div className="flex items-start gap-2 text-xs">
                               <XCircle size={14} className="text-destructive shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0">

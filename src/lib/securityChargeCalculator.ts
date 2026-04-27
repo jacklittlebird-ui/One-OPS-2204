@@ -49,12 +49,10 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
   const { airport, flightType, groundTimeHours, rates } = input;
   const lines: ChargeLine[] = [];
 
-  // Determine effective flight type — auto-classify Night Stop when ground time exceeds 3h
-  // for turnaround entries, per clause 6.
-  let effectiveType = flightType;
-  if ((flightType === "Turnaround Departure" || flightType === "Turnaround Arrival") && groundTimeHours > 3) {
-    effectiveType = "Night Stop";
-  }
+  // Use the flight type as-is. Contract rates now use the canonical
+  // SECURITY_FLIGHT_TYPES list: Arrival Security, Departure Security,
+  // Maintenance Security, Turnaround. Overtime applies above included_hours.
+  const effectiveType = flightType;
 
   const baseRate = findRate(rates, airport, effectiveType);
   const currency = baseRate?.currency || "USD";
