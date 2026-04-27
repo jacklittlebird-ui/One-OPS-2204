@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Eye, EyeOff, Shield, Globe, Clock, PlaneLanding, PlaneTakeoff } from "lucide-react";
 import oneOpsLogo from "@/assets/one-ops-logo.png";
 import linkAeroVertical from "@/assets/linkaero-logo-vertical.png";
+import oneStoryLogo from "@/assets/onestory-solutions-logo.png";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -132,9 +133,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-[11px] text-muted-foreground mt-8 opacity-70">
-            Developed by OneStory Solutions
-          </p>
+          <div className="flex flex-col items-center gap-1.5 mt-8 opacity-80">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Developed by</span>
+            <img src={oneStoryLogo} alt="OneStory Solutions" className="h-10 object-contain" />
+          </div>
         </div>
       </div>
     </div>
