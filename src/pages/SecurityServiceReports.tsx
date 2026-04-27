@@ -1000,7 +1000,7 @@ export default function SecurityServiceReportsPage() {
                       </tr>
                       {isStationView && r.review_status === "Rejected" && (
                         <tr className="bg-destructive/5 border-l-2 border-l-destructive">
-                          <td colSpan={16} className="px-4 py-2">
+                          <td colSpan={isReceivablesView ? 17 : 16} className="px-4 py-2">
                             <div className="flex items-start gap-2 text-xs">
                               <XCircle size={14} className="text-destructive shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0">
