@@ -39,8 +39,8 @@ export type SecurityRateRow = {
   service_type?: string;
 };
 
-export const CONTRACT_TYPES = ["Ad-Hoc", "Bilateral", "Charter", "Interline", "SGHA"] as const;
-export const SERVICE_CATEGORIES: ServiceCategory[] = ["Handling", "Security", "Both"];
+export const CONTRACT_TYPES = ["Schedule", "Charter", "Ad-Hoc", "Military", "Private", "Cargo"] as const;
+export const SERVICE_CATEGORIES: ServiceCategory[] = ["Full Handling", "Ramp Handling", "Supervision", "Security", "Both"];
 
 export const SECURITY_FLIGHT_TYPES = [
   "Turnaround Departure",
