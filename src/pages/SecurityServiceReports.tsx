@@ -931,6 +931,17 @@ export default function SecurityServiceReportsPage() {
                             return overtimeDisplay > 0 ? <span className="text-warning font-semibold">{overtimeDisplay}h</span> : "—";
                           })()}
                         </td>
+                        {isReceivablesView && (() => {
+                          const live = computeRowCharges(r);
+                          const saved = (r as any).total_security_charges || r.total_charge || 0;
+                          const amount = live.amount > 0 ? live.amount : saved;
+                          const currency = live.currency || (r as any).charges_currency || "USD";
+                          return (
+                            <td className="px-3 py-2.5 font-semibold text-foreground whitespace-nowrap">
+                              {amount > 0 ? `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground font-normal">—</span>}
+                            </td>
+                          );
+                        })()}
                         <td className="px-3 py-2.5">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc}`}>{r.status}</span>
                           {hasIrregularity && (
