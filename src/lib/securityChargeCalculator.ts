@@ -8,6 +8,7 @@ export interface SecurityChargeInput {
   extraManpower?: number;          // additional security personnel
   rampVehicleTrips?: number;       // number of ramp vehicle trips
   returnToRampWithLoadChange?: boolean; // applies 50% of turnaround
+  isAdhoc?: boolean;               // SKD type = ADHOC → add ADHOC surcharge on top of base
   rates: SecurityRateRow[];        // from the linked contract
 }
 
