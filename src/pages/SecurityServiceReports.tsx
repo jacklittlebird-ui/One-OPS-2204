@@ -442,8 +442,10 @@ export default function SecurityServiceReportsPage() {
     const duration = minutesToHMM(actualMins);
     const contractMins = Math.round((row.contract_duration_hours || 0) * 60);
     const overtimeMins = Math.max(0, actualMins - contractMins);
-    const overtimeHours = minutesToHMM(overtimeMins);
-    const overtimeCharge = (overtimeMins / 60) * (row.overtime_rate || 0) * (row.staff_count || 1);
+    // Any fractional hour of OT is rounded UP to a full hour for billing.
+    const billedOtHours = Math.ceil(overtimeMins / 60);
+    const overtimeHours = billedOtHours; // displayed as whole hours
+    const overtimeCharge = billedOtHours * (row.overtime_rate || 0) * (row.staff_count || 1);
     const totalCharge = (row.base_fee || 0) + (row.service_rate || 0) + overtimeCharge;
 
     // Detect "completing a clearance flight" case: new dispatch but row already
@@ -925,9 +927,11 @@ export default function SecurityServiceReportsPage() {
                         <td className="px-3 py-2.5 text-foreground">{r.actual_start && r.actual_end ? `${timeDiffHours(r.actual_start, r.actual_end)}h` : (r.actual_duration_hours ? `${r.actual_duration_hours}h` : "—")}</td>
                         <td className="px-3 py-2.5">
                           {(() => {
+                            // Any fractional OT hour is rounded UP to a full hour.
+                            const baselineMins = Math.round(((r.contract_duration_hours && r.contract_duration_hours > 0) ? r.contract_duration_hours : 3) * 60);
                             const overtimeDisplay = r.actual_start && r.actual_end
-                              ? minutesToHMM(Math.max(0, timeDiffMinutes(r.actual_start, r.actual_end) - Math.round((r.contract_duration_hours || 0) * 60)))
-                              : r.overtime_hours;
+                              ? Math.ceil(Math.max(0, timeDiffMinutes(r.actual_start, r.actual_end) - baselineMins) / 60)
+                              : (r.overtime_hours || 0);
                             return overtimeDisplay > 0 ? <span className="text-warning font-semibold">{overtimeDisplay}h</span> : "—";
                           })()}
                         </td>
