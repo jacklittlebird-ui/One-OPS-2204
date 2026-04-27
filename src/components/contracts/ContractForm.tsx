@@ -27,6 +27,21 @@ type Props = {
 export function ContractForm({ data, onChange, onSave, onCancel, title, isSaving }: Props) {
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
   const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines", { orderBy: "name", ascending: true });
+  const { data: airports } = useSupabaseTable<{ id: string; name: string; iata_code: string; city: string; status: string }>("airports", { orderBy: "iata_code", ascending: true });
+
+  const selectedStations = (data.stations || "")
+    .split(",")
+    .map(s => s.trim().toUpperCase())
+    .filter(Boolean);
+
+  const toggleStation = (iata: string) => {
+    const code = iata.trim().toUpperCase();
+    if (!code) return;
+    const next = selectedStations.includes(code)
+      ? selectedStations.filter(s => s !== code)
+      : [...selectedStations, code];
+    set("stations", next.join(", "));
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
