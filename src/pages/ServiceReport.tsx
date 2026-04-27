@@ -656,7 +656,7 @@ function HandlingServiceReportContent() {
       );
     }
     // Sort by Arrival Date (oldest first for station & operations views; newest first elsewhere); rows without an arrival date sink to the bottom
-    const ascending = isStationView || isOperationsView;
+    const ascending = isStationView || isOperationsView || isReceivablesView;
     return [...r].sort((a, b) => {
       const ad = a.arrivalDate || "";
       const bd = b.arrivalDate || "";
