@@ -16,7 +16,7 @@ const selectCls = "text-sm border rounded px-2 py-1 bg-card text-foreground focu
 
 const emptyRate = (currency = "USD"): SecurityRateRow => ({
   airport: "CAI",
-  flight_type: "Turnaround Departure",
+  flight_type: "Arrival Security",
   rate: 0,
   included_hours: 3,
   overtime_rate: 10,
