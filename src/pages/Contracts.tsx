@@ -117,7 +117,7 @@ export default function ContractsPage() {
       const wb = XLSX.read(evt.target?.result, { type: "binary" });
       const json = XLSX.utils.sheet_to_json<any>(wb.Sheets[wb.SheetNames[0]]);
       const rows = json.map((row: any) => ({
-        contract_no: row["Contract No"] || "", contract_type: row["Type"] || "SGHA",
+        contract_no: row["Contract No"] || "", contract_type: row["Type"] || "Schedule",
         sgha_ref: row["SGHA Ref"] || "", airline: row["Airline"] || "",
         airline_iata: row["IATA"] || "", contact_person: row["Contact Person"] || "",
         contact_email: row["Contact Email"] || "",
