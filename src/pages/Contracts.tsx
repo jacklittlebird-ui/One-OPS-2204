@@ -11,7 +11,7 @@ import {
   AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import type { ContractRow, ContractStatus } from "@/components/contracts/ContractTypes";
-import { daysUntilExpiry, emptyContract, STATUSES } from "@/components/contracts/ContractTypes";
+import { daysUntilExpiry, emptyContract, STATUSES, CONTRACT_TYPES, SERVICE_CATEGORIES } from "@/components/contracts/ContractTypes";
 import { ContractStatusBadge, ContractTypeBadge } from "@/components/contracts/ContractStatusBadge";
 import { ContractForm } from "@/components/contracts/ContractForm";
 import { ContractDetailModal } from "@/components/contracts/ContractDetailModal";
