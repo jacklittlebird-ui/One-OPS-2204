@@ -47,12 +47,12 @@ export function ContractForm({ data, onChange, onSave, onCancel, title, isSaving
                 <input className={inputCls} value={data.contract_no || ""} onChange={e => set("contract_no", e.target.value)} />
               </FormField>
               <FormField label="Contract Type">
-                <select className={selectCls} value={data.contract_type || "SGHA"} onChange={e => set("contract_type", e.target.value)}>
+                <select className={selectCls} value={data.contract_type || "Schedule"} onChange={e => set("contract_type", e.target.value)}>
                   {CONTRACT_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select>
               </FormField>
               <FormField label="Service Category">
-                <select className={selectCls} value={data.service_category || "Handling"} onChange={e => set("service_category", e.target.value)}>
+                <select className={selectCls} value={data.service_category || "Full Handling"} onChange={e => set("service_category", e.target.value)}>
                   {SERVICE_CATEGORIES.map(t => <option key={t}>{t}</option>)}
                 </select>
               </FormField>
