@@ -317,6 +317,7 @@ function ContractFormWithRates({
   onServiceRatesChange: (r: ServiceRate[]) => void;
 }) {
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
+  const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines", { orderBy: "name", ascending: true });
 
   const addRate = () => {
     onServiceRatesChange([...serviceRates, { service_type: "", rate: 0, staff_count: 0, duration_hours: 0 }]);
@@ -334,22 +335,38 @@ function ContractFormWithRates({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4">
+      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto m-4">
         <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
           <h2 className="font-bold text-foreground text-lg">{title}</h2>
           <button onClick={onCancel} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Airline & Station */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Airline & Station & Contract Type */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-semibold text-foreground">Airline</label>
-              <input className={inputCls} value={data.airline || ""} onChange={e => set("airline", e.target.value)} placeholder="Select airline" />
+              <select
+                className={selectCls}
+                value={data.airline || ""}
+                onChange={e => {
+                  const a = airlines.find(x => x.name === e.target.value);
+                  onChange({ ...data, airline: e.target.value, airline_iata: a?.iata_code || "" });
+                }}
+              >
+                <option value="">Select airline</option>
+                {airlines.map(a => <option key={a.id} value={a.name}>{a.name}{a.iata_code ? ` (${a.iata_code})` : ""}</option>)}
+              </select>
             </div>
             <div>
               <label className="text-sm font-semibold text-foreground">Station (Airport)</label>
               <input className={inputCls} value={data.stations || ""} onChange={e => set("stations", e.target.value)} placeholder="Select station" />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Contract Type</label>
+              <select className={selectCls} value={data.contract_type || "Schedule"} onChange={e => set("contract_type", e.target.value)}>
+                {CONTRACT_TYPES.map(t => <option key={t}>{t}</option>)}
+              </select>
             </div>
           </div>
 
@@ -357,10 +374,8 @@ function ContractFormWithRates({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-semibold text-foreground">Service Category</label>
-              <select className={selectCls} value={(data as any).service_category || "Handling"} onChange={e => set("service_category", e.target.value)}>
-                <option value="Handling">Handling</option>
-                <option value="Security">Security</option>
-                <option value="Both">Both</option>
+              <select className={selectCls} value={(data as any).service_category || "Full Handling"} onChange={e => set("service_category", e.target.value)}>
+                {SERVICE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
