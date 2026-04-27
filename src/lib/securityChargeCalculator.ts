@@ -38,7 +38,7 @@ function findRate(rates: SecurityRateRow[], airport: string, flightType: string)
 
 /**
  * Compute security charges from a contract per the Air Cairo SGHA rules:
- * - Turnaround flights: ground time ≤ 3h base rate; extras charged at overtime rate using exact fractional hours (e.g. 10 min = 0.17h).
+ * - Turnaround flights: ground time ≤ 3h base rate; extras at overtime rate using H.MM literal (e.g. 3h30m → 3.30, OT = 0.30 → 0.3h).
  * - Night Stop (>3h ground time): includes 2h Departure + 1h Arrival; extras charged.
  * - ADHOC: base rate; if short-notice, add Short Notice ADHOC fee.
  * - Return to Ramp with load change: 50% of turnaround rate.
@@ -69,7 +69,8 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
       notes: baseRate.notes,
     });
 
-    // Overtime calculation — exact fractional hours beyond included threshold (e.g. 10 min = 0.17h)
+    // Overtime calculation — H.MM literal notation beyond included threshold
+    // (e.g. ground time 3h30m → 3.30, OT = 3.30 − 3 = 0.30 → displayed as 0.3h)
     const included = baseRate.included_hours || 0;
     if (groundTimeHours > included && baseRate.overtime_rate > 0) {
       const extraHours = Math.round((groundTimeHours - included) * 100) / 100;
@@ -141,7 +142,9 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
 }
 
 /**
- * Compute ground time in hours from "HH:MM" strings (supports midnight crossover).
+ * Compute ground time from "HH:MM" strings (supports midnight crossover).
+ * Returns value in H.MM literal notation (e.g. 3h30m → 3.30, displayed as 3.3),
+ * matching the airline ops convention where the decimal portion = literal minutes.
  */
 export function groundTimeHours(start: string, end: string): number {
   if (!start || !end) return 0;
@@ -150,5 +153,8 @@ export function groundTimeHours(start: string, end: string): number {
   if ([h1, m1, h2, m2].some(isNaN)) return 0;
   let mins = h2 * 60 + m2 - (h1 * 60 + m1);
   if (mins < 0) mins += 24 * 60;
-  return Math.round((mins / 60) * 100) / 100;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  // H.MM literal: 3h30m → 3.30
+  return Math.round((h + m / 100) * 100) / 100;
 }
