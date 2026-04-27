@@ -139,8 +139,8 @@ export default function ContractsPage() {
     const nc = emptyContract();
     if (serviceType && serviceType !== "all") {
       nc.services = serviceType;
-      nc.contract_type = serviceType === "Security" ? "Bilateral" : "SGHA";
-      (nc as any).service_category = serviceType === "Security" ? "Security" : "Handling";
+      nc.contract_type = "Schedule";
+      (nc as any).service_category = serviceType === "Security" ? "Security" : "Full Handling";
     }
     setNewContract(nc);
     setNewServiceRates([]);
