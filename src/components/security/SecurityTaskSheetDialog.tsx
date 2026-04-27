@@ -413,14 +413,22 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     // billing user can save contract/charges updates without re-entering
     // station data.
     if (!isReceivablesView) {
+      // Determine which time fields are relevant based on flight type.
+      // Arrival-only flights don't need STD/ATD; Departure-only flights don't need STA/ATA.
+      const ft = (flightTypeForCharges || "").toLowerCase();
+      const isArrivalOnly = ft.includes("arrival") && !ft.includes("departure");
+      const isDepartureOnly = ft.includes("departure") && !ft.includes("arrival");
+
       const required: { key: keyof TaskSheetData; label: string }[] = [
-        { key: "sta", label: "STA" },
-        { key: "ata", label: "ATA" },
-        { key: "std", label: "STD" },
-        { key: "atd", label: "ATD" },
         { key: "shift_start", label: "Start Shift Time" },
         { key: "shift_end", label: "End Shift Time" },
       ];
+      if (!isDepartureOnly) {
+        required.push({ key: "sta", label: "STA" }, { key: "ata", label: "ATA" });
+      }
+      if (!isArrivalOnly) {
+        required.push({ key: "std", label: "STD" }, { key: "atd", label: "ATD" });
+      }
       const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
       if (missing.length > 0) {
         toast({
