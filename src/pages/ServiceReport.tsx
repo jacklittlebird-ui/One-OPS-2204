@@ -656,7 +656,7 @@ function HandlingServiceReportContent() {
       );
     }
     // Sort by Arrival Date (oldest first for station & operations views; newest first elsewhere); rows without an arrival date sink to the bottom
-    const ascending = isStationView || isOperationsView;
+    const ascending = isStationView || isOperationsView || isReceivablesView;
     return [...r].sort((a, b) => {
       const ad = a.arrivalDate || "";
       const bd = b.arrivalDate || "";
@@ -665,7 +665,7 @@ function HandlingServiceReportContent() {
       if (!bd) return -1;
       return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, stationTab, operationsTab]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
