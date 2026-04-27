@@ -406,6 +406,33 @@ export default function SecurityServiceReportsPage() {
     return map;
   }, [irregularities]);
 
+  // Map dispatch service_type → contract flight_type
+  const mapServiceTypeToFlightType = (st: string): string => {
+    const s = (st || "").toLowerCase();
+    if (s.includes("turnaround")) return "Turnaround";
+    if (s.includes("maintenance")) return "Maintenance Security";
+    if (s.includes("departure")) return "Departure Security";
+    if (s.includes("arrival")) return "Arrival Security";
+    return st || "Turnaround";
+  };
+
+  // Compute live amount/currency for a row from the linked contract's rates.
+  // Used in the receivables view to always show an up-to-date charge even
+  // when the saved record hasn't been recomputed since the contract changed.
+  const computeRowCharges = useCallback((r: DispatchRow) => {
+    if (!r.contract_id) return { amount: 0, currency: "USD" };
+    const rates = (allRates as any[]).filter(x => x.contract_id === r.contract_id);
+    if (!rates.length) return { amount: 0, currency: "USD" };
+    const gt = r.actual_duration_hours || 0;
+    const result = calculateSecurityCharges({
+      airport: r.station || "CAI",
+      flightType: mapServiceTypeToFlightType(r.service_type),
+      groundTimeHours: gt,
+      rates: rates as any,
+    });
+    return { amount: result.total, currency: result.currency };
+  }, [allRates]);
+
   const saveEdit = () => {};
 
   const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
