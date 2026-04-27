@@ -69,7 +69,8 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
       notes: baseRate.notes,
     });
 
-    // Overtime calculation — exact fractional hours beyond included threshold (e.g. 10 min = 0.17h)
+    // Overtime calculation — H.MM literal notation beyond included threshold
+    // (e.g. ground time 3h30m → 3.30, OT = 3.30 − 3 = 0.30 → displayed as 0.3h)
     const included = baseRate.included_hours || 0;
     if (groundTimeHours > included && baseRate.overtime_rate > 0) {
       const extraHours = Math.round((groundTimeHours - included) * 100) / 100;
