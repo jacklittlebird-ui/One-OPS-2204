@@ -69,9 +69,10 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
       notes: baseRate.notes,
     });
 
-    // Overtime calculation — H.MM literal notation beyond included threshold
-    // (e.g. ground time 3h30m → 3.30, OT = 3.30 − 3 = 0.30 → displayed as 0.3h)
-    const included = baseRate.included_hours || 0;
+    // Overtime calculation — only when DURATION exceeds 3h.
+    // Uses H.MM literal notation (e.g. 3h30m → 3.30, OT = 3.30 − 3 = 0.30 → 0.3h).
+    // If duration ≤ 3h, OT is 0h and no overtime line is added.
+    const included = Math.max(baseRate.included_hours || 0, 3);
     if (groundTimeHours > included && baseRate.overtime_rate > 0) {
       const extraHours = Math.round((groundTimeHours - included) * 100) / 100;
       const otAmount = Math.round(extraHours * baseRate.overtime_rate * 100) / 100;
