@@ -38,7 +38,7 @@ function findRate(rates: SecurityRateRow[], airport: string, flightType: string)
 
 /**
  * Compute security charges from a contract per the Air Cairo SGHA rules:
- * - Turnaround flights: ground time ≤ 3h base rate; extras at overtime rate (fraction = full hour).
+ * - Turnaround flights: ground time ≤ 3h base rate; extras charged at overtime rate using exact fractional hours (e.g. 10 min = 0.17h).
  * - Night Stop (>3h ground time): includes 2h Departure + 1h Arrival; extras charged.
  * - ADHOC: base rate; if short-notice, add Short Notice ADHOC fee.
  * - Return to Ramp with load change: 50% of turnaround rate.
@@ -69,11 +69,11 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
       notes: baseRate.notes,
     });
 
-    // Overtime calculation — any fraction counts as a full hour
+    // Overtime calculation — exact fractional hours beyond included threshold (e.g. 10 min = 0.17h)
     const included = baseRate.included_hours || 0;
     if (groundTimeHours > included && baseRate.overtime_rate > 0) {
-      const extraHours = Math.ceil(groundTimeHours - included);
-      const otAmount = extraHours * baseRate.overtime_rate;
+      const extraHours = Math.round((groundTimeHours - included) * 100) / 100;
+      const otAmount = Math.round(extraHours * baseRate.overtime_rate * 100) / 100;
       lines.push({
         label: `Overtime (${extraHours}h beyond ${included}h)`,
         qty: extraHours,
