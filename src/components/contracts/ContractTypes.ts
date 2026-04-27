@@ -1,5 +1,5 @@
 export type ContractStatus = "Active" | "Expired" | "Pending" | "Terminated";
-export type ServiceCategory = "Handling" | "Security" | "Both";
+export type ServiceCategory = "Full Handling" | "Ramp Handling" | "Supervision" | "Security" | "Both";
 
 export type ContractRow = {
   id: string;
