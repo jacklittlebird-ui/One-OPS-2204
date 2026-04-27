@@ -72,11 +72,16 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
     // If duration ≤ 3h, OT is 0h and no overtime line is added.
     const included = Math.max(baseRate.included_hours || 0, 3);
     if (groundTimeHours > included && baseRate.overtime_rate > 0) {
-      const extraHours = Math.round((groundTimeHours - included) * 100) / 100;
-      const otAmount = Math.round(extraHours * baseRate.overtime_rate * 100) / 100;
+      // H.MM literal: split whole hours and minutes, then round any fractional
+      // hour UP to a full hour (e.g. 3h05m → 1h OT, 4h30m → 2h OT).
+      const rawDelta = groundTimeHours - included;
+      const wholeHours = Math.floor(rawDelta);
+      const minutesPart = Math.round((rawDelta - wholeHours) * 100); // H.MM literal
+      const billedHours = wholeHours + (minutesPart > 0 ? 1 : 0);
+      const otAmount = Math.round(billedHours * baseRate.overtime_rate * 100) / 100;
       lines.push({
-        label: `Overtime (${extraHours}h beyond ${included}h)`,
-        qty: extraHours,
+        label: `Overtime (${billedHours}h beyond ${included}h)`,
+        qty: billedHours,
         unit: "Per Hour",
         rate: baseRate.overtime_rate,
         amount: otAmount,
