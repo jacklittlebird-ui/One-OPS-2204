@@ -1,5 +1,5 @@
 export type ContractStatus = "Active" | "Expired" | "Pending" | "Terminated";
-export type ServiceCategory = "Handling" | "Security" | "Both";
+export type ServiceCategory = "Full Handling" | "Ramp Handling" | "Supervision" | "Security" | "Both";
 
 export type ContractRow = {
   id: string;
@@ -39,8 +39,8 @@ export type SecurityRateRow = {
   service_type?: string;
 };
 
-export const CONTRACT_TYPES = ["Ad-Hoc", "Bilateral", "Charter", "Interline", "SGHA"] as const;
-export const SERVICE_CATEGORIES: ServiceCategory[] = ["Handling", "Security", "Both"];
+export const CONTRACT_TYPES = ["Schedule", "Charter", "Ad-Hoc", "Military", "Private", "Cargo"] as const;
+export const SERVICE_CATEGORIES: ServiceCategory[] = ["Full Handling", "Ramp Handling", "Supervision", "Security", "Both"];
 
 export const SECURITY_FLIGHT_TYPES = [
   "Turnaround Departure",
@@ -70,7 +70,7 @@ export const emptyContract = (): Partial<ContractRow> => ({
   end_date: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
   services: "", stations: "", currency: "USD", annual_value: 0,
   status: "Pending" as ContractStatus, auto_renew: false, notes: "",
-  contract_type: "SGHA", service_category: "Handling" as ServiceCategory,
+  contract_type: "Schedule", service_category: "Full Handling" as ServiceCategory,
   contact_person: "", contact_email: "",
   payment_terms: "Net 30", billing_frequency: "Monthly", sgha_ref: "",
 });

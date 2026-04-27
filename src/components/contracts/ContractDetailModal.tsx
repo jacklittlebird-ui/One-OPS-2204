@@ -28,7 +28,7 @@ export function ContractDetailModal({ contract: c, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto m-4">
+      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto m-4">
         <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
           <div>
             <h2 className="font-bold text-foreground text-lg flex items-center gap-2">

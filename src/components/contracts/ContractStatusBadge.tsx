@@ -17,10 +17,16 @@ export function ContractStatusBadge({ status }: { status: ContractStatus }) {
 }
 
 export function ContractTypeBadge({ type }: { type: string }) {
-  const cls = type === "SGHA"
+  const cls = type === "Schedule"
     ? "bg-primary/15 text-primary"
     : type === "Charter" || type === "Ad-Hoc"
     ? "bg-accent/15 text-accent-foreground"
+    : type === "Military"
+    ? "bg-destructive/10 text-destructive"
+    : type === "Cargo"
+    ? "bg-info/15 text-info"
+    : type === "Private"
+    ? "bg-warning/15 text-warning"
     : "bg-secondary text-secondary-foreground";
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
