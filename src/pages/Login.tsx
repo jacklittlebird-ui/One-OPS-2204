@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Eye, EyeOff, Shield, Globe, Clock, PlaneLanding, PlaneTakeoff } from "lucide-react";
 import oneOpsLogo from "@/assets/one-ops-logo.png";
 import linkAeroVertical from "@/assets/linkaero-logo-vertical.png";
+import oneStoryLogo from "@/assets/onestory-solutions-logo.png";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
