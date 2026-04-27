@@ -133,9 +133,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-[11px] text-muted-foreground mt-8 opacity-70">
-            Developed by OneStory Solutions
-          </p>
+          <div className="flex flex-col items-center gap-1.5 mt-8 opacity-80">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Developed by</span>
+            <img src={oneStoryLogo} alt="OneStory Solutions" className="h-10 object-contain" />
+          </div>
         </div>
       </div>
     </div>
