@@ -70,7 +70,7 @@ export const emptyContract = (): Partial<ContractRow> => ({
   end_date: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
   services: "", stations: "", currency: "USD", annual_value: 0,
   status: "Pending" as ContractStatus, auto_renew: false, notes: "",
-  contract_type: "SGHA", service_category: "Handling" as ServiceCategory,
+  contract_type: "Schedule", service_category: "Full Handling" as ServiceCategory,
   contact_person: "", contact_email: "",
   payment_terms: "Net 30", billing_frequency: "Monthly", sgha_ref: "",
 });
