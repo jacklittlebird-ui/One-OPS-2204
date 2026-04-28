@@ -136,9 +136,34 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
         return;
       }
       const defaultType = defaultCategory === "security" ? "Arrival Security" : "Full Handling";
+      const station = (selectedStation || "").toUpperCase().trim();
       const normalized = result.rows.map(r => {
-        const cat = getServiceCategory(r.service_type as any);
-        return cat === defaultCategory ? r : { ...r, service_type: defaultType };
+        let serviceType = r.service_type;
+        if (defaultCategory === "security" && station) {
+          const segs = (r.route || "")
+            .split("/")
+            .map(s => s.trim().toUpperCase())
+            .filter(Boolean);
+          if (segs.length >= 2) {
+            const first = segs[0];
+            const last = segs[segs.length - 1];
+            const middle = segs.slice(1, -1);
+            if (first === station && last !== station) {
+              serviceType = "Departure Security";
+            } else if (last === station && first !== station) {
+              serviceType = "Arrival Security";
+            } else if (middle.includes(station)) {
+              serviceType = "Turnaround Security";
+            } else {
+              serviceType = defaultType;
+            }
+          } else {
+            serviceType = defaultType;
+          }
+          return { ...r, service_type: serviceType };
+        }
+        const cat = getServiceCategory(serviceType as any);
+        return cat === defaultCategory ? { ...r, service_type: serviceType } : { ...r, service_type: defaultType };
       });
       setFlights(normalized);
       setIsTrafficReport(result.isTrafficReport);
