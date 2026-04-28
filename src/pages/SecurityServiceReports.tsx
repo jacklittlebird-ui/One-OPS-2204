@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
-  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays
+  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -101,7 +101,7 @@ export default function SecurityServiceReportsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { session } = useAuth();
-  const { activeChannel } = useChannel();
+  const { activeChannel, isAdmin } = useChannel();
   const isReceivablesView = activeChannel === "receivables";
   const isOperationsView = activeChannel === "operations" || activeChannel === "admin";
   const isStationView = activeChannel === "station";
@@ -1004,6 +1004,26 @@ export default function SecurityServiceReportsPage() {
                                   </button>
                                 )}
                               </>
+                            )}
+                            {isAdmin && r.flight_schedule_id && (
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Delete flight ${r.flight_no}? This removes the security report AND the underlying flight schedule.`)) return;
+                                  try {
+                                    if (r.id && !isPending) await supabase.from("dispatch_assignments").delete().eq("id", r.id);
+                                    await supabase.from("flight_schedules").delete().eq("id", r.flight_schedule_id!);
+                                    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+                                    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+                                    toast({ title: "Deleted", description: "Flight and security report removed." });
+                                  } catch (e: any) {
+                                    toast({ title: "Error", description: e.message, variant: "destructive" });
+                                  }
+                                }}
+                                className="p-1 rounded hover:bg-destructive/10"
+                                title="Delete Flight (Admin) — removes flight + report"
+                              >
+                                <X size={14} className="text-destructive" />
+                              </button>
                             )}
                           </div>
                         </td>
