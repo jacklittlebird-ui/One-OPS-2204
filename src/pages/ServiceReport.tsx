@@ -1116,6 +1116,28 @@ function HandlingServiceReportContent() {
                               <Trash2 size={13} />
                             </button>
                           )}
+                          {isAdmin && r.flightScheduleId && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Delete flight ${r.flightNo} (${r.arrivalDate || r.departureDate || "—"})? This removes the service report AND the underlying flight schedule.`)) return;
+                                try {
+                                  if (r.id) {
+                                    await supabase.from("service_reports").delete().eq("id", r.id);
+                                  }
+                                  await supabase.from("flight_schedules").delete().eq("id", r.flightScheduleId!);
+                                  queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                                  queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+                                  toast({ title: "Deleted", description: "Flight and report removed." });
+                                } catch (e: any) {
+                                  toast({ title: "Error", description: e.message, variant: "destructive" });
+                                }
+                              }}
+                              className="text-destructive hover:text-destructive/80"
+                              title="Delete Flight (Admin) — removes flight + report"
+                            >
+                              <X size={13} />
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
