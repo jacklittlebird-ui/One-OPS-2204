@@ -1010,7 +1010,7 @@ export default function SecurityServiceReportsPage() {
                                 onClick={async () => {
                                   if (!confirm(`Delete flight ${r.flight_no}? This removes the security report AND the underlying flight schedule.`)) return;
                                   try {
-                                    if (r.id && !isPending) await supabase.from("security_dispatches").delete().eq("id", r.id);
+                                    if (r.id && !isPending) await supabase.from("dispatch_assignments").delete().eq("id", r.id);
                                     await supabase.from("flight_schedules").delete().eq("id", r.flight_schedule_id!);
                                     queryClient.invalidateQueries({ queryKey: ["security_dispatches"] });
                                     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
