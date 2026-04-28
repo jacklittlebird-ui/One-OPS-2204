@@ -755,7 +755,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                       onChange={e => updateRow("service_type", e.target.value)}
                     >
                       <option value="">Select…</option>
-                      {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      {allowedServiceTypes.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                 </>
