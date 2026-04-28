@@ -321,7 +321,7 @@ function HandlingServiceReportContent() {
   const location = useLocation();
   const queryClient = useQueryClient();
 
-  const { activeChannel } = useChannel();
+  const { activeChannel, isAdmin } = useChannel();
   const isReceivablesView = activeChannel === "receivables";
   const isOperationsView = activeChannel === "operations";
   const isStationView = activeChannel === "station";
