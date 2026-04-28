@@ -376,6 +376,22 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     return s === "ADHOC";
   }, [skdType, currentRow, sheet.flight_type]);
 
+  // Restrict Service Type by current Skd Type (Maintenance / ADHOC).
+  const effectiveSkd = (skdType || (currentRow as any)?.skd_type || sheet.flight_type || "").toString();
+  const allowedServiceTypes = useMemo(
+    () => getAllowedServiceTypesForSkd(effectiveSkd) ?? SECURITY_CLEARANCE_TYPES,
+    [effectiveSkd],
+  );
+
+  // Auto-correct service_type when restriction changes
+  useEffect(() => {
+    if (!editableRow) return;
+    if (allowedServiceTypes.length > 0 && !allowedServiceTypes.includes(editableRow.service_type)) {
+      updateRow("service_type", allowedServiceTypes[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowedServiceTypes.join("|")]);
+
   const computedCharges = useMemo(() => {
     if (!contractRates.length || !currentRow) return null;
     const gtHours = groundTimeHours(sheet.shift_start || sheet.ata || sheet.sta, sheet.shift_end || sheet.atd || sheet.std);
