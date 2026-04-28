@@ -371,6 +371,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     return sheet.flight_type || "Turnaround";
   }, [editableRow?.service_type, serviceType, currentRow?.service_type, sheet.flight_type]);
 
+  const isAdhocFlight = useMemo(() => {
+    const s = (skdType || (currentRow as any)?.skd_type || sheet.flight_type || "").toString().trim().toUpperCase();
+    return s === "ADHOC";
+  }, [skdType, currentRow, sheet.flight_type]);
+
   const computedCharges = useMemo(() => {
     if (!contractRates.length || !currentRow) return null;
     const gtHours = groundTimeHours(sheet.shift_start || sheet.ata || sheet.sta, sheet.shift_end || sheet.atd || sheet.std);
@@ -380,9 +385,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       groundTimeHours: gtHours,
       shortNotice, extraManpower, rampVehicleTrips,
       returnToRampWithLoadChange: returnToRamp,
+      isAdhoc: isAdhocFlight,
       rates: contractRates,
     });
-  }, [contractRates, currentRow, flightTypeForCharges, sheet.shift_start, sheet.shift_end, sheet.ata, sheet.atd, sheet.sta, sheet.std, shortNotice, extraManpower, rampVehicleTrips, returnToRamp]);
+  }, [contractRates, currentRow, flightTypeForCharges, sheet.shift_start, sheet.shift_end, sheet.ata, sheet.atd, sheet.sta, sheet.std, shortNotice, extraManpower, rampVehicleTrips, returnToRamp, isAdhocFlight]);
 
   const isReceivablesView = activeChannel === "receivables";
 
