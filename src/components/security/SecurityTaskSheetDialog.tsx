@@ -733,7 +733,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Service Type</label>
                     <select className={inputCls} value={editableRow.service_type} onChange={e => updateRow("service_type", e.target.value)}>
-                      {SECURITY_CLEARANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      {allowedServiceTypes.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                 </>
