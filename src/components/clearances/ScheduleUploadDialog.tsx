@@ -147,13 +147,10 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
           if (segs.length >= 2) {
             const first = segs[0];
             const last = segs[segs.length - 1];
-            const middle = segs.slice(1, -1);
             if (first === station && last !== station) {
               serviceType = "Departure Security";
             } else if (last === station && first !== station) {
               serviceType = "Arrival Security";
-            } else if (middle.includes(station)) {
-              serviceType = "Turnaround Security";
             } else {
               serviceType = defaultType;
             }
