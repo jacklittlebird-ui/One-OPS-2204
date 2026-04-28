@@ -53,7 +53,7 @@ export function getClearanceTypesByCategory(category: ServiceCategory): string[]
 }
 
 export const PURPOSES = ["Cargo", "Charter", "Diplomatic", "Ferry", "Medical Evacuation", "Scheduled", "Technical Stop", "VIP"];
-export const SKD_TYPES = ["ADHOC", "Cargo", "Charter", "General Aviation", "Meet and Assist", "Military", "Schedule", "State", "Transportation", "VIP Lounge"];
+export const SKD_TYPES = ["ADHOC", "Cargo", "Charter", "General Aviation", "Maintenance", "Meet and Assist", "Military", "Schedule", "State", "Transportation", "VIP Lounge"];
 export const HANDLING_OPTIONS = ["Ferry", "Full Handling", "Ramp Only", "Technical", "Transit", "VIP Hall"];
 
 export const STATUS_CONFIG: Record<string, { cls: string }> = {
