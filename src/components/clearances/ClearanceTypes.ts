@@ -52,6 +52,19 @@ export function getClearanceTypesByCategory(category: ServiceCategory): string[]
   return category === "security" ? SECURITY_CLEARANCE_TYPES : HANDLING_CLEARANCE_TYPES;
 }
 
+/**
+ * Returns the allowed Service Types for a given Skd Type.
+ * - "Maintenance" → only Maintenance Security
+ * - "ADHOC"       → only Arrival/Departure/Turnaround Security
+ * - anything else → null (no restriction; use category list)
+ */
+export function getAllowedServiceTypesForSkd(skdType: string | null | undefined): string[] | null {
+  const s = (skdType || "").toString().trim().toUpperCase();
+  if (s === "MAINTENANCE") return ["Maintenance Security"];
+  if (s === "ADHOC") return ["Arrival Security", "Departure Security", "Turnaround Security"];
+  return null;
+}
+
 export const PURPOSES = ["Cargo", "Charter", "Diplomatic", "Ferry", "Medical Evacuation", "Scheduled", "Technical Stop", "VIP"];
 export const SKD_TYPES = ["ADHOC", "Cargo", "Charter", "General Aviation", "Maintenance", "Meet and Assist", "Military", "Schedule", "State", "Transportation", "VIP Lounge"];
 export const HANDLING_OPTIONS = ["Ferry", "Full Handling", "Ramp Only", "Technical", "Transit", "VIP Hall"];
