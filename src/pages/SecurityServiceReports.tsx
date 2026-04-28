@@ -101,7 +101,7 @@ export default function SecurityServiceReportsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { session } = useAuth();
-  const { activeChannel } = useChannel();
+  const { activeChannel, isAdmin } = useChannel();
   const isReceivablesView = activeChannel === "receivables";
   const isOperationsView = activeChannel === "operations" || activeChannel === "admin";
   const isStationView = activeChannel === "station";
