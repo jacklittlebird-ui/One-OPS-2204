@@ -128,7 +128,22 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
     }
   };
 
-  const availableTypes = getClearanceTypesByCategory(serviceTab);
+  const baseTypes = getClearanceTypesByCategory(serviceTab);
+  const skd = (form.skd_type || "").toString().trim().toUpperCase();
+  const availableTypes =
+    skd === "MAINTENANCE"
+      ? ["Maintenance Security"]
+      : skd === "ADHOC"
+      ? ["Arrival Security", "Departure Security", "Turnaround Security"]
+      : baseTypes;
+
+  // Auto-correct service type when skd_type restricts choices
+  useEffect(() => {
+    if (availableTypes.length > 0 && !availableTypes.includes(form.clearance_type)) {
+      setForm({ ...form, clearance_type: availableTypes[0] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.skd_type]);
   const [airlineOpen, setAirlineOpen] = useState(false);
   const [stationOpen, setStationOpen] = useState(false);
   const { data: airports } = useQuery({
