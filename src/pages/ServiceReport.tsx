@@ -612,6 +612,8 @@ function HandlingServiceReportContent() {
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
+
+  // Auto-fill from FlightSchedule query params
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const flightNo = params.get("flightNo");
