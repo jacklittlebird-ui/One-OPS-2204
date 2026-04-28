@@ -1012,7 +1012,7 @@ export default function SecurityServiceReportsPage() {
                                   try {
                                     if (r.id && !isPending) await supabase.from("dispatch_assignments").delete().eq("id", r.id);
                                     await supabase.from("flight_schedules").delete().eq("id", r.flight_schedule_id!);
-                                    queryClient.invalidateQueries({ queryKey: ["security_dispatches"] });
+                                    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
                                     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
                                     toast({ title: "Deleted", description: "Flight and security report removed." });
                                   } catch (e: any) {
