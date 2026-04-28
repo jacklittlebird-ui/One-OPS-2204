@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { CLEARANCE_TYPES, SKD_TYPES, SECURITY_CLEARANCE_TYPES, getServiceCategory, getClearanceTypesByCategory, type ServiceCategory } from "./ClearanceTypes";
+import { CLEARANCE_TYPES, SKD_TYPES, SECURITY_CLEARANCE_TYPES, getServiceCategory, getClearanceTypesByCategory, getAllowedServiceTypesForSkd, type ServiceCategory } from "./ClearanceTypes";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
