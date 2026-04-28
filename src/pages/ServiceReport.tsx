@@ -599,7 +599,19 @@ function HandlingServiceReportContent() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Auto-fill from FlightSchedule query params
+  // Delete underlying flight schedule (admin only) — removes the unlinked flight row
+  const deleteScheduleMutation = useMutation({
+    mutationFn: async ({ id, sourceType }: { id: string; sourceType: "flight_schedules" | "clearances" }) => {
+      const table = sourceType === "clearances" ? "flight_schedules" : "flight_schedules";
+      const { error } = await supabase.from(table).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+      toast({ title: "Deleted", description: "Flight removed." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const flightNo = params.get("flightNo");
