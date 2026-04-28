@@ -129,13 +129,8 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
   };
 
   const baseTypes = getClearanceTypesByCategory(serviceTab);
-  const skd = (form.skd_type || "").toString().trim().toUpperCase();
-  const availableTypes =
-    skd === "MAINTENANCE"
-      ? ["Maintenance Security"]
-      : skd === "ADHOC"
-      ? ["Arrival Security", "Departure Security", "Turnaround Security"]
-      : baseTypes;
+  const skdRestriction = getAllowedServiceTypesForSkd(form.skd_type);
+  const availableTypes = skdRestriction ?? baseTypes;
 
   // Auto-correct service type when skd_type restricts choices
   useEffect(() => {
