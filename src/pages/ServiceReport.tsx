@@ -1039,27 +1039,42 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">
                       {!r.isLinked ? (
-                        <button
-                          onClick={() => {
-                            setNewReport({
-                              ...emptyReport(),
-                              flightNo: r.flightNo,
-                              operator: r.operator,
-                              aircraftType: r.aircraftType,
-                              route: r.route,
-                              sta: r.sta,
-                              std: r.std,
-                              arrivalDate: r.arrivalDate,
-                              departureDate: r.departureDate,
-                            });
-                            setActiveClearanceStatus(r.clearanceStatus || "");
-                            setShowAdd(true);
-                          }}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                          title="Complete Service Report"
-                        >
-                          <Pencil size={12} /> Complete
-                        </button>
+                        <>
+                          <button
+                            onClick={() => {
+                              setNewReport({
+                                ...emptyReport(),
+                                flightNo: r.flightNo,
+                                operator: r.operator,
+                                aircraftType: r.aircraftType,
+                                route: r.route,
+                                sta: r.sta,
+                                std: r.std,
+                                arrivalDate: r.arrivalDate,
+                                departureDate: r.departureDate,
+                              });
+                              setActiveClearanceStatus(r.clearanceStatus || "");
+                              setShowAdd(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                            title="Complete Service Report"
+                          >
+                            <Pencil size={12} /> Complete
+                          </button>
+                          {isAdmin && r.flightScheduleId && (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete flight ${r.flightNo} (${r.arrivalDate || "—"})? This removes the underlying schedule.`)) {
+                                  deleteScheduleMutation.mutate({ id: r.flightScheduleId!, sourceType: r.sourceType || "flight_schedules" });
+                                }
+                              }}
+                              className="text-destructive hover:text-destructive/80"
+                              title="Delete Flight (Admin)"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </>
                       ) : (
                         <>
                           {(r.reviewStatus === "pending" || r.reviewStatus === "modified") && (
@@ -1090,7 +1105,17 @@ function HandlingServiceReportContent() {
                             }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
                           )}
                           <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
-                          <button onClick={() => deleteReport(r.id!)} className="text-destructive hover:text-destructive/80"><Trash2 size={13} /></button>
+                          {(!isOperationsView || isAdmin) && (
+                            <button
+                              onClick={() => {
+                                if (confirm("Delete this service report?")) deleteReport(r.id!);
+                              }}
+                              className="text-destructive hover:text-destructive/80"
+                              title={isOperationsView ? "Delete Report (Admin)" : "Delete Report"}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
