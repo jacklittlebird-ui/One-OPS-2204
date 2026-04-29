@@ -49,7 +49,7 @@ export function useSupabaseTable<T extends Record<string, any>>(
         let q = supabase
           .from(table)
           .select("*")
-          .order(orderCol, { ascending: asc })
+          .order(orderCol, { ascending: asc, nullsFirst: false })
           .range(from, from + PAGE_SIZE - 1);
         if (applyStationFilter) {
           q = (q as any).eq("station", station as string);
