@@ -23,7 +23,13 @@ export function useSupabaseTable<T extends Record<string, any>>(
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const { station, isStationScoped } = useUserStation();
-  const orderCol = options?.orderBy || "created_at";
+  // Default sort: flight-centric tables sort by arrival_date so all portals/tabs
+  // show flights ordered by ARR date (most recent first) consistently.
+  const defaultOrder =
+    table === "flight_schedules" ? "arrival_date" :
+    table === "service_reports" ? "arrival_date" :
+    "created_at";
+  const orderCol = options?.orderBy || defaultOrder;
   const asc = options?.ascending ?? false;
   const applyStationFilter = !!options?.stationFilter && isStationScoped && !!station;
 
