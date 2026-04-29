@@ -27,7 +27,7 @@ export default function OperationsDashboard() {
 
   const { data: reports = [] } = useQuery({
     queryKey: ["service_reports_dash"],
-    queryFn: async () => { const { data } = await supabase.from("service_reports").select("id,operator,flight_no,handling_type,arrival_date,departure_date,total_cost,pax_in_adult_i,pax_in_adult_d,pax_in_inf_i,pax_in_inf_d,pax_transit,station,day_night").order("created_at", { ascending: false }).limit(200); return (data || []) as ServiceReportRow[]; },
+    queryFn: async () => { const { data } = await supabase.from("service_reports").select("id,operator,flight_no,handling_type,arrival_date,departure_date,total_cost,pax_in_adult_i,pax_in_adult_d,pax_in_inf_i,pax_in_inf_d,pax_transit,station,day_night").order("arrival_date", { ascending: false, nullsFirst: false }).limit(200); return (data || []) as ServiceReportRow[]; },
   });
 
   const { data: staff = [] } = useQuery({
