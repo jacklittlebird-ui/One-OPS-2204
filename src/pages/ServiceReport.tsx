@@ -352,7 +352,7 @@ function HandlingServiceReportContent() {
   const { data: dbReports = [], isLoading: isLoadingReports } = useQuery({
     queryKey: ["service_reports", isStationScoped ? userStation : null],
     queryFn: async () => {
-      let q = supabase.from("service_reports").select("*").order("created_at", { ascending: false });
+      let q = supabase.from("service_reports").select("*").order("arrival_date", { ascending: false, nullsFirst: false });
       if (isStationScoped && userStation) q = (q as any).eq("station", userStation);
       const { data, error } = await q;
       if (error) throw error;
@@ -375,7 +375,7 @@ function HandlingServiceReportContent() {
       const { data, error } = await supabase
         .from("flight_schedules")
         .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type")
-        .order("created_at", { ascending: false });
+        .order("arrival_date", { ascending: false, nullsFirst: false });
       if (error) throw error;
       return data;
     },
