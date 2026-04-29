@@ -22,7 +22,7 @@ export default function OperationsDashboard() {
 
   const { data: flights = [] } = useQuery({
     queryKey: ["flight_schedules_ops"],
-    queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("id,flight_no,aircraft_type,route,sta,std,status,clearance_type").order("created_at", { ascending: false }); return (data || []) as FlightRow[]; },
+    queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("id,flight_no,aircraft_type,route,sta,std,status,clearance_type,arrival_date").order("arrival_date", { ascending: false, nullsFirst: false }); return (data || []) as FlightRow[]; },
   });
 
   const { data: reports = [] } = useQuery({
