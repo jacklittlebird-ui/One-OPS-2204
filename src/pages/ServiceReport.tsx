@@ -352,7 +352,7 @@ function HandlingServiceReportContent() {
   const { data: dbReports = [], isLoading: isLoadingReports } = useQuery({
     queryKey: ["service_reports", isStationScoped ? userStation : null],
     queryFn: async () => {
-      let q = supabase.from("service_reports").select("*").order("created_at", { ascending: false });
+      let q = supabase.from("service_reports").select("*").order("arrival_date", { ascending: false, nullsFirst: false });
       if (isStationScoped && userStation) q = (q as any).eq("station", userStation);
       const { data, error } = await q;
       if (error) throw error;
