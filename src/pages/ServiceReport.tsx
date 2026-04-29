@@ -375,7 +375,7 @@ function HandlingServiceReportContent() {
       const { data, error } = await supabase
         .from("flight_schedules")
         .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type")
-        .order("created_at", { ascending: false });
+        .order("arrival_date", { ascending: false, nullsFirst: false });
       if (error) throw error;
       return data;
     },
