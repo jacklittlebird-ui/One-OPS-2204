@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SECURITY_CLEARANCE_TYPES, getServiceCategory, type ServiceCategory } from "@/components/clearances/ClearanceTypes";
+import { useUserStation } from "@/contexts/UserStationContext";
 
 type FlightRow = {
   id: string;
@@ -214,6 +215,11 @@ function DispatchCalendarView({ dispatches, month, onMonthChange, onEdit }: {
 export default function StationDispatchPage() {
   const { data: flights, isLoading: flightsLoading } = useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
   const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
+  const { station: userStation, isStationScoped } = useUserStation();
+  const stationsScoped = useMemo(
+    () => (isStationScoped && userStation ? STATIONS.filter(s => s.code === userStation) : STATIONS),
+    [isStationScoped, userStation]
+  );
   const { data: contracts } = useSupabaseTable<ContractRow>("contracts");
   const { data: serviceRates } = useSupabaseTable<ServiceRateRow>("contract_service_rates");
   const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines");
@@ -505,8 +511,8 @@ export default function StationDispatchPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className={selectCls + " w-40"}>
-          <option value="">All Stations</option>
-          {STATIONS.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
+          {!isStationScoped && <option value="">All Stations</option>}
+          {stationsScoped.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
         </select>
         <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className={selectCls + " w-44"}>
           <option value="">All Airlines</option>
@@ -661,8 +667,8 @@ export default function StationDispatchPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div><label className="text-xs font-semibold text-muted-foreground">Station</label>
-                  <select className={selectCls} value={formData.station || "CAI"} onChange={e => updateFormField("station", e.target.value)}>
-                    {STATIONS.map(s => <option key={s.code} value={s.code}>{s.code}</option>)}
+                  <select className={selectCls} value={formData.station || (isStationScoped && userStation) || "CAI"} onChange={e => updateFormField("station", e.target.value)} disabled={isStationScoped}>
+                    {stationsScoped.map(s => <option key={s.code} value={s.code}>{s.code}</option>)}
                   </select></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Date</label>
                   <input type="date" className={inputCls} value={formData.flight_date || ""} onChange={e => updateFormField("flight_date", e.target.value)} /></div>

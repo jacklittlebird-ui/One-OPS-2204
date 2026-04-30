@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useUserStation } from "@/contexts/UserStationContext";
 import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 import { formatDateDMY } from "@/lib/utils";
@@ -277,13 +278,21 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     },
   });
 
-  const { data: airportsList = [] } = useQuery({
+  const { station: userStation, isStationScoped } = useUserStation();
+
+  const { data: airportsListRaw = [] } = useQuery({
     queryKey: ["airports-for-task-sheet"],
     queryFn: async () => {
       const { data } = await supabase.from("airports").select("id,name,iata_code,city").order("iata_code");
       return data || [];
     },
   });
+  const airportsList = useMemo(
+    () => (isStationScoped && userStation
+      ? airportsListRaw.filter((a: any) => (a.iata_code || a.name) === userStation)
+      : airportsListRaw),
+    [airportsListRaw, isStationScoped, userStation]
+  );
 
   // Fetch security contracts for the current airline
   const { data: securityContracts = [] } = useQuery({
