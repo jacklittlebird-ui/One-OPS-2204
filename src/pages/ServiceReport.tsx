@@ -219,6 +219,7 @@ interface MergedRow extends ReportFormData {
   clearanceStatus?: string;
   skdType?: string;
   serviceType?: string;
+  purpose?: string;
 }
 
 interface ScheduleSourceRow {
@@ -236,6 +237,7 @@ interface ScheduleSourceRow {
   clearanceStatus: string;
   skdType: string;
   serviceType: string;
+  purpose: string;
 }
 
 function resolveStationFromRoute(route: string, preferred?: string | null) {
