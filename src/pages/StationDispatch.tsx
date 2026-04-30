@@ -99,6 +99,22 @@ const statusColors: Record<string, string> = {
 const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
 const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
 
+function routeTouchesStation(route: string | null | undefined, station: string) {
+  const stationCode = station.trim().toUpperCase();
+  if (!stationCode) return true;
+  return (route || "").toUpperCase().split("/").map(part => part.trim()).filter(Boolean).includes(stationCode);
+}
+
+function flightOverlapsDateWindow(arrivalDate: string | null | undefined, departureDate: string | null | undefined, dateFrom: string, dateTo: string) {
+  const dates = [arrivalDate || "", departureDate || ""].filter(Boolean).sort();
+  if (dates.length === 0) return false;
+  const start = dates[0];
+  const end = dates[dates.length - 1];
+  if (dateFrom && end < dateFrom) return false;
+  if (dateTo && start > dateTo) return false;
+  return true;
+}
+
 // Returns duration in minutes between two HH:MM strings (handles wraparound)
 function calcDurationMinutes(start: string, end: string): number {
   if (!start || !end) return 0;
