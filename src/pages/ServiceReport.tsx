@@ -433,8 +433,23 @@ function HandlingServiceReportContent() {
   );
 
   const scheduleSources: ScheduleSourceRow[] = useMemo(() => {
+    // Station-originated records (added from Station Dispatch / Service Report)
+    // require Operations approval before they show up in All Reports. While
+    // they are still Pending, only the Operations Pending-Approval tab sees them.
+    const isStationOriginatedPending = (c: any) => {
+      const remarks = (c.remarks || "") as string;
+      const isStationOriginated =
+        c.purpose === "Station Dispatch" ||
+        c.purpose === "Security Service" ||
+        remarks.includes("Added from Station Dispatch") ||
+        remarks.includes("Added from Security Service") ||
+        remarks.includes("Added from Service Report");
+      return isStationOriginated && c.status !== "Approved";
+    };
+
     return (dbFlights as any[])
       .filter((c: any) => getScheduleFlightNo(c))
+      .filter((c: any) => !isStationOriginatedPending(c))
       .filter((c: any) => {
         // When station-scoped, include any flight that touches the user's station
         // anywhere in the route (origin, intermediate, or destination), or is
