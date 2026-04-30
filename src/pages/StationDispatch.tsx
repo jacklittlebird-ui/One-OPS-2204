@@ -312,7 +312,7 @@ export default function StationDispatchPage() {
         if (aName.toLowerCase() !== airlineFilter.toLowerCase()) return false;
       }
       return true;
-    }).sort((a, b) => (a.arrival_date || a.departure_date || "").localeCompare(b.arrival_date || b.departure_date || ""));
+    }).sort((a, b) => (b.arrival_date || b.departure_date || "").localeCompare(a.arrival_date || a.departure_date || ""));
   }, [flights, stationFilter, dateFrom, dateTo, airlineFilter, airlineMap, serviceCategory]);
 
   const assignedFlightIds = useMemo(() => new Set(dispatches.filter(d => d.flight_schedule_id).map(d => d.flight_schedule_id)), [dispatches]);
