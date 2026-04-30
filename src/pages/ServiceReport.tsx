@@ -693,10 +693,17 @@ function HandlingServiceReportContent() {
         flightTouchesStation(x, userStation)
       );
     }
-    // Operations view: only show linked/completed reports awaiting or under review
-    if (isOperationsView) r = r.filter(x => x.isLinked);
-    // Operations sub-tab: filter to Modified reports
-    if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
+    // Operations view: split between "Pending Approval" (Station Dispatch
+    // origin awaiting Operations approval) and the regular linked reports.
+    if (isOperationsView) {
+      if (operationsTab === "pending-approval") {
+        r = r.filter(x => x.purpose === "Station Dispatch" && x.clearanceStatus === "Pending");
+      } else {
+        // "All Reports" / "Modified" exclude pending-approval items
+        r = r.filter(x => x.isLinked && x.purpose !== "Station Dispatch");
+        if (operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
+      }
+    }
     // Station view: when "Rejected" tab is active, only show rejected reports
     if (isStationView && stationTab === "rejected") r = r.filter(x => x.isLinked && x.reviewStatus === "rejected");
     if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
