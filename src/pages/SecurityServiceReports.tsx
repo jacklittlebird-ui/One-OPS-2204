@@ -891,7 +891,7 @@ export default function SecurityServiceReportsPage() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={isReceivablesView ? 17 : 16} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={isReceivablesView ? 18 : 17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
                   ) : pageData.length === 0 ? (
                      <tr>
                       <td colSpan={isReceivablesView ? 17 : 16} className="text-center py-16">
