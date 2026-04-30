@@ -459,6 +459,7 @@ function HandlingServiceReportContent() {
           clearanceStatus: c.status || "Pending",
           skdType: c.skd_type || "",
           serviceType: c.clearance_type || "",
+          purpose: c.purpose || "",
         };
       });
   }, [dbFlights, airlineById, userStation, isStationScoped]);
