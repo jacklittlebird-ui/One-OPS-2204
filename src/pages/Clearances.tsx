@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload, CalendarDays, TableIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -132,14 +131,11 @@ export default function ClearancesPage() {
   const stations = [...new Set((airportsList || []).map((a: any) => a.iata_code).filter(Boolean))].sort();
   const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
 
-  const isOperationsApprovalRecord = (c: ClearanceRow) =>
+  const isStationDispatchRecord = (c: ClearanceRow) =>
     c.purpose === "Station Dispatch" ||
-    c.purpose === "Security Service" ||
-    c.remarks?.includes("Added from Station Dispatch") ||
-    c.remarks?.includes("Added from Security Service") ||
-    c.remarks?.includes("Added from Service Report");
+    c.remarks?.includes("Added from Station Dispatch");
 
-  const clearanceOwnedData = data.filter(c => !isOperationsApprovalRecord(c));
+  const clearanceOwnedData = data.filter(c => !isStationDispatchRecord(c));
 
   const filtered = clearanceOwnedData.filter(c => {
     // Filter by service category first
@@ -164,10 +160,6 @@ export default function ClearancesPage() {
     return db.localeCompare(da);
   });
 
-  // Pending Approval = exceptional clearance approvals only. Normal flights added
-  // by Clearance are operational schedule records and remain in All Flights.
-  const pendingApproval = clearanceOwnedData.filter(c => c.status === "Pending" && c.purpose !== "Scheduled");
-
   // Stats are scoped to the active service category (Security or Handling)
   const categoryData = clearanceOwnedData.filter(c => getServiceCategory(c.clearance_type) === serviceCategory);
   const stats = {
@@ -176,32 +168,6 @@ export default function ClearancesPage() {
     approved: categoryData.filter(c => c.status === "Approved").length,
     expiringSoon: categoryData.filter(c => c.status === "Approved" && c.valid_to && (new Date(c.valid_to).getTime() - Date.now()) / 86400000 <= 7 && (new Date(c.valid_to).getTime() - Date.now()) > 0).length,
     totalPax: categoryData.filter(c => c.status === "Approved").reduce((s, c) => s + (c.passengers || 0), 0),
-  };
-
-  const handleApprove = async (c: ClearanceRow) => {
-    await update({ id: c.id, status: "Approved" as any });
-    // If this clearance was added from a Security Service report, mark the
-    // linked dispatch as Completed and move it to Pending Review (step 2 done).
-    if (c.purpose === "Security Service") {
-      const { error } = await supabase
-        .from("dispatch_assignments")
-        .update({ status: "Completed", review_status: "Pending Review" } as any)
-        .eq("flight_schedule_id", c.id);
-      if (error) console.error("Failed to update linked service report:", error.message);
-    }
-    toast({ title: "✅ Approved", description: `Flight ${c.flight_no} has been approved.` });
-  };
-
-  const handleReject = async (c: ClearanceRow) => {
-    await update({ id: c.id, status: "Rejected" as any });
-    if (c.purpose === "Security Service") {
-      const { error } = await supabase
-        .from("dispatch_assignments")
-        .update({ review_status: "Rejected" } as any)
-        .eq("flight_schedule_id", c.id);
-      if (error) console.error("Failed to update linked service report:", error.message);
-    }
-    toast({ title: "❌ Rejected", description: `Flight ${c.flight_no} has been rejected.` });
   };
 
   const openAdd = () => {
@@ -402,18 +368,6 @@ export default function ClearancesPage() {
         </TabsList>
 
         <TabsContent value={serviceCategory}>
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All Flights</TabsTrigger>
-          <TabsTrigger value="pending-approval" className="gap-1">
-            Pending Approval
-            {pendingApproval.filter(c => getServiceCategory(c.clearance_type) === serviceCategory).length > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 min-w-5 text-xs px-1.5">{pendingApproval.filter(c => getServiceCategory(c.clearance_type) === serviceCategory).length}</Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all">
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <div className="relative flex-1 min-w-[180px]"><Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} /><Input placeholder="Search flights…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
             <Select value={airlineFilter} onValueChange={setAirlineFilter}>
@@ -525,70 +479,6 @@ export default function ClearancesPage() {
               onEdit={openEdit}
             />
           )}
-        </TabsContent>
-
-        <TabsContent value="pending-approval">
-          <Card>
-            <CardContent className="p-0 overflow-x-auto">
-              <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Flight</TableHead>
-                      <TableHead>Airline</TableHead>
-                      <TableHead>Reg No</TableHead>
-                      <TableHead>Route</TableHead>
-                      <TableHead>Service Type</TableHead>
-                      <TableHead>Station</TableHead>
-                      <TableHead>STA</TableHead>
-                      <TableHead>STD</TableHead>
-                      <TableHead>Remarks</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-36">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pendingApproval.filter(c => getServiceCategory(c.clearance_type) === serviceCategory).map(c => (
-                      <TableRow key={c.id}>
-                        <TableCell className="text-xs">{formatDateDMY(c.arrival_date || c.departure_date)}</TableCell>
-                        <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
-                        <TableCell className="text-xs">{c.airline_id ? (airlineMap[c.airline_id]?.name || c.handling_agent || "—") : (c.handling_agent || "—")}</TableCell>
-                        <TableCell className="text-xs font-mono">{c.registration || "—"}</TableCell>
-                        <TableCell className="text-xs font-mono">{c.route || "—"}</TableCell>
-                        <TableCell className="text-xs">{c.clearance_type}</TableCell>
-                        <TableCell className="text-xs">{c.authority || "—"}</TableCell>
-                        <TableCell className="text-xs">{c.sta || "—"}</TableCell>
-                        <TableCell className="text-xs">{c.std || "—"}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{c.remarks || "—"}</TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-warning/15 text-warning"><Clock size={12} />Pending</span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => handleApprove(c)}>
-                              <CheckCircle2 size={13} className="mr-1" /> Approve
-                            </Button>
-                            <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handleReject(c)}>
-                              <XCircle size={13} className="mr-1" /> Reject
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(c)}>
-                              <Pencil size={13} />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {pendingApproval.filter(c => getServiceCategory(c.clearance_type) === serviceCategory).length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">No flights pending approval</TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
         </TabsContent>
       </Tabs>
 
