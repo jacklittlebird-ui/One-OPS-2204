@@ -164,9 +164,9 @@ export default function ClearancesPage() {
     return db.localeCompare(da);
   });
 
-  // Pending Approval = items routed to Clearance for approval. Service-report
-  // approval records go to Operations → Pending Approval instead.
-  const pendingApproval = clearanceOwnedData.filter(c => c.status === "Pending");
+  // Pending Approval = exceptional clearance approvals only. Normal flights added
+  // by Clearance are operational schedule records and remain in All Flights.
+  const pendingApproval = clearanceOwnedData.filter(c => c.status === "Pending" && c.purpose !== "Scheduled");
 
   // Stats are scoped to the active service category (Security or Handling)
   const categoryData = clearanceOwnedData.filter(c => getServiceCategory(c.clearance_type) === serviceCategory);
