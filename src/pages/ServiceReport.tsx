@@ -422,7 +422,7 @@ function HandlingServiceReportContent() {
           route: c.route || "",
           sta: c.sta || "",
           std: c.std || "",
-          station: resolveStationFromRoute(c.route || "") || c.authority || "CAI",
+          station: resolveStationFromRoute(c.route || "", userStation) || c.authority || "CAI",
           arrivalDate: c.arrival_date || "",
           departureDate: c.departure_date || "",
           clearanceStatus: c.status || "Pending",
