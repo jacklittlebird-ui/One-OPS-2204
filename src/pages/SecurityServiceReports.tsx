@@ -103,6 +103,7 @@ export default function SecurityServiceReportsPage() {
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const { activeChannel, isAdmin } = useChannel();
+  const { station: userStation, isStationScoped } = useUserStation();
   const isReceivablesView = activeChannel === "receivables";
   const isOperationsView = activeChannel === "operations" || activeChannel === "admin";
   const isStationView = activeChannel === "station";
