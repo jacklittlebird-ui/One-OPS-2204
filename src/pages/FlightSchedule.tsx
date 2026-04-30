@@ -131,7 +131,7 @@ function FlightForm({ data, onChange, onSave, onCancel, title, isSaving }: {
 
 export default function FlightSchedulePage() {
   const navigate = useNavigate();
-  const { data, isLoading, add, update, remove, bulkInsert, isAdding, isUpdating } = useSupabaseTable<FlightRow>("flight_schedules");
+  const { data, isLoading, add, update, remove, bulkInsert, isAdding, isUpdating } = useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
   const [search, setSearch] = useState("");
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [statusFilter, setStatusFilter] = useState("All Status");
