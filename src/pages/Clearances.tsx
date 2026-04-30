@@ -133,6 +133,8 @@ export default function ClearancesPage() {
   const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
 
   const filtered = data.filter(c => {
+    // Hide records that belong to Operations → Pending Approval (Station Dispatch origin)
+    if (c.purpose === "Station Dispatch") return false;
     // Filter by service category first
     const categoryMatch = getServiceCategory(c.clearance_type) === serviceCategory;
     const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
