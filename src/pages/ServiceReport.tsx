@@ -251,6 +251,28 @@ function resolveStationFromRoute(route: string, preferred?: string | null) {
   return parts[0] || "";
 }
 
+function flightTouchesStation(row: { route?: string | null; authority?: string | null }, station?: string | null) {
+  const stationCode = (station || "").trim().toUpperCase();
+  if (!stationCode) return true;
+  const routeParts = (row.route || "").toUpperCase().split("/").map(part => part.trim()).filter(Boolean);
+  return routeParts.includes(stationCode) || (row.authority || "").trim().toUpperCase() === stationCode;
+}
+
+function overlapsDateWindow(arrivalDate = "", departureDate = "", dateFrom = "", dateTo = "") {
+  if (!dateFrom && !dateTo) return true;
+  const dates = [arrivalDate, departureDate].filter(Boolean).sort();
+  if (dates.length === 0) return false;
+  const start = dates[0];
+  const end = dates[dates.length - 1];
+  if (dateFrom && end < dateFrom) return false;
+  if (dateTo && start > dateTo) return false;
+  return true;
+}
+
+function getScheduleFlightNo(row: { flight_no?: string | null; arrival_flight?: string | null; departure_flight?: string | null }) {
+  return row.flight_no || row.arrival_flight || row.departure_flight || "";
+}
+
 // ─── Service Report Calendar View ───
 function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit }: {
   reports: any[];
