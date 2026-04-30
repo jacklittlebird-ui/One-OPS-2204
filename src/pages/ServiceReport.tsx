@@ -490,6 +490,7 @@ function HandlingServiceReportContent() {
             clearanceStatus: source.clearanceStatus,
             skdType: source.skdType,
             serviceType: source.serviceType,
+            purpose: source.purpose,
           });
         });
         return;
@@ -518,6 +519,7 @@ function HandlingServiceReportContent() {
         clearanceStatus: source.clearanceStatus,
         skdType: source.skdType,
         serviceType: source.serviceType,
+        purpose: source.purpose,
       });
     });
 
