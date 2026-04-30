@@ -224,7 +224,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
         handling_agent: "",
         config: parseInt(f.config) || null,
         authority: selectedStation,
-        status: "Pending" as const,
+        status: "Approved" as const,
         purpose: "Scheduled",
         period_from: f.period_from || null,
         period_to: f.period_to || null,
@@ -250,6 +250,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["all_clearance_flights_readonly"] });
       toast({ title: "✅ Import Complete", description: `${records.length} flight records imported (duplicates replaced).` });
       handleClose();
     } catch (err: any) {
