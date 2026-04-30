@@ -434,7 +434,7 @@ export default function StationDispatchPage() {
             clearance_type: svcType === "Arrival" ? "Full Handling" : svcType === "Departure" ? "Full Handling" : svcType,
             status: "Pending" as any,
             authority: stationCode,
-            purpose: "Scheduled",
+            purpose: "Station Dispatch",
             airline_id: matchedAirline?.id || null,
             handling_agent: formData.airline || "",
             arrival_date: flightDate,
@@ -444,7 +444,7 @@ export default function StationDispatchPage() {
             sta: formData.scheduled_start || "",
             std: formData.scheduled_end || "",
             requested_date: flightDate,
-            remarks: `Added from Station Dispatch – ${svcType} – pending clearance approval`,
+            remarks: `Added from Station Dispatch – ${svcType} – pending Operations approval`,
           })
           .select("id")
           .single();
@@ -454,7 +454,7 @@ export default function StationDispatchPage() {
           return;
         }
         scheduleId = newSchedule.id;
-        toast({ title: "Flight Schedule Created", description: "A pending clearance record was created for approval." });
+        toast({ title: "Sent to Operations", description: "New service report awaiting Operations approval." });
       }
       await add({ ...formData, flight_schedule_id: scheduleId } as any);
     }
