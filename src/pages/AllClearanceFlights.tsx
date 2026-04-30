@@ -113,11 +113,13 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Plane size={22} className="text-primary" />
-            All Clearance Flights
+            {securityOnly ? "All Clearance Flights — Security" : "All Clearance Flights"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
             <Lock size={12} />
-            Read-only view of every flight entered by the Clearance team.
+            {securityOnly
+              ? "Read-only view of Security clearance flights only (Handling clearances are excluded)."
+              : "Read-only view of every flight entered by the Clearance team."}
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
