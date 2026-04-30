@@ -215,6 +215,11 @@ function DispatchCalendarView({ dispatches, month, onMonthChange, onEdit }: {
 export default function StationDispatchPage() {
   const { data: flights, isLoading: flightsLoading } = useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
   const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
+  const { station: userStation, isStationScoped } = useUserStation();
+  const stationsScoped = useMemo(
+    () => (isStationScoped && userStation ? STATIONS.filter(s => s.code === userStation) : STATIONS),
+    [isStationScoped, userStation]
+  );
   const { data: contracts } = useSupabaseTable<ContractRow>("contracts");
   const { data: serviceRates } = useSupabaseTable<ServiceRateRow>("contract_service_rates");
   const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines");
