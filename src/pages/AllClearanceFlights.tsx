@@ -8,6 +8,12 @@ import { Card } from "@/components/ui/card";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
+
+interface AllClearanceFlightsPageProps {
+  /** When true, only Security clearance types are shown (Operations security view). */
+  securityOnly?: boolean;
+}
 
 type FlightRow = {
   id: string;
