@@ -841,11 +841,93 @@ export default function SecurityServiceReportsPage() {
             <Plane size={14} />
             All Clearance Flights
           </button>
+          <button
+            onClick={() => { setOpsTab("pending-approval"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              opsTab === "pending-approval"
+                ? "text-destructive border-destructive"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <Clock size={14} />
+            Pending Approval
+            {pendingApprovalFlights.length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                {pendingApprovalFlights.length}
+              </span>
+            )}
+          </button>
         </div>
       )}
 
       {isOperationsView && opsTab === "clearance-flights" ? (
         <AllClearanceFlightsPage securityOnly />
+      ) : isOperationsView && opsTab === "pending-approval" ? (
+        <div className="bg-card border rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b bg-muted/30">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Clock size={14} className="text-destructive" />
+              Pending Operations Approval
+              <span className="text-xs font-normal text-muted-foreground">
+                — flights submitted by Stations awaiting Operations review
+              </span>
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/30">
+                  {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "ACTIONS"].map(h => (
+                    <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pendingApprovalFlights.length === 0 ? (
+                  <tr>
+                    <td colSpan={12} className="text-center py-16">
+                      <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
+                      <p className="font-semibold text-foreground">No flights pending approval</p>
+                      <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
+                    </td>
+                  </tr>
+                ) : pendingApprovalFlights.map((f: any, i: number) => (
+                  <tr key={f.id} className="data-table-row">
+                    <td className="px-3 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
+                    <td className="px-3 py-2.5 font-semibold text-foreground">{f.authority || "—"}</td>
+                    <td className="px-3 py-2.5 text-foreground">{f.airlines?.name || f.handling_agent || "—"}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no || "—"}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.registration || "—"}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{f.clearance_type || "—"}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{f.arrival_date || "—"}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.sta || "—"}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.std || "—"}</td>
+                    <td className="px-3 py-2.5 text-foreground text-xs">{f.route || "—"}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={f.remarks || ""}>{f.remarks || "—"}</td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => approvePendingFlight(f.id)}
+                          className="px-2 py-1 text-xs font-semibold rounded bg-success/15 text-success hover:bg-success/25 transition-colors"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => rejectPendingFlight(f.id)}
+                          className="px-2 py-1 text-xs font-semibold rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
       <>
       {/* KPI Cards */}
