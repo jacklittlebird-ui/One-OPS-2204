@@ -302,25 +302,17 @@ export default function StationDispatchPage() {
       const catMatch = getServiceCategory(f.clearance_type) === serviceCategory;
       if (!catMatch) return false;
       if (stationFilter) {
-        const routeMatch = (f.route || "").toUpperCase().includes(stationFilter);
+        const routeMatch = routeTouchesStation(f.route, stationFilter);
         const authorityMatch = (f.authority || "").toUpperCase() === stationFilter;
         if (!(routeMatch || authorityMatch)) return false;
       }
-      const arrDate = f.arrival_date || "";
-      const depDate = f.departure_date || "";
-      const inRange = (d: string) => {
-        if (!d) return false;
-        if (dateFrom && d < dateFrom) return false;
-        if (dateTo && d > dateTo) return false;
-        return true;
-      };
-      if (!(inRange(arrDate) || inRange(depDate))) return false;
+      if (!flightOverlapsDateWindow(f.arrival_date, f.departure_date, dateFrom, dateTo)) return false;
       if (airlineFilter && f.airline_id) {
         const aName = airlineMap[f.airline_id]?.name || "";
         if (aName.toLowerCase() !== airlineFilter.toLowerCase()) return false;
       }
       return true;
-    });
+    }).sort((a, b) => (a.arrival_date || a.departure_date || "").localeCompare(b.arrival_date || b.departure_date || ""));
   }, [flights, stationFilter, dateFrom, dateTo, airlineFilter, airlineMap, serviceCategory]);
 
   const assignedFlightIds = useMemo(() => new Set(dispatches.filter(d => d.flight_schedule_id).map(d => d.flight_schedule_id)), [dispatches]);
