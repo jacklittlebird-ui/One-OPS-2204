@@ -511,8 +511,8 @@ export default function StationDispatchPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className={selectCls + " w-40"}>
-          <option value="">All Stations</option>
-          {STATIONS.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
+          {!isStationScoped && <option value="">All Stations</option>}
+          {stationsScoped.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
         </select>
         <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className={selectCls + " w-44"}>
           <option value="">All Airlines</option>
