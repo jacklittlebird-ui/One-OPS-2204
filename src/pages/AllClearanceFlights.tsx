@@ -49,7 +49,7 @@ const STATUS_CLS: Record<string, string> = {
   Cancelled: "bg-muted text-muted-foreground",
 };
 
-export default function AllClearanceFlightsPage() {
+export default function AllClearanceFlightsPage({ securityOnly = false }: AllClearanceFlightsPageProps = {}) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
