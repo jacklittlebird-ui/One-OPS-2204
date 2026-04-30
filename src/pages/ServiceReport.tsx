@@ -409,8 +409,16 @@ function HandlingServiceReportContent() {
   );
 
   const scheduleSources: ScheduleSourceRow[] = useMemo(() => {
+    const userSt = userStation ? userStation.toUpperCase() : "";
     return (dbFlights as any[])
       .filter((c: any) => c.flight_no)
+      .filter((c: any) => {
+        // When station-scoped, include any flight that touches the user's station
+        // anywhere in the route (origin, intermediate, or destination).
+        if (!isStationScoped || !userSt) return true;
+        const parts = (c.route || "").toUpperCase().split("/").map((p: string) => p.trim()).filter(Boolean);
+        return parts.includes(userSt);
+      })
       .map((c: any) => {
         const airline = c.airline_id ? airlineById.get(c.airline_id) : undefined;
         return {
@@ -430,7 +438,7 @@ function HandlingServiceReportContent() {
           serviceType: c.clearance_type || "",
         };
       });
-  }, [dbFlights, airlineById]);
+  }, [dbFlights, airlineById, userStation, isStationScoped]);
 
   const mergedRows: MergedRow[] = useMemo(() => {
     const reportsByFlight = new Map<string, ReportFormData[]>();
