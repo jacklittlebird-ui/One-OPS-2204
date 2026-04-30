@@ -54,14 +54,17 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const { station: userStation, isStationScoped } = useUserStation();
 
   const { data: flights = [], isLoading } = useQuery({
-    queryKey: ["all_clearance_flights_readonly"],
+    queryKey: ["all_clearance_flights_readonly", isStationScoped ? userStation : null],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("flight_schedules")
         .select("*")
         .order("arrival_date", { ascending: false, nullsFirst: false });
+      if (isStationScoped && userStation) q = (q as any).ilike("route", `%${userStation}%`);
+      const { data, error } = await q;
       if (error) throw error;
       return (data || []) as unknown as FlightRow[];
     },
