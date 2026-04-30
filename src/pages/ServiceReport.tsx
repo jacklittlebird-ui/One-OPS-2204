@@ -251,6 +251,28 @@ function resolveStationFromRoute(route: string, preferred?: string | null) {
   return parts[0] || "";
 }
 
+function flightTouchesStation(row: { route?: string | null; authority?: string | null }, station?: string | null) {
+  const stationCode = (station || "").trim().toUpperCase();
+  if (!stationCode) return true;
+  const routeParts = (row.route || "").toUpperCase().split("/").map(part => part.trim()).filter(Boolean);
+  return routeParts.includes(stationCode) || (row.authority || "").trim().toUpperCase() === stationCode;
+}
+
+function overlapsDateWindow(arrivalDate = "", departureDate = "", dateFrom = "", dateTo = "") {
+  if (!dateFrom && !dateTo) return true;
+  const dates = [arrivalDate, departureDate].filter(Boolean).sort();
+  if (dates.length === 0) return false;
+  const start = dates[0];
+  const end = dates[dates.length - 1];
+  if (dateFrom && end < dateFrom) return false;
+  if (dateTo && start > dateTo) return false;
+  return true;
+}
+
+function getScheduleFlightNo(row: { flight_no?: string | null; arrival_flight?: string | null; departure_flight?: string | null }) {
+  return row.flight_no || row.arrival_flight || row.departure_flight || "";
+}
+
 // ─── Service Report Calendar View ───
 function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit }: {
   reports: any[];
@@ -380,7 +402,7 @@ function HandlingServiceReportContent() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("flight_schedules")
-        .select("id, flight_no, aircraft_type, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type")
+        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type")
         .order("arrival_date", { ascending: false, nullsFirst: false });
       if (error) throw error;
       return data;
@@ -409,22 +431,21 @@ function HandlingServiceReportContent() {
   );
 
   const scheduleSources: ScheduleSourceRow[] = useMemo(() => {
-    const userSt = userStation ? userStation.toUpperCase() : "";
     return (dbFlights as any[])
-      .filter((c: any) => c.flight_no)
+      .filter((c: any) => getScheduleFlightNo(c))
       .filter((c: any) => {
         // When station-scoped, include any flight that touches the user's station
-        // anywhere in the route (origin, intermediate, or destination).
-        if (!isStationScoped || !userSt) return true;
-        const parts = (c.route || "").toUpperCase().split("/").map((p: string) => p.trim()).filter(Boolean);
-        return parts.includes(userSt);
+        // anywhere in the route (origin, intermediate, or destination), or is
+        // explicitly assigned to that station by authority.
+        if (!isStationScoped) return true;
+        return flightTouchesStation(c, userStation);
       })
       .map((c: any) => {
         const airline = c.airline_id ? airlineById.get(c.airline_id) : undefined;
         return {
           id: c.id,
           sourceType: "flight_schedules" as const,
-          flightNo: c.flight_no,
+          flightNo: getScheduleFlightNo(c),
           operator: airline?.name || airline?.code || c.handling_agent || "",
           aircraftType: c.aircraft_type || "",
           route: c.route || "",
@@ -661,6 +682,12 @@ function HandlingServiceReportContent() {
 
   const filtered = useMemo(() => {
     let r = mergedRows;
+    if (isStationScoped && userStation) {
+      r = r.filter(x =>
+        x.station?.toUpperCase() === userStation.toUpperCase() ||
+        flightTouchesStation(x, userStation)
+      );
+    }
     // Operations view: only show linked/completed reports awaiting or under review
     if (isOperationsView) r = r.filter(x => x.isLinked);
     // Operations sub-tab: filter to Modified reports
@@ -673,8 +700,7 @@ function HandlingServiceReportContent() {
     if (stationFilter !== "All Stations") r = r.filter(x => x.station === stationFilter);
     if (reviewFilter !== "All Review") r = r.filter(x => x.reviewStatus === reviewFilter);
     if (airlineFilter !== "All Airlines") r = r.filter(x => x.operator === airlineFilter);
-    if (dateFrom) r = r.filter(x => x.arrivalDate >= dateFrom);
-    if (dateTo) r = r.filter(x => x.arrivalDate <= dateTo);
+    if (dateFrom || dateTo) r = r.filter(x => overlapsDateWindow(x.arrivalDate, x.departureDate, dateFrom, dateTo));
     if (search) {
       const s = search.toLowerCase();
       r = r.filter(x =>
@@ -693,7 +719,7 @@ function HandlingServiceReportContent() {
       if (!bd) return -1;
       return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab, isStationScoped, userStation]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -1026,7 +1052,7 @@ function HandlingServiceReportContent() {
                   </td>
                   <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{r.skdType || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{r.serviceType || "—"}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.isLinked ? r.station : "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.station || "—"}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.route}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.arrivalDate || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.aircraftType}</td>
