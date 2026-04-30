@@ -930,22 +930,6 @@ function HandlingServiceReportContent() {
             All Reports
           </button>
           <button
-            onClick={() => { setOperationsTab("pending-approval"); setPage(1); }}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
-              operationsTab === "pending-approval"
-                ? "text-destructive border-destructive"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            }`}
-          >
-            <Clock size={14} />
-            Pending Approval
-            {pendingApprovalCount > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                {pendingApprovalCount}
-              </span>
-            )}
-          </button>
-          <button
             onClick={() => { setOperationsTab("modified"); setPage(1); }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
               operationsTab === "modified"
