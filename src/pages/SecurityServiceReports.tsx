@@ -803,7 +803,7 @@ export default function SecurityServiceReportsPage() {
       )}
 
       {isOperationsView && opsTab === "clearance-flights" ? (
-        <AllClearanceFlightsPage />
+        <AllClearanceFlightsPage securityOnly />
       ) : (
       <>
       {/* KPI Cards */}

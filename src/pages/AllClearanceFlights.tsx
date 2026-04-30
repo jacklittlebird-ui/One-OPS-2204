@@ -8,6 +8,12 @@ import { Card } from "@/components/ui/card";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
+
+interface AllClearanceFlightsPageProps {
+  /** When true, only Security clearance types are shown (Operations security view). */
+  securityOnly?: boolean;
+}
 
 type FlightRow = {
   id: string;
@@ -43,7 +49,7 @@ const STATUS_CLS: Record<string, string> = {
   Cancelled: "bg-muted text-muted-foreground",
 };
 
-export default function AllClearanceFlightsPage() {
+export default function AllClearanceFlightsPage({ securityOnly = false }: AllClearanceFlightsPageProps = {}) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -73,14 +79,21 @@ export default function AllClearanceFlightsPage() {
     return m;
   }, [airlines]);
 
+  const securityTypeSet = useMemo(() => new Set(SECURITY_CLEARANCE_TYPES), []);
+
+  const scopedFlights = useMemo(
+    () => (securityOnly ? flights.filter(f => securityTypeSet.has(f.clearance_type)) : flights),
+    [flights, securityOnly, securityTypeSet]
+  );
+
   const allTypes = useMemo(
-    () => Array.from(new Set(flights.map(f => f.clearance_type).filter(Boolean))).sort(),
-    [flights]
+    () => Array.from(new Set(scopedFlights.map(f => f.clearance_type).filter(Boolean))).sort(),
+    [scopedFlights]
   );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return flights.filter(f => {
+    return scopedFlights.filter(f => {
       if (statusFilter !== "all" && f.status !== statusFilter) return false;
       if (typeFilter !== "all" && f.clearance_type !== typeFilter) return false;
       if (!q) return true;
@@ -91,7 +104,7 @@ export default function AllClearanceFlightsPage() {
         f.arrival_flight, f.departure_flight,
       ].some(v => (v || "").toLowerCase().includes(q));
     });
-  }, [flights, search, statusFilter, typeFilter, airlineMap]);
+  }, [scopedFlights, search, statusFilter, typeFilter, airlineMap]);
 
   return (
     <div className="space-y-4">
@@ -100,11 +113,13 @@ export default function AllClearanceFlightsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Plane size={22} className="text-primary" />
-            All Clearance Flights
+            {securityOnly ? "All Clearance Flights — Security" : "All Clearance Flights"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
             <Lock size={12} />
-            Read-only view of every flight entered by the Clearance team.
+            {securityOnly
+              ? "Read-only view of Security clearance flights only (Handling clearances are excluded)."
+              : "Read-only view of every flight entered by the Clearance team."}
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
