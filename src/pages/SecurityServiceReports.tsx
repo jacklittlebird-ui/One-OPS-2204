@@ -194,12 +194,14 @@ export default function SecurityServiceReportsPage() {
       const { data, error } = await supabase
         .from("flight_schedules")
         .select("*, airlines:airline_id(name, iata_code)")
-        .in("clearance_type", SECURITY_CLEARANCE_TYPES)
         .eq("status", "Pending")
-        .in("purpose", ["Station Dispatch", "Security Service"])
         .order("arrival_date", { ascending: true });
       if (error) throw error;
-      return data as any[];
+      return (data || []).filter((f: any) => {
+        const purpose = f.purpose || "";
+        const remarks = f.remarks || "";
+        return purpose === "Station Dispatch" || purpose === "Security Service" || remarks.includes("Added from Station Dispatch") || remarks.includes("Added from Security Service");
+      }) as any[];
     },
     enabled: !!session && isOperationsView,
   });
