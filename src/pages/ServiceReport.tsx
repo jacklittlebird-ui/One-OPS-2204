@@ -1020,17 +1020,17 @@ function HandlingServiceReportContent() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["#", "OPERATOR", "FLIGHT", "TYPE", "SKD TYPE", "SERVICE TYPE", "STATION", "ROUTE", "ARR DATE", "A/C TYPE", "MTOW", "D/N", "PAX IN", "DLY", "TOTAL ($)", "PIPELINE", "ACTIONS"].map(h => (
+                {["#", "OPERATOR", "FLIGHT", "REG", "TYPE", "SKD TYPE", "SERVICE TYPE", "STATION", "ROUTE", "ARR DATE", "A/C TYPE", "MTOW", "D/N", "PAX IN", "DLY", "TOTAL ($)", "PIPELINE", "ACTIONS"].map(h => (
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                <tr><td colSpan={18} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
               ) : pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={17} className="text-center py-16">
+                  <td colSpan={18} className="text-center py-16">
                     <FileBarChart2 size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                     <p className="font-semibold text-foreground">No Service Reports Found</p>
                     <p className="text-muted-foreground text-sm mt-1">Add a new report or upload an Excel file</p>
@@ -1041,6 +1041,7 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground whitespace-nowrap">{r.operator}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flightNo}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{r.registration || "—"}</td>
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     {r.isLinked ? (
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${statusColor[r.handlingType] || "bg-muted text-muted-foreground"}`}>
