@@ -1052,7 +1052,7 @@ function HandlingServiceReportContent() {
                   </td>
                   <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{r.skdType || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{r.serviceType || "—"}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.isLinked ? r.station : "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.station || "—"}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.route}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.arrivalDate || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.aircraftType}</td>
