@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload, CalendarDays, TableIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -132,14 +131,11 @@ export default function ClearancesPage() {
   const stations = [...new Set((airportsList || []).map((a: any) => a.iata_code).filter(Boolean))].sort();
   const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
 
-  const isOperationsApprovalRecord = (c: ClearanceRow) =>
+  const isStationDispatchRecord = (c: ClearanceRow) =>
     c.purpose === "Station Dispatch" ||
-    c.purpose === "Security Service" ||
-    c.remarks?.includes("Added from Station Dispatch") ||
-    c.remarks?.includes("Added from Security Service") ||
-    c.remarks?.includes("Added from Service Report");
+    c.remarks?.includes("Added from Station Dispatch");
 
-  const clearanceOwnedData = data.filter(c => !isOperationsApprovalRecord(c));
+  const clearanceOwnedData = data.filter(c => !isStationDispatchRecord(c));
 
   const filtered = clearanceOwnedData.filter(c => {
     // Filter by service category first
@@ -164,10 +160,6 @@ export default function ClearancesPage() {
     return db.localeCompare(da);
   });
 
-  // Pending Approval = exceptional clearance approvals only. Normal flights added
-  // by Clearance are operational schedule records and remain in All Flights.
-  const pendingApproval = clearanceOwnedData.filter(c => c.status === "Pending" && c.purpose !== "Scheduled");
-
   // Stats are scoped to the active service category (Security or Handling)
   const categoryData = clearanceOwnedData.filter(c => getServiceCategory(c.clearance_type) === serviceCategory);
   const stats = {
@@ -176,32 +168,6 @@ export default function ClearancesPage() {
     approved: categoryData.filter(c => c.status === "Approved").length,
     expiringSoon: categoryData.filter(c => c.status === "Approved" && c.valid_to && (new Date(c.valid_to).getTime() - Date.now()) / 86400000 <= 7 && (new Date(c.valid_to).getTime() - Date.now()) > 0).length,
     totalPax: categoryData.filter(c => c.status === "Approved").reduce((s, c) => s + (c.passengers || 0), 0),
-  };
-
-  const handleApprove = async (c: ClearanceRow) => {
-    await update({ id: c.id, status: "Approved" as any });
-    // If this clearance was added from a Security Service report, mark the
-    // linked dispatch as Completed and move it to Pending Review (step 2 done).
-    if (c.purpose === "Security Service") {
-      const { error } = await supabase
-        .from("dispatch_assignments")
-        .update({ status: "Completed", review_status: "Pending Review" } as any)
-        .eq("flight_schedule_id", c.id);
-      if (error) console.error("Failed to update linked service report:", error.message);
-    }
-    toast({ title: "✅ Approved", description: `Flight ${c.flight_no} has been approved.` });
-  };
-
-  const handleReject = async (c: ClearanceRow) => {
-    await update({ id: c.id, status: "Rejected" as any });
-    if (c.purpose === "Security Service") {
-      const { error } = await supabase
-        .from("dispatch_assignments")
-        .update({ review_status: "Rejected" } as any)
-        .eq("flight_schedule_id", c.id);
-      if (error) console.error("Failed to update linked service report:", error.message);
-    }
-    toast({ title: "❌ Rejected", description: `Flight ${c.flight_no} has been rejected.` });
   };
 
   const openAdd = () => {
