@@ -133,8 +133,8 @@ export default function ClearancesPage() {
   const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
 
   const filtered = data.filter(c => {
-    // Hide records that belong to Operations → Pending Approval (Station Dispatch origin)
-    if (c.purpose === "Station Dispatch") return false;
+    // Hide service-report approval records; they belong to Operations → Pending Approval.
+    if (c.purpose === "Station Dispatch" || c.purpose === "Security Service") return false;
     // Filter by service category first
     const categoryMatch = getServiceCategory(c.clearance_type) === serviceCategory;
     const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
@@ -157,13 +157,13 @@ export default function ClearancesPage() {
     return db.localeCompare(da);
   });
 
-  // Pending Approval = items routed to Clearance for approval. Records with
-  // purpose === "Station Dispatch" go to Operations → Pending Approval instead,
-  // so they are excluded here.
+  // Pending Approval = items routed to Clearance for approval. Service-report
+  // approval records go to Operations → Pending Approval instead.
   const pendingApproval = data.filter(c =>
     c.status === "Pending"
     && c.purpose !== "Station Dispatch"
-    && (c.remarks?.includes("Added from Station Dispatch") || c.purpose === "Security Service")
+    && c.purpose !== "Security Service"
+    && c.remarks?.includes("Added from Station Dispatch")
   );
 
   // Stats are scoped to the active service category (Security or Handling)
