@@ -682,6 +682,12 @@ function HandlingServiceReportContent() {
 
   const filtered = useMemo(() => {
     let r = mergedRows;
+    if (isStationScoped && userStation) {
+      r = r.filter(x =>
+        x.station?.toUpperCase() === userStation.toUpperCase() ||
+        flightTouchesStation(x, userStation)
+      );
+    }
     // Operations view: only show linked/completed reports awaiting or under review
     if (isOperationsView) r = r.filter(x => x.isLinked);
     // Operations sub-tab: filter to Modified reports
@@ -694,8 +700,7 @@ function HandlingServiceReportContent() {
     if (stationFilter !== "All Stations") r = r.filter(x => x.station === stationFilter);
     if (reviewFilter !== "All Review") r = r.filter(x => x.reviewStatus === reviewFilter);
     if (airlineFilter !== "All Airlines") r = r.filter(x => x.operator === airlineFilter);
-    if (dateFrom) r = r.filter(x => x.arrivalDate >= dateFrom);
-    if (dateTo) r = r.filter(x => x.arrivalDate <= dateTo);
+    if (dateFrom || dateTo) r = r.filter(x => overlapsDateWindow(x.arrivalDate, x.departureDate, dateFrom, dateTo));
     if (search) {
       const s = search.toLowerCase();
       r = r.filter(x =>
@@ -714,7 +719,7 @@ function HandlingServiceReportContent() {
       if (!bd) return -1;
       return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab, isStationScoped, userStation]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
