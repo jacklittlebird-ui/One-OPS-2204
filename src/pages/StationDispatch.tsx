@@ -225,6 +225,25 @@ export default function StationDispatchPage() {
     return m;
   }, [airlines]);
 
+  // Lookup map: flight_schedule_id -> registration, plus fallback by flight_no
+  const regByScheduleId = useMemo(() => {
+    const m: Record<string, string> = {};
+    flights.forEach(f => { if (f.id) m[f.id] = f.registration || ""; });
+    return m;
+  }, [flights]);
+  const regByFlightNo = useMemo(() => {
+    const m: Record<string, string> = {};
+    flights.forEach(f => {
+      const key = (f.flight_no || "").trim().toUpperCase();
+      if (key && f.registration && !m[key]) m[key] = f.registration;
+    });
+    return m;
+  }, [flights]);
+  const getDispatchReg = useCallback((d: DispatchRow) => {
+    if (d.flight_schedule_id && regByScheduleId[d.flight_schedule_id]) return regByScheduleId[d.flight_schedule_id];
+    return regByFlightNo[(d.flight_no || "").trim().toUpperCase()] || "";
+  }, [regByScheduleId, regByFlightNo]);
+
   // Find contract & rates for a given airline + station + service type
   const findContractRate = useCallback((airline: string, station: string, serviceType: string) => {
     const contract = contracts.find(c =>
