@@ -195,7 +195,7 @@ interface DispatchContentProps {
 }
 
 export default function DispatchContent({ serviceCategory }: DispatchContentProps) {
-  const { data: flights, isLoading: flightsLoading } = useSupabaseTable<FlightRow>("flight_schedules");
+  const { data: flights, isLoading: flightsLoading } = useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
   const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<ContractRow>("contracts");
   const { data: serviceRates } = useSupabaseTable<ServiceRateRow>("contract_service_rates");

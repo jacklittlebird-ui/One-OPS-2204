@@ -139,7 +139,7 @@ export default function InvoicesPage() {
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices", { stationFilter: true });
   const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<any>("contracts");
-  const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules");
+  const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules", { stationFilter: true });
 
   // Map: first flight_no in flight_ref -> registration
   const regByFlightNo = useMemo(() => {

@@ -53,7 +53,12 @@ export function useSupabaseTable<T extends Record<string, any>>(
           .order(orderCol, { ascending: asc, nullsFirst: false })
           .range(from, from + PAGE_SIZE - 1);
         if (applyStationFilter) {
-          q = (q as any).eq("station", station as string);
+          // flight_schedules has no `station` column — scope by route containing the station code
+          if (table === "flight_schedules") {
+            q = (q as any).ilike("route", `%${station}%`);
+          } else {
+            q = (q as any).eq("station", station as string);
+          }
         }
         const { data, error } = await q;
         if (error) throw error;

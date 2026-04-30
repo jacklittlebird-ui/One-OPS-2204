@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useUserStation } from "@/contexts/UserStationContext";
 import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -102,6 +103,7 @@ export default function SecurityServiceReportsPage() {
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const { activeChannel, isAdmin } = useChannel();
+  const { station: userStation, isStationScoped } = useUserStation();
   const isReceivablesView = activeChannel === "receivables";
   const isOperationsView = activeChannel === "operations" || activeChannel === "admin";
   const isStationView = activeChannel === "station";
@@ -146,12 +148,14 @@ export default function SecurityServiceReportsPage() {
 
   // Fetch dispatch assignments (completed ones = service reports)
   const { data: dispatches = [], isLoading } = useQuery({
-    queryKey: ["dispatch_assignments", "service-reports", session?.user?.id],
+    queryKey: ["dispatch_assignments", "service-reports", session?.user?.id, isStationScoped ? userStation : null],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("dispatch_assignments")
         .select("*")
         .order("flight_date", { ascending: false });
+      if (isStationScoped && userStation) q = (q as any).eq("station", userStation);
+      const { data, error } = await q;
       if (error) throw error;
       return data as DispatchRow[];
     },
@@ -174,13 +178,15 @@ export default function SecurityServiceReportsPage() {
 
   // Fetch flight schedules with security clearance types
   const { data: securityFlights = [] } = useQuery({
-    queryKey: ["flight_schedules", "security-types"],
+    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("flight_schedules")
         .select("*, airlines:airline_id(name, iata_code)")
         .in("clearance_type", SECURITY_CLEARANCE_TYPES)
         .order("arrival_date", { ascending: false });
+      if (isStationScoped && userStation) q = (q as any).ilike("route", `%${userStation}%`);
+      const { data, error } = await q;
       if (error) throw error;
       return data as any[];
     },
@@ -189,13 +195,15 @@ export default function SecurityServiceReportsPage() {
 
   // Fetch flight schedules awaiting Operations approval (created by Station/Security service reports).
   const { data: pendingApprovalFlights = [] } = useQuery({
-    queryKey: ["flight_schedules", "station-dispatch-pending"],
+    queryKey: ["flight_schedules", "station-dispatch-pending", isStationScoped ? userStation : null],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("flight_schedules")
         .select("*, airlines:airline_id(name, iata_code)")
         .eq("status", "Pending")
         .order("arrival_date", { ascending: true });
+      if (isStationScoped && userStation) q = (q as any).ilike("route", `%${userStation}%`);
+      const { data, error } = await q;
       if (error) throw error;
       return (data || []).filter((f: any) => {
         const purpose = f.purpose || "";
