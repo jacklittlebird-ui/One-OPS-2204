@@ -238,11 +238,17 @@ interface ScheduleSourceRow {
   serviceType: string;
 }
 
-function resolveStationFromRoute(route: string) {
-  const parts = route.split("/").map(part => part.trim()).filter(Boolean);
+function resolveStationFromRoute(route: string, preferred?: string | null) {
+  const parts = route.split("/").map(part => part.trim().toUpperCase()).filter(Boolean);
+  // If the user's station appears anywhere in the route, use it (so flights that
+  // touch the user's station are correctly attributed to that station).
+  if (preferred) {
+    const p = preferred.toUpperCase();
+    if (parts.includes(p)) return p;
+  }
   if (parts.length >= 3) return parts[1];
   if (parts.length >= 2) return parts[parts.length - 1];
-  return "";
+  return parts[0] || "";
 }
 
 // ─── Service Report Calendar View ───
@@ -403,8 +409,16 @@ function HandlingServiceReportContent() {
   );
 
   const scheduleSources: ScheduleSourceRow[] = useMemo(() => {
+    const userSt = userStation ? userStation.toUpperCase() : "";
     return (dbFlights as any[])
       .filter((c: any) => c.flight_no)
+      .filter((c: any) => {
+        // When station-scoped, include any flight that touches the user's station
+        // anywhere in the route (origin, intermediate, or destination).
+        if (!isStationScoped || !userSt) return true;
+        const parts = (c.route || "").toUpperCase().split("/").map((p: string) => p.trim()).filter(Boolean);
+        return parts.includes(userSt);
+      })
       .map((c: any) => {
         const airline = c.airline_id ? airlineById.get(c.airline_id) : undefined;
         return {
@@ -416,7 +430,7 @@ function HandlingServiceReportContent() {
           route: c.route || "",
           sta: c.sta || "",
           std: c.std || "",
-          station: resolveStationFromRoute(c.route || "") || c.authority || "CAI",
+          station: resolveStationFromRoute(c.route || "", userStation) || c.authority || "CAI",
           arrivalDate: c.arrival_date || "",
           departureDate: c.departure_date || "",
           clearanceStatus: c.status || "Pending",
@@ -424,7 +438,7 @@ function HandlingServiceReportContent() {
           serviceType: c.clearance_type || "",
         };
       });
-  }, [dbFlights, airlineById]);
+  }, [dbFlights, airlineById, userStation, isStationScoped]);
 
   const mergedRows: MergedRow[] = useMemo(() => {
     const reportsByFlight = new Map<string, ReportFormData[]>();
