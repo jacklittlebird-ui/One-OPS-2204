@@ -219,6 +219,7 @@ interface MergedRow extends ReportFormData {
   clearanceStatus?: string;
   skdType?: string;
   serviceType?: string;
+  purpose?: string;
 }
 
 interface ScheduleSourceRow {
@@ -236,6 +237,7 @@ interface ScheduleSourceRow {
   clearanceStatus: string;
   skdType: string;
   serviceType: string;
+  purpose: string;
 }
 
 function resolveStationFromRoute(route: string, preferred?: string | null) {
@@ -365,7 +367,7 @@ function HandlingServiceReportContent() {
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
-  const [operationsTab, setOperationsTab] = useState<"all" | "modified">("all");
+  const [operationsTab, setOperationsTab] = useState<"all" | "modified" | "pending-approval">("all");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
@@ -457,6 +459,7 @@ function HandlingServiceReportContent() {
           clearanceStatus: c.status || "Pending",
           skdType: c.skd_type || "",
           serviceType: c.clearance_type || "",
+          purpose: c.purpose || "",
         };
       });
   }, [dbFlights, airlineById, userStation, isStationScoped]);
@@ -487,6 +490,7 @@ function HandlingServiceReportContent() {
             clearanceStatus: source.clearanceStatus,
             skdType: source.skdType,
             serviceType: source.serviceType,
+            purpose: source.purpose,
           });
         });
         return;
@@ -515,6 +519,7 @@ function HandlingServiceReportContent() {
         clearanceStatus: source.clearanceStatus,
         skdType: source.skdType,
         serviceType: source.serviceType,
+        purpose: source.purpose,
       });
     });
 
@@ -680,6 +685,11 @@ function HandlingServiceReportContent() {
     [mergedRows]
   );
 
+  const pendingApprovalCount = useMemo(
+    () => mergedRows.filter(r => r.purpose === "Station Dispatch" && r.clearanceStatus === "Pending").length,
+    [mergedRows]
+  );
+
   const filtered = useMemo(() => {
     let r = mergedRows;
     if (isStationScoped && userStation) {
@@ -688,10 +698,17 @@ function HandlingServiceReportContent() {
         flightTouchesStation(x, userStation)
       );
     }
-    // Operations view: only show linked/completed reports awaiting or under review
-    if (isOperationsView) r = r.filter(x => x.isLinked);
-    // Operations sub-tab: filter to Modified reports
-    if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
+    // Operations view: split between "Pending Approval" (Station Dispatch
+    // origin awaiting Operations approval) and the regular linked reports.
+    if (isOperationsView) {
+      if (operationsTab === "pending-approval") {
+        r = r.filter(x => x.purpose === "Station Dispatch" && x.clearanceStatus === "Pending");
+      } else {
+        // "All Reports" / "Modified" exclude pending-approval items
+        r = r.filter(x => x.isLinked && x.purpose !== "Station Dispatch");
+        if (operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
+      }
+    }
     // Station view: when "Rejected" tab is active, only show rejected reports
     if (isStationView && stationTab === "rejected") r = r.filter(x => x.isLinked && x.reviewStatus === "rejected");
     if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
@@ -918,6 +935,22 @@ function HandlingServiceReportContent() {
             }`}
           >
             All Reports
+          </button>
+          <button
+            onClick={() => { setOperationsTab("pending-approval"); setPage(1); }}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+              operationsTab === "pending-approval"
+                ? "text-destructive border-destructive"
+                : "text-muted-foreground border-transparent hover:text-foreground"
+            }`}
+          >
+            <Clock size={14} />
+            Pending Approval
+            {pendingApprovalCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                {pendingApprovalCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => { setOperationsTab("modified"); setPage(1); }}
