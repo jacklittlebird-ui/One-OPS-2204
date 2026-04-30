@@ -9,6 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
+import { useUserStation } from "@/contexts/UserStationContext";
 
 interface AllClearanceFlightsPageProps {
   /** When true, only Security clearance types are shown (Operations security view). */
