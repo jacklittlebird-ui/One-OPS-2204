@@ -667,8 +667,8 @@ export default function StationDispatchPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div><label className="text-xs font-semibold text-muted-foreground">Station</label>
-                  <select className={selectCls} value={formData.station || "CAI"} onChange={e => updateFormField("station", e.target.value)}>
-                    {STATIONS.map(s => <option key={s.code} value={s.code}>{s.code}</option>)}
+                  <select className={selectCls} value={formData.station || (isStationScoped && userStation) || "CAI"} onChange={e => updateFormField("station", e.target.value)} disabled={isStationScoped}>
+                    {stationsScoped.map(s => <option key={s.code} value={s.code}>{s.code}</option>)}
                   </select></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Date</label>
                   <input type="date" className={inputCls} value={formData.flight_date || ""} onChange={e => updateFormField("flight_date", e.target.value)} /></div>
