@@ -187,16 +187,17 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
   });
 
-  // Fetch flight schedules awaiting Operations approval (created by Station Dispatch).
+  // Fetch flight schedules awaiting Operations approval (created by Station/Security service reports).
   const { data: pendingApprovalFlights = [] } = useQuery({
     queryKey: ["flight_schedules", "station-dispatch-pending"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("flight_schedules")
         .select("*, airlines:airline_id(name, iata_code)")
-        .eq("purpose", "Station Dispatch")
+        .in("clearance_type", SECURITY_CLEARANCE_TYPES)
         .eq("status", "Pending")
-        .order("arrival_date", { ascending: false });
+        .or("purpose.eq.Station Dispatch,purpose.eq.Security Service")
+        .order("arrival_date", { ascending: true });
       if (error) throw error;
       return data as any[];
     },
@@ -212,7 +213,12 @@ export default function SecurityServiceReportsPage() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+    await supabase
+      .from("dispatch_assignments")
+      .update({ status: "Completed", review_status: "Approved", reviewed_by: session?.user?.email || "Operations", reviewed_at: new Date().toISOString() } as any)
+      .eq("flight_schedule_id", flightId);
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     toast({ title: "Approved", description: "Flight approved by Operations." });
   };
 
@@ -225,7 +231,12 @@ export default function SecurityServiceReportsPage() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+    await supabase
+      .from("dispatch_assignments")
+      .update({ review_status: "Rejected", reviewed_by: session?.user?.email || "Operations", reviewed_at: new Date().toISOString() } as any)
+      .eq("flight_schedule_id", flightId);
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     toast({ title: "Rejected", description: "Flight rejected." });
   };
 
