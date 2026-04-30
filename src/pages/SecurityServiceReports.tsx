@@ -187,6 +187,48 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
   });
 
+  // Fetch flight schedules awaiting Operations approval (created by Station Dispatch).
+  const { data: pendingApprovalFlights = [] } = useQuery({
+    queryKey: ["flight_schedules", "station-dispatch-pending"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("flight_schedules")
+        .select("*, airlines:airline_id(name, iata_code)")
+        .eq("purpose", "Station Dispatch")
+        .eq("status", "Pending")
+        .order("arrival_date", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!session && isOperationsView,
+  });
+
+  const approvePendingFlight = async (flightId: string) => {
+    const { error } = await supabase
+      .from("flight_schedules")
+      .update({ status: "Approved" } as any)
+      .eq("id", flightId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+    toast({ title: "Approved", description: "Flight approved by Operations." });
+  };
+
+  const rejectPendingFlight = async (flightId: string) => {
+    const { error } = await supabase
+      .from("flight_schedules")
+      .update({ status: "Rejected" } as any)
+      .eq("id", flightId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+    toast({ title: "Rejected", description: "Flight rejected." });
+  };
+
   // Fetch ALL security contract rates (used for receivables on-the-fly amount computation)
   const { data: allRates = [] } = useQuery({
     queryKey: ["contract_service_rates", "security-all"],
