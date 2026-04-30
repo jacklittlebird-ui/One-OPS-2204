@@ -187,18 +187,21 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
   });
 
-  // Fetch flight schedules awaiting Operations approval (created by Station Dispatch).
+  // Fetch flight schedules awaiting Operations approval (created by Station/Security service reports).
   const { data: pendingApprovalFlights = [] } = useQuery({
     queryKey: ["flight_schedules", "station-dispatch-pending"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("flight_schedules")
         .select("*, airlines:airline_id(name, iata_code)")
-        .eq("purpose", "Station Dispatch")
         .eq("status", "Pending")
-        .order("arrival_date", { ascending: false });
+        .order("arrival_date", { ascending: true });
       if (error) throw error;
-      return data as any[];
+      return (data || []).filter((f: any) => {
+        const purpose = f.purpose || "";
+        const remarks = f.remarks || "";
+        return purpose === "Station Dispatch" || purpose === "Security Service" || remarks.includes("Added from Station Dispatch") || remarks.includes("Added from Security Service") || remarks.includes("Added from Service Report");
+      }) as any[];
     },
     enabled: !!session && isOperationsView,
   });
@@ -212,7 +215,12 @@ export default function SecurityServiceReportsPage() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+    await supabase
+      .from("dispatch_assignments")
+      .update({ status: "Completed", review_status: "Approved", reviewed_by: session?.user?.email || "Operations", reviewed_at: new Date().toISOString() } as any)
+      .eq("flight_schedule_id", flightId);
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     toast({ title: "Approved", description: "Flight approved by Operations." });
   };
 
@@ -225,7 +233,12 @@ export default function SecurityServiceReportsPage() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+    await supabase
+      .from("dispatch_assignments")
+      .update({ review_status: "Rejected", reviewed_by: session?.user?.email || "Operations", reviewed_at: new Date().toISOString() } as any)
+      .eq("flight_schedule_id", flightId);
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     toast({ title: "Rejected", description: "Flight rejected." });
   };
 
@@ -593,7 +606,7 @@ export default function SecurityServiceReportsPage() {
             .eq("name", row.airline)
             .maybeSingle();
 
-          // 2. Create flight_schedule for clearance approval (Pending)
+          // 2. Create flight_schedule for Operations approval (Pending)
           const clearancePayload: Record<string, any> = {
             flight_no: row.flight_no,
             aircraft_type: taskSheet.aircraft_type || "",
@@ -608,7 +621,7 @@ export default function SecurityServiceReportsPage() {
             handling_agent: "",
             arrival_date: row.flight_date || null,
             departure_date: row.flight_date || null,
-            remarks: "Added from Security Service – pending clearance approval",
+            remarks: "Added from Security Service – pending Operations approval",
             notes: "",
             purpose: "Security Service",
           };
@@ -630,16 +643,15 @@ export default function SecurityServiceReportsPage() {
 
           queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
           queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-          toast({ title: "Submitted for Clearance", description: "Report sent to Clearance for approval." });
+          toast({ title: "Submitted for Operations", description: "Report sent to Operations for approval." });
         } catch (e: any) {
           toast({ title: "Error", description: e.message, variant: "destructive" });
         }
       })();
     } else {
       // Editing an existing dispatch. Always sync changed fields back to the
-      // linked flight_schedule (so Clearance sees up-to-date data). If the
-      // Service Type changed, also reset the clearance status to "Pending"
-      // so the flight returns to Clearance → Pending Approval.
+      // linked flight_schedule. If the Service Type changed, reset the schedule
+      // to Pending so the flight returns to Operations → Pending Approval.
       (async () => {
         try {
           // 1. Update the dispatch
@@ -665,7 +677,7 @@ export default function SecurityServiceReportsPage() {
             // Service Type change → revert clearance to Pending (re-approval needed)
             if (serviceTypeChanged) {
               fsUpdate.status = "Pending";
-              fsUpdate.remarks = "Service Type changed by Station — re-approval required";
+              fsUpdate.remarks = "Service Type changed by Station — Operations re-approval required";
             }
             const { error: fsErr } = await supabase
               .from("flight_schedules")
@@ -679,11 +691,11 @@ export default function SecurityServiceReportsPage() {
 
           if (serviceTypeChanged) {
             toast({
-              title: "Returned to Clearance",
-              description: "Service Type changed — flight sent back to Clearance → Pending Approval.",
+              title: "Returned to Operations",
+              description: "Service Type changed — flight sent back to Operations → Pending Approval.",
             });
           } else {
-            toast({ title: "Task Sheet Updated", description: "Changes saved and synced to Clearance." });
+            toast({ title: "Task Sheet Updated", description: "Changes saved and synced to Operations." });
           }
         } catch (e: any) {
           toast({ title: "Error", description: e.message, variant: "destructive" });

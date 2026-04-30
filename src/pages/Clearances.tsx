@@ -132,9 +132,16 @@ export default function ClearancesPage() {
   const stations = [...new Set((airportsList || []).map((a: any) => a.iata_code).filter(Boolean))].sort();
   const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
 
-  const filtered = data.filter(c => {
-    // Hide records that belong to Operations → Pending Approval (Station Dispatch origin)
-    if (c.purpose === "Station Dispatch") return false;
+  const isOperationsApprovalRecord = (c: ClearanceRow) =>
+    c.purpose === "Station Dispatch" ||
+    c.purpose === "Security Service" ||
+    c.remarks?.includes("Added from Station Dispatch") ||
+    c.remarks?.includes("Added from Security Service") ||
+    c.remarks?.includes("Added from Service Report");
+
+  const clearanceOwnedData = data.filter(c => !isOperationsApprovalRecord(c));
+
+  const filtered = clearanceOwnedData.filter(c => {
     // Filter by service category first
     const categoryMatch = getServiceCategory(c.clearance_type) === serviceCategory;
     const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
@@ -157,17 +164,12 @@ export default function ClearancesPage() {
     return db.localeCompare(da);
   });
 
-  // Pending Approval = items routed to Clearance for approval. Records with
-  // purpose === "Station Dispatch" go to Operations → Pending Approval instead,
-  // so they are excluded here.
-  const pendingApproval = data.filter(c =>
-    c.status === "Pending"
-    && c.purpose !== "Station Dispatch"
-    && (c.remarks?.includes("Added from Station Dispatch") || c.purpose === "Security Service")
-  );
+  // Pending Approval = items routed to Clearance for approval. Service-report
+  // approval records go to Operations → Pending Approval instead.
+  const pendingApproval = clearanceOwnedData.filter(c => c.status === "Pending");
 
   // Stats are scoped to the active service category (Security or Handling)
-  const categoryData = data.filter(c => getServiceCategory(c.clearance_type) === serviceCategory);
+  const categoryData = clearanceOwnedData.filter(c => getServiceCategory(c.clearance_type) === serviceCategory);
   const stats = {
     total: categoryData.length,
     pending: categoryData.filter(c => c.status === "Pending").length,
