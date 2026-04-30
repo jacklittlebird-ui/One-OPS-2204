@@ -131,6 +131,13 @@ Deno.serve(async (req) => {
   );
   results.push(...accpayPortalResults);
 
+  // 10) RMF Station Portal: rmfstn@linkagency.com (Marsa Alam)
+  const rmfStationResults = await ensureUser(supabaseAdmin, adminList,
+    "rmfstn@linkagency.com", "Rmfsec12345", "RMF Station - Marsa Alam",
+    ["station_ops"], "RMF"
+  );
+  results.push(...rmfStationResults);
+
   return new Response(JSON.stringify({ results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
