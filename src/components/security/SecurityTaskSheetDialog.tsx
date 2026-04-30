@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useUserStation } from "@/contexts/UserStationContext";
 import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 import { formatDateDMY } from "@/lib/utils";
