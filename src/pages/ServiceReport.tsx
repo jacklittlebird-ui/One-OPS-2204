@@ -238,11 +238,17 @@ interface ScheduleSourceRow {
   serviceType: string;
 }
 
-function resolveStationFromRoute(route: string) {
-  const parts = route.split("/").map(part => part.trim()).filter(Boolean);
+function resolveStationFromRoute(route: string, preferred?: string | null) {
+  const parts = route.split("/").map(part => part.trim().toUpperCase()).filter(Boolean);
+  // If the user's station appears anywhere in the route, use it (so flights that
+  // touch the user's station are correctly attributed to that station).
+  if (preferred) {
+    const p = preferred.toUpperCase();
+    if (parts.includes(p)) return p;
+  }
   if (parts.length >= 3) return parts[1];
   if (parts.length >= 2) return parts[parts.length - 1];
-  return "";
+  return parts[0] || "";
 }
 
 // ─── Service Report Calendar View ───
