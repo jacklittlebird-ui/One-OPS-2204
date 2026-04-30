@@ -155,7 +155,14 @@ export default function ClearancesPage() {
     return db.localeCompare(da);
   });
 
-  const pendingApproval = data.filter(c => c.status === "Pending" && (c.remarks?.includes("Added from Station Dispatch") || c.purpose === "Security Service"));
+  // Pending Approval = items routed to Clearance for approval. Records with
+  // purpose === "Station Dispatch" go to Operations → Pending Approval instead,
+  // so they are excluded here.
+  const pendingApproval = data.filter(c =>
+    c.status === "Pending"
+    && c.purpose !== "Station Dispatch"
+    && (c.remarks?.includes("Added from Station Dispatch") || c.purpose === "Security Service")
+  );
 
   // Stats are scoped to the active service category (Security or Handling)
   const categoryData = data.filter(c => getServiceCategory(c.clearance_type) === serviceCategory);
