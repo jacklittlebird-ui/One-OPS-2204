@@ -200,7 +200,7 @@ export default function SecurityServiceReportsPage() {
       return (data || []).filter((f: any) => {
         const purpose = f.purpose || "";
         const remarks = f.remarks || "";
-        return purpose === "Station Dispatch" || purpose === "Security Service" || remarks.includes("Added from Station Dispatch") || remarks.includes("Added from Security Service");
+        return purpose === "Station Dispatch" || purpose === "Security Service" || remarks.includes("Added from Station Dispatch") || remarks.includes("Added from Security Service") || remarks.includes("Added from Service Report");
       }) as any[];
     },
     enabled: !!session && isOperationsView,
