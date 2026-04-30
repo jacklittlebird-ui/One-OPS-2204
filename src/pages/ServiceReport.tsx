@@ -685,6 +685,11 @@ function HandlingServiceReportContent() {
     [mergedRows]
   );
 
+  const pendingApprovalCount = useMemo(
+    () => mergedRows.filter(r => r.purpose === "Station Dispatch" && r.clearanceStatus === "Pending").length,
+    [mergedRows]
+  );
+
   const filtered = useMemo(() => {
     let r = mergedRows;
     if (isStationScoped && userStation) {
