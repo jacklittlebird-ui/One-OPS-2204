@@ -53,9 +53,9 @@ export function useSupabaseTable<T extends Record<string, any>>(
           .order(orderCol, { ascending: asc, nullsFirst: false })
           .range(from, from + PAGE_SIZE - 1);
         if (applyStationFilter) {
-          // flight_schedules has no `station` column — scope by route containing the station code
+          // flight_schedules has no `station` column — scope by route OR authority containing the station code
           if (table === "flight_schedules") {
-            q = (q as any).ilike("route", `%${station}%`);
+            q = (q as any).or(`route.ilike.%${station}%,authority.eq.${station}`);
           } else {
             q = (q as any).eq("station", station as string);
           }
