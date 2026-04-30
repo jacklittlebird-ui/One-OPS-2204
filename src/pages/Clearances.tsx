@@ -134,7 +134,7 @@ export default function ClearancesPage() {
 
   const filtered = data.filter(c => {
     // Hide service-report approval records; they belong to Operations → Pending Approval.
-    if (c.purpose === "Station Dispatch" || c.purpose === "Security Service") return false;
+    if (c.purpose === "Station Dispatch" || c.purpose === "Security Service" || c.remarks?.includes("Added from Station Dispatch") || c.remarks?.includes("Added from Security Service")) return false;
     // Filter by service category first
     const categoryMatch = getServiceCategory(c.clearance_type) === serviceCategory;
     const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
