@@ -196,7 +196,7 @@ export default function SecurityServiceReportsPage() {
         .select("*, airlines:airline_id(name, iata_code)")
         .in("clearance_type", SECURITY_CLEARANCE_TYPES)
         .eq("status", "Pending")
-        .or("purpose.eq.Station Dispatch,purpose.eq.Security Service")
+        .in("purpose", ["Station Dispatch", "Security Service"])
         .order("arrival_date", { ascending: true });
       if (error) throw error;
       return data as any[];
