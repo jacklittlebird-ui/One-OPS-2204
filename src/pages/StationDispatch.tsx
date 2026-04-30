@@ -538,16 +538,17 @@ export default function StationDispatchPage() {
           <div className="bg-card rounded-lg border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr>{["#","FLIGHT","AIRLINE","SERVICE TYPE","STAFF","SCHED TIME","ACTUAL TIME","DURATION","OT HRS","CHARGE","STATUS","ACTIONS"].map(h =>
+                <thead><tr>{["#","FLIGHT","REG","AIRLINE","SERVICE TYPE","STAFF","SCHED TIME","ACTUAL TIME","DURATION","OT HRS","CHARGE","STATUS","ACTIONS"].map(h =>
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 )}</tr></thead>
                 <tbody>
                   {pageData.length === 0 ? (
-                    <tr><td colSpan={12} className="text-center py-16 text-muted-foreground">No dispatches found for this date/station</td></tr>
+                    <tr><td colSpan={13} className="text-center py-16 text-muted-foreground">No dispatches found for this date/station</td></tr>
                   ) : pageData.map((d, i) => (
                     <tr key={d.id} className="data-table-row">
                       <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="px-3 py-2.5 font-semibold text-foreground">{d.flight_no}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getDispatchReg(d) || "—"}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{d.airline}</td>
                       <td className="px-3 py-2.5 text-xs">{d.service_type}</td>
                       <td className="px-3 py-2.5">
