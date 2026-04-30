@@ -139,6 +139,22 @@ export default function InvoicesPage() {
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices", { stationFilter: true });
   const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<any>("contracts");
+  const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules");
+
+  // Map: first flight_no in flight_ref -> registration
+  const regByFlightNo = useMemo(() => {
+    const m: Record<string, string> = {};
+    (flightSchedules || []).forEach((f: any) => {
+      const k = (f.flight_no || "").trim().toUpperCase();
+      if (k && f.registration && !m[k]) m[k] = f.registration;
+    });
+    return m;
+  }, [flightSchedules]);
+  const getInvoiceReg = useCallback((inv: InvoiceRow) => {
+    if (!inv.flight_ref) return "";
+    const first = inv.flight_ref.split(",")[0].trim().toUpperCase();
+    return regByFlightNo[first] || "";
+  }, [regByFlightNo]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -513,13 +529,13 @@ export default function InvoicesPage() {
               <th className="data-table-header px-3 py-3 w-8">
                 <input type="checkbox" checked={pageData.length > 0 && selectedIds.size === pageData.length} onChange={toggleAll} className="rounded border-border" />
               </th>
-              {["#","INVOICE NO","DATE","DUE","OPERATOR","FLIGHT REF","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"].map(h => (
+              {["#","INVOICE NO","DATE","DUE","OPERATOR","FLIGHT REF","REG","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"].map(h => (
                 <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
               ))}
             </tr></thead>
             <tbody>
               {pageData.length === 0 ? (
-                <tr><td colSpan={14} className="text-center py-16">
+                <tr><td colSpan={15} className="text-center py-16">
                   <FileText size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                   <p className="font-semibold text-foreground">No Invoices Found</p>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -537,6 +553,7 @@ export default function InvoicesPage() {
                   <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{formatDateDMY(inv.due_date)}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground">{inv.operator}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{inv.flight_ref}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getInvoiceReg(inv) || "—"}</td>
                   <td className="px-3 py-2.5">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${inv.invoice_type === "Final" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
                       {inv.invoice_type || "Preliminary"}

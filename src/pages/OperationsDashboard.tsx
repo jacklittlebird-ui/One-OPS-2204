@@ -13,7 +13,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from "recharts";
 
-type FlightRow = { id: string; flight_no: string; aircraft_type: string; route: string; sta: string; std: string; status: string; clearance_type: string; };
+type FlightRow = { id: string; flight_no: string; aircraft_type: string; registration: string; route: string; sta: string; std: string; status: string; clearance_type: string; };
 type ServiceReportRow = { id: string; operator: string; flight_no: string; handling_type: string; arrival_date: string | null; departure_date: string | null; total_cost: number; pax_in_adult_i: number; pax_in_adult_d: number; pax_in_inf_i: number; pax_in_inf_d: number; pax_transit: number; station: string; day_night: string; };
 type StaffRow = { id: string; name: string; status: string; shift: string; department: string; };
 
@@ -22,7 +22,7 @@ export default function OperationsDashboard() {
 
   const { data: flights = [] } = useQuery({
     queryKey: ["flight_schedules_ops"],
-    queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("id,flight_no,aircraft_type,route,sta,std,status,clearance_type,arrival_date").order("arrival_date", { ascending: false, nullsFirst: false }); return (data || []) as FlightRow[]; },
+    queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("id,flight_no,aircraft_type,registration,route,sta,std,status,clearance_type,arrival_date").order("arrival_date", { ascending: false, nullsFirst: false }); return (data || []) as FlightRow[]; },
   });
 
   const { data: reports = [] } = useQuery({
@@ -271,14 +271,14 @@ export default function OperationsDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  {["FLIGHT", "A/C TYPE", "ROUTE", "STA", "STD", "TYPE", "STATUS"].map(h => (
+                  {["FLIGHT", "REG", "A/C TYPE", "ROUTE", "STA", "STD", "TYPE", "STATUS"].map(h => (
                     <th key={h} className="data-table-header px-3 py-2.5 text-left whitespace-nowrap text-[11px]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {recentFlights.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center py-12 text-muted-foreground">
+                  <tr><td colSpan={8} className="text-center py-12 text-muted-foreground">
                     <Plane size={32} className="mx-auto mb-2 text-muted-foreground/30" />
                     <p className="font-semibold text-foreground text-sm">No flights in schedule</p>
                     <p className="text-xs">Add flights to see them here</p>
@@ -286,6 +286,7 @@ export default function OperationsDashboard() {
                 ) : recentFlights.map(f => (
                   <tr key={f.id} className="data-table-row cursor-pointer hover:bg-muted/50" onClick={() => navigate("/clearances")}>
                     <td className="px-3 py-2 font-semibold text-foreground text-xs">{f.flight_no}</td>
+                    <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{f.registration || "—"}</td>
                     <td className="px-3 py-2 text-foreground text-xs">{f.aircraft_type || "—"}</td>
                     <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{f.route || "—"}</td>
                     <td className="px-3 py-2 text-foreground text-xs">{f.sta || "—"}</td>
