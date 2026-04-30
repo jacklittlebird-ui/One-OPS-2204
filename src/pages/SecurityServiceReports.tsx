@@ -910,6 +910,7 @@ export default function SecurityServiceReportsPage() {
                     const depDate = fd?.departure_date || meta?.departure_date || "";
                     const route = fd?.route || meta?.route || "";
                     const acType = fd?.aircraft_type || meta?.aircraft_type || "";
+                    const reg = fd?.registration || (meta as any)?.registration || "";
                     return (
                       <React.Fragment key={r.id}>
                       <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
@@ -917,6 +918,7 @@ export default function SecurityServiceReportsPage() {
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
                         <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flight_no}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{reg || "—"}</td>
                         <td className="px-3 py-2.5">
                           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{r.service_type}</span>
                         </td>
