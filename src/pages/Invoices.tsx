@@ -230,7 +230,7 @@ export default function InvoicesPage() {
   const finalizedCount = invoices.filter(i => i.invoice_type === "Final").length;
   const collectionRate = totalRevenue > 0 ? Math.round((totalPaid / totalRevenue) * 100) : 0;
 
-  const activeFilterCount = [statusFilter !== "All", typeFilter !== "All", currencyFilter !== "All", !!dateFrom, !!dateTo].filter(Boolean).length;
+  const activeFilterCount = [statusFilter !== "All", typeFilter !== "All", currencyFilter !== "All", operatorFilter !== "All", !!dateFrom, !!dateTo, !!dueFrom, !!dueTo, !!minTotal, !!maxTotal].filter(Boolean).length;
 
   const saveNew = async () => {
     if (!newInvoice.operator) return;
