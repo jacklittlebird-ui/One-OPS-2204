@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Plane, DollarSign, Activity, Calendar, MapPin, Clock, ShieldCheck, Building2,
@@ -611,13 +612,37 @@ export default function DashboardPage() {
 
   const displayName = profile?.full_name?.split(" ")[0] || "there";
 
+  // Preload the welcome background as early as possible (before <img> mounts).
+  // This injects <link rel="preload"> so the browser parallelizes the fetch
+  // with React render & data queries instead of waiting for layout.
+  useEffect(() => {
+    const id = "welcome-bg-preload";
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "preload";
+    link.as = "image";
+    link.href = welcomeBg;
+    (link as HTMLLinkElement & { fetchPriority?: string }).fetchPriority = "high";
+    document.head.appendChild(link);
+  }, []);
+
   return (
     <div className="space-y-5">
-      <div
-        className="relative overflow-hidden rounded-xl p-4 md:p-6 text-foreground bg-cover bg-center border"
-        style={{ backgroundImage: `url(${welcomeBg})` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/60 to-background/30" />
+      <div className="relative overflow-hidden rounded-xl p-4 md:p-6 text-foreground border isolate">
+        {/* Real <img> instead of CSS background so the browser can prioritize
+            it (fetchpriority=high) and decode async without blocking paint. */}
+        <img
+          src={welcomeBg}
+          alt=""
+          aria-hidden="true"
+          fetchPriority="high"
+          decoding="async"
+          width={1600}
+          height={427}
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background/85 via-background/60 to-background/30" />
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <h1 className="text-xl md:text-2xl font-bold">{greeting}, {displayName} 👋</h1>
