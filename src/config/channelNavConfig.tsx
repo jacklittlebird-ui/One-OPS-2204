@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Plane, Calculator, FileText, Utensils, DollarSign,
   Shield, AlertTriangle, MoreHorizontal, FileBarChart2, ScrollText,
   ShieldCheck, Users, Bell, Settings, ClipboardCheck, Building2,
-  Receipt, CreditCard, Eye
+  Receipt, CreditCard, Eye, Landmark
 } from "lucide-react";
 import type { Channel } from "@/contexts/ChannelContext";
 
