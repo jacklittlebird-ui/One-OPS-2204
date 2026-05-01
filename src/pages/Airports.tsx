@@ -47,13 +47,20 @@ export default function AirportsPage() {
   const countryMap = Object.fromEntries((countries || []).map(c => [c.id, c]));
 
   const filtered = useMemo(() => {
+    const s = search.toLowerCase();
+    const iataS = iataFilter.toLowerCase();
+    const icaoS = icaoFilter.toLowerCase();
+    const minT = minTerminals ? parseInt(minTerminals) : null;
     return data.filter(a => {
-      const matchSearch = !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.iata_code.toLowerCase().includes(search.toLowerCase()) || a.city.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = !s || a.name.toLowerCase().includes(s) || a.iata_code.toLowerCase().includes(s) || a.city.toLowerCase().includes(s);
       const matchCountry = countryFilter === "all" || a.country_id === countryFilter;
       const matchStatus = statusFilter === "all" || a.status === statusFilter;
-      return matchSearch && matchCountry && matchStatus;
+      const matchIata = !iataS || a.iata_code.toLowerCase().includes(iataS);
+      const matchIcao = !icaoS || (a.icao_code || "").toLowerCase().includes(icaoS);
+      const matchMin = minT === null || (a.terminal_count || 0) >= minT;
+      return matchSearch && matchCountry && matchStatus && matchIata && matchIcao && matchMin;
     });
-  }, [data, search, countryFilter, statusFilter]);
+  }, [data, search, countryFilter, statusFilter, iataFilter, icaoFilter, minTerminals]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
