@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import {
   StatTile, TrendCard, ProgressRow, Section, ActivityItem, last7DaysCounts, relTime,
 } from "@/components/dashboard/DashboardPrimitives";
+import welcomeBg from "@/assets/welcome-bg.jpg";
 
 const CHANNEL_ICONS: Record<Channel, React.ReactNode> = {
   clearance: <ShieldCheck size={20} />,
