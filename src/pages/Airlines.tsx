@@ -35,6 +35,9 @@ export default function AirlinesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
+  const [allianceFilter, setAllianceFilter] = useState("all");
+  const [currencyFilter, setCurrencyFilter] = useState("all");
+  const [creditFilter, setCreditFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AirlineRow | null>(null);
