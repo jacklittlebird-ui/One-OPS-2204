@@ -34,6 +34,11 @@ export default function JournalEntriesPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [refTypeFilter, setRefTypeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [createdByFilter, setCreatedByFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<JournalEntry | null>(null);
   const [lines, setLines] = useState<Partial<JournalLine>[]>([{ account_id: "", debit: 0, credit: 0, description: "" }]);
@@ -45,10 +50,19 @@ export default function JournalEntriesPage() {
     setLines((data as unknown as JournalLine[])?.length ? (data as unknown as JournalLine[]) : [{ account_id: "", debit: 0, credit: 0, description: "" }]);
   };
 
+  const refTypes = [...new Set(entries.map(e => e.reference_type).filter(Boolean))].sort();
+  const creators = [...new Set(entries.map(e => e.created_by).filter(Boolean))].sort();
+
   const filtered = entries.filter(e => {
-    const ms = e.entry_no.toLowerCase().includes(search.toLowerCase()) || e.description.toLowerCase().includes(search.toLowerCase());
+    const ms = e.entry_no.toLowerCase().includes(search.toLowerCase()) || e.description.toLowerCase().includes(search.toLowerCase()) || (e.reference || "").toLowerCase().includes(search.toLowerCase());
     const mst = statusFilter === "all" || e.status === statusFilter;
-    return ms && mst;
+    const mrt = refTypeFilter === "all" || e.reference_type === refTypeFilter;
+    const mcb = createdByFilter === "all" || e.created_by === createdByFilter;
+    const mdf = !dateFrom || (e.entry_date || "") >= dateFrom;
+    const mdt = !dateTo || (e.entry_date || "") <= dateTo;
+    const minA = minAmount ? parseFloat(minAmount) : null;
+    const mma = minA === null || (e.total_debit || 0) >= minA;
+    return ms && mst && mrt && mcb && mdf && mdt && mma;
   });
 
   const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
