@@ -31,16 +31,37 @@ export default function VendorInvoicesPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [vendorFilter, setVendorFilter] = useState("all");
+  const [currencyFilter, setCurrencyFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [dueFrom, setDueFrom] = useState("");
+  const [dueTo, setDueTo] = useState("");
+  const [minTotal, setMinTotal] = useState("");
+  const [maxTotal, setMaxTotal] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<VendorInvoiceRow | null>(null);
   const [editItem, setEditItem] = useState<VendorInvoiceRow | null>(null);
   const emptyForm = { invoice_no: "", vendor_name: "", vendor_id: "", date: new Date().toISOString().slice(0, 10), due_date: "", amount: 0, vat: 0, currency: "USD", status: "Draft", notes: "" };
   const [form, setForm] = useState<any>(emptyForm);
 
+  const vendors = useMemo(() => [...new Set(data.map(d => d.vendor_name).filter(Boolean))].sort(), [data]);
+  const currencies = useMemo(() => [...new Set(data.map(d => d.currency).filter(Boolean))].sort(), [data]);
+
   const filtered = data.filter(v => {
-    const ms = v.invoice_no.toLowerCase().includes(search.toLowerCase()) || v.vendor_name.toLowerCase().includes(search.toLowerCase());
+    const ms = v.invoice_no.toLowerCase().includes(search.toLowerCase()) || v.vendor_name.toLowerCase().includes(search.toLowerCase()) || (v.notes || "").toLowerCase().includes(search.toLowerCase());
     const mst = statusFilter === "all" || v.status === statusFilter;
-    return ms && mst;
+    const mv = vendorFilter === "all" || v.vendor_name === vendorFilter;
+    const mc = currencyFilter === "all" || v.currency === currencyFilter;
+    const mdf = !dateFrom || (v.date || "") >= dateFrom;
+    const mdt = !dateTo || (v.date || "") <= dateTo;
+    const muf = !dueFrom || (v.due_date || "") >= dueFrom;
+    const mut = !dueTo || (v.due_date || "") <= dueTo;
+    const minT = minTotal ? parseFloat(minTotal) : null;
+    const maxT = maxTotal ? parseFloat(maxTotal) : null;
+    const mmin = minT === null || (v.total || 0) >= minT;
+    const mmax = maxT === null || (v.total || 0) <= maxT;
+    return ms && mst && mv && mc && mdf && mdt && muf && mut && mmin && mmax;
   });
 
   const stats = useMemo(() => {
