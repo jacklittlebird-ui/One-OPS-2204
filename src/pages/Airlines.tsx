@@ -46,17 +46,23 @@ export default function AirlinesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const countries = useMemo(() => [...new Set(data.map(d => d.country).filter(Boolean))].sort(), [data]);
+  const alliances = useMemo(() => [...new Set(data.map(d => d.alliance).filter(Boolean))].sort(), [data]);
+  const currencies = useMemo(() => [...new Set(data.map(d => d.billing_currency).filter(Boolean))].sort(), [data]);
+  const creditTerms = useMemo(() => [...new Set(data.map(d => d.credit_terms).filter(Boolean))].sort(), [data]);
 
   const filtered = useMemo(() => {
     let result = data;
     if (statusFilter !== "all") result = result.filter(r => r.status === statusFilter);
     if (countryFilter !== "all") result = result.filter(r => r.country === countryFilter);
+    if (allianceFilter !== "all") result = result.filter(r => r.alliance === allianceFilter);
+    if (currencyFilter !== "all") result = result.filter(r => r.billing_currency === currencyFilter);
+    if (creditFilter !== "all") result = result.filter(r => r.credit_terms === creditFilter);
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(r => r.name.toLowerCase().includes(s) || r.code.toLowerCase().includes(s) || r.iata_code?.toLowerCase().includes(s) || r.country.toLowerCase().includes(s));
     }
     return result;
-  }, [data, statusFilter, countryFilter, search]);
+  }, [data, statusFilter, countryFilter, allianceFilter, currencyFilter, creditFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
