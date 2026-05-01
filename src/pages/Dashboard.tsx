@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Plane, DollarSign, Activity, Calendar, MapPin, Clock, ShieldCheck, Building2,
   FileText, Eye, Receipt, CreditCard, Shield, Users, AlertTriangle, CheckCircle2,
   XCircle, TrendingUp, BarChart3, FileBarChart2, Calculator, ArrowRight, Zap,
   PlaneTakeoff, PlaneLanding, Bell, FileCheck2, Wallet, Truck, Briefcase, Globe2,
+  ImageIcon, Check,
 } from "lucide-react";
 import OperationsDashboard from "./OperationsDashboard";
 import AccountantDashboard from "./AccountantDashboard";
@@ -13,11 +14,24 @@ import { useChannel, CHANNEL_LABELS, type Channel } from "@/contexts/ChannelCont
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
 import {
   StatTile, TrendCard, ProgressRow, Section, ActivityItem, last7DaysCounts, relTime,
 } from "@/components/dashboard/DashboardPrimitives";
-import welcomeBg from "@/assets/welcome-bg.jpg";
+import welcomeBgSky from "@/assets/welcome-bg-sky.jpg";
+import welcomeBgMisty from "@/assets/welcome-bg-misty.jpg";
+import welcomeBgForest from "@/assets/welcome-bg-forest.jpg";
+import welcomeBgMountains from "@/assets/welcome-bg-mountains.jpg";
+
+type WelcomeBgKey = "sky" | "misty" | "forest" | "mountains";
+const WELCOME_BACKGROUNDS: { key: WelcomeBgKey; label: string; src: string }[] = [
+  { key: "sky", label: "Sky", src: welcomeBgSky },
+  { key: "misty", label: "Misty", src: welcomeBgMisty },
+  { key: "forest", label: "Forest", src: welcomeBgForest },
+  { key: "mountains", label: "Mountains", src: welcomeBgMountains },
+];
+const WELCOME_BG_STORAGE_KEY = "oneops.welcomeBg";
 
 const CHANNEL_ICONS: Record<Channel, React.ReactNode> = {
   clearance: <ShieldCheck size={20} />,
