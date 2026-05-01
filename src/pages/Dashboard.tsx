@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import {
   StatTile, TrendCard, ProgressRow, Section, ActivityItem, last7DaysCounts, relTime,
 } from "@/components/dashboard/DashboardPrimitives";
+import welcomeBg from "@/assets/welcome-bg.jpg";
 
 const CHANNEL_ICONS: Record<Channel, React.ReactNode> = {
   clearance: <ShieldCheck size={20} />,
@@ -612,29 +613,31 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary via-primary/90 to-indigo p-4 md:p-6 text-primary-foreground">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 hidden md:block" />
-        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 hidden md:block" />
+      <div
+        className="relative overflow-hidden rounded-xl p-4 md:p-6 text-foreground bg-cover bg-center border"
+        style={{ backgroundImage: `url(${welcomeBg})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/60 to-background/30" />
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <h1 className="text-xl md:text-2xl font-bold">{greeting}, {displayName} 👋</h1>
-            <span className="ml-auto flex items-center gap-1.5 text-xs bg-white/15 px-3 py-1.5 rounded-full font-semibold">
+            <span className="ml-auto flex items-center gap-1.5 text-xs bg-background/70 backdrop-blur px-3 py-1.5 rounded-full font-semibold border">
               {CHANNEL_ICONS[activeChannel]}
               {CHANNEL_LABELS[activeChannel]}
             </span>
           </div>
-          <p className="text-primary-foreground/70 text-xs md:text-sm mt-1 flex items-center gap-2">
+          <p className="text-muted-foreground text-xs md:text-sm mt-1 flex items-center gap-2">
             <Calendar size={14} />
             {today.toLocaleDateString("en-GB", { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
           </p>
           <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-3">
-            <div className="flex items-center gap-1.5 text-xs bg-white/10 px-2.5 py-1 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs bg-background/70 backdrop-blur px-2.5 py-1 rounded-full border">
               <MapPin size={12} /> {profile?.station || "CAI"}
             </div>
-            <div className="flex items-center gap-1.5 text-xs bg-white/10 px-2.5 py-1 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs bg-background/70 backdrop-blur px-2.5 py-1 rounded-full border">
               <Clock size={12} /> {today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
             </div>
-            <div className="flex items-center gap-1.5 text-xs bg-success/30 px-2.5 py-1 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs bg-success/20 text-success-foreground px-2.5 py-1 rounded-full border border-success/30">
               <Activity size={12} /> Online
             </div>
           </div>
