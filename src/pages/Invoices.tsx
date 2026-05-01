@@ -361,7 +361,7 @@ export default function InvoicesPage() {
     status: inv.status, notes: inv.notes,
   });
 
-  const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setDateFrom(""); setDateTo(""); };
+  const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
 
   // Billing preview: group completed dispatches by airline+station for the month
   const billingPreviewData = useMemo(() => {
