@@ -116,6 +116,11 @@ export default function ClearancesPage() {
   const [stationFilter, setStationFilter] = useState("all");
   const [registrationFilter, setRegistrationFilter] = useState("all");
   const [airlineFilter, setAirlineFilter] = useState("all");
+  const [aircraftTypeFilter, setAircraftTypeFilter] = useState("all");
+  const [originFilter, setOriginFilter] = useState("");
+  const [destinationFilter, setDestinationFilter] = useState("");
+  const [purposeFilter, setPurposeFilter] = useState("all");
+  const [minPax, setMinPax] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("security");
