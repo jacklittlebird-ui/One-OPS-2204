@@ -34,6 +34,9 @@ export default function AirportsPage() {
   const [search, setSearch] = useState("");
   const [countryFilter, setCountryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [minTerminals, setMinTerminals] = useState("");
+  const [iataFilter, setIataFilter] = useState("");
+  const [icaoFilter, setIcaoFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AirportRow | null>(null);
   const [inspectItem, setInspectItem] = useState<AirportRow | null>(null);
