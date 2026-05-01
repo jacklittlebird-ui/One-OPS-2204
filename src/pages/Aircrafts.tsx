@@ -43,6 +43,10 @@ export default function AircraftsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [airlineFilter, setAirlineFilter] = useState("all");
+  const [acTypeFilter, setAcTypeFilter] = useState("all");
+  const [minMtow, setMinMtow] = useState("");
+  const [maxMtow, setMaxMtow] = useState("");
+  const [minSeats, setMinSeats] = useState("");
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AircraftRow | null>(null);
