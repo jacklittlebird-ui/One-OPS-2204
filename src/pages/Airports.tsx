@@ -181,20 +181,34 @@ export default function AirportsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} />
-          <Input placeholder="Search by name, IATA, or city…" className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-        </div>
-        <Select value={countryFilter} onValueChange={v => { setCountryFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="All Countries" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Countries</SelectItem>{(countries || []).slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="All Status" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent>
-        </Select>
-      </div>
+      {(() => {
+        const fields: FilterField[] = [
+          { key: "search", kind: "text", label: "Search", placeholder: "Name, IATA, city…" },
+          { key: "country", kind: "select", label: "Country", options: (countries || []).slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => ({ value: c.id, label: c.name })) },
+          { key: "status", kind: "select", label: "Status", options: [{ value: "Active", label: "Active" }, { value: "Inactive", label: "Inactive" }] },
+          { key: "min_terminals", kind: "number", label: "Min Terminals", placeholder: "e.g. 2" },
+          { key: "iata", kind: "text", label: "IATA Code", placeholder: "e.g. CAI" },
+          { key: "icao", kind: "text", label: "ICAO Code", placeholder: "e.g. HECA" },
+        ];
+        const values = { search, country: countryFilter, status: statusFilter, min_terminals: minTerminals, iata: iataFilter, icao: icaoFilter };
+        return (
+          <AdvancedFilters
+            fields={fields}
+            values={values}
+            searchKey="search"
+            searchPlaceholder="Search by name, IATA, or city…"
+            onChange={(v) => {
+              setSearch(v.search ?? "");
+              setCountryFilter(v.country ?? "all");
+              setStatusFilter(v.status ?? "all");
+              setMinTerminals(v.min_terminals ?? "");
+              setIataFilter(v.iata ?? "");
+              setIcaoFilter(v.icao ?? "");
+              setPage(1);
+            }}
+          />
+        );
+      })()}
 
       {/* Table */}
       <Card>
