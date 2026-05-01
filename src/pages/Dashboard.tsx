@@ -31,7 +31,7 @@ const WELCOME_BACKGROUNDS: { key: WelcomeBgKey; label: string; src: string }[] =
   { key: "forest", label: "Forest", src: welcomeBgForest },
   { key: "mountains", label: "Mountains", src: welcomeBgMountains },
 ];
-const WELCOME_BG_STORAGE_KEY = "oneops.welcomeBg";
+const WELCOME_BG_STORAGE_KEY = "oneops.welcomeBgChoice";
 
 const CHANNEL_ICONS: Record<Channel, React.ReactNode> = {
   clearance: <ShieldCheck size={20} />,
