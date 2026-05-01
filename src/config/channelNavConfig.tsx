@@ -154,6 +154,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Financial Reports", path: "/financial-reports" },
       ],
     },
+    TREASURY_SECTION,
     {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
       children: [
@@ -186,10 +187,11 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Vendor Equipment", path: "/vendor-equipment" },
       ],
     },
+    TREASURY_SECTION,
     { label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications" },
   ],
 
-  general_accounts: [
+  general_accounts_marker_unused_below: undefined as any, // placeholder line replaced below
     { label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/" },
     {
       label: "PAYABLES", icon: <CreditCard size={18} />, collapsible: true,
