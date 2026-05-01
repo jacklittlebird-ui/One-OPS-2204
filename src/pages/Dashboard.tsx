@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Plane, DollarSign, Activity, Calendar, MapPin, Clock, ShieldCheck, Building2,
