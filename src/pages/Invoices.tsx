@@ -516,8 +516,22 @@ export default function InvoicesPage() {
               <FormField label="From Date">
                 <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               </FormField>
-              <FormField label="To Date">
-                <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              <FormField label="Operator">
+                <select value={operatorFilter} onChange={e => { setOperatorFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-44">
+                  <option>All</option>{operators.map(o => <option key={o}>{o}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Due From">
+                <input type="date" value={dueFrom} onChange={e => { setDueFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              </FormField>
+              <FormField label="Due To">
+                <input type="date" value={dueTo} onChange={e => { setDueTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              </FormField>
+              <FormField label="Min Total">
+                <input type="number" value={minTotal} onChange={e => { setMinTotal(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
+              </FormField>
+              <FormField label="Max Total">
+                <input type="number" value={maxTotal} onChange={e => { setMaxTotal(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
               </FormField>
               {activeFilterCount > 0 && (
                 <button onClick={clearFilters} className="text-xs text-destructive hover:underline pb-1.5">Clear all</button>
