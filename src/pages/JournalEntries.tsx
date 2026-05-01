@@ -196,13 +196,24 @@ export default function JournalEntriesPage() {
         </Dialog>
       </div>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} /><Input placeholder="Search entries…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Posted">Posted</SelectItem><SelectItem value="Void">Void</SelectItem></SelectContent>
-        </Select>
-      </div>
+      <AdvancedFilters
+        searchKey="search"
+        searchPlaceholder="Search entry no, description, reference…"
+        fields={[
+          { key: "search", kind: "text", label: "Search" },
+          { key: "status", kind: "select", label: "Status", options: [{ value: "Draft", label: "Draft" }, { value: "Posted", label: "Posted" }, { value: "Void", label: "Void" }] },
+          { key: "ref_type", kind: "select", label: "Reference Type", options: refTypes.map(t => ({ value: t, label: t })) },
+          { key: "created_by", kind: "select", label: "Created By", options: creators.map(c => ({ value: c, label: c })) },
+          { key: "date_from", kind: "date", label: "Date From" },
+          { key: "date_to", kind: "date", label: "Date To" },
+          { key: "min_amount", kind: "number", label: "Min Total" },
+        ]}
+        values={{ search, status: statusFilter, ref_type: refTypeFilter, created_by: createdByFilter, date_from: dateFrom, date_to: dateTo, min_amount: minAmount }}
+        onChange={(v) => {
+          setSearch(v.search ?? ""); setStatusFilter(v.status ?? "all"); setRefTypeFilter(v.ref_type ?? "all");
+          setCreatedByFilter(v.created_by ?? "all"); setDateFrom(v.date_from ?? ""); setDateTo(v.date_to ?? ""); setMinAmount(v.min_amount ?? "");
+        }}
+      />
 
       <Card>
         <CardContent className="p-0">
