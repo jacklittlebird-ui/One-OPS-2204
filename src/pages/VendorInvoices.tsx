@@ -178,13 +178,30 @@ export default function VendorInvoicesPage() {
         ))}
       </div>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} /><Input placeholder="Search vendor invoices…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Received">Received</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Paid">Paid</SelectItem><SelectItem value="Overdue">Overdue</SelectItem></SelectContent>
-        </Select>
-      </div>
+      <AdvancedFilters
+        searchKey="search"
+        searchPlaceholder="Search vendor invoices, notes…"
+        fields={[
+          { key: "search", kind: "text", label: "Search" },
+          { key: "status", kind: "select", label: "Status", options: ["Draft","Received","Approved","Paid","Overdue"].map(s => ({ value: s, label: s })) },
+          { key: "vendor", kind: "select", label: "Vendor", options: vendors.map(v => ({ value: v, label: v })) },
+          { key: "currency", kind: "select", label: "Currency", options: currencies.map(c => ({ value: c, label: c })) },
+          { key: "date_from", kind: "date", label: "Issued From" },
+          { key: "date_to", kind: "date", label: "Issued To" },
+          { key: "due_from", kind: "date", label: "Due From" },
+          { key: "due_to", kind: "date", label: "Due To" },
+          { key: "min_total", kind: "number", label: "Min Total" },
+          { key: "max_total", kind: "number", label: "Max Total" },
+        ]}
+        values={{ search, status: statusFilter, vendor: vendorFilter, currency: currencyFilter, date_from: dateFrom, date_to: dateTo, due_from: dueFrom, due_to: dueTo, min_total: minTotal, max_total: maxTotal }}
+        onChange={(v) => {
+          setSearch(v.search ?? ""); setStatusFilter(v.status ?? "all"); setVendorFilter(v.vendor ?? "all");
+          setCurrencyFilter(v.currency ?? "all");
+          setDateFrom(v.date_from ?? ""); setDateTo(v.date_to ?? "");
+          setDueFrom(v.due_from ?? ""); setDueTo(v.due_to ?? "");
+          setMinTotal(v.min_total ?? ""); setMaxTotal(v.max_total ?? "");
+        }}
+      />
 
       <Card>
         <CardContent className="p-0">
