@@ -19,6 +19,19 @@ interface NavSection {
   collapsible?: boolean;
 }
 
+const TREASURY_SECTION: NavSection = {
+  label: "TREASURY", icon: <Landmark size={18} />, collapsible: true,
+  children: [
+    { label: "Treasury Overview", path: "/treasury" },
+    { label: "Bank Accounts", path: "/treasury/bank-accounts" },
+    { label: "Cash Accounts", path: "/treasury/cash-accounts" },
+    { label: "Receipts", path: "/treasury/receipts" },
+    { label: "Payments", path: "/treasury/payments" },
+    { label: "Bank Transfers", path: "/treasury/bank-transfers" },
+    { label: "Bank Reconciliation", path: "/treasury/bank-reconciliation" },
+  ],
+};
+
 // Channel-specific navigation configs
 const channelNavs: Record<Channel, NavSection[]> = {
   clearance: [
