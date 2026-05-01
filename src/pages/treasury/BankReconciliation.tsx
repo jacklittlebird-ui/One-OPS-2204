@@ -1,6 +1,12 @@
 import TreasuryTablePage, { StatusBadge } from "@/components/treasury/TreasuryTablePage";
+import { supabase } from "@/integrations/supabase/client";
 
 const STATUS = [{value:"Open",label:"Open"},{value:"Reconciled",label:"Reconciled"},{value:"Closed",label:"Closed"}];
+
+const loadBanks = async () => {
+  const { data } = await supabase.from("bank_accounts").select("id,account_name,bank_name,currency").order("account_name");
+  return (data || []).map((b: any) => ({ value: b.id, label: `${b.account_name} — ${b.bank_name || ""} (${b.currency || ""})` }));
+};
 
 export default function BankReconciliationPage() {
   return <TreasuryTablePage
@@ -10,6 +16,7 @@ export default function BankReconciliationPage() {
     orderBy="statement_date"
     searchKeys={["status","notes"]}
     fields={[
+      { key: "bank_account_id", label: "Bank Account", type: "select", loadOptions: loadBanks, required: true },
       { key: "statement_date", label: "Statement Date", type: "date", required: true },
       { key: "statement_balance", label: "Statement Balance", type: "number", default: 0 },
       { key: "system_balance", label: "System Balance", type: "number", default: 0 },
