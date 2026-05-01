@@ -199,16 +199,25 @@ export default function InvoicesPage() {
     }
   }, [location.search]);
 
+  const operators = useMemo(() => [...new Set(invoices.map(i => i.operator).filter(Boolean))].sort(), [invoices]);
+
   const filtered = useMemo(() => {
     let r = invoices;
     if (statusFilter !== "All") r = r.filter(i => i.status === statusFilter);
     if (typeFilter !== "All") r = r.filter(i => (i.invoice_type || "Preliminary") === typeFilter);
     if (currencyFilter !== "All") r = r.filter(i => i.currency === currencyFilter);
+    if (operatorFilter !== "All") r = r.filter(i => i.operator === operatorFilter);
     if (dateFrom) r = r.filter(i => i.date >= dateFrom);
     if (dateTo) r = r.filter(i => i.date <= dateTo);
-    if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s)); }
+    if (dueFrom) r = r.filter(i => (i.due_date || "") >= dueFrom);
+    if (dueTo) r = r.filter(i => (i.due_date || "") <= dueTo);
+    const minT = minTotal ? parseFloat(minTotal) : null;
+    const maxT = maxTotal ? parseFloat(maxTotal) : null;
+    if (minT !== null) r = r.filter(i => (i.total || 0) >= minT);
+    if (maxT !== null) r = r.filter(i => (i.total || 0) <= maxT);
+    if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s) || (i.notes || "").toLowerCase().includes(s)); }
     return r;
-  }, [invoices, statusFilter, typeFilter, currencyFilter, dateFrom, dateTo, search]);
+  }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
