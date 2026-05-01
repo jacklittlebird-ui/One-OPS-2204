@@ -222,6 +222,14 @@ const channelNavs: Record<Channel, NavSection[]> = {
     },
     TREASURY_SECTION,
     {
+      label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
+      children: [
+        { label: "Airlines", path: "/airlines" },
+      ],
+    },
+    { label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications" },
+  ],
+  admin: [
     { label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/" },
     {
       label: "CLEARANCE", icon: <ShieldCheck size={18} />, collapsible: true,
