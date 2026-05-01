@@ -16,6 +16,7 @@ import { ClearanceRow, CLEARANCE_TYPES, STATUS_CONFIG, emptyForm, SECURITY_CLEAR
 import ClearanceFormDialog from "@/components/clearances/ClearanceFormDialog";
 import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog";
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
+import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 
 // ─── Calendar View Component ───
 function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdit }: {
