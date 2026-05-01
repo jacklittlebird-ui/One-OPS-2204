@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Pencil, Trash2, FileText, Download, Eye, AlertTriangle, DollarSign, Clock, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
+import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 
 type VendorInvoiceRow = {
   id: string; invoice_no: string; vendor_name: string; vendor_id: string | null;
