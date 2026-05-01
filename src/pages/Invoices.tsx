@@ -159,8 +159,13 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [currencyFilter, setCurrencyFilter] = useState("All");
+  const [operatorFilter, setOperatorFilter] = useState("All");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [dueFrom, setDueFrom] = useState("");
+  const [dueTo, setDueTo] = useState("");
+  const [minTotal, setMinTotal] = useState("");
+  const [maxTotal, setMaxTotal] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
