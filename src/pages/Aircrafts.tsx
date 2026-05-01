@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 25;
@@ -42,6 +43,10 @@ export default function AircraftsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [airlineFilter, setAirlineFilter] = useState("all");
+  const [acTypeFilter, setAcTypeFilter] = useState("all");
+  const [minMtow, setMinMtow] = useState("");
+  const [maxMtow, setMaxMtow] = useState("");
+  const [minSeats, setMinSeats] = useState("");
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AircraftRow | null>(null);
@@ -51,18 +56,26 @@ export default function AircraftsPage() {
 
   const types = useMemo(() => [...new Set(data.map(d => d.type).filter(Boolean))].sort(), [data]);
   const airlines = useMemo(() => [...new Set(data.map(d => d.airline).filter(Boolean))].sort(), [data]);
+  const acTypes = useMemo(() => [...new Set(data.map(d => d.ac_type).filter(Boolean))].sort(), [data]);
 
   const filtered = useMemo(() => {
     let result = data;
     if (typeFilter !== "all") result = result.filter(r => r.type === typeFilter);
     if (categoryFilter !== "all") result = result.filter(r => r.status === categoryFilter);
     if (airlineFilter !== "all") result = result.filter(r => r.airline === airlineFilter);
+    if (acTypeFilter !== "all") result = result.filter(r => r.ac_type === acTypeFilter);
+    const minM = minMtow ? parseFloat(minMtow) : null;
+    const maxM = maxMtow ? parseFloat(maxMtow) : null;
+    const minS = minSeats ? parseInt(minSeats) : null;
+    if (minM !== null) result = result.filter(r => (r.mtow ?? 0) >= minM);
+    if (maxM !== null) result = result.filter(r => (r.mtow ?? 0) <= maxM);
+    if (minS !== null) result = result.filter(r => (r.seats ?? 0) >= minS);
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(r => (r.registration || '').toLowerCase().includes(s) || (r.model || '').toLowerCase().includes(s) || (r.airline || '').toLowerCase().includes(s) || (r.certificate_no || '').toLowerCase().includes(s) || (r.ac_type || '').toLowerCase().includes(s));
     }
     return result;
-  }, [data, typeFilter, categoryFilter, airlineFilter, search]);
+  }, [data, typeFilter, categoryFilter, airlineFilter, acTypeFilter, minMtow, maxMtow, minSeats, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -155,27 +168,27 @@ export default function AircraftsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} />
-          <Input placeholder="Search by registration, model, airline, A/C type…" className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-        </div>
-        <Select value={airlineFilter} onValueChange={v => { setAirlineFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="All Airlines" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Airlines</SelectItem>{airlines.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={typeFilter} onValueChange={v => { setTypeFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="All Types" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Types</SelectItem>{types.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={categoryFilter} onValueChange={v => { setCategoryFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="All Categories" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
+      <AdvancedFilters
+        searchKey="search"
+        searchPlaceholder="Search by registration, model, airline, A/C type…"
+        fields={[
+          { key: "search", kind: "text", label: "Search" },
+          { key: "airline", kind: "select", label: "Airline", options: airlines.map(a => ({ value: a, label: a })) },
+          { key: "type", kind: "select", label: "Type", options: types.map(t => ({ value: t, label: t })) },
+          { key: "category", kind: "select", label: "Category", options: CATEGORIES.map(c => ({ value: c, label: c })) },
+          { key: "ac_type", kind: "select", label: "A/C Type", options: acTypes.map(c => ({ value: c, label: c })) },
+          { key: "min_mtow", kind: "number", label: "Min MTOW (T)", placeholder: "e.g. 50" },
+          { key: "max_mtow", kind: "number", label: "Max MTOW (T)", placeholder: "e.g. 200" },
+          { key: "min_seats", kind: "number", label: "Min Seats", placeholder: "e.g. 100" },
+        ]}
+        values={{ search, airline: airlineFilter, type: typeFilter, category: categoryFilter, ac_type: acTypeFilter, min_mtow: minMtow, max_mtow: maxMtow, min_seats: minSeats }}
+        onChange={(v) => {
+          setSearch(v.search ?? ""); setAirlineFilter(v.airline ?? "all"); setTypeFilter(v.type ?? "all");
+          setCategoryFilter(v.category ?? "all"); setAcTypeFilter(v.ac_type ?? "all");
+          setMinMtow(v.min_mtow ?? ""); setMaxMtow(v.max_mtow ?? ""); setMinSeats(v.min_seats ?? "");
+          setPage(1);
+        }}
+      />
 
       {/* Table */}
       <Card>

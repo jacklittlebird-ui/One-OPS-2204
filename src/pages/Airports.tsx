@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
+import { AdvancedFilters, FilterField } from "@/components/filters/AdvancedFilters";
 
 type AirportRow = { id: string; country_id: string; name: string; iata_code: string; icao_code: string; city: string; terminal_count: number; status: string; created_at: string };
 type CountryRow = { id: string; name: string; code: string; };
@@ -33,6 +34,9 @@ export default function AirportsPage() {
   const [search, setSearch] = useState("");
   const [countryFilter, setCountryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [minTerminals, setMinTerminals] = useState("");
+  const [iataFilter, setIataFilter] = useState("");
+  const [icaoFilter, setIcaoFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AirportRow | null>(null);
   const [inspectItem, setInspectItem] = useState<AirportRow | null>(null);
@@ -43,13 +47,20 @@ export default function AirportsPage() {
   const countryMap = Object.fromEntries((countries || []).map(c => [c.id, c]));
 
   const filtered = useMemo(() => {
+    const s = search.toLowerCase();
+    const iataS = iataFilter.toLowerCase();
+    const icaoS = icaoFilter.toLowerCase();
+    const minT = minTerminals ? parseInt(minTerminals) : null;
     return data.filter(a => {
-      const matchSearch = !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.iata_code.toLowerCase().includes(search.toLowerCase()) || a.city.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = !s || a.name.toLowerCase().includes(s) || a.iata_code.toLowerCase().includes(s) || a.city.toLowerCase().includes(s);
       const matchCountry = countryFilter === "all" || a.country_id === countryFilter;
       const matchStatus = statusFilter === "all" || a.status === statusFilter;
-      return matchSearch && matchCountry && matchStatus;
+      const matchIata = !iataS || a.iata_code.toLowerCase().includes(iataS);
+      const matchIcao = !icaoS || (a.icao_code || "").toLowerCase().includes(icaoS);
+      const matchMin = minT === null || (a.terminal_count || 0) >= minT;
+      return matchSearch && matchCountry && matchStatus && matchIata && matchIcao && matchMin;
     });
-  }, [data, search, countryFilter, statusFilter]);
+  }, [data, search, countryFilter, statusFilter, iataFilter, icaoFilter, minTerminals]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -180,20 +191,34 @@ export default function AirportsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} />
-          <Input placeholder="Search by name, IATA, or city…" className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-        </div>
-        <Select value={countryFilter} onValueChange={v => { setCountryFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="All Countries" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Countries</SelectItem>{(countries || []).slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="All Status" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent>
-        </Select>
-      </div>
+      {(() => {
+        const fields: FilterField[] = [
+          { key: "search", kind: "text", label: "Search", placeholder: "Name, IATA, city…" },
+          { key: "country", kind: "select", label: "Country", options: (countries || []).slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => ({ value: c.id, label: c.name })) },
+          { key: "status", kind: "select", label: "Status", options: [{ value: "Active", label: "Active" }, { value: "Inactive", label: "Inactive" }] },
+          { key: "min_terminals", kind: "number", label: "Min Terminals", placeholder: "e.g. 2" },
+          { key: "iata", kind: "text", label: "IATA Code", placeholder: "e.g. CAI" },
+          { key: "icao", kind: "text", label: "ICAO Code", placeholder: "e.g. HECA" },
+        ];
+        const values = { search, country: countryFilter, status: statusFilter, min_terminals: minTerminals, iata: iataFilter, icao: icaoFilter };
+        return (
+          <AdvancedFilters
+            fields={fields}
+            values={values}
+            searchKey="search"
+            searchPlaceholder="Search by name, IATA, or city…"
+            onChange={(v) => {
+              setSearch(v.search ?? "");
+              setCountryFilter(v.country ?? "all");
+              setStatusFilter(v.status ?? "all");
+              setMinTerminals(v.min_terminals ?? "");
+              setIataFilter(v.iata ?? "");
+              setIcaoFilter(v.icao ?? "");
+              setPage(1);
+            }}
+          />
+        );
+      })()}
 
       {/* Table */}
       <Card>

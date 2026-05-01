@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AdvancedFilters, FilterField } from "@/components/filters/AdvancedFilters";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 25;
@@ -34,6 +35,9 @@ export default function AirlinesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
+  const [allianceFilter, setAllianceFilter] = useState("all");
+  const [currencyFilter, setCurrencyFilter] = useState("all");
+  const [creditFilter, setCreditFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AirlineRow | null>(null);
@@ -42,17 +46,23 @@ export default function AirlinesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const countries = useMemo(() => [...new Set(data.map(d => d.country).filter(Boolean))].sort(), [data]);
+  const alliances = useMemo(() => [...new Set(data.map(d => d.alliance).filter(Boolean))].sort(), [data]);
+  const currencies = useMemo(() => [...new Set(data.map(d => d.billing_currency).filter(Boolean))].sort(), [data]);
+  const creditTerms = useMemo(() => [...new Set(data.map(d => d.credit_terms).filter(Boolean))].sort(), [data]);
 
   const filtered = useMemo(() => {
     let result = data;
     if (statusFilter !== "all") result = result.filter(r => r.status === statusFilter);
     if (countryFilter !== "all") result = result.filter(r => r.country === countryFilter);
+    if (allianceFilter !== "all") result = result.filter(r => r.alliance === allianceFilter);
+    if (currencyFilter !== "all") result = result.filter(r => r.billing_currency === currencyFilter);
+    if (creditFilter !== "all") result = result.filter(r => r.credit_terms === creditFilter);
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(r => r.name.toLowerCase().includes(s) || r.code.toLowerCase().includes(s) || r.iata_code?.toLowerCase().includes(s) || r.country.toLowerCase().includes(s));
     }
     return result;
-  }, [data, statusFilter, countryFilter, search]);
+  }, [data, statusFilter, countryFilter, allianceFilter, currencyFilter, creditFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -134,20 +144,24 @@ export default function AirlinesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} />
-          <Input placeholder="Search by name, code, IATA, or country…" className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-        </div>
-        <Select value={countryFilter} onValueChange={v => { setCountryFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="All Countries" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Countries</SelectItem>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="All Status" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem><SelectItem value="Suspended">Suspended</SelectItem></SelectContent>
-        </Select>
-      </div>
+      <AdvancedFilters
+        searchKey="search"
+        searchPlaceholder="Search by name, code, IATA, or country…"
+        fields={[
+          { key: "search", kind: "text", label: "Search" },
+          { key: "country", kind: "select", label: "Country", options: countries.map(c => ({ value: c, label: c })) },
+          { key: "status", kind: "select", label: "Status", options: [{ value: "Active", label: "Active" }, { value: "Inactive", label: "Inactive" }, { value: "Suspended", label: "Suspended" }] },
+          { key: "alliance", kind: "select", label: "Alliance", options: alliances.map(a => ({ value: a, label: a })) },
+          { key: "currency", kind: "select", label: "Billing Currency", options: currencies.map(c => ({ value: c, label: c })) },
+          { key: "credit", kind: "select", label: "Credit Terms", options: creditTerms.map(c => ({ value: c, label: c })) },
+        ]}
+        values={{ search, country: countryFilter, status: statusFilter, alliance: allianceFilter, currency: currencyFilter, credit: creditFilter }}
+        onChange={(v) => {
+          setSearch(v.search ?? ""); setCountryFilter(v.country ?? "all"); setStatusFilter(v.status ?? "all");
+          setAllianceFilter(v.alliance ?? "all"); setCurrencyFilter(v.currency ?? "all"); setCreditFilter(v.credit ?? "all");
+          setPage(1);
+        }}
+      />
 
       {/* Table */}
       <Card>

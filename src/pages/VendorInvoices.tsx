@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Pencil, Trash2, FileText, Download, Eye, AlertTriangle, DollarSign, Clock, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
+import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 
 type VendorInvoiceRow = {
   id: string; invoice_no: string; vendor_name: string; vendor_id: string | null;
@@ -30,16 +31,37 @@ export default function VendorInvoicesPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [vendorFilter, setVendorFilter] = useState("all");
+  const [currencyFilter, setCurrencyFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [dueFrom, setDueFrom] = useState("");
+  const [dueTo, setDueTo] = useState("");
+  const [minTotal, setMinTotal] = useState("");
+  const [maxTotal, setMaxTotal] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<VendorInvoiceRow | null>(null);
   const [editItem, setEditItem] = useState<VendorInvoiceRow | null>(null);
   const emptyForm = { invoice_no: "", vendor_name: "", vendor_id: "", date: new Date().toISOString().slice(0, 10), due_date: "", amount: 0, vat: 0, currency: "USD", status: "Draft", notes: "" };
   const [form, setForm] = useState<any>(emptyForm);
 
+  const vendors = useMemo(() => [...new Set(data.map(d => d.vendor_name).filter(Boolean))].sort(), [data]);
+  const currencies = useMemo(() => [...new Set(data.map(d => d.currency).filter(Boolean))].sort(), [data]);
+
   const filtered = data.filter(v => {
-    const ms = v.invoice_no.toLowerCase().includes(search.toLowerCase()) || v.vendor_name.toLowerCase().includes(search.toLowerCase());
+    const ms = v.invoice_no.toLowerCase().includes(search.toLowerCase()) || v.vendor_name.toLowerCase().includes(search.toLowerCase()) || (v.notes || "").toLowerCase().includes(search.toLowerCase());
     const mst = statusFilter === "all" || v.status === statusFilter;
-    return ms && mst;
+    const mv = vendorFilter === "all" || v.vendor_name === vendorFilter;
+    const mc = currencyFilter === "all" || v.currency === currencyFilter;
+    const mdf = !dateFrom || (v.date || "") >= dateFrom;
+    const mdt = !dateTo || (v.date || "") <= dateTo;
+    const muf = !dueFrom || (v.due_date || "") >= dueFrom;
+    const mut = !dueTo || (v.due_date || "") <= dueTo;
+    const minT = minTotal ? parseFloat(minTotal) : null;
+    const maxT = maxTotal ? parseFloat(maxTotal) : null;
+    const mmin = minT === null || (v.total || 0) >= minT;
+    const mmax = maxT === null || (v.total || 0) <= maxT;
+    return ms && mst && mv && mc && mdf && mdt && muf && mut && mmin && mmax;
   });
 
   const stats = useMemo(() => {
@@ -156,13 +178,30 @@ export default function VendorInvoicesPage() {
         ))}
       </div>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} /><Input placeholder="Search vendor invoices…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Received">Received</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Paid">Paid</SelectItem><SelectItem value="Overdue">Overdue</SelectItem></SelectContent>
-        </Select>
-      </div>
+      <AdvancedFilters
+        searchKey="search"
+        searchPlaceholder="Search vendor invoices, notes…"
+        fields={[
+          { key: "search", kind: "text", label: "Search" },
+          { key: "status", kind: "select", label: "Status", options: ["Draft","Received","Approved","Paid","Overdue"].map(s => ({ value: s, label: s })) },
+          { key: "vendor", kind: "select", label: "Vendor", options: vendors.map(v => ({ value: v, label: v })) },
+          { key: "currency", kind: "select", label: "Currency", options: currencies.map(c => ({ value: c, label: c })) },
+          { key: "date_from", kind: "date", label: "Issued From" },
+          { key: "date_to", kind: "date", label: "Issued To" },
+          { key: "due_from", kind: "date", label: "Due From" },
+          { key: "due_to", kind: "date", label: "Due To" },
+          { key: "min_total", kind: "number", label: "Min Total" },
+          { key: "max_total", kind: "number", label: "Max Total" },
+        ]}
+        values={{ search, status: statusFilter, vendor: vendorFilter, currency: currencyFilter, date_from: dateFrom, date_to: dateTo, due_from: dueFrom, due_to: dueTo, min_total: minTotal, max_total: maxTotal }}
+        onChange={(v) => {
+          setSearch(v.search ?? ""); setStatusFilter(v.status ?? "all"); setVendorFilter(v.vendor ?? "all");
+          setCurrencyFilter(v.currency ?? "all");
+          setDateFrom(v.date_from ?? ""); setDateTo(v.date_to ?? "");
+          setDueFrom(v.due_from ?? ""); setDueTo(v.due_to ?? "");
+          setMinTotal(v.min_total ?? ""); setMaxTotal(v.max_total ?? "");
+        }}
+      />
 
       <Card>
         <CardContent className="p-0">

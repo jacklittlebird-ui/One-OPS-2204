@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Pencil, Trash2, BookOpen, Check, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 
 type JournalEntry = { id: string; entry_no: string; entry_date: string; description: string; reference: string; reference_type: string; status: string; total_debit: number; total_credit: number; created_by: string; };
 type JournalLine = { id: string; entry_id: string; account_id: string; debit: number; credit: number; description: string; sort_order: number; };
@@ -33,6 +34,11 @@ export default function JournalEntriesPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [refTypeFilter, setRefTypeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [createdByFilter, setCreatedByFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<JournalEntry | null>(null);
   const [lines, setLines] = useState<Partial<JournalLine>[]>([{ account_id: "", debit: 0, credit: 0, description: "" }]);
@@ -44,10 +50,19 @@ export default function JournalEntriesPage() {
     setLines((data as unknown as JournalLine[])?.length ? (data as unknown as JournalLine[]) : [{ account_id: "", debit: 0, credit: 0, description: "" }]);
   };
 
+  const refTypes = [...new Set(entries.map(e => e.reference_type).filter(Boolean))].sort();
+  const creators = [...new Set(entries.map(e => e.created_by).filter(Boolean))].sort();
+
   const filtered = entries.filter(e => {
-    const ms = e.entry_no.toLowerCase().includes(search.toLowerCase()) || e.description.toLowerCase().includes(search.toLowerCase());
+    const ms = e.entry_no.toLowerCase().includes(search.toLowerCase()) || e.description.toLowerCase().includes(search.toLowerCase()) || (e.reference || "").toLowerCase().includes(search.toLowerCase());
     const mst = statusFilter === "all" || e.status === statusFilter;
-    return ms && mst;
+    const mrt = refTypeFilter === "all" || e.reference_type === refTypeFilter;
+    const mcb = createdByFilter === "all" || e.created_by === createdByFilter;
+    const mdf = !dateFrom || (e.entry_date || "") >= dateFrom;
+    const mdt = !dateTo || (e.entry_date || "") <= dateTo;
+    const minA = minAmount ? parseFloat(minAmount) : null;
+    const mma = minA === null || (e.total_debit || 0) >= minA;
+    return ms && mst && mrt && mcb && mdf && mdt && mma;
   });
 
   const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
@@ -181,13 +196,24 @@ export default function JournalEntriesPage() {
         </Dialog>
       </div>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1"><Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} /><Input placeholder="Search entries…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Posted">Posted</SelectItem><SelectItem value="Void">Void</SelectItem></SelectContent>
-        </Select>
-      </div>
+      <AdvancedFilters
+        searchKey="search"
+        searchPlaceholder="Search entry no, description, reference…"
+        fields={[
+          { key: "search", kind: "text", label: "Search" },
+          { key: "status", kind: "select", label: "Status", options: [{ value: "Draft", label: "Draft" }, { value: "Posted", label: "Posted" }, { value: "Void", label: "Void" }] },
+          { key: "ref_type", kind: "select", label: "Reference Type", options: refTypes.map(t => ({ value: t, label: t })) },
+          { key: "created_by", kind: "select", label: "Created By", options: creators.map(c => ({ value: c, label: c })) },
+          { key: "date_from", kind: "date", label: "Date From" },
+          { key: "date_to", kind: "date", label: "Date To" },
+          { key: "min_amount", kind: "number", label: "Min Total" },
+        ]}
+        values={{ search, status: statusFilter, ref_type: refTypeFilter, created_by: createdByFilter, date_from: dateFrom, date_to: dateTo, min_amount: minAmount }}
+        onChange={(v) => {
+          setSearch(v.search ?? ""); setStatusFilter(v.status ?? "all"); setRefTypeFilter(v.ref_type ?? "all");
+          setCreatedByFilter(v.created_by ?? "all"); setDateFrom(v.date_from ?? ""); setDateTo(v.date_to ?? ""); setMinAmount(v.min_amount ?? "");
+        }}
+      />
 
       <Card>
         <CardContent className="p-0">

@@ -16,6 +16,7 @@ import { ClearanceRow, CLEARANCE_TYPES, STATUS_CONFIG, emptyForm, SECURITY_CLEAR
 import ClearanceFormDialog from "@/components/clearances/ClearanceFormDialog";
 import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog";
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
+import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 
 // ─── Calendar View Component ───
 function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdit }: {
@@ -115,6 +116,11 @@ export default function ClearancesPage() {
   const [stationFilter, setStationFilter] = useState("all");
   const [registrationFilter, setRegistrationFilter] = useState("all");
   const [airlineFilter, setAirlineFilter] = useState("all");
+  const [aircraftTypeFilter, setAircraftTypeFilter] = useState("all");
+  const [originFilter, setOriginFilter] = useState("");
+  const [destinationFilter, setDestinationFilter] = useState("");
+  const [purposeFilter, setPurposeFilter] = useState("all");
+  const [minPax, setMinPax] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("security");
@@ -130,6 +136,8 @@ export default function ClearancesPage() {
 
   const stations = [...new Set((airportsList || []).map((a: any) => a.iata_code).filter(Boolean))].sort();
   const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
+  const aircraftTypes = [...new Set(data.map(c => c.aircraft_type).filter(Boolean))].sort();
+  const purposes = [...new Set(data.map(c => c.purpose).filter(Boolean))].sort();
 
   const isStationDispatchRecord = (c: ClearanceRow) =>
     c.purpose === "Station Dispatch" ||
@@ -138,7 +146,6 @@ export default function ClearancesPage() {
   const clearanceOwnedData = data.filter(c => !isStationDispatchRecord(c));
 
   const filtered = clearanceOwnedData.filter(c => {
-    // Filter by service category first
     const categoryMatch = getServiceCategory(c.clearance_type) === serviceCategory;
     const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
     const mst = statusFilter === "all" || c.status === statusFilter;
@@ -146,17 +153,23 @@ export default function ClearancesPage() {
     const mstation = stationFilter === "all" || c.authority === stationFilter;
     const mreg = registrationFilter === "all" || c.registration === registrationFilter;
     const mairline = airlineFilter === "all" || c.airline_id === airlineFilter;
+    const mac = aircraftTypeFilter === "all" || c.aircraft_type === aircraftTypeFilter;
+    const mpurp = purposeFilter === "all" || c.purpose === purposeFilter;
+    const route = (c.route || "").toUpperCase();
+    const mor = !originFilter || route.startsWith(originFilter.toUpperCase());
+    const mdest = !destinationFilter || route.endsWith(destinationFilter.toUpperCase());
+    const minP = minPax ? parseInt(minPax) : null;
+    const mpx = minP === null || (c.passengers || 0) >= minP;
     const flightDate = c.arrival_date || c.departure_date || "";
     const mdf = !dateFrom || flightDate >= dateFrom;
     const mdt = !dateTo || flightDate <= dateTo;
-    return categoryMatch && ms && mst && mt && mstation && mreg && mairline && mdf && mdt;
+    return categoryMatch && ms && mst && mt && mstation && mreg && mairline && mac && mpurp && mor && mdest && mpx && mdf && mdt;
   }).sort((a, b) => {
     const da = a.arrival_date || a.departure_date || "";
     const db = b.arrival_date || b.departure_date || "";
     if (!da && !db) return 0;
     if (!da) return 1;
     if (!db) return -1;
-    // Newest first
     return db.localeCompare(da);
   });
 
@@ -368,48 +381,41 @@ export default function ClearancesPage() {
         </TabsList>
 
         <TabsContent value={serviceCategory}>
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <div className="relative flex-1 min-w-[180px]"><Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} /><Input placeholder="Search flights…" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
-            <Select value={airlineFilter} onValueChange={setAirlineFilter}>
-              <SelectTrigger className="w-40"><SelectValue placeholder="All Airlines" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Airlines</SelectItem>
-                {(airlines || []).slice().sort((a: any, b: any) => a.name.localeCompare(b.name)).map((a: any) => (
-                  <SelectItem key={a.id} value={a.id}>{a.code ? `${a.code} – ${a.name}` : a.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All Types</SelectItem>{getClearanceTypesByCategory(serviceCategory).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Pending">Pending</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Rejected">Rejected</SelectItem><SelectItem value="Expired">Expired</SelectItem></SelectContent>
-            </Select>
-            <Select value={stationFilter} onValueChange={setStationFilter}>
-              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All Stations</SelectItem>{stations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-            </Select>
-            {registrations.length > 0 && (
-              <Select value={registrationFilter} onValueChange={setRegistrationFilter}>
-                <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="all">All Registrations</SelectItem>{registrations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-              </Select>
-            )}
-            <div className="flex items-center gap-1">
-              <label className="text-xs text-muted-foreground whitespace-nowrap">From</label>
-              <Input type="date" className="w-36 h-9" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-            </div>
-            <div className="flex items-center gap-1">
-              <label className="text-xs text-muted-foreground whitespace-nowrap">To</label>
-              <Input type="date" className="w-36 h-9" value={dateTo} onChange={e => setDateTo(e.target.value)} />
-            </div>
-            <div className="flex border rounded-lg overflow-hidden ml-auto">
-              <Button variant={viewMode === "table" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => setViewMode("table")}><TableIcon size={14} className="mr-1" /> Table</Button>
-              <Button variant={viewMode === "calendar" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => setViewMode("calendar")}><CalendarDays size={14} className="mr-1" /> Calendar</Button>
-            </div>
-          </div>
+          <AdvancedFilters
+            className="mb-4"
+            searchKey="search"
+            searchPlaceholder="Search flight, permit, route…"
+            rightSlot={
+              <div className="flex border rounded-lg overflow-hidden">
+                <Button variant={viewMode === "table" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => setViewMode("table")}><TableIcon size={14} className="mr-1" /> Table</Button>
+                <Button variant={viewMode === "calendar" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => setViewMode("calendar")}><CalendarDays size={14} className="mr-1" /> Calendar</Button>
+              </div>
+            }
+            fields={[
+              { key: "search", kind: "text", label: "Search" },
+              { key: "airline", kind: "select", label: "Airline", options: (airlines || []).slice().sort((a: any, b: any) => a.name.localeCompare(b.name)).map((a: any) => ({ value: a.id, label: a.code ? `${a.code} – ${a.name}` : a.name })) },
+              { key: "type", kind: "select", label: "Clearance Type", options: getClearanceTypesByCategory(serviceCategory).map(t => ({ value: t, label: t })) },
+              { key: "status", kind: "select", label: "Status", options: [{ value: "Pending", label: "Pending" }, { value: "Approved", label: "Approved" }, { value: "Rejected", label: "Rejected" }, { value: "Expired", label: "Expired" }] },
+              { key: "station", kind: "select", label: "Station", options: stations.map(s => ({ value: s, label: s })) },
+              ...(registrations.length > 0 ? [{ key: "registration", kind: "select" as const, label: "Registration", options: registrations.map(r => ({ value: r, label: r })) }] : []),
+              { key: "aircraft_type", kind: "select", label: "Aircraft Type", options: aircraftTypes.map(t => ({ value: t, label: t })) },
+              { key: "purpose", kind: "select", label: "Purpose", options: purposes.map(p => ({ value: p, label: p })) },
+              { key: "origin", kind: "text", label: "Origin (route start)", placeholder: "e.g. CAI" },
+              { key: "destination", kind: "text", label: "Destination (route end)", placeholder: "e.g. DXB" },
+              { key: "min_pax", kind: "number", label: "Min Passengers", placeholder: "e.g. 50" },
+              { key: "date_from", kind: "date", label: "Date From" },
+              { key: "date_to", kind: "date", label: "Date To" },
+            ]}
+            values={{ search, airline: airlineFilter, type: typeFilter, status: statusFilter, station: stationFilter, registration: registrationFilter, aircraft_type: aircraftTypeFilter, purpose: purposeFilter, origin: originFilter, destination: destinationFilter, min_pax: minPax, date_from: dateFrom, date_to: dateTo }}
+            onChange={(v) => {
+              setSearch(v.search ?? ""); setAirlineFilter(v.airline ?? "all"); setTypeFilter(v.type ?? "all");
+              setStatusFilter(v.status ?? "all"); setStationFilter(v.station ?? "all");
+              setRegistrationFilter(v.registration ?? "all");
+              setAircraftTypeFilter(v.aircraft_type ?? "all"); setPurposeFilter(v.purpose ?? "all");
+              setOriginFilter(v.origin ?? ""); setDestinationFilter(v.destination ?? ""); setMinPax(v.min_pax ?? "");
+              setDateFrom(v.date_from ?? ""); setDateTo(v.date_to ?? "");
+            }}
+          />
 
           {viewMode === "table" ? (
             <Card>

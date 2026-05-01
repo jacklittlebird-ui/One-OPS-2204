@@ -159,8 +159,13 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [currencyFilter, setCurrencyFilter] = useState("All");
+  const [operatorFilter, setOperatorFilter] = useState("All");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [dueFrom, setDueFrom] = useState("");
+  const [dueTo, setDueTo] = useState("");
+  const [minTotal, setMinTotal] = useState("");
+  const [maxTotal, setMaxTotal] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
@@ -194,16 +199,25 @@ export default function InvoicesPage() {
     }
   }, [location.search]);
 
+  const operators = useMemo(() => [...new Set(invoices.map(i => i.operator).filter(Boolean))].sort(), [invoices]);
+
   const filtered = useMemo(() => {
     let r = invoices;
     if (statusFilter !== "All") r = r.filter(i => i.status === statusFilter);
     if (typeFilter !== "All") r = r.filter(i => (i.invoice_type || "Preliminary") === typeFilter);
     if (currencyFilter !== "All") r = r.filter(i => i.currency === currencyFilter);
+    if (operatorFilter !== "All") r = r.filter(i => i.operator === operatorFilter);
     if (dateFrom) r = r.filter(i => i.date >= dateFrom);
     if (dateTo) r = r.filter(i => i.date <= dateTo);
-    if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s)); }
+    if (dueFrom) r = r.filter(i => (i.due_date || "") >= dueFrom);
+    if (dueTo) r = r.filter(i => (i.due_date || "") <= dueTo);
+    const minT = minTotal ? parseFloat(minTotal) : null;
+    const maxT = maxTotal ? parseFloat(maxTotal) : null;
+    if (minT !== null) r = r.filter(i => (i.total || 0) >= minT);
+    if (maxT !== null) r = r.filter(i => (i.total || 0) <= maxT);
+    if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s) || (i.notes || "").toLowerCase().includes(s)); }
     return r;
-  }, [invoices, statusFilter, typeFilter, currencyFilter, dateFrom, dateTo, search]);
+  }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -216,7 +230,7 @@ export default function InvoicesPage() {
   const finalizedCount = invoices.filter(i => i.invoice_type === "Final").length;
   const collectionRate = totalRevenue > 0 ? Math.round((totalPaid / totalRevenue) * 100) : 0;
 
-  const activeFilterCount = [statusFilter !== "All", typeFilter !== "All", currencyFilter !== "All", !!dateFrom, !!dateTo].filter(Boolean).length;
+  const activeFilterCount = [statusFilter !== "All", typeFilter !== "All", currencyFilter !== "All", operatorFilter !== "All", !!dateFrom, !!dateTo, !!dueFrom, !!dueTo, !!minTotal, !!maxTotal].filter(Boolean).length;
 
   const saveNew = async () => {
     if (!newInvoice.operator) return;
@@ -347,7 +361,7 @@ export default function InvoicesPage() {
     status: inv.status, notes: inv.notes,
   });
 
-  const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setDateFrom(""); setDateTo(""); };
+  const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
 
   // Billing preview: group completed dispatches by airline+station for the month
   const billingPreviewData = useMemo(() => {
@@ -502,8 +516,22 @@ export default function InvoicesPage() {
               <FormField label="From Date">
                 <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               </FormField>
-              <FormField label="To Date">
-                <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              <FormField label="Operator">
+                <select value={operatorFilter} onChange={e => { setOperatorFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-44">
+                  <option>All</option>{operators.map(o => <option key={o}>{o}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Due From">
+                <input type="date" value={dueFrom} onChange={e => { setDueFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              </FormField>
+              <FormField label="Due To">
+                <input type="date" value={dueTo} onChange={e => { setDueTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+              </FormField>
+              <FormField label="Min Total">
+                <input type="number" value={minTotal} onChange={e => { setMinTotal(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
+              </FormField>
+              <FormField label="Max Total">
+                <input type="number" value={maxTotal} onChange={e => { setMaxTotal(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
               </FormField>
               {activeFilterCount > 0 && (
                 <button onClick={clearFilters} className="text-xs text-destructive hover:underline pb-1.5">Clear all</button>
