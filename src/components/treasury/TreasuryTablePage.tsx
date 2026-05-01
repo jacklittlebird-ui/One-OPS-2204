@@ -19,9 +19,11 @@ export interface TreasuryField {
   label: string;
   type: FieldType;
   options?: { value: string; label: string }[];
+  loadOptions?: () => Promise<{ value: string; label: string }[]>;
   required?: boolean;
   default?: any;
   span?: 1 | 2;
+  allowEmpty?: boolean;
 }
 
 interface Props {
@@ -138,10 +140,16 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
               <div key={f.key} className={f.span === 2 || f.type === "textarea" ? "md:col-span-2" : ""}>
                 <Label className="mb-1 block text-sm">{f.label}{f.required && " *"}</Label>
                 {f.type === "select" ? (
-                  <Select value={String(form[f.key] ?? "")} onValueChange={(v) => setForm({ ...form, [f.key]: v })}>
+                  <Select
+                    value={String(form[f.key] ?? "__none__")}
+                    onValueChange={(v) => setForm({ ...form, [f.key]: v === "__none__" ? "" : v })}
+                  >
                     <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                     <SelectContent>
-                      {f.options?.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                      {f.allowEmpty && <SelectItem value="__none__">— None —</SelectItem>}
+                      {(asyncOptions[f.key] ?? f.options ?? []).map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 ) : f.type === "textarea" ? (
