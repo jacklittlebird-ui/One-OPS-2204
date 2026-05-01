@@ -136,6 +136,8 @@ export default function ClearancesPage() {
 
   const stations = [...new Set((airportsList || []).map((a: any) => a.iata_code).filter(Boolean))].sort();
   const registrations = [...new Set(data.map(c => c.registration).filter(Boolean))].sort();
+  const aircraftTypes = [...new Set(data.map(c => c.aircraft_type).filter(Boolean))].sort();
+  const purposes = [...new Set(data.map(c => c.purpose).filter(Boolean))].sort();
 
   const isStationDispatchRecord = (c: ClearanceRow) =>
     c.purpose === "Station Dispatch" ||
@@ -144,7 +146,6 @@ export default function ClearancesPage() {
   const clearanceOwnedData = data.filter(c => !isStationDispatchRecord(c));
 
   const filtered = clearanceOwnedData.filter(c => {
-    // Filter by service category first
     const categoryMatch = getServiceCategory(c.clearance_type) === serviceCategory;
     const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
     const mst = statusFilter === "all" || c.status === statusFilter;
@@ -152,17 +153,23 @@ export default function ClearancesPage() {
     const mstation = stationFilter === "all" || c.authority === stationFilter;
     const mreg = registrationFilter === "all" || c.registration === registrationFilter;
     const mairline = airlineFilter === "all" || c.airline_id === airlineFilter;
+    const mac = aircraftTypeFilter === "all" || c.aircraft_type === aircraftTypeFilter;
+    const mpurp = purposeFilter === "all" || c.purpose === purposeFilter;
+    const route = (c.route || "").toUpperCase();
+    const mor = !originFilter || route.startsWith(originFilter.toUpperCase());
+    const mdest = !destinationFilter || route.endsWith(destinationFilter.toUpperCase());
+    const minP = minPax ? parseInt(minPax) : null;
+    const mpx = minP === null || (c.passengers || 0) >= minP;
     const flightDate = c.arrival_date || c.departure_date || "";
     const mdf = !dateFrom || flightDate >= dateFrom;
     const mdt = !dateTo || flightDate <= dateTo;
-    return categoryMatch && ms && mst && mt && mstation && mreg && mairline && mdf && mdt;
+    return categoryMatch && ms && mst && mt && mstation && mreg && mairline && mac && mpurp && mor && mdest && mpx && mdf && mdt;
   }).sort((a, b) => {
     const da = a.arrival_date || a.departure_date || "";
     const db = b.arrival_date || b.departure_date || "";
     if (!da && !db) return 0;
     if (!da) return 1;
     if (!db) return -1;
-    // Newest first
     return db.localeCompare(da);
   });
 
