@@ -16,8 +16,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import {
   Building2, MapPin, Globe, Shield, Bell, User, Monitor, Lock, Clock,
-  Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check
+  Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check,
+  Sparkles, Layout, Type, Contrast, Wand2, PanelLeft
 } from "lucide-react";
+import { applyTheme, loadTheme, saveTheme, DEFAULT_THEME, THEME_PRESETS, type ThemeSettings, type SidebarStyle, type BackgroundStyle, type FontScale } from "@/lib/themeStorage";
 import { formatDateDMY } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────
