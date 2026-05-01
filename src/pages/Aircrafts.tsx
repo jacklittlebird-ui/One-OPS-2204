@@ -56,18 +56,26 @@ export default function AircraftsPage() {
 
   const types = useMemo(() => [...new Set(data.map(d => d.type).filter(Boolean))].sort(), [data]);
   const airlines = useMemo(() => [...new Set(data.map(d => d.airline).filter(Boolean))].sort(), [data]);
+  const acTypes = useMemo(() => [...new Set(data.map(d => d.ac_type).filter(Boolean))].sort(), [data]);
 
   const filtered = useMemo(() => {
     let result = data;
     if (typeFilter !== "all") result = result.filter(r => r.type === typeFilter);
     if (categoryFilter !== "all") result = result.filter(r => r.status === categoryFilter);
     if (airlineFilter !== "all") result = result.filter(r => r.airline === airlineFilter);
+    if (acTypeFilter !== "all") result = result.filter(r => r.ac_type === acTypeFilter);
+    const minM = minMtow ? parseFloat(minMtow) : null;
+    const maxM = maxMtow ? parseFloat(maxMtow) : null;
+    const minS = minSeats ? parseInt(minSeats) : null;
+    if (minM !== null) result = result.filter(r => (r.mtow ?? 0) >= minM);
+    if (maxM !== null) result = result.filter(r => (r.mtow ?? 0) <= maxM);
+    if (minS !== null) result = result.filter(r => (r.seats ?? 0) >= minS);
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(r => (r.registration || '').toLowerCase().includes(s) || (r.model || '').toLowerCase().includes(s) || (r.airline || '').toLowerCase().includes(s) || (r.certificate_no || '').toLowerCase().includes(s) || (r.ac_type || '').toLowerCase().includes(s));
     }
     return result;
-  }, [data, typeFilter, categoryFilter, airlineFilter, search]);
+  }, [data, typeFilter, categoryFilter, airlineFilter, acTypeFilter, minMtow, maxMtow, minSeats, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
