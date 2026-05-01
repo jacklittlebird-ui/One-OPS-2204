@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
+import { AdvancedFilters, FilterField } from "@/components/filters/AdvancedFilters";
 
 type AirportRow = { id: string; country_id: string; name: string; iata_code: string; icao_code: string; city: string; terminal_count: number; status: string; created_at: string };
 type CountryRow = { id: string; name: string; code: string; };
