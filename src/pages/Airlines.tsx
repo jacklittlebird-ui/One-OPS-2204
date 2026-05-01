@@ -144,20 +144,24 @@ export default function AirlinesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-2.5 text-muted-foreground" size={16} />
-          <Input placeholder="Search by name, code, IATA, or country…" className="pl-9" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-        </div>
-        <Select value={countryFilter} onValueChange={v => { setCountryFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="All Countries" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Countries</SelectItem>{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="All Status" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem><SelectItem value="Suspended">Suspended</SelectItem></SelectContent>
-        </Select>
-      </div>
+      <AdvancedFilters
+        searchKey="search"
+        searchPlaceholder="Search by name, code, IATA, or country…"
+        fields={[
+          { key: "search", kind: "text", label: "Search" },
+          { key: "country", kind: "select", label: "Country", options: countries.map(c => ({ value: c, label: c })) },
+          { key: "status", kind: "select", label: "Status", options: [{ value: "Active", label: "Active" }, { value: "Inactive", label: "Inactive" }, { value: "Suspended", label: "Suspended" }] },
+          { key: "alliance", kind: "select", label: "Alliance", options: alliances.map(a => ({ value: a, label: a })) },
+          { key: "currency", kind: "select", label: "Billing Currency", options: currencies.map(c => ({ value: c, label: c })) },
+          { key: "credit", kind: "select", label: "Credit Terms", options: creditTerms.map(c => ({ value: c, label: c })) },
+        ]}
+        values={{ search, country: countryFilter, status: statusFilter, alliance: allianceFilter, currency: currencyFilter, credit: creditFilter }}
+        onChange={(v) => {
+          setSearch(v.search ?? ""); setCountryFilter(v.country ?? "all"); setStatusFilter(v.status ?? "all");
+          setAllianceFilter(v.alliance ?? "all"); setCurrencyFilter(v.currency ?? "all"); setCreditFilter(v.credit ?? "all");
+          setPage(1);
+        }}
+      />
 
       {/* Table */}
       <Card>
