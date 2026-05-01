@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Plane, Calculator, FileText, Utensils, DollarSign,
   Shield, AlertTriangle, MoreHorizontal, FileBarChart2, ScrollText,
   ShieldCheck, Users, Bell, Settings, ClipboardCheck, Building2,
-  Receipt, CreditCard, Eye
+  Receipt, CreditCard, Eye, Landmark
 } from "lucide-react";
 import type { Channel } from "@/contexts/ChannelContext";
 
@@ -18,6 +18,19 @@ interface NavSection {
   path?: string;
   collapsible?: boolean;
 }
+
+const TREASURY_SECTION: NavSection = {
+  label: "TREASURY", icon: <Landmark size={18} />, collapsible: true,
+  children: [
+    { label: "Treasury Overview", path: "/treasury" },
+    { label: "Bank Accounts", path: "/treasury/bank-accounts" },
+    { label: "Cash Accounts", path: "/treasury/cash-accounts" },
+    { label: "Receipts", path: "/treasury/receipts" },
+    { label: "Payments", path: "/treasury/payments" },
+    { label: "Bank Transfers", path: "/treasury/bank-transfers" },
+    { label: "Bank Reconciliation", path: "/treasury/bank-reconciliation" },
+  ],
+};
 
 // Channel-specific navigation configs
 const channelNavs: Record<Channel, NavSection[]> = {
@@ -141,6 +154,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Financial Reports", path: "/financial-reports" },
       ],
     },
+    TREASURY_SECTION,
     {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
       children: [
@@ -173,6 +187,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Vendor Equipment", path: "/vendor-equipment" },
       ],
     },
+    TREASURY_SECTION,
     { label: "NOTIFICATIONS", icon: <Bell size={18} />, path: "/notifications" },
   ],
 
@@ -205,6 +220,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Aging Reports", path: "/aging-reports" },
       ],
     },
+    TREASURY_SECTION,
     {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
       children: [
@@ -249,6 +265,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Airline Incentives", path: "/airline-incentives" },
       ],
     },
+    TREASURY_SECTION,
     {
       label: "CONTRACT", icon: <FileText size={18} />, collapsible: true,
       children: [{ label: "Contracts", path: "/contracts" }],
