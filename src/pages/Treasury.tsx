@@ -1,9 +1,15 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 import {
   Landmark, Wallet, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight,
   ClipboardCheck, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Scale,
+  CalendarIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,25 +29,56 @@ const links = [
 
 const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 const ddmm = (iso: string) => { const d = new Date(iso); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`; };
+const toIso = (d: Date) => d.toISOString().slice(0, 10);
+const fmtDdmmyyyy = (d: Date) => `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
 
 const COLORS = ["hsl(217 91% 60%)", "hsl(160 84% 39%)", "hsl(280 75% 60%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)", "hsl(190 95% 39%)"];
 
+type Preset = "7d" | "30d" | "90d" | "mtd" | "ytd" | "custom";
+
+function presetRange(p: Preset): { from: Date; to: Date } {
+  const to = new Date(); to.setHours(23, 59, 59, 999);
+  const from = new Date(); from.setHours(0, 0, 0, 0);
+  if (p === "7d") from.setDate(from.getDate() - 6);
+  else if (p === "30d") from.setDate(from.getDate() - 29);
+  else if (p === "90d") from.setDate(from.getDate() - 89);
+  else if (p === "mtd") from.setDate(1);
+  else if (p === "ytd") { from.setMonth(0); from.setDate(1); }
+  return { from, to };
+}
+
 export default function TreasuryPage() {
+  const [preset, setPreset] = useState<Preset>("30d");
+  const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
+  const range = useMemo(() => {
+    if (preset === "custom" && customRange.from && customRange.to) {
+      return { from: customRange.from, to: customRange.to };
+    }
+    return presetRange(preset === "custom" ? "30d" : preset);
+  }, [preset, customRange]);
+  const fromIso = toIso(range.from);
+  const toIsoStr = toIso(range.to);
+  const dayCount = Math.max(1, Math.round((range.to.getTime() - range.from.getTime()) / 86400000) + 1);
+
+  const presetLabels: Record<Preset, string> = {
+    "7d": "Last 7 days", "30d": "Last 30 days", "90d": "Last 90 days",
+    mtd: "Month to date", ytd: "Year to date", custom: "Custom",
+  };
+
   const [data, setData] = useState<{ banks: any[]; cash: any[]; payments: any[]; receipts: any[]; transfers: any[]; recs: any[] }>({
     banks: [], cash: [], payments: [], receipts: [], transfers: [], recs: [],
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     (async () => {
-      const since = new Date(); since.setDate(since.getDate() - 30);
-      const sinceIso = since.toISOString().slice(0, 10);
       const [b, c, p, r, t, rec] = await Promise.all([
         (supabase.from as any)("bank_accounts").select("*"),
         (supabase.from as any)("cash_accounts").select("*"),
-        (supabase.from as any)("payments").select("*").gte("payment_date", sinceIso).order("payment_date", { ascending: true }),
-        (supabase.from as any)("receipts").select("*").gte("receipt_date", sinceIso).order("receipt_date", { ascending: true }),
-        (supabase.from as any)("bank_transfers").select("*").gte("transfer_date", sinceIso),
+        (supabase.from as any)("payments").select("*").gte("payment_date", fromIso).lte("payment_date", toIsoStr).order("payment_date", { ascending: true }),
+        (supabase.from as any)("receipts").select("*").gte("receipt_date", fromIso).lte("receipt_date", toIsoStr).order("receipt_date", { ascending: true }),
+        (supabase.from as any)("bank_transfers").select("*").gte("transfer_date", fromIso).lte("transfer_date", toIsoStr),
         (supabase.from as any)("bank_reconciliations").select("*").order("statement_date", { ascending: false }).limit(20),
       ]);
       setData({
@@ -50,48 +87,43 @@ export default function TreasuryPage() {
       });
       setLoading(false);
     })();
-  }, []);
+  }, [fromIso, toIsoStr]);
 
   const sum = (rows: any[], k: string) => rows.reduce((s, x) => s + Number(x[k] || 0), 0);
-
-  const monthStartIso = useMemo(() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }, []);
 
   const bankBal = sum(data.banks, "current_balance");
   const cashBal = sum(data.cash, "current_balance");
   const totalLiquidity = bankBal + cashBal;
-  const receiptsMtd = sum(data.receipts.filter(r => r.receipt_date >= monthStartIso), "amount");
-  const paymentsMtd = sum(data.payments.filter(r => r.payment_date >= monthStartIso), "amount");
-  const netCashflowMtd = receiptsMtd - paymentsMtd;
-  const receipts30 = sum(data.receipts, "amount");
-  const payments30 = sum(data.payments, "amount");
-  const transfers30 = sum(data.transfers, "amount");
+  const receiptsPeriod = sum(data.receipts, "amount");
+  const paymentsPeriod = sum(data.payments, "amount");
+  const transfersPeriod = sum(data.transfers, "amount");
+  const netCashflowPeriod = receiptsPeriod - paymentsPeriod;
 
   // Reconciliation
   const openRecs = data.recs.filter(r => r.status === "Open");
   const totalDifference = sum(data.recs.filter(r => r.status === "Open"), "difference");
   const lastRec = data.recs[0];
 
-  // 30-day cashflow series
+  // Cashflow series across selected range
   const flowSeries = useMemo(() => {
     const days: Record<string, { date: string; receipts: number; payments: number; net: number }> = {};
-    const today = new Date();
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+    const start = new Date(range.from); start.setHours(0, 0, 0, 0);
+    for (let i = 0; i < dayCount; i++) {
+      const d = new Date(start); d.setDate(d.getDate() + i);
+      const key = toIso(d);
       days[key] = { date: key, receipts: 0, payments: 0, net: 0 };
     }
     data.receipts.forEach(r => { if (days[r.receipt_date]) days[r.receipt_date].receipts += Number(r.amount || 0); });
     data.payments.forEach(p => { if (days[p.payment_date]) days[p.payment_date].payments += Number(p.amount || 0); });
     return Object.values(days).map(d => ({ ...d, label: ddmm(d.date), net: d.receipts - d.payments }));
-  }, [data]);
+  }, [data, range.from, dayCount]);
 
   // Account distribution
   const accountDist = useMemo(() => {
-    const items = [
+    return [
       ...data.banks.map(b => ({ name: b.account_name || b.bank_name, value: Number(b.current_balance || 0), type: "Bank" })),
       ...data.cash.map(c => ({ name: c.account_name, value: Number(c.current_balance || 0), type: "Cash" })),
     ].filter(x => x.value > 0).sort((a, b) => b.value - a.value).slice(0, 6);
-    return items;
   }, [data]);
 
   // Currency breakdown
@@ -104,6 +136,10 @@ export default function TreasuryPage() {
     return Object.entries(m).map(([currency, balance]) => ({ currency, balance }));
   }, [data]);
 
+  const periodSuffix = preset === "custom" && customRange.from && customRange.to
+    ? `${fmtDdmmyyyy(customRange.from)} – ${fmtDdmmyyyy(customRange.to)}`
+    : presetLabels[preset];
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
@@ -111,7 +147,51 @@ export default function TreasuryPage() {
           <h1 className="text-2xl font-bold">Treasury Overview</h1>
           <p className="text-sm text-muted-foreground">Cash, banking, payments, receipts and reconciliation</p>
         </div>
+
+        {/* Date range filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <ToggleGroup
+            type="single"
+            value={preset}
+            onValueChange={(v) => v && setPreset(v as Preset)}
+            size="sm"
+            variant="outline"
+          >
+            <ToggleGroupItem value="7d">7d</ToggleGroupItem>
+            <ToggleGroupItem value="30d">30d</ToggleGroupItem>
+            <ToggleGroupItem value="90d">90d</ToggleGroupItem>
+            <ToggleGroupItem value="mtd">MTD</ToggleGroupItem>
+            <ToggleGroupItem value="ytd">YTD</ToggleGroupItem>
+          </ToggleGroup>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={preset === "custom" ? "default" : "outline"}
+                size="sm"
+                className={cn("h-9 justify-start text-left font-normal", preset !== "custom" && "text-muted-foreground")}
+                onClick={() => setPreset("custom")}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {preset === "custom" && customRange.from && customRange.to
+                  ? `${fmtDdmmyyyy(customRange.from)} – ${fmtDdmmyyyy(customRange.to)}`
+                  : "Custom range"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                numberOfMonths={2}
+                selected={customRange as any}
+                onSelect={(r: any) => { setCustomRange(r || {}); if (r?.from && r?.to) setPreset("custom"); }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
+
+      <div className="text-xs text-muted-foreground -mt-4">Showing data for: <span className="font-medium text-foreground">{periodSuffix}</span> ({dayCount} days)</div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -131,18 +211,18 @@ export default function TreasuryPage() {
           <div className="text-[11px] text-muted-foreground">{data.cash.length} accounts</div>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <div className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp size={12}/> Receipts (MTD)</div>
-          <div className="text-xl font-bold text-green-600">{fmt(receiptsMtd)}</div>
-          <div className="text-[11px] text-muted-foreground">{data.receipts.filter(r => r.receipt_date >= monthStartIso).length} entries</div>
+          <div className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp size={12}/> Receipts</div>
+          <div className="text-xl font-bold text-green-600">{fmt(receiptsPeriod)}</div>
+          <div className="text-[11px] text-muted-foreground">{data.receipts.length} entries · {periodSuffix}</div>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <div className="text-xs text-muted-foreground flex items-center gap-1"><TrendingDown size={12}/> Payments (MTD)</div>
-          <div className="text-xl font-bold text-rose-600">{fmt(paymentsMtd)}</div>
-          <div className="text-[11px] text-muted-foreground">{data.payments.filter(r => r.payment_date >= monthStartIso).length} entries</div>
+          <div className="text-xs text-muted-foreground flex items-center gap-1"><TrendingDown size={12}/> Payments</div>
+          <div className="text-xl font-bold text-rose-600">{fmt(paymentsPeriod)}</div>
+          <div className="text-[11px] text-muted-foreground">{data.payments.length} entries · {periodSuffix}</div>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <div className="text-xs text-muted-foreground flex items-center gap-1"><Scale size={12}/> Net Cashflow MTD</div>
-          <div className={`text-xl font-bold ${netCashflowMtd >= 0 ? "text-green-600" : "text-rose-600"}`}>{netCashflowMtd >= 0 ? "+" : ""}{fmt(netCashflowMtd)}</div>
+          <div className="text-xs text-muted-foreground flex items-center gap-1"><Scale size={12}/> Net Cashflow</div>
+          <div className={`text-xl font-bold ${netCashflowPeriod >= 0 ? "text-green-600" : "text-rose-600"}`}>{netCashflowPeriod >= 0 ? "+" : ""}{fmt(netCashflowPeriod)}</div>
           <div className="text-[11px] text-muted-foreground">Receipts − Payments</div>
         </CardContent></Card>
       </div>
@@ -180,13 +260,13 @@ export default function TreasuryPage() {
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
-          <CardHeader className="pb-2"><CardTitle className="text-base">Cashflow — Last 30 days</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Cashflow — {periodSuffix}</CardTitle></CardHeader>
           <CardContent className="h-72">
             {loading ? <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Loading…</div> : (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={flowSeries}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis dataKey="label" fontSize={11} />
+                  <XAxis dataKey="label" fontSize={11} interval="preserveStartEnd" />
                   <YAxis fontSize={11} />
                   <Tooltip />
                   <Legend />
