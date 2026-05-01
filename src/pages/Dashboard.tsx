@@ -643,7 +643,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-      </div>
 
       <ChannelDashboardContent channel={activeChannel} />
     </div>
