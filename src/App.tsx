@@ -51,6 +51,13 @@ import AuditLogPage from "./pages/AuditLog";
 // StationDispatch merged into ServiceReport
 import IrregularityReportsPage from "./pages/IrregularityReports";
 import AllClearanceFlightsPage from "./pages/AllClearanceFlights";
+import TreasuryPage from "./pages/Treasury";
+import BankAccountsPage from "./pages/treasury/BankAccounts";
+import CashAccountsPage from "./pages/treasury/CashAccounts";
+import PaymentsPage from "./pages/treasury/Payments";
+import ReceiptsPage from "./pages/treasury/Receipts";
+import BankTransfersPage from "./pages/treasury/BankTransfers";
+import BankReconciliationPage from "./pages/treasury/BankReconciliation";
 
 
 const queryClient = new QueryClient();
@@ -112,6 +119,13 @@ function AppRoutes() {
       <Route path="/irregularity-reports" element={<ProtectedRoute><AppLayout><IrregularityReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/security-service-reports" element={<Navigate to="/service-report" replace />} />
       <Route path="/all-clearance-flights" element={<ProtectedRoute><AppLayout><AllClearanceFlightsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/treasury" element={<ProtectedRoute><AppLayout><TreasuryPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/treasury/bank-accounts" element={<ProtectedRoute><AppLayout><BankAccountsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/treasury/cash-accounts" element={<ProtectedRoute><AppLayout><CashAccountsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/treasury/payments" element={<ProtectedRoute><AppLayout><PaymentsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/treasury/receipts" element={<ProtectedRoute><AppLayout><ReceiptsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/treasury/bank-transfers" element={<ProtectedRoute><AppLayout><BankTransfersPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/treasury/bank-reconciliation" element={<ProtectedRoute><AppLayout><BankReconciliationPage /></AppLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
