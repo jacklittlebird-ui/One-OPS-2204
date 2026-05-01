@@ -45,6 +45,8 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
   const emptyForm = useMemo(() => Object.fromEntries(fields.map(f => [f.key, f.default ?? ""])), [fields]);
   const [form, setForm] = useState<any>(emptyForm);
 
+  const [asyncOptions, setAsyncOptions] = useState<Record<string, { value: string; label: string }[]>>({});
+
   const load = async () => {
     setLoading(true);
     const { data, error } = await (supabase.from as any)(table).select("*").order(orderBy, { ascending: false });
@@ -52,6 +54,18 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
     setRows(data || []); setLoading(false);
   };
   useEffect(() => { load(); }, [table]);
+
+  useEffect(() => {
+    (async () => {
+      const entries: [string, { value: string; label: string }[]][] = [];
+      for (const f of fields) {
+        if (f.loadOptions) {
+          try { entries.push([f.key, await f.loadOptions()]); } catch { entries.push([f.key, []]); }
+        }
+      }
+      if (entries.length) setAsyncOptions(Object.fromEntries(entries));
+    })();
+  }, [fields]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return rows;
