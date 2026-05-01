@@ -5,12 +5,19 @@
  */
 
 export type ThemeMode = "light" | "dark";
+export type SidebarStyle = "tinted" | "dark" | "light" | "glass";
+export type BackgroundStyle = "solid" | "subtle-gradient" | "mesh";
+export type FontScale = "compact" | "comfortable" | "spacious";
 
 export interface ThemeSettings {
   mode: ThemeMode;
   primary: string;        // HSL triplet, e.g. "243 55% 25%"
   accent: string;         // HSL triplet
   radius: string;         // numeric in rem (no unit), e.g. "0.5"
+  sidebarStyle: SidebarStyle;
+  backgroundStyle: BackgroundStyle;
+  fontScale: FontScale;
+  highContrast: boolean;
 }
 
 export interface SystemSettings {
@@ -33,6 +40,10 @@ export const DEFAULT_THEME: ThemeSettings = {
   primary: "205 85% 35%",
   accent: "190 80% 45%",
   radius: "0.5",
+  sidebarStyle: "tinted",
+  backgroundStyle: "solid",
+  fontScale: "comfortable",
+  highContrast: false,
 };
 
 export const DEFAULT_SYSTEM: SystemSettings = {
@@ -45,6 +56,32 @@ export const DEFAULT_SYSTEM: SystemSettings = {
   enableAnimations: true,
   compactMode: false,
 };
+
+/* ───────────── Curated Presets ───────────── */
+export interface ThemePreset {
+  id: string;
+  name: string;
+  description: string;
+  mode: ThemeMode;
+  primary: string;
+  accent: string;
+  radius: string;
+  sidebarStyle: SidebarStyle;
+  backgroundStyle: BackgroundStyle;
+}
+
+export const THEME_PRESETS: ThemePreset[] = [
+  { id: "aviation",   name: "Aviation Blue",  description: "Classic airline cockpit feel",      mode: "light", primary: "205 85% 35%", accent: "190 80% 45%", radius: "0.5",  sidebarStyle: "tinted", backgroundStyle: "solid" },
+  { id: "midnight",   name: "Midnight Cockpit", description: "Dark mode for night ops",         mode: "dark",  primary: "210 90% 55%", accent: "190 80% 50%", radius: "0.5",  sidebarStyle: "dark",   backgroundStyle: "subtle-gradient" },
+  { id: "desert",     name: "Desert Sand",    description: "Warm sandy palette",                 mode: "light", primary: "30 60% 38%",  accent: "40 85% 50%",  radius: "0.625",sidebarStyle: "tinted", backgroundStyle: "subtle-gradient" },
+  { id: "emerald",    name: "Emerald Tower",  description: "Crisp green & teal",                 mode: "light", primary: "160 60% 32%", accent: "175 70% 40%", radius: "0.5",  sidebarStyle: "tinted", backgroundStyle: "solid" },
+  { id: "monochrome", name: "Monochrome",     description: "Minimal black & white",              mode: "light", primary: "220 15% 20%", accent: "220 10% 45%", radius: "0.25", sidebarStyle: "dark",   backgroundStyle: "solid" },
+  { id: "sunset",     name: "Sunset Gate",    description: "Warm amber & rose",                  mode: "light", primary: "15 80% 48%",  accent: "340 75% 55%", radius: "0.75", sidebarStyle: "tinted", backgroundStyle: "mesh" },
+  { id: "royal",      name: "Royal Indigo",   description: "Deep indigo & gold accents",         mode: "light", primary: "243 55% 30%", accent: "45 90% 50%",  radius: "0.5",  sidebarStyle: "tinted", backgroundStyle: "solid" },
+  { id: "ocean",      name: "Deep Ocean",     description: "Soothing dark blue tones",           mode: "dark",  primary: "200 90% 50%", accent: "180 70% 45%", radius: "0.625",sidebarStyle: "dark",   backgroundStyle: "mesh" },
+  { id: "forest",     name: "Forest Lounge",  description: "Earthy greens & browns",             mode: "light", primary: "145 50% 28%", accent: "85 55% 40%",  radius: "0.5",  sidebarStyle: "tinted", backgroundStyle: "solid" },
+  { id: "contrast",   name: "High Contrast",  description: "Maximum readability (a11y)",         mode: "light", primary: "220 100% 30%",accent: "0 85% 45%",   radius: "0.25", sidebarStyle: "dark",   backgroundStyle: "solid" },
+];
 
 export function loadTheme(): ThemeSettings {
   try {
@@ -87,12 +124,35 @@ export function applyTheme(t: ThemeSettings) {
   const root = document.documentElement;
   root.style.setProperty("--primary", t.primary);
   root.style.setProperty("--ring", t.primary);
-  root.style.setProperty("--sidebar-background", darken(t.primary));
   root.style.setProperty("--accent", t.accent);
   root.style.setProperty("--sidebar-primary", t.accent);
   root.style.setProperty("--success", t.accent);
   root.style.setProperty("--radius", `${t.radius}rem`);
   root.classList.toggle("dark", t.mode === "dark");
+
+  // Sidebar style
+  const sidebarBg =
+    t.sidebarStyle === "dark"   ? "220 25% 12%" :
+    t.sidebarStyle === "light"  ? "0 0% 100%"   :
+    t.sidebarStyle === "glass"  ? "0 0% 100%"   :
+    /* tinted */                  darken(t.primary);
+  root.style.setProperty("--sidebar-background", sidebarBg);
+  root.classList.toggle("sidebar-glass", t.sidebarStyle === "glass");
+  root.classList.toggle("sidebar-light", t.sidebarStyle === "light");
+
+  // Background style
+  root.classList.remove("bg-solid", "bg-subtle-gradient", "bg-mesh");
+  root.classList.add(`bg-${t.backgroundStyle}`);
+
+  // Font scale
+  const fontPx =
+    t.fontScale === "compact"   ? "14px" :
+    t.fontScale === "spacious"  ? "17px" :
+    /* comfortable */             "16px";
+  root.style.fontSize = fontPx;
+
+  // High contrast
+  root.classList.toggle("high-contrast", t.highContrast);
 }
 
 /** Apply system display prefs (compact mode, animations) */

@@ -221,7 +221,73 @@ input[type="time"] {
   font-variant-numeric: tabular-nums;
 }
 
-/* Bump base font size globally */
+/* Base font size — overridden inline by theme.fontScale */
 html {
   font-size: 16px;
 }
+
+/* ───────────── Advanced theme effects ───────────── */
+
+/* Background styles */
+html.bg-solid body { background: hsl(var(--background)); }
+
+html.bg-subtle-gradient body {
+  background:
+    radial-gradient(1200px 600px at 0% 0%, hsl(var(--primary) / 0.06), transparent 60%),
+    radial-gradient(1000px 500px at 100% 100%, hsl(var(--accent) / 0.05), transparent 60%),
+    hsl(var(--background));
+  background-attachment: fixed;
+}
+
+html.bg-mesh body {
+  background:
+    radial-gradient(at 20% 10%, hsl(var(--primary) / 0.10) 0px, transparent 50%),
+    radial-gradient(at 80% 0%,  hsl(var(--accent) / 0.10) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsl(var(--accent) / 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 80%, hsl(var(--primary) / 0.08) 0px, transparent 50%),
+    hsl(var(--background));
+  background-attachment: fixed;
+}
+
+/* Sidebar variants */
+html.sidebar-glass [data-sidebar],
+html.sidebar-glass aside {
+  background: hsl(var(--background) / 0.55) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-right: 1px solid hsl(var(--border));
+}
+
+html.sidebar-light [data-sidebar],
+html.sidebar-light aside {
+  color: hsl(var(--foreground));
+}
+
+/* High contrast mode (a11y) */
+html.high-contrast {
+  --border: 220 15% 35%;
+  --muted-foreground: 220 15% 25%;
+}
+html.high-contrast.dark {
+  --border: 220 15% 70%;
+  --muted-foreground: 220 15% 80%;
+}
+html.high-contrast * {
+  text-shadow: none;
+}
+html.high-contrast .text-muted-foreground {
+  color: hsl(var(--foreground)) !important;
+  opacity: 0.85;
+}
+
+/* Reduced animations */
+html.no-animations *,
+html.no-animations *::before,
+html.no-animations *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Compact density */
+html.compact .stat-card { padding: 0.5rem 0.75rem; }
+html.compact .data-table-row td { padding-top: 0.4rem; padding-bottom: 0.4rem; }

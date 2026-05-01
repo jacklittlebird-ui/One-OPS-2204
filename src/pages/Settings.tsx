@@ -16,8 +16,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import {
   Building2, MapPin, Globe, Shield, Bell, User, Monitor, Lock, Clock,
-  Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check
+  Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check,
+  Sparkles, Layout, Type, Contrast, Wand2, PanelLeft
 } from "lucide-react";
+import { applyTheme, loadTheme, saveTheme, DEFAULT_THEME, THEME_PRESETS, type ThemeSettings, type SidebarStyle, type BackgroundStyle, type FontScale } from "@/lib/themeStorage";
 import { formatDateDMY } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────
@@ -640,73 +642,80 @@ const accentColors = [
 ];
 
 function ThemeAppearanceTab() {
-  const initial = (() => {
-    try {
-      const raw = localStorage.getItem("app:theme");
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  })();
+  const [theme, setTheme] = useState<ThemeSettings>(() => loadTheme());
 
-  const [mode, setMode] = useState<"light" | "dark">(
-    initial?.mode || (document.documentElement.classList.contains("dark") ? "dark" : "light")
-  );
-  const [selectedPrimary, setSelectedPrimary] = useState(initial?.primary || "243 55% 25%");
-  const [selectedAccent, setSelectedAccent] = useState(initial?.accent || "152 60% 45%");
-  const [borderRadius, setBorderRadius] = useState(initial?.radius || "0.5");
-
-  const persist = (next: Partial<{ mode: "light" | "dark"; primary: string; accent: string; radius: string }>) => {
-    const current = { mode, primary: selectedPrimary, accent: selectedAccent, radius: borderRadius, ...next };
-    localStorage.setItem("app:theme", JSON.stringify(current));
-  };
-
-  const applyPrimary = (val: string) => {
-    setSelectedPrimary(val);
-    document.documentElement.style.setProperty("--primary", val);
-    document.documentElement.style.setProperty("--ring", val);
-    document.documentElement.style.setProperty("--sidebar-background", val.replace(/\d+%$/, (m) => `${Math.max(0, parseInt(m) - 7)}%`));
-    persist({ primary: val });
-  };
-
-  const applyAccent = (val: string) => {
-    setSelectedAccent(val);
-    document.documentElement.style.setProperty("--accent", val);
-    document.documentElement.style.setProperty("--sidebar-primary", val);
-    document.documentElement.style.setProperty("--success", val);
-    persist({ accent: val });
-  };
-
-  const applyMode = (m: "light" | "dark") => {
-    setMode(m);
-    document.documentElement.classList.toggle("dark", m === "dark");
-    persist({ mode: m });
-  };
-
-  const applyRadius = (val: string) => {
-    setBorderRadius(val);
-    document.documentElement.style.setProperty("--radius", `${val}rem`);
-    persist({ radius: val });
+  const update = (patch: Partial<ThemeSettings>) => {
+    const next = { ...theme, ...patch };
+    setTheme(next);
+    applyTheme(next);
+    saveTheme(next);
   };
 
   const handleReset = () => {
-    document.documentElement.style.removeProperty("--primary");
-    document.documentElement.style.removeProperty("--ring");
-    document.documentElement.style.removeProperty("--accent");
-    document.documentElement.style.removeProperty("--sidebar-background");
-    document.documentElement.style.removeProperty("--sidebar-primary");
-    document.documentElement.style.removeProperty("--success");
-    document.documentElement.style.removeProperty("--radius");
-    document.documentElement.classList.remove("dark");
-    setSelectedPrimary("243 55% 25%");
-    setSelectedAccent("152 60% 45%");
-    setBorderRadius("0.5");
-    setMode("light");
+    setTheme(DEFAULT_THEME);
+    applyTheme(DEFAULT_THEME);
     localStorage.removeItem("app:theme");
     toast.success("Theme reset to defaults");
   };
 
+  const applyPreset = (id: string) => {
+    const p = THEME_PRESETS.find(x => x.id === id);
+    if (!p) return;
+    const next: ThemeSettings = {
+      ...theme,
+      mode: p.mode, primary: p.primary, accent: p.accent, radius: p.radius,
+      sidebarStyle: p.sidebarStyle, backgroundStyle: p.backgroundStyle,
+    };
+    setTheme(next);
+    applyTheme(next);
+    saveTheme(next);
+    toast.success(`Applied "${p.name}" preset`);
+  };
+
+  // Parse HSL triplet "H S% L%" into separate numbers
+  const parseHSL = (hsl: string): [number, number, number] => {
+    const m = hsl.match(/(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%/);
+    return m ? [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])] : [0, 0, 0];
+  };
+  const formatHSL = (h: number, s: number, l: number) => `${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%`;
+
+  const [pH, pS, pL] = parseHSL(theme.primary);
+  const [aH, aS, aL] = parseHSL(theme.accent);
+
   return (
     <div className="space-y-6">
-      {/* Mode */}
+      {/* PRESETS */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Sparkles size={18} className="text-primary" /> Theme Presets</CardTitle>
+          <CardDescription>One-click curated palettes for different ops scenarios</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {THEME_PRESETS.map(p => {
+              const active = theme.primary === p.primary && theme.accent === p.accent && theme.mode === p.mode;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => applyPreset(p.id)}
+                  className={`group relative overflow-hidden rounded-lg border-2 p-3 text-left transition-all ${active ? "border-primary shadow-md" : "border-border hover:border-muted-foreground/40"}`}
+                >
+                  {active && <div className="absolute top-2 right-2 z-10"><Check size={14} className="text-primary" /></div>}
+                  <div className="flex gap-1.5 mb-2">
+                    <div className="w-7 h-7 rounded-md shadow-inner" style={{ background: `hsl(${p.primary})` }} />
+                    <div className="w-7 h-7 rounded-md shadow-inner" style={{ background: `hsl(${p.accent})` }} />
+                    <div className={`w-7 h-7 rounded-md border ${p.mode === "dark" ? "bg-gray-900" : "bg-white"}`} />
+                  </div>
+                  <p className="text-xs font-bold text-foreground">{p.name}</p>
+                  <p className="text-[10px] text-muted-foreground line-clamp-1">{p.description}</p>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* MODE */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Sun size={18} className="text-amber" /> Appearance Mode</CardTitle>
@@ -715,20 +724,20 @@ function ThemeAppearanceTab() {
         <CardContent>
           <div className="grid grid-cols-2 gap-4 max-w-sm">
             <button
-              onClick={() => applyMode("light")}
-              className={`relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${mode === "light" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
+              onClick={() => update({ mode: "light" })}
+              className={`relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${theme.mode === "light" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
             >
-              {mode === "light" && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
+              {theme.mode === "light" && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
               <div className="w-12 h-12 rounded-lg bg-white border shadow-sm flex items-center justify-center">
                 <Sun size={20} className="text-amber" />
               </div>
               <span className="text-sm font-semibold text-foreground">Light</span>
             </button>
             <button
-              onClick={() => applyMode("dark")}
-              className={`relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${mode === "dark" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
+              onClick={() => update({ mode: "dark" })}
+              className={`relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${theme.mode === "dark" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
             >
-              {mode === "dark" && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
+              {theme.mode === "dark" && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
               <div className="w-12 h-12 rounded-lg bg-gray-900 border border-gray-700 flex items-center justify-center">
                 <Moon size={20} className="text-sky" />
               </div>
@@ -738,98 +747,264 @@ function ThemeAppearanceTab() {
         </CardContent>
       </Card>
 
-      {/* Primary Color */}
+      {/* PRIMARY COLOR PALETTE + CUSTOM HSL */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Palette size={18} className="text-primary" /> Primary Color</CardTitle>
           <CardDescription>Main brand color used for buttons, links, and highlights</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
             {themeColors.map(c => (
               <button
                 key={c.value}
-                onClick={() => applyPrimary(c.value)}
-                className={`relative group flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${selectedPrimary === c.value ? "border-foreground shadow-md" : "border-transparent hover:border-border"}`}
+                onClick={() => update({ primary: c.value })}
+                className={`relative group flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${theme.primary === c.value ? "border-foreground shadow-md" : "border-transparent hover:border-border"}`}
               >
                 <div className="w-10 h-10 rounded-full shadow-inner border border-black/10 flex items-center justify-center" style={{ backgroundColor: c.preview }}>
-                  {selectedPrimary === c.value && <Check size={16} className="text-white drop-shadow" />}
+                  {theme.primary === c.value && <Check size={16} className="text-white drop-shadow" />}
                 </div>
                 <span className="text-[10px] font-semibold text-muted-foreground group-hover:text-foreground">{c.name}</span>
               </button>
             ))}
           </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Wand2 size={14} className="text-muted-foreground" />
+              <Label className="text-xs font-semibold uppercase tracking-wide">Custom HSL</Label>
+              <div className="ml-auto w-8 h-8 rounded-md border" style={{ background: `hsl(${theme.primary})` }} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Hue ({Math.round(pH)})</Label>
+                <input type="range" min="0" max="360" value={pH} onChange={e => update({ primary: formatHSL(+e.target.value, pS, pL) })}
+                  className="w-full h-2 rounded accent-primary"
+                  style={{ background: "linear-gradient(to right, hsl(0 70% 50%),hsl(60 70% 50%),hsl(120 70% 50%),hsl(180 70% 50%),hsl(240 70% 50%),hsl(300 70% 50%),hsl(360 70% 50%))" }} />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Saturation ({Math.round(pS)}%)</Label>
+                <input type="range" min="0" max="100" value={pS} onChange={e => update({ primary: formatHSL(pH, +e.target.value, pL) })} className="w-full h-2 rounded accent-primary" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Lightness ({Math.round(pL)}%)</Label>
+                <input type="range" min="0" max="100" value={pL} onChange={e => update({ primary: formatHSL(pH, pS, +e.target.value) })} className="w-full h-2 rounded accent-primary" />
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Accent Color */}
+      {/* ACCENT COLOR PALETTE + CUSTOM */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Palette size={18} className="text-accent" /> Accent Color</CardTitle>
           <CardDescription>Used for success states, sidebar highlights, and accents</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {accentColors.map(c => (
               <button
                 key={c.value}
-                onClick={() => applyAccent(c.value)}
-                className={`relative group flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${selectedAccent === c.value ? "border-foreground shadow-md" : "border-transparent hover:border-border"}`}
+                onClick={() => update({ accent: c.value })}
+                className={`relative group flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${theme.accent === c.value ? "border-foreground shadow-md" : "border-transparent hover:border-border"}`}
               >
                 <div className="w-10 h-10 rounded-full shadow-inner border border-black/10 flex items-center justify-center" style={{ backgroundColor: c.preview }}>
-                  {selectedAccent === c.value && <Check size={16} className="text-white drop-shadow" />}
+                  {theme.accent === c.value && <Check size={16} className="text-white drop-shadow" />}
                 </div>
                 <span className="text-[10px] font-semibold text-muted-foreground group-hover:text-foreground">{c.name}</span>
               </button>
             ))}
           </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Wand2 size={14} className="text-muted-foreground" />
+              <Label className="text-xs font-semibold uppercase tracking-wide">Custom HSL</Label>
+              <div className="ml-auto w-8 h-8 rounded-md border" style={{ background: `hsl(${theme.accent})` }} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Hue ({Math.round(aH)})</Label>
+                <input type="range" min="0" max="360" value={aH} onChange={e => update({ accent: formatHSL(+e.target.value, aS, aL) })} className="w-full h-2 rounded accent-primary" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Saturation ({Math.round(aS)}%)</Label>
+                <input type="range" min="0" max="100" value={aS} onChange={e => update({ accent: formatHSL(aH, +e.target.value, aL) })} className="w-full h-2 rounded accent-primary" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Lightness ({Math.round(aL)}%)</Label>
+                <input type="range" min="0" max="100" value={aL} onChange={e => update({ accent: formatHSL(aH, aS, +e.target.value) })} className="w-full h-2 rounded accent-primary" />
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Border Radius */}
+      {/* SIDEBAR STYLE */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><PanelLeft size={18} className="text-primary" /> Sidebar Style</CardTitle>
+          <CardDescription>How the navigation panel renders</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {([
+              { id: "tinted", label: "Tinted", desc: "Primary-color tint" },
+              { id: "dark",   label: "Dark",   desc: "Always dark" },
+              { id: "light",  label: "Light",  desc: "White panel" },
+              { id: "glass",  label: "Glass",  desc: "Frosted blur" },
+            ] as { id: SidebarStyle; label: string; desc: string }[]).map(s => {
+              const active = theme.sidebarStyle === s.id;
+              const preview =
+                s.id === "tinted" ? `hsl(${theme.primary})` :
+                s.id === "dark"   ? "hsl(220 25% 12%)" :
+                s.id === "light"  ? "hsl(0 0% 100%)" :
+                                    "hsl(0 0% 100% / 0.55)";
+              return (
+                <button key={s.id} onClick={() => update({ sidebarStyle: s.id })}
+                  className={`relative flex flex-col gap-2 p-3 rounded-lg border-2 transition-all ${active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                  {active && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
+                  <div className="flex gap-1.5 h-12">
+                    <div className="w-1/3 rounded border" style={{ background: preview, backdropFilter: s.id === "glass" ? "blur(6px)" : undefined }} />
+                    <div className="flex-1 rounded bg-muted/40 border" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">{s.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{s.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* BACKGROUND STYLE */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Layout size={18} className="text-primary" /> Background Style</CardTitle>
+          <CardDescription>Workspace background — solid or atmospheric</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            {([
+              { id: "solid", label: "Solid", desc: "Flat color" },
+              { id: "subtle-gradient", label: "Subtle Gradient", desc: "Soft brand glow" },
+              { id: "mesh", label: "Mesh", desc: "Multi-point gradient" },
+            ] as { id: BackgroundStyle; label: string; desc: string }[]).map(b => {
+              const active = theme.backgroundStyle === b.id;
+              const bg =
+                b.id === "solid" ? "hsl(var(--background))" :
+                b.id === "subtle-gradient" ? `radial-gradient(ellipse at 0% 0%, hsl(${theme.primary} / 0.15), transparent 60%), radial-gradient(ellipse at 100% 100%, hsl(${theme.accent} / 0.12), transparent 60%), hsl(var(--background))` :
+                `radial-gradient(at 20% 10%, hsl(${theme.primary} / 0.25), transparent 50%), radial-gradient(at 80% 0%, hsl(${theme.accent} / 0.25), transparent 50%), radial-gradient(at 100% 80%, hsl(${theme.primary} / 0.18), transparent 50%), hsl(var(--background))`;
+              return (
+                <button key={b.id} onClick={() => update({ backgroundStyle: b.id })}
+                  className={`relative flex flex-col gap-2 p-3 rounded-lg border-2 transition-all ${active ? "border-primary" : "border-border hover:border-muted-foreground/30"}`}>
+                  {active && <div className="absolute top-2 right-2 z-10"><Check size={14} className="text-primary" /></div>}
+                  <div className="h-16 rounded border" style={{ background: bg }} />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">{b.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{b.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* TYPOGRAPHY & DENSITY */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Type size={18} className="text-primary" /> Typography Scale</CardTitle>
+          <CardDescription>Adjusts root font size for the entire app</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3 max-w-2xl">
+            {([
+              { id: "compact", label: "Compact", px: "14px" },
+              { id: "comfortable", label: "Comfortable", px: "16px" },
+              { id: "spacious", label: "Spacious", px: "17px" },
+            ] as { id: FontScale; label: string; px: string }[]).map(f => {
+              const active = theme.fontScale === f.id;
+              return (
+                <button key={f.id} onClick={() => update({ fontScale: f.id })}
+                  className={`relative p-4 rounded-lg border-2 transition-all ${active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                  {active && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
+                  <p className="font-bold text-foreground" style={{ fontSize: f.px }}>Aa</p>
+                  <p className="text-xs font-semibold text-foreground mt-1">{f.label}</p>
+                  <p className="text-[10px] text-muted-foreground">{f.px} root</p>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* BORDER RADIUS */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Monitor size={18} className="text-violet" /> Border Radius</CardTitle>
           <CardDescription>Controls the roundness of buttons, cards, and inputs</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-6 max-w-md">
-            <div className="flex gap-3">
-              {[
-                { label: "None", val: "0" },
-                { label: "Small", val: "0.25" },
-                { label: "Medium", val: "0.5" },
-                { label: "Large", val: "0.75" },
-                { label: "Full", val: "1" },
-              ].map(r => (
-                <button
-                  key={r.val}
-                  onClick={() => applyRadius(r.val)}
-                  className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${borderRadius === r.val ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
-                >
-                  <div className="w-10 h-10 bg-primary/20 border border-primary/30" style={{ borderRadius: `${r.val}rem` }} />
-                  <span className="text-[10px] font-semibold text-muted-foreground">{r.label}</span>
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { label: "None", val: "0" },
+              { label: "Small", val: "0.25" },
+              { label: "Medium", val: "0.5" },
+              { label: "Large", val: "0.75" },
+              { label: "Full", val: "1" },
+            ].map(r => (
+              <button
+                key={r.val}
+                onClick={() => update({ radius: r.val })}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${theme.radius === r.val ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}
+              >
+                <div className="w-10 h-10 bg-primary/20 border border-primary/30" style={{ borderRadius: `${r.val}rem` }} />
+                <span className="text-[10px] font-semibold text-muted-foreground">{r.label}</span>
+              </button>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Preview */}
+      {/* ACCESSIBILITY */}
       <Card>
         <CardHeader>
-          <CardTitle>Preview</CardTitle>
-          <CardDescription>See how your theme choices look</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Contrast size={18} className="text-primary" /> Accessibility</CardTitle>
+          <CardDescription>High-contrast mode for improved readability</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+            <div>
+              <p className="text-sm font-semibold text-foreground">High contrast</p>
+              <p className="text-xs text-muted-foreground">Increases borders and text contrast across the app</p>
+            </div>
+            <Switch checked={theme.highContrast} onCheckedChange={(v) => update({ highContrast: !!v })} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* PREVIEW */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Eye size={18} /> Live Preview</CardTitle>
+          <CardDescription>See how your theme choices look</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-3">
             <Button>Primary Button</Button>
             <Button variant="secondary">Secondary</Button>
             <Button variant="outline">Outline</Button>
             <Button variant="destructive">Destructive</Button>
           </div>
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap gap-2">
             <Badge>Default</Badge>
             <Badge variant="secondary">Secondary</Badge>
             <Badge variant="outline">Outline</Badge>
@@ -838,7 +1013,34 @@ function ThemeAppearanceTab() {
             <Badge className="bg-info/15 text-info border-0">Info</Badge>
             <Badge className="bg-destructive/15 text-destructive border-0">Error</Badge>
           </div>
-          <div className="flex gap-3 mt-4">
+
+          {/* Mini app preview */}
+          <div className="rounded-lg border overflow-hidden grid grid-cols-[120px_1fr] h-48">
+            <div className="p-3 space-y-2" style={{
+              background: theme.sidebarStyle === "dark" ? "hsl(220 25% 12%)" :
+                          theme.sidebarStyle === "light" ? "hsl(0 0% 100%)" :
+                          theme.sidebarStyle === "glass" ? "hsl(var(--background) / 0.55)" :
+                          `hsl(${theme.primary})`,
+              color: ["dark", "tinted"].includes(theme.sidebarStyle) ? "white" : "hsl(var(--foreground))"
+            }}>
+              <div className="text-[10px] font-bold uppercase opacity-80">Sidebar</div>
+              <div className="h-2 rounded bg-current opacity-30" />
+              <div className="h-2 rounded bg-current opacity-20 w-3/4" />
+              <div className="h-2 rounded bg-current opacity-20 w-2/3" />
+              <div className="h-6 rounded mt-2" style={{ background: `hsl(${theme.accent})` }} />
+            </div>
+            <div className="p-3 bg-card flex flex-col gap-2">
+              <div className="h-3 rounded bg-foreground/80 w-1/2" />
+              <div className="h-2 rounded bg-muted-foreground/40 w-3/4" />
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="h-12 rounded border" style={{ background: `hsl(${theme.primary} / 0.1)`, borderRadius: `${theme.radius}rem` }} />
+                <div className="h-12 rounded border" style={{ background: `hsl(${theme.accent} / 0.1)`, borderRadius: `${theme.radius}rem` }} />
+                <div className="h-12 rounded border bg-muted" style={{ borderRadius: `${theme.radius}rem` }} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 flex-wrap">
             <div className="w-8 h-8 rounded-full bg-primary" title="Primary" />
             <div className="w-8 h-8 rounded-full bg-accent" title="Accent" />
             <div className="w-8 h-8 rounded-full bg-info" title="Info" />
