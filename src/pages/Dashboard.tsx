@@ -626,20 +626,32 @@ export default function DashboardPage() {
 
   const displayName = profile?.full_name?.split(" ")[0] || "there";
 
-  // Preload the welcome background as early as possible (before <img> mounts).
-  // This injects <link rel="preload"> so the browser parallelizes the fetch
-  // with React render & data queries instead of waiting for layout.
+  // Persisted background choice (resets to "sky" by default).
+  const [bgKey, setBgKey] = useState<WelcomeBgKey>(() => {
+    if (typeof window === "undefined") return "sky";
+    const saved = window.localStorage.getItem(WELCOME_BG_STORAGE_KEY) as WelcomeBgKey | null;
+    return saved && WELCOME_BACKGROUNDS.some((b) => b.key === saved) ? saved : "sky";
+  });
+  const activeBg = WELCOME_BACKGROUNDS.find((b) => b.key === bgKey) ?? WELCOME_BACKGROUNDS[0];
+
+  // Preload the active welcome background as early as possible (before <img>
+  // mounts) so the browser parallelizes the fetch with React render & queries.
   useEffect(() => {
     const id = "welcome-bg-preload";
-    if (document.getElementById(id)) return;
+    document.getElementById(id)?.remove();
     const link = document.createElement("link");
     link.id = id;
     link.rel = "preload";
     link.as = "image";
-    link.href = welcomeBg;
+    link.href = activeBg.src;
     (link as HTMLLinkElement & { fetchPriority?: string }).fetchPriority = "high";
     document.head.appendChild(link);
-  }, []);
+  }, [activeBg.src]);
+
+  const handleBgChange = (key: WelcomeBgKey) => {
+    setBgKey(key);
+    try { window.localStorage.setItem(WELCOME_BG_STORAGE_KEY, key); } catch { /* ignore */ }
+  };
 
   return (
     <div className="space-y-5">
@@ -647,20 +659,70 @@ export default function DashboardPage() {
         {/* Real <img> instead of CSS background so the browser can prioritize
             it (fetchpriority=high) and decode async without blocking paint. */}
         <img
-          src={welcomeBg}
+          key={activeBg.src}
+          src={activeBg.src}
           alt=""
           aria-hidden="true"
           fetchPriority="high"
           decoding="async"
           width={1600}
           height={427}
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          className="absolute inset-0 -z-10 h-full w-full object-cover transition-opacity duration-300"
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background/85 via-background/60 to-background/30" />
         <div className="relative z-10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <h1 className="text-xl md:text-2xl font-bold">{greeting}, {displayName} 👋</h1>
-            <span className="ml-auto flex items-center gap-1.5 text-xs bg-background/70 backdrop-blur px-3 py-1.5 rounded-full font-semibold border">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Change welcome background"
+                  className="ml-auto inline-flex items-center gap-1.5 text-xs bg-background/70 backdrop-blur hover:bg-background/90 px-2.5 py-1.5 rounded-full font-medium border transition-colors"
+                >
+                  <ImageIcon size={12} />
+                  <span className="hidden sm:inline">Background</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 p-2">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold px-2 pt-1 pb-2">
+                  Welcome background
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {WELCOME_BACKGROUNDS.map((bg) => {
+                    const selected = bg.key === bgKey;
+                    return (
+                      <button
+                        key={bg.key}
+                        type="button"
+                        onClick={() => handleBgChange(bg.key)}
+                        className={`relative overflow-hidden rounded-md border-2 aspect-[16/9] group transition-all ${
+                          selected ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
+                        }`}
+                        aria-pressed={selected}
+                      >
+                        <img
+                          src={bg.src}
+                          alt={bg.label}
+                          loading="lazy"
+                          decoding="async"
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                        <span className="absolute inset-x-0 bottom-0 bg-background/80 backdrop-blur-sm text-[10px] font-semibold py-0.5 text-center">
+                          {bg.label}
+                        </span>
+                        {selected && (
+                          <span className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                            <Check size={10} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <span className="flex items-center gap-1.5 text-xs bg-background/70 backdrop-blur px-3 py-1.5 rounded-full font-semibold border">
               {CHANNEL_ICONS[activeChannel]}
               {CHANNEL_LABELS[activeChannel]}
             </span>
