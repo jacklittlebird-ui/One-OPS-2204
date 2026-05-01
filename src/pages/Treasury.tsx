@@ -315,21 +315,21 @@ export default function TreasuryPage() {
         </Card>
 
         <Card className="lg:col-span-2">
-          <CardHeader className="pb-2"><CardTitle className="text-base">30-day Activity</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Activity — {periodSuffix}</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-3 gap-4 pt-2">
             <div className="p-4 rounded-lg bg-green-500/10">
               <div className="text-xs text-muted-foreground">Receipts</div>
-              <div className="text-2xl font-bold text-green-600">{fmt(receipts30)}</div>
+              <div className="text-2xl font-bold text-green-600">{fmt(receiptsPeriod)}</div>
               <div className="text-[11px] text-muted-foreground">{data.receipts.length} entries</div>
             </div>
             <div className="p-4 rounded-lg bg-rose-500/10">
               <div className="text-xs text-muted-foreground">Payments</div>
-              <div className="text-2xl font-bold text-rose-600">{fmt(payments30)}</div>
+              <div className="text-2xl font-bold text-rose-600">{fmt(paymentsPeriod)}</div>
               <div className="text-[11px] text-muted-foreground">{data.payments.length} entries</div>
             </div>
             <div className="p-4 rounded-lg bg-violet-500/10">
               <div className="text-xs text-muted-foreground">Transfers</div>
-              <div className="text-2xl font-bold text-violet-600">{fmt(transfers30)}</div>
+              <div className="text-2xl font-bold text-violet-600">{fmt(transfersPeriod)}</div>
               <div className="text-[11px] text-muted-foreground">{data.transfers.length} entries</div>
             </div>
           </CardContent>
