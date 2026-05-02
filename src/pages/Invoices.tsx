@@ -602,7 +602,31 @@ export default function InvoicesPage() {
     return { issues, errorCount, warningCount, cleanCount: rows.length - issues.length };
   }, [monthlySecurityPreview]);
 
-  const generateMonthlySecurityInvoice = async () => {
+  // Annex A export-mirror: identical shape to detailRows used in generateMonthlySecurityInvoice
+  const securityAnnexExport = useMemo(() => {
+    const rows = monthlySecurityPreview.rows.map((d: any) => ({
+      date: d.flight_date || "",
+      flight: d.flight_no || "",
+      station: d.station || "",
+      type: d.service_type || "",
+      base: Number(d.base_fee) || 0,            // → "Handling" column in printed Annex A
+      overtime: Number(d.overtime_charge) || 0, // → "Other" column in printed Annex A
+      total: Number(d.total_charge) || 0,
+    }));
+    // Stable ordering (matches print/CSV): date asc, then flight no
+    rows.sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.flight || "").localeCompare(b.flight || ""));
+    const totals = rows.reduce(
+      (acc, r) => { acc.base += r.base; acc.overtime += r.overtime; acc.total += r.total; return acc; },
+      { base: 0, overtime: 0, total: 0 }
+    );
+    // Cross-check vs preview totals (the values that will be written to the invoice header)
+    const headerTotals = monthlySecurityPreview.totals;
+    const mismatch =
+      Math.abs(totals.base - headerTotals.base) > 0.5 ||
+      Math.abs(totals.overtime - headerTotals.overtime) > 0.5 ||
+      Math.abs(totals.total - headerTotals.total) > 0.5;
+    return { rows, totals, mismatch };
+  }, [monthlySecurityPreview]);
     const { rows, totals } = monthlySecurityPreview;
     if (rows.length === 0) {
       toast({ title: "No data", description: "No approved security assignments for that airline & month.", variant: "destructive" });
