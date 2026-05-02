@@ -334,6 +334,19 @@ export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewP
           )}
 
           {/* Per-Flight Detail Annex — paginated for print */}
+          {showAnnex && detail.length === 0 && (
+            <div className="mt-10 pt-6 border-t-2 border-gray-300 break-before-page print:break-before-page">
+              <h3 className="text-lg font-bold text-gray-800 mb-2">Annex A — Per-Flight Service Detail</h3>
+              <div className="p-6 rounded border border-dashed border-gray-300 bg-gray-50 text-center">
+                <p className="text-sm font-semibold text-gray-700">No per-flight detail available</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {detailStatus === "missing" && "This invoice was not generated from per-flight service reports."}
+                  {detailStatus === "malformed" && `The attached detail could not be read${parseError ? `: ${parseError}` : "."}`}
+                  {detailStatus === "empty" && "Detail payload is present but contains no flight rows."}
+                </p>
+              </div>
+            </div>
+          )}
           {detail.length > 0 && (() => {
             const grandTotals = detail.reduce(
               (s, d) => ({
