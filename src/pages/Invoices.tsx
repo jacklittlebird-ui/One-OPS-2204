@@ -653,6 +653,46 @@ export default function InvoicesPage() {
     };
   }, [monthlySecurityPreview]);
 
+  // Preview-only filtered view (date range + per-station breakdown). Does NOT affect what gets exported.
+  const securityAnnexFiltered = useMemo(() => {
+    const from = securityAnnexDateFrom;
+    const to = securityAnnexDateTo;
+    const inRange = (d: string) => {
+      if (!d) return !from && !to;
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      return true;
+    };
+    const rows = securityAnnexExport.rows.filter(r => inRange(r.date));
+    const totals = rows.reduce(
+      (acc, r) => { acc.base += r.base; acc.overtime += r.overtime; acc.total += r.total; return acc; },
+      { base: 0, overtime: 0, total: 0 }
+    );
+    const stations = new Set(rows.map(r => (r.station || "").trim()).filter(Boolean));
+    const flights = new Set(rows.map(r => (r.flight || "").trim()).filter(Boolean));
+    const dates = new Set(rows.map(r => (r.date || "").trim()).filter(Boolean));
+    const stationMap = new Map<string, { station: string; flights: Set<string>; rows: number; base: number; overtime: number; total: number }>();
+    for (const r of rows) {
+      const key = (r.station || "—").trim() || "—";
+      const existing = stationMap.get(key) || { station: key, flights: new Set<string>(), rows: 0, base: 0, overtime: 0, total: 0 };
+      existing.rows += 1;
+      existing.base += r.base;
+      existing.overtime += r.overtime;
+      existing.total += r.total;
+      if ((r.flight || "").trim()) existing.flights.add(r.flight.trim());
+      stationMap.set(key, existing);
+    }
+    const stationBreakdown = Array.from(stationMap.values())
+      .map(s => ({ station: s.station, rows: s.rows, flights: s.flights.size, base: s.base, overtime: s.overtime, total: s.total }))
+      .sort((a, b) => b.total - a.total);
+    const isFiltered = !!(from || to);
+    return {
+      rows, totals, stationBreakdown, isFiltered,
+      counts: { rows: rows.length, flights: flights.size, stations: stations.size, dates: dates.size },
+      hiddenCount: securityAnnexExport.rows.length - rows.length,
+    };
+  }, [securityAnnexExport, securityAnnexDateFrom, securityAnnexDateTo]);
+
   const generateMonthlySecurityInvoice = async () => {
     const { rows, totals } = monthlySecurityPreview;
     if (rows.length === 0) {
