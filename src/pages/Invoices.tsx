@@ -134,6 +134,7 @@ const PAGE_SIZE = 15;
 
 export default function InvoicesPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { activeChannel } = useChannel();
   const readOnly = activeChannel === "payables";
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices", { stationFilter: true });
