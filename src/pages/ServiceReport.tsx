@@ -358,6 +358,7 @@ function HandlingServiceReportContent() {
   const canCreateNew = !isReceivablesView && !isOperationsView;
 
   const [search, setSearch] = useState("");
+  const [bulkApproving, setBulkApproving] = useState(false);
   const [handlingFilter, setHandlingFilter] = useState("All Types");
   const [stationFilter, setStationFilter] = useState("All Stations");
   const [reviewFilter, setReviewFilter] = useState("All Review");
