@@ -1165,6 +1165,16 @@ function HandlingServiceReportContent() {
               <CheckCircle2 size={14} /> {bulkApproving ? "Approving…" : `Approve All Shown (${filtered.filter(r => r.isLinked && r.reviewStatus !== "approved").length})`}
             </button>
           )}
+          {isReceivablesView && (
+            <button
+              onClick={() => setShowUnbilled(true)}
+              className="toolbar-btn-primary"
+              title="Open all approved flights that have not been invoiced yet, with per-flight receivables"
+            >
+              <Receipt size={14} />
+              Unbilled Flights ({unbilledRows.rows.length})
+            </button>
+          )}
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
         </div>
 
