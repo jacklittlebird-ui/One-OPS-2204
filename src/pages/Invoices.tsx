@@ -1249,6 +1249,154 @@ export default function InvoicesPage() {
                     </button>
                   </div>
                 </>
+              ))}
+
+              {monthlyTab === "security" && (
+                monthlySecurityPreview.rows.length === 0 ? (
+                  <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
+                    <FileText size={32} className="mx-auto mb-2 opacity-40" />
+                    <p className="font-semibold">No approved security assignments</p>
+                    <p className="text-xs mt-1">Approve Security Service assignments for {monthlyAirlineOperator} in {monthlyAirlineMonth} first.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="bg-muted/30 border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Assignments</div>
+                        <div className="text-xl font-bold text-foreground">{monthlySecurityPreview.rows.length}</div>
+                      </div>
+                      <div className="bg-muted/30 border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Base Fees</div>
+                        <div className="text-xl font-bold text-foreground">${monthlySecurityPreview.totals.base.toFixed(0)}</div>
+                      </div>
+                      <div className="bg-muted/30 border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Overtime</div>
+                        <div className="text-xl font-bold text-foreground">${monthlySecurityPreview.totals.overtime.toFixed(0)}</div>
+                      </div>
+                      <div className="bg-muted/30 border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Total</div>
+                        <div className="text-xl font-bold text-success">${monthlySecurityPreview.totals.total.toFixed(0)}</div>
+                      </div>
+                    </div>
+
+                    {/* Security validation panel */}
+                    <div className={`border rounded-lg overflow-hidden ${
+                      monthlySecurityValidation.errorCount > 0 ? "border-destructive/50" :
+                      monthlySecurityValidation.warningCount > 0 ? "border-warning/50" :
+                      "border-success/40"
+                    }`}>
+                      <div className={`px-3 py-2 text-xs font-bold uppercase flex items-center justify-between ${
+                        monthlySecurityValidation.errorCount > 0 ? "bg-destructive/10 text-destructive" :
+                        monthlySecurityValidation.warningCount > 0 ? "bg-warning/10 text-warning" :
+                        "bg-success/10 text-success"
+                      }`}>
+                        <span className="flex items-center gap-2">
+                          <AlertCircle size={14} /> Pre-Invoice Validation (Security)
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono normal-case">
+                            {monthlySecurityValidation.cleanCount} clean · {monthlySecurityValidation.warningCount} warning{monthlySecurityValidation.warningCount === 1 ? "" : "s"} · {monthlySecurityValidation.errorCount} error{monthlySecurityValidation.errorCount === 1 ? "" : "s"}
+                          </span>
+                          {monthlySecurityValidation.issues.length > 0 && (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 rounded-md border border-current px-2 py-0.5 text-[11px] font-bold uppercase normal-case hover:bg-current hover:text-background transition-colors"
+                              title="Open Security Service Reports filtered to the flagged rows"
+                              onClick={() => {
+                                const ids = monthlySecurityValidation.issues.map(i => i.id).join(",");
+                                navigate(`/security-service-reports?reviewIds=${encodeURIComponent(ids)}`);
+                              }}
+                            >
+                              Fix these reports →
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {monthlySecurityValidation.issues.length === 0 ? (
+                        <div className="p-3 text-sm text-success flex items-center gap-2">
+                          <CheckCircle size={14} /> All {monthlySecurityPreview.rows.length} security assignments passed validation.
+                        </div>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-muted/30 sticky top-0">
+                              <tr className="text-left text-muted-foreground uppercase">
+                                <th className="px-3 py-1.5">Severity</th>
+                                <th className="px-3 py-1.5">Date</th>
+                                <th className="px-3 py-1.5">Flight</th>
+                                <th className="px-3 py-1.5">Station</th>
+                                <th className="px-3 py-1.5">Issues</th>
+                                <th className="px-3 py-1.5 text-right">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {monthlySecurityValidation.issues.map((iss) => (
+                                <tr key={iss.id} className={`border-t ${iss.severity === "error" ? "bg-destructive/5" : "bg-warning/5"}`}>
+                                  <td className="px-3 py-1.5">
+                                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                      iss.severity === "error" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning"
+                                    }`}>{iss.severity}</span>
+                                  </td>
+                                  <td className="px-3 py-1.5 font-mono">{iss.date}</td>
+                                  <td className="px-3 py-1.5 font-mono font-semibold">{iss.flight}</td>
+                                  <td className="px-3 py-1.5">{iss.station}</td>
+                                  <td className="px-3 py-1.5 text-foreground">{iss.issues.join("; ")}</td>
+                                  <td className="px-3 py-1.5 text-right whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      className="text-primary hover:underline font-semibold"
+                                      title="Open this Security assignment to fix"
+                                      onClick={() => navigate(`/security-service-reports?reviewIds=${encodeURIComponent(iss.id)}`)}
+                                    >
+                                      Fix →
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground">Per-Station × Service Type Breakdown</div>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-muted/20 text-xs uppercase text-muted-foreground">
+                            <th className="text-left px-3 py-2">Station</th>
+                            <th className="text-left px-3 py-2">Service Type</th>
+                            <th className="text-right px-3 py-2">Assignments</th>
+                            <th className="text-right px-3 py-2">Total ($)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {monthlySecurityPreview.breakdown.map((b, i) => (
+                            <tr key={i} className="border-b last:border-0">
+                              <td className="px-3 py-2 font-semibold text-foreground">{b.station || "—"}</td>
+                              <td className="px-3 py-2 text-foreground">{b.type || "—"}</td>
+                              <td className="px-3 py-2 text-right font-mono text-foreground">{b.flights}</td>
+                              <td className="px-3 py-2 text-right font-mono text-foreground">{b.total.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-muted/30 font-bold">
+                            <td colSpan={2} className="px-3 py-2 text-right">Grand Total</td>
+                            <td className="px-3 py-2 text-right font-mono">{monthlySecurityPreview.rows.length}</td>
+                            <td className="px-3 py-2 text-right font-mono text-success">${monthlySecurityPreview.totals.total.toFixed(2)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <button onClick={generateMonthlySecurityInvoice} className="toolbar-btn-primary">
+                        <Plus size={14} /> Create Security Consolidated Invoice
+                      </button>
+                    </div>
+                  </>
+                )
               )}
             </div>
           </div>
