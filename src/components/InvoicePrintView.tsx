@@ -31,18 +31,78 @@ type DetailRow = {
   type?: string; civil?: number; handling?: number; airport?: number; other?: number; total?: number;
 };
 
-function parseDetail(notes: string): { detail: DetailRow[]; cleanNotes: string } {
-  if (!notes) return { detail: [], cleanNotes: "" };
-  const m = notes.match(/__DETAIL__:(\[.*?\])(?:\s|$)/s);
-  if (!m) return { detail: [], cleanNotes: notes };
+/**
+ * Robust parser for the __DETAIL__:[...] payload embedded in invoice notes.
+ * Handles: missing notes, no marker, malformed JSON, non-array payloads,
+ * trailing/leading whitespace, and rows missing fields. Always returns
+ * a stable `{ detail, cleanNotes }` shape — never throws.
+ */
+function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; cleanNotes: string } {
+  const raw = (notes ?? "").toString();
+  if (!raw.trim()) return { detail: [], cleanNotes: "" };
+
+  // Locate the marker. Use a balanced-bracket scan instead of a non-greedy regex
+  // so payloads containing nested arrays/objects don't get truncated.
+  const markerIdx = raw.indexOf("__DETAIL__:");
+  if (markerIdx === -1) return { detail: [], cleanNotes: raw.trim() };
+
+  const startBracket = raw.indexOf("[", markerIdx);
+  if (startBracket === -1) {
+    return { detail: [], cleanNotes: raw.replace(/__DETAIL__:.*$/s, "").trim() };
+  }
+
+  let depth = 0;
+  let endBracket = -1;
+  let inString = false;
+  let escape = false;
+  for (let i = startBracket; i < raw.length; i++) {
+    const ch = raw[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "[") depth++;
+    else if (ch === "]") {
+      depth--;
+      if (depth === 0) { endBracket = i; break; }
+    }
+  }
+
+  if (endBracket === -1) {
+    // Unterminated payload — strip marker, treat as plain notes
+    return { detail: [], cleanNotes: raw.slice(0, markerIdx).trim() };
+  }
+
+  const jsonStr = raw.slice(startBracket, endBracket + 1);
+  const cleanNotes = (raw.slice(0, markerIdx) + raw.slice(endBracket + 1)).trim();
+
   try {
-    const arr = JSON.parse(m[1]) as DetailRow[];
-    const cleanNotes = notes.replace(m[0], "").trim();
-    return { detail: Array.isArray(arr) ? arr : [], cleanNotes };
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed)) return { detail: [], cleanNotes };
+    // Sanitize: coerce numeric fields, drop obviously empty rows
+    const detail: DetailRow[] = parsed
+      .filter((r): r is Record<string, unknown> => r != null && typeof r === "object")
+      .map((r: any) => ({
+        date: r.date ? String(r.date) : "",
+        flight: r.flight ? String(r.flight) : "",
+        reg: r.reg ? String(r.reg) : "",
+        route: r.route ? String(r.route) : "",
+        station: r.station ? String(r.station) : "",
+        type: r.type ? String(r.type) : "",
+        civil: Number(r.civil) || 0,
+        handling: Number(r.handling) || 0,
+        airport: Number(r.airport) || 0,
+        other: Number(r.other) || 0,
+        total: Number(r.total) || 0,
+      }));
+    return { detail, cleanNotes };
   } catch {
-    return { detail: [], cleanNotes: notes };
+    return { detail: [], cleanNotes };
   }
 }
+
+const ROWS_PER_PAGE = 22; // keeps each annex page within standard A4 print height
+
 
 export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewProps) {
   const handlePrint = () => window.print();
@@ -146,85 +206,144 @@ export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewP
             </div>
           )}
 
-          {/* Per-Flight Detail Annex */}
-          {detail.length > 0 && (
-            <div className="mt-10 pt-6 border-t-2 border-gray-300 break-before-page print:break-before-page">
-              <h3 className="text-lg font-bold text-gray-800 mb-1">Annex A — Per-Flight Service Detail</h3>
-              <p className="text-xs text-gray-500 mb-4">
-                {detail.length} flight{detail.length === 1 ? "" : "s"} included in this invoice
-              </p>
-              <table className="w-full text-[11px]">
-                <thead>
-                  <tr className="border-b-2 border-gray-300 bg-gray-50">
-                    {["Date","Flight","Reg","Route","Station","Service","Civil Av.","Handling","Airport","Other","Total"].map(h => (
-                      <th key={h} className="px-2 py-1.5 text-left font-bold text-gray-600 uppercase whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {detail.map((d, i) => (
-                    <tr key={i} className="border-b border-gray-100">
-                      <td className="px-2 py-1.5 whitespace-nowrap">{d.date || "—"}</td>
-                      <td className="px-2 py-1.5 font-mono whitespace-nowrap">{d.flight || "—"}</td>
-                      <td className="px-2 py-1.5 font-mono whitespace-nowrap">{d.reg || "—"}</td>
-                      <td className="px-2 py-1.5 whitespace-nowrap">{d.route || "—"}</td>
-                      <td className="px-2 py-1.5 font-semibold whitespace-nowrap">{d.station || "—"}</td>
-                      <td className="px-2 py-1.5 whitespace-nowrap">{d.type || "—"}</td>
-                      <td className="px-2 py-1.5 text-right font-mono">{(d.civil || 0).toFixed(2)}</td>
-                      <td className="px-2 py-1.5 text-right font-mono">{(d.handling || 0).toFixed(2)}</td>
-                      <td className="px-2 py-1.5 text-right font-mono">{(d.airport || 0).toFixed(2)}</td>
-                      <td className="px-2 py-1.5 text-right font-mono">{(d.other || 0).toFixed(2)}</td>
-                      <td className="px-2 py-1.5 text-right font-mono font-bold">{(d.total || 0).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  <tr className="border-t-2 border-gray-700 bg-gray-50 font-bold">
-                    <td colSpan={6} className="px-2 py-2 text-right">Annex Total</td>
-                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.civil||0),0).toFixed(2)}</td>
-                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.handling||0),0).toFixed(2)}</td>
-                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.airport||0),0).toFixed(2)}</td>
-                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.other||0),0).toFixed(2)}</td>
-                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.total||0),0).toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
+          {/* Per-Flight Detail Annex — paginated for print */}
+          {detail.length > 0 && (() => {
+            const grandTotals = detail.reduce(
+              (s, d) => ({
+                civil: s.civil + (d.civil || 0),
+                handling: s.handling + (d.handling || 0),
+                airport: s.airport + (d.airport || 0),
+                other: s.other + (d.other || 0),
+                total: s.total + (d.total || 0),
+              }),
+              { civil: 0, handling: 0, airport: 0, other: 0, total: 0 }
+            );
+            const pages: DetailRow[][] = [];
+            for (let i = 0; i < detail.length; i += ROWS_PER_PAGE) {
+              pages.push(detail.slice(i, i + ROWS_PER_PAGE));
+            }
+            const totalPages = pages.length;
 
-              {/* Per-station subtotals */}
-              {(() => {
-                const byStation: Record<string, { flights: number; total: number }> = {};
-                detail.forEach(d => {
-                  const k = d.station || "—";
-                  if (!byStation[k]) byStation[k] = { flights: 0, total: 0 };
-                  byStation[k].flights++;
-                  byStation[k].total += d.total || 0;
-                });
-                const rows = Object.entries(byStation);
-                if (rows.length <= 1) return null;
-                return (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-bold text-gray-800 mb-2">Subtotals by Station</h4>
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b-2 border-gray-300 bg-gray-50">
-                          <th className="px-2 py-1.5 text-left font-bold text-gray-600 uppercase">Station</th>
-                          <th className="px-2 py-1.5 text-right font-bold text-gray-600 uppercase">Flights</th>
-                          <th className="px-2 py-1.5 text-right font-bold text-gray-600 uppercase">Total ({invoice.currency})</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map(([st, v]) => (
-                          <tr key={st} className="border-b border-gray-100">
-                            <td className="px-2 py-1.5 font-semibold">{st}</td>
-                            <td className="px-2 py-1.5 text-right font-mono">{v.flights}</td>
-                            <td className="px-2 py-1.5 text-right font-mono">{v.total.toFixed(2)}</td>
+            const byStation: Record<string, { flights: number; total: number }> = {};
+            detail.forEach(d => {
+              const k = d.station || "—";
+              if (!byStation[k]) byStation[k] = { flights: 0, total: 0 };
+              byStation[k].flights++;
+              byStation[k].total += d.total || 0;
+            });
+            const stationRows = Object.entries(byStation);
+
+            return (
+              <>
+                {pages.map((pageRows, pageIdx) => {
+                  const isLast = pageIdx === totalPages - 1;
+                  const pageRunning = pageRows.reduce(
+                    (s, d) => ({
+                      civil: s.civil + (d.civil || 0),
+                      handling: s.handling + (d.handling || 0),
+                      airport: s.airport + (d.airport || 0),
+                      other: s.other + (d.other || 0),
+                      total: s.total + (d.total || 0),
+                    }),
+                    { civil: 0, handling: 0, airport: 0, other: 0, total: 0 }
+                  );
+                  return (
+                    <div
+                      key={pageIdx}
+                      className="mt-10 pt-6 border-t-2 border-gray-300 break-before-page print:break-before-page"
+                    >
+                      <div className="flex items-end justify-between mb-1">
+                        <h3 className="text-lg font-bold text-gray-800">
+                          Annex A — Per-Flight Service Detail
+                        </h3>
+                        <span className="text-xs text-gray-500 font-mono">
+                          Page {pageIdx + 1} of {totalPages}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-4">
+                        Invoice {invoice.invoiceNo} · {invoice.operator} · {detail.length} flight{detail.length === 1 ? "" : "s"} total
+                      </p>
+                      <table className="w-full text-[11px]">
+                        <thead>
+                          <tr className="border-b-2 border-gray-300 bg-gray-50">
+                            {["Date","Flight","Reg","Route","Station","Service","Civil Av.","Handling","Airport","Other","Total"].map(h => (
+                              <th key={h} className="px-2 py-1.5 text-left font-bold text-gray-600 uppercase whitespace-nowrap">{h}</th>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })()}
-            </div>
-          )}
+                        </thead>
+                        <tbody>
+                          {pageRows.map((d, i) => (
+                            <tr key={i} className="border-b border-gray-100">
+                              <td className="px-2 py-1.5 whitespace-nowrap">{d.date || "—"}</td>
+                              <td className="px-2 py-1.5 font-mono whitespace-nowrap">{d.flight || "—"}</td>
+                              <td className="px-2 py-1.5 font-mono whitespace-nowrap">{d.reg || "—"}</td>
+                              <td className="px-2 py-1.5 whitespace-nowrap">{d.route || "—"}</td>
+                              <td className="px-2 py-1.5 font-semibold whitespace-nowrap">{d.station || "—"}</td>
+                              <td className="px-2 py-1.5 whitespace-nowrap">{d.type || "—"}</td>
+                              <td className="px-2 py-1.5 text-right font-mono">{(d.civil || 0).toFixed(2)}</td>
+                              <td className="px-2 py-1.5 text-right font-mono">{(d.handling || 0).toFixed(2)}</td>
+                              <td className="px-2 py-1.5 text-right font-mono">{(d.airport || 0).toFixed(2)}</td>
+                              <td className="px-2 py-1.5 text-right font-mono">{(d.other || 0).toFixed(2)}</td>
+                              <td className="px-2 py-1.5 text-right font-mono font-bold">{(d.total || 0).toFixed(2)}</td>
+                            </tr>
+                          ))}
+                          <tr className="border-t border-gray-400 bg-gray-50/60 italic">
+                            <td colSpan={6} className="px-2 py-1.5 text-right text-gray-600">Page Subtotal</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{pageRunning.civil.toFixed(2)}</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{pageRunning.handling.toFixed(2)}</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{pageRunning.airport.toFixed(2)}</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{pageRunning.other.toFixed(2)}</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{pageRunning.total.toFixed(2)}</td>
+                          </tr>
+                          {isLast && (
+                            <tr className="border-t-2 border-gray-700 bg-gray-50 font-bold">
+                              <td colSpan={6} className="px-2 py-2 text-right">Annex Grand Total</td>
+                              <td className="px-2 py-2 text-right font-mono">{grandTotals.civil.toFixed(2)}</td>
+                              <td className="px-2 py-2 text-right font-mono">{grandTotals.handling.toFixed(2)}</td>
+                              <td className="px-2 py-2 text-right font-mono">{grandTotals.airport.toFixed(2)}</td>
+                              <td className="px-2 py-2 text-right font-mono">{grandTotals.other.toFixed(2)}</td>
+                              <td className="px-2 py-2 text-right font-mono">{grandTotals.total.toFixed(2)}</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+
+                      {/* Subtotals by Station — only on the last annex page */}
+                      {isLast && stationRows.length > 1 && (
+                        <div className="mt-6">
+                          <h4 className="text-sm font-bold text-gray-800 mb-2">Subtotals by Station</h4>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b-2 border-gray-300 bg-gray-50">
+                                <th className="px-2 py-1.5 text-left font-bold text-gray-600 uppercase">Station</th>
+                                <th className="px-2 py-1.5 text-right font-bold text-gray-600 uppercase">Flights</th>
+                                <th className="px-2 py-1.5 text-right font-bold text-gray-600 uppercase">Total ({invoice.currency})</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {stationRows.map(([st, v]) => (
+                                <tr key={st} className="border-b border-gray-100">
+                                  <td className="px-2 py-1.5 font-semibold">{st}</td>
+                                  <td className="px-2 py-1.5 text-right font-mono">{v.flights}</td>
+                                  <td className="px-2 py-1.5 text-right font-mono">{v.total.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                              <tr className="border-t-2 border-gray-700 bg-gray-50 font-bold">
+                                <td className="px-2 py-1.5">Total</td>
+                                <td className="px-2 py-1.5 text-right font-mono">{detail.length}</td>
+                                <td className="px-2 py-1.5 text-right font-mono">{grandTotals.total.toFixed(2)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })()}
+
 
           {/* Signature */}
           <div className="grid grid-cols-2 gap-12 mt-12 pt-4">

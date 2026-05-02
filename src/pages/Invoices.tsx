@@ -411,6 +411,27 @@ export default function InvoicesPage() {
   };
 
   // ===== Monthly Airline Invoice (1 invoice per airline per month, source = Service Reports) =====
+  // Field rollup mapping (Service Report -> Invoice category):
+  //   civil_aviation  <- civil_aviation_fee
+  //   handling        <- handling_fee
+  //   airport_charges <- airport_charge + landing_charge + parking_charge + housing_charge
+  //   other           <- fuel_charge + catering_charge + hotac_charge
+  const rollupReport = (r: any) => {
+    const civil = Number(r.civil_aviation_fee) || 0;
+    const handling = Number(r.handling_fee) || 0;
+    const airport =
+      (Number(r.airport_charge) || 0) +
+      (Number(r.landing_charge) || 0) +
+      (Number(r.parking_charge) || 0) +
+      (Number(r.housing_charge) || 0);
+    const other =
+      (Number(r.fuel_charge) || 0) +
+      (Number(r.catering_charge) || 0) +
+      (Number(r.hotac_charge) || 0);
+    const lineTotal = Number(r.total_cost) || (civil + handling + airport + other);
+    return { civil, handling, airport, other, total: lineTotal };
+  };
+
   const monthlyAirlinePreview = useMemo(() => {
     const reports = (serviceReports || []).filter((r: any) =>
       r.review_status === "approved" &&
@@ -418,19 +439,20 @@ export default function InvoicesPage() {
       (r.arrival_date || "").startsWith(monthlyAirlineMonth)
     );
     const totals = reports.reduce((acc: any, r: any) => {
-      acc.civil += Number(r.civil_aviation_fee) || 0;
-      acc.handling += Number(r.handling_fee) || 0;
-      acc.airport += Number(r.airport_charge) || 0;
-      acc.total += Number(r.total_cost) || 0;
+      const m = rollupReport(r);
+      acc.civil += m.civil;
+      acc.handling += m.handling;
+      acc.airport += m.airport;
+      acc.other += m.other;
+      acc.total += m.total;
       return acc;
-    }, { civil: 0, handling: 0, airport: 0, total: 0 });
-    // Group by station + service type for the breakdown
+    }, { civil: 0, handling: 0, airport: 0, other: 0, total: 0 });
     const byStationType: Record<string, { station: string; type: string; flights: number; total: number }> = {};
     reports.forEach((r: any) => {
       const key = `${r.station}__${r.handling_type}`;
       if (!byStationType[key]) byStationType[key] = { station: r.station, type: r.handling_type, flights: 0, total: 0 };
       byStationType[key].flights++;
-      byStationType[key].total += Number(r.total_cost) || 0;
+      byStationType[key].total += rollupReport(r).total;
     });
     return { reports, totals, breakdown: Object.values(byStationType) };
   }, [serviceReports, monthlyAirlineOperator, monthlyAirlineMonth]);
@@ -446,22 +468,52 @@ export default function InvoicesPage() {
       toast({ title: "No data", description: "No approved service reports for that airline & month.", variant: "destructive" });
       return;
     }
-    const detailRows = reports.map((r: any) => ({
-      date: r.arrival_date || "",
-      flight: r.flight_no || "",
-      reg: r.registration || "",
-      route: r.route || "",
-      station: r.station || "",
-      type: r.handling_type || "",
-      civil: Number(r.civil_aviation_fee) || 0,
-      handling: Number(r.handling_fee) || 0,
-      airport: Number(r.airport_charge) || 0,
-      other: 0,
-      total: Number(r.total_cost) || 0,
-    }));
+
+    // Duplicate guard: refuse if a non-cancelled monthly invoice already exists for this operator+month
+    const duplicate = (invoices || []).find((inv: any) =>
+      inv.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      inv.billing_period === monthlyAirlineMonth &&
+      inv.station === "ALL" &&
+      (inv.status || "").toLowerCase() !== "cancelled"
+    );
+    if (duplicate) {
+      const ok = window.confirm(
+        `A monthly invoice already exists for ${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${duplicate.invoice_no}, status: ${duplicate.status}).\n\nCreating another draft will result in duplicate billing. Continue anyway?`
+      );
+      if (!ok) {
+        toast({ title: "Duplicate skipped", description: `Existing invoice ${duplicate.invoice_no} kept.` });
+        return;
+      }
+    }
+
+    const detailRows = reports.map((r: any) => {
+      const m = rollupReport(r);
+      return {
+        date: r.arrival_date || "",
+        flight: r.flight_no || "",
+        reg: r.registration || "",
+        route: r.route || "",
+        station: r.station || "",
+        type: r.handling_type || "",
+        civil: m.civil,
+        handling: m.handling,
+        airport: m.airport,
+        other: m.other,
+        total: m.total,
+      };
+    });
     const headerNote = `Monthly consolidated invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${reports.length} approved service reports across ${new Set(reports.map((r: any) => r.station)).size} station(s). See Annex A for per-flight detail.`;
+    // Suffix invoice_no when re-creating after a confirmed duplicate
+    const baseNo = `LNK-${monthlyAirlineMonth.replace("-", "")}-${monthlyAirlineOperator.replace(/\s+/g, "").slice(0, 4).toUpperCase()}`;
+    const existingCount = (invoices || []).filter((inv: any) =>
+      inv.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      inv.billing_period === monthlyAirlineMonth && inv.station === "ALL"
+    ).length;
+    const invoiceNo = existingCount > 0 ? `${baseNo}-R${existingCount + 1}` : baseNo;
+
+    const subtotal = totals.civil + totals.handling + totals.airport + totals.other;
     const inv: Partial<InvoiceRow> = {
-      invoice_no: `LNK-${monthlyAirlineMonth.replace("-", "")}-${monthlyAirlineOperator.replace(/\s+/g, "").slice(0, 4).toUpperCase()}`,
+      invoice_no: invoiceNo,
       date: new Date().toISOString().slice(0, 10),
       due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       operator: monthlyAirlineOperator,
@@ -470,9 +522,9 @@ export default function InvoicesPage() {
       civil_aviation: totals.civil,
       handling: totals.handling,
       airport_charges: totals.airport,
-      catering: 0, other: 0, vat: 0,
-      subtotal: totals.civil + totals.handling + totals.airport,
-      total: totals.civil + totals.handling + totals.airport,
+      catering: 0, other: totals.other, vat: 0,
+      subtotal,
+      total: subtotal,
       currency: "USD" as InvoiceCurrency,
       status: "Draft" as InvoiceStatus,
       invoice_type: "Preliminary" as InvoiceType,
@@ -484,6 +536,7 @@ export default function InvoicesPage() {
     setShowMonthlyAirline(false);
     toast({ title: "✅ Monthly Invoice Created", description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${reports.length} flights, all stations).` });
   };
+
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
