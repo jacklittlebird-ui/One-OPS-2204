@@ -182,6 +182,7 @@ export default function InvoicesPage() {
   const [showMonthlyAirline, setShowMonthlyAirline] = useState(false);
   const [monthlyAirlineMonth, setMonthlyAirlineMonth] = useState(new Date().toISOString().slice(0, 7));
   const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
+  const [monthlyTab, setMonthlyTab] = useState<"handling" | "security">("handling");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: serviceReports } = useSupabaseTable<any>("service_reports");
 
