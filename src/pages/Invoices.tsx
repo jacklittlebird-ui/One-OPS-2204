@@ -619,13 +619,23 @@ export default function InvoicesPage() {
       (acc, r) => { acc.base += r.base; acc.overtime += r.overtime; acc.total += r.total; return acc; },
       { base: 0, overtime: 0, total: 0 }
     );
+    // Distinct counts for summary line (flights, stations, dates)
+    const stations = new Set(rows.map(r => (r.station || "").trim()).filter(Boolean));
+    const flights = new Set(rows.map(r => (r.flight || "").trim()).filter(Boolean));
+    const dates = new Set(rows.map(r => (r.date || "").trim()).filter(Boolean));
+    const counts = {
+      rows: rows.length,
+      flights: flights.size,
+      stations: stations.size,
+      dates: dates.size,
+    };
     // Cross-check vs preview totals (the values that will be written to the invoice header)
     const headerTotals = monthlySecurityPreview.totals;
     const mismatch =
       Math.abs(totals.base - headerTotals.base) > 0.5 ||
       Math.abs(totals.overtime - headerTotals.overtime) > 0.5 ||
       Math.abs(totals.total - headerTotals.total) > 0.5;
-    return { rows, totals, mismatch };
+    return { rows, totals, counts, mismatch };
   }, [monthlySecurityPreview]);
 
   const generateMonthlySecurityInvoice = async () => {
