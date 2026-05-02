@@ -1451,6 +1451,29 @@ export default function InvoicesPage() {
                       </button>
                       {showSecurityAnnexPreview && (
                         <div className="border-t">
+                          <div className="px-3 py-2 bg-primary/5 border-b border-primary/20 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+                            <span className="font-semibold text-foreground uppercase tracking-wide">Export Summary:</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-muted-foreground">Rows:</span>
+                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.rows}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-muted-foreground">Flights:</span>
+                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.flights}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-muted-foreground">Stations:</span>
+                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.stations}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-muted-foreground">Distinct Dates:</span>
+                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.dates}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1 ms-auto">
+                              <span className="text-muted-foreground">Grand Total:</span>
+                              <span className="font-mono font-bold text-success">${securityAnnexExport.totals.total.toFixed(2)}</span>
+                            </span>
+                          </div>
                           <div className="px-3 py-2 bg-muted/10 text-[11px] text-muted-foreground italic">
                             This is exactly what will be exported to the printed invoice's Annex A page (and CSV). Rows are sorted by date then flight number.
                           </div>
