@@ -432,6 +432,10 @@ export default function SecurityServiceReportsPage() {
     }
     // Station "Rejected" tab
     if (isStationView && stationTab === "rejected") rows = rows.filter(r => r.review_status === "Rejected");
+    if (reviewIdsFilter && reviewIdsFilter.length > 0) {
+      const set = new Set(reviewIdsFilter);
+      rows = rows.filter(r => set.has(r.id));
+    }
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
     if (reviewFilter !== "All") rows = rows.filter(r => r.review_status === reviewFilter);
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
