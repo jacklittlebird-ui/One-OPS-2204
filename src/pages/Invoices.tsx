@@ -178,7 +178,11 @@ export default function InvoicesPage() {
   const [showBillingPreview, setShowBillingPreview] = useState(false);
   const [billingMonth, setBillingMonth] = useState(new Date().toISOString().slice(0, 7));
   const [billingStation, setBillingStation] = useState("All");
+  const [showMonthlyAirline, setShowMonthlyAirline] = useState(false);
+  const [monthlyAirlineMonth, setMonthlyAirlineMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: serviceReports } = useSupabaseTable<any>("service_reports");
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
