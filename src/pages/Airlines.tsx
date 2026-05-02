@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useReadOnly } from "@/hooks/useReadOnly";
+import { useChannel } from "@/contexts/ChannelContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
