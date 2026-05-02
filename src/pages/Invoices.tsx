@@ -1304,7 +1304,7 @@ export default function InvoicesPage() {
                               title="Open Security Service Reports filtered to the flagged rows"
                               onClick={() => {
                                 const ids = monthlySecurityValidation.issues.map(i => i.id).join(",");
-                                navigate(`/security-service-reports?reviewIds=${encodeURIComponent(ids)}`);
+                                navigate(`/service-report?tab=security&reviewIds=${encodeURIComponent(ids)}`);
                               }}
                             >
                               Fix these reports →
@@ -1346,7 +1346,7 @@ export default function InvoicesPage() {
                                       type="button"
                                       className="text-primary hover:underline font-semibold"
                                       title="Open this Security assignment to fix"
-                                      onClick={() => navigate(`/security-service-reports?reviewIds=${encodeURIComponent(iss.id)}`)}
+                                      onClick={() => navigate(`/service-report?tab=security&reviewIds=${encodeURIComponent(iss.id)}`)}
                                     >
                                       Fix →
                                     </button>
