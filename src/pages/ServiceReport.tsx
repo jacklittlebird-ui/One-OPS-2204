@@ -1036,6 +1036,32 @@ function HandlingServiceReportContent() {
           </div>
           <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload Excel</button>
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
+          {isOperationsView && (
+            <button
+              onClick={async () => {
+                const targets = filtered.filter(r => r.isLinked && r.id && r.reviewStatus !== "approved");
+                if (targets.length === 0) {
+                  toast({ title: "Nothing to approve", description: "All shown reports are already approved.", variant: "destructive" });
+                  return;
+                }
+                if (!confirm(`Approve ${targets.length} service report(s) shown on this view?`)) return;
+                const ids = targets.map(r => r.id!) as string[];
+                const { error } = await supabase
+                  .from("service_reports")
+                  .update({ review_status: "approved", reviewed_by: "Operations (bulk)", reviewed_at: new Date().toISOString() } as any)
+                  .in("id", ids);
+                if (error) {
+                  toast({ title: "Error", description: error.message, variant: "destructive" });
+                  return;
+                }
+                queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                toast({ title: "✅ Bulk Approved", description: `${ids.length} service report(s) approved and forwarded to Receivables.` });
+              }}
+              className="toolbar-btn-primary"
+            >
+              <CheckCircle2 size={14} /> Approve All Shown ({filtered.filter(r => r.isLinked && r.reviewStatus !== "approved").length})
+            </button>
+          )}
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
         </div>
 
