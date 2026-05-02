@@ -996,9 +996,24 @@ export default function InvoicesPage() {
                       <span className="flex items-center gap-2">
                         <AlertCircle size={14} /> Pre-Invoice Validation
                       </span>
-                      <span className="font-mono normal-case">
-                        {monthlyValidation.cleanCount} clean · {monthlyValidation.warningCount} warning{monthlyValidation.warningCount === 1 ? "" : "s"} · {monthlyValidation.errorCount} error{monthlyValidation.errorCount === 1 ? "" : "s"}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono normal-case">
+                          {monthlyValidation.cleanCount} clean · {monthlyValidation.warningCount} warning{monthlyValidation.warningCount === 1 ? "" : "s"} · {monthlyValidation.errorCount} error{monthlyValidation.errorCount === 1 ? "" : "s"}
+                        </span>
+                        {monthlyValidation.issues.length > 0 && (
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded-md border border-current px-2 py-0.5 text-[11px] font-bold uppercase normal-case hover:bg-current hover:text-background transition-colors"
+                            title="Open Service Reports filtered to the flagged rows"
+                            onClick={() => {
+                              const ids = monthlyValidation.issues.map(i => i.id).join(",");
+                              navigate(`/service-report?reviewIds=${encodeURIComponent(ids)}`);
+                            }}
+                          >
+                            Fix these reports →
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {monthlyValidation.issues.length === 0 ? (
                       <div className="p-3 text-sm text-success flex items-center gap-2">
