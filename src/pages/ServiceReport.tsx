@@ -671,7 +671,8 @@ function HandlingServiceReportContent() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Auto-fill from FlightSchedule query params
+  // Auto-fill from FlightSchedule query params + deep-link filters from Invoices validation panel
+  const [reviewIdsFilter, setReviewIdsFilter] = useState<string[] | null>(null);
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const flightNo = params.get("flightNo");
@@ -686,6 +687,16 @@ function HandlingServiceReportContent() {
         std: params.get("std") || "",
       }));
       setShowAdd(true);
+    }
+    const searchParam = params.get("search");
+    if (searchParam) { setSearch(searchParam); setPage(1); }
+    const reviewIds = params.get("reviewIds");
+    if (reviewIds) {
+      const ids = reviewIds.split(",").map(s => s.trim()).filter(Boolean);
+      setReviewIdsFilter(ids.length > 0 ? ids : null);
+      setPage(1);
+    } else {
+      setReviewIdsFilter(null);
     }
   }, [location.search]);
 
