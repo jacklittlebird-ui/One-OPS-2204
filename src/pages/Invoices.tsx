@@ -462,6 +462,76 @@ export default function InvoicesPage() {
     [serviceReports]
   );
 
+  // Validation: flag service reports with missing fields or unusual values
+  // BEFORE generating the monthly invoice. Helps users catch data issues early.
+  type ReportIssue = {
+    id: string; flight: string; date: string; station: string;
+    severity: "error" | "warning";
+    issues: string[];
+  };
+  const monthlyValidation = useMemo(() => {
+    const issues: ReportIssue[] = [];
+    const reports = monthlyAirlinePreview.reports;
+    if (reports.length === 0) return { issues, errorCount: 0, warningCount: 0, cleanCount: 0 };
+
+    // Compute median total for outlier detection (simple, no deps)
+    const totals = reports.map((r: any) => rollupReport(r).total).filter(t => t > 0).sort((a, b) => a - b);
+    const median = totals.length ? totals[Math.floor(totals.length / 2)] : 0;
+    const outlierHigh = median * 5;
+    const outlierLow = median > 0 ? median / 10 : 0;
+
+    reports.forEach((r: any) => {
+      const m = rollupReport(r);
+      const rowIssues: string[] = [];
+      let severity: "error" | "warning" = "warning";
+
+      // Required fields
+      if (!r.flight_no?.trim()) { rowIssues.push("Missing flight number"); severity = "error"; }
+      if (!r.station?.trim()) { rowIssues.push("Missing station"); severity = "error"; }
+      if (!r.arrival_date) { rowIssues.push("Missing arrival date"); severity = "error"; }
+      if (!r.registration?.trim()) { rowIssues.push("Missing aircraft registration"); }
+      if (!r.handling_type?.trim()) { rowIssues.push("Missing service type"); }
+      if (!r.route?.trim()) { rowIssues.push("Missing route"); }
+
+      // Numeric sanity
+      if (m.total <= 0) { rowIssues.push("Total cost is zero"); severity = "error"; }
+      if (m.civil < 0 || m.handling < 0 || m.airport < 0 || m.other < 0) {
+        rowIssues.push("Negative charge amount"); severity = "error";
+      }
+
+      // Total mismatch with sum-of-parts (flag if reported total differs from rolled-up parts)
+      const partsSum = m.civil + m.handling + m.airport + m.other;
+      const reported = Number(r.total_cost) || 0;
+      if (reported > 0 && partsSum > 0 && Math.abs(reported - partsSum) > 0.5) {
+        rowIssues.push(`Total ${reported.toFixed(2)} ≠ sum of parts ${partsSum.toFixed(2)}`);
+      }
+
+      // Outliers vs median
+      if (median > 0 && m.total > outlierHigh) {
+        rowIssues.push(`Unusually high total (${m.total.toFixed(0)} vs median ${median.toFixed(0)})`);
+      }
+      if (median > 0 && m.total > 0 && m.total < outlierLow) {
+        rowIssues.push(`Unusually low total (${m.total.toFixed(0)} vs median ${median.toFixed(0)})`);
+      }
+
+      if (rowIssues.length > 0) {
+        issues.push({
+          id: r.id,
+          flight: r.flight_no || "—",
+          date: r.arrival_date || "—",
+          station: r.station || "—",
+          severity,
+          issues: rowIssues,
+        });
+      }
+    });
+
+    const errorCount = issues.filter(i => i.severity === "error").length;
+    const warningCount = issues.filter(i => i.severity === "warning").length;
+    return { issues, errorCount, warningCount, cleanCount: reports.length - issues.length };
+  }, [monthlyAirlinePreview]);
+
+
   const generateMonthlyAirlineInvoice = async () => {
     const { reports, totals } = monthlyAirlinePreview;
     if (reports.length === 0) {
