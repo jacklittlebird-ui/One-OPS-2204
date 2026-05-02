@@ -1101,7 +1101,8 @@ export default function InvoicesPage() {
                 </div>
               </div>
 
-              {monthlyAirlinePreview.reports.length === 0 ? (
+              {monthlyTab === "handling" && (
+              monthlyAirlinePreview.reports.length === 0 ? (
                 <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
                   <FileText size={32} className="mx-auto mb-2 opacity-40" />
                   <p className="font-semibold">No approved service reports</p>
