@@ -460,8 +460,11 @@ export default function InvoicesPage() {
   }, [serviceReports, monthlyAirlineOperator, monthlyAirlineMonth]);
 
   const allOperators = useMemo(
-    () => Array.from(new Set((serviceReports || []).map((r: any) => r.operator).filter(Boolean))).sort() as string[],
-    [serviceReports]
+    () => Array.from(new Set([
+      ...(serviceReports || []).map((r: any) => r.operator),
+      ...(dispatches || []).map((d: any) => d.airline),
+    ].filter(Boolean))).sort() as string[],
+    [serviceReports, dispatches]
   );
 
   // Validation: flag service reports with missing fields or unusual values
