@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Download, AlertTriangle } from "lucide-react";
 
 export interface PrintableInvoice {
   invoiceNo: string;
