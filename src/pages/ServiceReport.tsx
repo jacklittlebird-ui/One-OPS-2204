@@ -411,6 +411,8 @@ function HandlingServiceReportContent() {
     },
     enabled: isReceivablesView,
   });
+
+  const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
     queryKey: ["flight_schedules", isStationScoped ? userStation : null],
     queryFn: async () => {
       let q = supabase
