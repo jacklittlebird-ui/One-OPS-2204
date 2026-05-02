@@ -497,6 +497,7 @@ export default function InvoicesPage() {
         {!readOnly && (
           <div className="flex gap-2">
             <button onClick={() => setShowBillingPreview(true)} className="toolbar-btn-outline"><Zap size={14} /> Generate from Dispatches</button>
+            <button onClick={() => setShowMonthlyAirline(true)} className="toolbar-btn-outline"><Calendar size={14} /> Monthly Airline Invoice</button>
             <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
           </div>
         )}
