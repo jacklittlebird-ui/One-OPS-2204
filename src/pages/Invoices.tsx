@@ -627,6 +627,8 @@ export default function InvoicesPage() {
       Math.abs(totals.total - headerTotals.total) > 0.5;
     return { rows, totals, mismatch };
   }, [monthlySecurityPreview]);
+
+  const generateMonthlySecurityInvoice = async () => {
     const { rows, totals } = monthlySecurityPreview;
     if (rows.length === 0) {
       toast({ title: "No data", description: "No approved security assignments for that airline & month.", variant: "destructive" });
