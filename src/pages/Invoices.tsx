@@ -184,6 +184,8 @@ export default function InvoicesPage() {
   const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
   const [monthlyTab, setMonthlyTab] = useState<"handling" | "security">("handling");
   const [showSecurityAnnexPreview, setShowSecurityAnnexPreview] = useState(false);
+  const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
+  const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: serviceReports } = useSupabaseTable<any>("service_reports");
 
