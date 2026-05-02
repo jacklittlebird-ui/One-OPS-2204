@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
   FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
