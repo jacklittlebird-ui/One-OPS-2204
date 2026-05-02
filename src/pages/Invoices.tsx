@@ -539,6 +539,22 @@ export default function InvoicesPage() {
       return;
     }
 
+    // Validation guard: block on errors, prompt on warnings
+    if (monthlyValidation.errorCount > 0) {
+      toast({
+        title: `Cannot generate — ${monthlyValidation.errorCount} report(s) have errors`,
+        description: "Fix the highlighted reports in the validation panel before generating the invoice.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (monthlyValidation.warningCount > 0) {
+      const ok = window.confirm(
+        `${monthlyValidation.warningCount} service report(s) have validation warnings (e.g., missing fields, unusual values).\n\nGenerate the invoice anyway?`
+      );
+      if (!ok) return;
+    }
+
     // Duplicate guard: refuse if a non-cancelled monthly invoice already exists for this operator+month
     const duplicate = (invoices || []).find((inv: any) =>
       inv.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
