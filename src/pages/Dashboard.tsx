@@ -626,7 +626,7 @@ export default function DashboardPage() {
 
   const displayName = profile?.full_name?.split(" ")[0] || "there";
 
-  // Persisted background choice (resets to "sky" by default).
+  // Persisted welcome-card background choice (defaults to "sky").
   const [bgKey, setBgKey] = useState<WelcomeBgKey>(() => {
     if (typeof window === "undefined") return "sky";
     const saved = window.localStorage.getItem(WELCOME_BG_STORAGE_KEY) as WelcomeBgKey | null;
