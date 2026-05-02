@@ -631,11 +631,24 @@ export default function InvoicesPage() {
     };
     // Cross-check vs preview totals (the values that will be written to the invoice header)
     const headerTotals = monthlySecurityPreview.totals;
-    const mismatch =
+    const totalsMismatch =
       Math.abs(totals.base - headerTotals.base) > 0.5 ||
       Math.abs(totals.overtime - headerTotals.overtime) > 0.5 ||
       Math.abs(totals.total - headerTotals.total) > 0.5;
-    return { rows, totals, counts, mismatch };
+    // Count-integrity: rows missing identifying fields will collapse in distinct sets,
+    // creating a divergence between exported row count and what the printed Annex A summarises.
+    const sourceRowCount = monthlySecurityPreview.rows.length;
+    const missingStation = rows.filter(r => !(r.station || "").trim()).length;
+    const missingFlight = rows.filter(r => !(r.flight || "").trim()).length;
+    const missingDate = rows.filter(r => !(r.date || "").trim()).length;
+    const rowCountMismatch = rows.length !== sourceRowCount;
+    const countMismatch = rowCountMismatch || missingStation > 0 || missingFlight > 0 || missingDate > 0;
+    const mismatch = totalsMismatch || countMismatch;
+    return {
+      rows, totals, counts, mismatch,
+      totalsMismatch, countMismatch,
+      integrity: { sourceRowCount, missingStation, missingFlight, missingDate, rowCountMismatch },
+    };
   }, [monthlySecurityPreview]);
 
   const generateMonthlySecurityInvoice = async () => {
@@ -1451,23 +1464,35 @@ export default function InvoicesPage() {
                       </button>
                       {showSecurityAnnexPreview && (
                         <div className="border-t">
-                          <div className="px-3 py-2 bg-primary/5 border-b border-primary/20 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+                          <div className={`px-3 py-2 border-b flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] ${securityAnnexExport.countMismatch ? "bg-warning/10 border-warning/40" : "bg-primary/5 border-primary/20"}`}>
                             <span className="font-semibold text-foreground uppercase tracking-wide">Export Summary:</span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Rows:</span>
-                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.rows}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.rowCountMismatch ? "text-destructive" : "text-foreground"}`}>{securityAnnexExport.counts.rows}</span>
+                              {securityAnnexExport.integrity.rowCountMismatch && (
+                                <span className="text-destructive">/ source {securityAnnexExport.integrity.sourceRowCount}</span>
+                              )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Flights:</span>
-                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.flights}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingFlight > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.flights}</span>
+                              {securityAnnexExport.integrity.missingFlight > 0 && (
+                                <span className="text-warning">({securityAnnexExport.integrity.missingFlight} missing)</span>
+                              )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Stations:</span>
-                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.stations}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingStation > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.stations}</span>
+                              {securityAnnexExport.integrity.missingStation > 0 && (
+                                <span className="text-warning">({securityAnnexExport.integrity.missingStation} missing)</span>
+                              )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Distinct Dates:</span>
-                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.dates}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingDate > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.dates}</span>
+                              {securityAnnexExport.integrity.missingDate > 0 && (
+                                <span className="text-warning">({securityAnnexExport.integrity.missingDate} missing)</span>
+                              )}
                             </span>
                             <span className="inline-flex items-center gap-1 ms-auto">
                               <span className="text-muted-foreground">Grand Total:</span>
@@ -1518,13 +1543,36 @@ export default function InvoicesPage() {
                           {securityAnnexExport.mismatch && (
                             <div className="px-3 py-2 bg-warning/10 border-t border-warning/30 text-xs text-warning flex items-start gap-2">
                               <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                              <div>
-                                <div className="font-bold">Totals mismatch detected</div>
-                                <div className="font-mono text-[11px] mt-0.5">
-                                  Annex rows: base {securityAnnexExport.totals.base.toFixed(2)} · overtime {securityAnnexExport.totals.overtime.toFixed(2)} · total {securityAnnexExport.totals.total.toFixed(2)}
-                                  <br />
-                                  Invoice header: base {monthlySecurityPreview.totals.base.toFixed(2)} · overtime {monthlySecurityPreview.totals.overtime.toFixed(2)} · total {monthlySecurityPreview.totals.total.toFixed(2)}
-                                </div>
+                              <div className="space-y-1">
+                                {securityAnnexExport.totalsMismatch && (
+                                  <div>
+                                    <div className="font-bold">Totals mismatch detected</div>
+                                    <div className="font-mono text-[11px] mt-0.5">
+                                      Annex rows: base {securityAnnexExport.totals.base.toFixed(2)} · overtime {securityAnnexExport.totals.overtime.toFixed(2)} · total {securityAnnexExport.totals.total.toFixed(2)}
+                                      <br />
+                                      Invoice header: base {monthlySecurityPreview.totals.base.toFixed(2)} · overtime {monthlySecurityPreview.totals.overtime.toFixed(2)} · total {monthlySecurityPreview.totals.total.toFixed(2)}
+                                    </div>
+                                  </div>
+                                )}
+                                {securityAnnexExport.countMismatch && (
+                                  <div>
+                                    <div className="font-bold">Count integrity warning — preview may not match exported PDF/CSV</div>
+                                    <ul className="font-mono text-[11px] mt-0.5 list-disc ms-4 space-y-0.5">
+                                      {securityAnnexExport.integrity.rowCountMismatch && (
+                                        <li className="text-destructive">Row count diverges: preview {securityAnnexExport.counts.rows} vs source {securityAnnexExport.integrity.sourceRowCount}.</li>
+                                      )}
+                                      {securityAnnexExport.integrity.missingFlight > 0 && (
+                                        <li>{securityAnnexExport.integrity.missingFlight} row(s) missing flight number — distinct-flight count understated.</li>
+                                      )}
+                                      {securityAnnexExport.integrity.missingStation > 0 && (
+                                        <li>{securityAnnexExport.integrity.missingStation} row(s) missing station — Annex A station summary will diverge.</li>
+                                      )}
+                                      {securityAnnexExport.integrity.missingDate > 0 && (
+                                        <li>{securityAnnexExport.integrity.missingDate} row(s) missing flight date — distinct-date count understated; sort order unstable.</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
