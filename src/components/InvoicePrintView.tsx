@@ -26,8 +26,27 @@ interface InvoicePrintViewProps {
   onClose: () => void;
 }
 
+type DetailRow = {
+  date?: string; flight?: string; route?: string; reg?: string; station?: string;
+  type?: string; civil?: number; handling?: number; airport?: number; other?: number; total?: number;
+};
+
+function parseDetail(notes: string): { detail: DetailRow[]; cleanNotes: string } {
+  if (!notes) return { detail: [], cleanNotes: "" };
+  const m = notes.match(/__DETAIL__:(\[.*?\])(?:\s|$)/s);
+  if (!m) return { detail: [], cleanNotes: notes };
+  try {
+    const arr = JSON.parse(m[1]) as DetailRow[];
+    const cleanNotes = notes.replace(m[0], "").trim();
+    return { detail: Array.isArray(arr) ? arr : [], cleanNotes };
+  } catch {
+    return { detail: [], cleanNotes: notes };
+  }
+}
+
 export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewProps) {
   const handlePrint = () => window.print();
+  const { detail, cleanNotes } = parseDetail(invoice.notes || "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
