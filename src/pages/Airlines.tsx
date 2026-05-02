@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useReadOnly } from "@/hooks/useReadOnly";
+import { useChannel } from "@/contexts/ChannelContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,9 @@ const statusBadge = (s: string) => {
 
 export default function AirlinesPage() {
   const navigate = useNavigate();
-  const readOnly = useReadOnly();
+  const baseReadOnly = useReadOnly();
+  const { activeChannel } = useChannel();
+  const readOnly = baseReadOnly || activeChannel === "receivables";
   const { data, isLoading, add, update, remove } = useSupabaseTable<AirlineRow>("airlines", { orderBy: "name", ascending: true });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
