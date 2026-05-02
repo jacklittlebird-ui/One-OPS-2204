@@ -184,6 +184,8 @@ export default function InvoicesPage() {
   const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
   const [monthlyTab, setMonthlyTab] = useState<"handling" | "security">("handling");
   const [showSecurityAnnexPreview, setShowSecurityAnnexPreview] = useState(false);
+  const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
+  const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: serviceReports } = useSupabaseTable<any>("service_reports");
 
@@ -650,6 +652,46 @@ export default function InvoicesPage() {
       integrity: { sourceRowCount, missingStation, missingFlight, missingDate, rowCountMismatch },
     };
   }, [monthlySecurityPreview]);
+
+  // Preview-only filtered view (date range + per-station breakdown). Does NOT affect what gets exported.
+  const securityAnnexFiltered = useMemo(() => {
+    const from = securityAnnexDateFrom;
+    const to = securityAnnexDateTo;
+    const inRange = (d: string) => {
+      if (!d) return !from && !to;
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      return true;
+    };
+    const rows = securityAnnexExport.rows.filter(r => inRange(r.date));
+    const totals = rows.reduce(
+      (acc, r) => { acc.base += r.base; acc.overtime += r.overtime; acc.total += r.total; return acc; },
+      { base: 0, overtime: 0, total: 0 }
+    );
+    const stations = new Set(rows.map(r => (r.station || "").trim()).filter(Boolean));
+    const flights = new Set(rows.map(r => (r.flight || "").trim()).filter(Boolean));
+    const dates = new Set(rows.map(r => (r.date || "").trim()).filter(Boolean));
+    const stationMap = new Map<string, { station: string; flights: Set<string>; rows: number; base: number; overtime: number; total: number }>();
+    for (const r of rows) {
+      const key = (r.station || "—").trim() || "—";
+      const existing = stationMap.get(key) || { station: key, flights: new Set<string>(), rows: 0, base: 0, overtime: 0, total: 0 };
+      existing.rows += 1;
+      existing.base += r.base;
+      existing.overtime += r.overtime;
+      existing.total += r.total;
+      if ((r.flight || "").trim()) existing.flights.add(r.flight.trim());
+      stationMap.set(key, existing);
+    }
+    const stationBreakdown = Array.from(stationMap.values())
+      .map(s => ({ station: s.station, rows: s.rows, flights: s.flights.size, base: s.base, overtime: s.overtime, total: s.total }))
+      .sort((a, b) => b.total - a.total);
+    const isFiltered = !!(from || to);
+    return {
+      rows, totals, stationBreakdown, isFiltered,
+      counts: { rows: rows.length, flights: flights.size, stations: stations.size, dates: dates.size },
+      hiddenCount: securityAnnexExport.rows.length - rows.length,
+    };
+  }, [securityAnnexExport, securityAnnexDateFrom, securityAnnexDateTo]);
 
   const generateMonthlySecurityInvoice = async () => {
     const { rows, totals } = monthlySecurityPreview;
@@ -1464,43 +1506,118 @@ export default function InvoicesPage() {
                       </button>
                       {showSecurityAnnexPreview && (
                         <div className="border-t">
+                          {/* Date-range quick filter (preview-only — does NOT change export) */}
+                          <div className="px-3 py-2 bg-muted/5 border-b flex flex-wrap items-end gap-3 text-[11px]">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-muted-foreground uppercase tracking-wide">Date From</label>
+                              <input
+                                type="date"
+                                value={securityAnnexDateFrom}
+                                onChange={(e) => setSecurityAnnexDateFrom(e.target.value)}
+                                className="h-7 px-2 rounded border border-border bg-background text-foreground font-mono text-[11px]"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-muted-foreground uppercase tracking-wide">Date To</label>
+                              <input
+                                type="date"
+                                value={securityAnnexDateTo}
+                                onChange={(e) => setSecurityAnnexDateTo(e.target.value)}
+                                className="h-7 px-2 rounded border border-border bg-background text-foreground font-mono text-[11px]"
+                              />
+                            </div>
+                            {securityAnnexFiltered.isFiltered && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => { setSecurityAnnexDateFrom(""); setSecurityAnnexDateTo(""); }}
+                                  className="h-7 px-2 rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                                >
+                                  Clear filter
+                                </button>
+                                <span className="ms-auto inline-flex items-center gap-1 px-2 py-0.5 rounded bg-warning/15 text-warning">
+                                  <AlertCircle size={11} />
+                                  Preview filtered — {securityAnnexFiltered.hiddenCount} row(s) hidden. Export will include ALL {securityAnnexExport.rows.length} rows.
+                                </span>
+                              </>
+                            )}
+                          </div>
                           <div className={`px-3 py-2 border-b flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] ${securityAnnexExport.countMismatch ? "bg-warning/10 border-warning/40" : "bg-primary/5 border-primary/20"}`}>
-                            <span className="font-semibold text-foreground uppercase tracking-wide">Export Summary:</span>
+                            <span className="font-semibold text-foreground uppercase tracking-wide">
+                              {securityAnnexFiltered.isFiltered ? "Filtered Summary:" : "Export Summary:"}
+                            </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Rows:</span>
-                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.rowCountMismatch ? "text-destructive" : "text-foreground"}`}>{securityAnnexExport.counts.rows}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.rowCountMismatch ? "text-destructive" : "text-foreground"}`}>{securityAnnexFiltered.counts.rows}</span>
+                              {securityAnnexFiltered.isFiltered && (
+                                <span className="text-muted-foreground">/ {securityAnnexExport.counts.rows}</span>
+                              )}
                               {securityAnnexExport.integrity.rowCountMismatch && (
-                                <span className="text-destructive">/ source {securityAnnexExport.integrity.sourceRowCount}</span>
+                                <span className="text-destructive">(source {securityAnnexExport.integrity.sourceRowCount})</span>
                               )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Flights:</span>
-                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingFlight > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.flights}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingFlight > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexFiltered.counts.flights}</span>
                               {securityAnnexExport.integrity.missingFlight > 0 && (
                                 <span className="text-warning">({securityAnnexExport.integrity.missingFlight} missing)</span>
                               )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Stations:</span>
-                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingStation > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.stations}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingStation > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexFiltered.counts.stations}</span>
                               {securityAnnexExport.integrity.missingStation > 0 && (
                                 <span className="text-warning">({securityAnnexExport.integrity.missingStation} missing)</span>
                               )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Distinct Dates:</span>
-                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingDate > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.dates}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingDate > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexFiltered.counts.dates}</span>
                               {securityAnnexExport.integrity.missingDate > 0 && (
                                 <span className="text-warning">({securityAnnexExport.integrity.missingDate} missing)</span>
                               )}
                             </span>
                             <span className="inline-flex items-center gap-1 ms-auto">
-                              <span className="text-muted-foreground">Grand Total:</span>
-                              <span className="font-mono font-bold text-success">${securityAnnexExport.totals.total.toFixed(2)}</span>
+                              <span className="text-muted-foreground">{securityAnnexFiltered.isFiltered ? "Filtered Total:" : "Grand Total:"}</span>
+                              <span className="font-mono font-bold text-success">${securityAnnexFiltered.totals.total.toFixed(2)}</span>
                             </span>
                           </div>
+                          {/* Per-station breakdown */}
+                          {securityAnnexFiltered.stationBreakdown.length > 0 && (
+                            <div className="px-3 py-2 bg-muted/5 border-b">
+                              <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+                                Station Breakdown {securityAnnexFiltered.isFiltered ? "(filtered)" : ""}
+                              </div>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-[11px]">
+                                  <thead>
+                                    <tr className="text-left text-muted-foreground">
+                                      <th className="px-2 py-1 font-medium">Station</th>
+                                      <th className="px-2 py-1 font-medium text-right">Rows</th>
+                                      <th className="px-2 py-1 font-medium text-right">Flights</th>
+                                      <th className="px-2 py-1 font-medium text-right">Base ($)</th>
+                                      <th className="px-2 py-1 font-medium text-right">OT ($)</th>
+                                      <th className="px-2 py-1 font-medium text-right">Total ($)</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {securityAnnexFiltered.stationBreakdown.map((s) => (
+                                      <tr key={s.station} className="border-t border-border/50">
+                                        <td className="px-2 py-1 font-semibold text-foreground">{s.station}</td>
+                                        <td className="px-2 py-1 text-right font-mono">{s.rows}</td>
+                                        <td className="px-2 py-1 text-right font-mono">{s.flights}</td>
+                                        <td className="px-2 py-1 text-right font-mono">{s.base.toFixed(2)}</td>
+                                        <td className="px-2 py-1 text-right font-mono">{s.overtime.toFixed(2)}</td>
+                                        <td className="px-2 py-1 text-right font-mono font-bold text-success">{s.total.toFixed(2)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
                           <div className="px-3 py-2 bg-muted/10 text-[11px] text-muted-foreground italic">
-                            This is exactly what will be exported to the printed invoice's Annex A page (and CSV). Rows are sorted by date then flight number.
+                            This is exactly what will be exported to the printed invoice's Annex A page (and CSV). Rows are sorted by date then flight number. Date-range filter affects this preview only — the exported file always contains all rows.
                           </div>
                           <div className="max-h-72 overflow-auto">
                             <table className="w-full text-xs">
@@ -1517,7 +1634,7 @@ export default function InvoicesPage() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {securityAnnexExport.rows.map((r, i) => (
+                                {securityAnnexFiltered.rows.map((r, i) => (
                                   <tr key={i} className="border-t">
                                     <td className="px-3 py-1.5 font-mono text-muted-foreground">{i + 1}</td>
                                     <td className="px-3 py-1.5 font-mono">{formatDateDMY(r.date)}</td>
@@ -1529,14 +1646,27 @@ export default function InvoicesPage() {
                                     <td className="px-3 py-1.5 text-right font-mono font-semibold text-foreground">{r.total.toFixed(2)}</td>
                                   </tr>
                                 ))}
+                                {securityAnnexFiltered.rows.length === 0 && (
+                                  <tr><td colSpan={8} className="px-3 py-4 text-center text-muted-foreground italic">No rows match the selected date range.</td></tr>
+                                )}
                               </tbody>
                               <tfoot>
                                 <tr className="bg-muted/40 font-bold border-t-2">
-                                  <td colSpan={5} className="px-3 py-2 text-right uppercase text-xs">Annex A Grand Total</td>
-                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexExport.totals.base.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexExport.totals.overtime.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-right font-mono text-success">{securityAnnexExport.totals.total.toFixed(2)}</td>
+                                  <td colSpan={5} className="px-3 py-2 text-right uppercase text-xs">
+                                    {securityAnnexFiltered.isFiltered ? "Filtered Subtotal" : "Annex A Grand Total"}
+                                  </td>
+                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexFiltered.totals.base.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexFiltered.totals.overtime.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-success">{securityAnnexFiltered.totals.total.toFixed(2)}</td>
                                 </tr>
+                                {securityAnnexFiltered.isFiltered && (
+                                  <tr className="bg-muted/20 text-muted-foreground border-t">
+                                    <td colSpan={5} className="px-3 py-1.5 text-right uppercase text-[10px]">Annex A Grand Total (export)</td>
+                                    <td className="px-3 py-1.5 text-right font-mono text-[11px]">{securityAnnexExport.totals.base.toFixed(2)}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono text-[11px]">{securityAnnexExport.totals.overtime.toFixed(2)}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono text-[11px] text-success">{securityAnnexExport.totals.total.toFixed(2)}</td>
+                                  </tr>
+                                )}
                               </tfoot>
                             </table>
                           </div>
