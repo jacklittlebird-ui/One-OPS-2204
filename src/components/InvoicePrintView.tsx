@@ -163,7 +163,30 @@ function downloadAnnexCsv(invoiceNo: string, detail: DetailRow[]) {
 
 export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewProps) {
   const handlePrint = () => window.print();
-  const { detail, cleanNotes } = parseDetail(invoice.notes || "");
+  const { detail, cleanNotes, status: detailStatus, parseError } = parseDetail(invoice.notes || "");
+  const isMonthlyConsolidated =
+    /__DETAIL__:|annex a/i.test(invoice.notes || "") || invoice.flightRef?.toLowerCase().includes("flights");
+  const showAnnex = detail.length > 0 || isMonthlyConsolidated;
+
+  // Recompute annex totals to verify against invoice totals
+  const annexTotals = detail.reduce(
+    (s, d) => ({
+      civil: s.civil + (d.civil || 0),
+      handling: s.handling + (d.handling || 0),
+      airport: s.airport + (d.airport || 0),
+      other: s.other + (d.other || 0),
+      total: s.total + (d.total || 0),
+    }),
+    { civil: 0, handling: 0, airport: 0, other: 0, total: 0 }
+  );
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const TOL = 0.01;
+  const totalsMismatch = detail.length > 0 && (
+    Math.abs(round2(annexTotals.civil) - round2(invoice.civilAviation || 0)) > TOL ||
+    Math.abs(round2(annexTotals.handling) - round2(invoice.handling || 0)) > TOL ||
+    Math.abs(round2(annexTotals.airport) - round2(invoice.airportCharges || 0)) > TOL ||
+    Math.abs(round2(annexTotals.other) - round2(invoice.other || 0)) > TOL
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
@@ -172,10 +195,57 @@ export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewP
         <div className="flex items-center justify-between px-6 py-3 border-b print:hidden">
           <span className="text-sm font-semibold text-gray-600">Invoice Preview</span>
           <div className="flex gap-2">
+            {detail.length > 0 && (
+              <button
+                onClick={() => downloadAnnexCsv(invoice.invoiceNo, detail)}
+                className="toolbar-btn-outline"
+                title="Export the per-flight Annex A as a CSV file"
+              >
+                <Download size={14} /> Export Annex A CSV
+              </button>
+            )}
             <button onClick={handlePrint} className="toolbar-btn-primary">🖨 Print / Save PDF</button>
             <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500"><X size={18} /></button>
           </div>
         </div>
+
+        {/* Totals mismatch warning (no-print) */}
+        {totalsMismatch && (
+          <div className="mx-6 mt-3 p-3 rounded border border-amber-300 bg-amber-50 text-amber-900 text-xs flex gap-2 print:hidden">
+            <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="font-semibold mb-1">Annex totals don't match invoice totals</div>
+              <table className="text-[11px] mt-1">
+                <thead>
+                  <tr className="text-amber-700">
+                    <th className="text-left pr-3">Category</th>
+                    <th className="text-right pr-3">Invoice</th>
+                    <th className="text-right pr-3">Annex Sum</th>
+                    <th className="text-right">Δ</th>
+                  </tr>
+                </thead>
+                <tbody className="font-mono">
+                  {([
+                    ["Civil Aviation", invoice.civilAviation || 0, annexTotals.civil],
+                    ["Handling", invoice.handling || 0, annexTotals.handling],
+                    ["Airport", invoice.airportCharges || 0, annexTotals.airport],
+                    ["Other", invoice.other || 0, annexTotals.other],
+                  ] as const).map(([label, inv, sum]) => {
+                    const diff = round2(sum - inv);
+                    return (
+                      <tr key={label} className={Math.abs(diff) > TOL ? "text-amber-900" : "text-amber-600"}>
+                        <td className="pr-3 font-sans">{label}</td>
+                        <td className="text-right pr-3">{inv.toFixed(2)}</td>
+                        <td className="text-right pr-3">{sum.toFixed(2)}</td>
+                        <td className="text-right">{diff > 0 ? "+" : ""}{diff.toFixed(2)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Printable content */}
         <div className="p-8 text-gray-900" id="invoice-print-area">
