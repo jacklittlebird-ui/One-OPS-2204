@@ -1002,6 +1002,22 @@ function HandlingServiceReportContent() {
         </div>
       </div>
 
+      {/* Deep-link filter banner from Invoices validation panel */}
+      {reviewIdsFilter && reviewIdsFilter.length > 0 && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
+          <div className="text-warning-foreground">
+            <span className="font-semibold">Filtered to {reviewIdsFilter.length} report{reviewIdsFilter.length === 1 ? "" : "s"}</span>
+            <span className="text-muted-foreground ml-2">flagged by Pre-Invoice Validation. Fix issues, then approve.</span>
+          </div>
+          <button
+            className="text-xs font-semibold text-primary hover:underline"
+            onClick={() => { setReviewIdsFilter(null); navigate("/service-report", { replace: true }); }}
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">
         <div className="p-4 border-b flex flex-wrap items-center gap-3">
