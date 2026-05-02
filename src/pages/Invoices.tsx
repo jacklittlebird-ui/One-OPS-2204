@@ -410,7 +410,82 @@ export default function InvoicesPage() {
     toast({ title: "✅ Invoice Created", description: `Draft invoice for ${group.airline} at ${group.station}` });
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+  // ===== Monthly Airline Invoice (1 invoice per airline per month, source = Service Reports) =====
+  const monthlyAirlinePreview = useMemo(() => {
+    const reports = (serviceReports || []).filter((r: any) =>
+      r.review_status === "approved" &&
+      r.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      (r.arrival_date || "").startsWith(monthlyAirlineMonth)
+    );
+    const totals = reports.reduce((acc: any, r: any) => {
+      acc.civil += Number(r.civil_aviation_fee) || 0;
+      acc.handling += Number(r.handling_fee) || 0;
+      acc.airport += Number(r.airport_charge) || 0;
+      acc.total += Number(r.total_cost) || 0;
+      return acc;
+    }, { civil: 0, handling: 0, airport: 0, total: 0 });
+    // Group by station + service type for the breakdown
+    const byStationType: Record<string, { station: string; type: string; flights: number; total: number }> = {};
+    reports.forEach((r: any) => {
+      const key = `${r.station}__${r.handling_type}`;
+      if (!byStationType[key]) byStationType[key] = { station: r.station, type: r.handling_type, flights: 0, total: 0 };
+      byStationType[key].flights++;
+      byStationType[key].total += Number(r.total_cost) || 0;
+    });
+    return { reports, totals, breakdown: Object.values(byStationType) };
+  }, [serviceReports, monthlyAirlineOperator, monthlyAirlineMonth]);
+
+  const allOperators = useMemo(
+    () => Array.from(new Set((serviceReports || []).map((r: any) => r.operator).filter(Boolean))).sort() as string[],
+    [serviceReports]
+  );
+
+  const generateMonthlyAirlineInvoice = async () => {
+    const { reports, totals } = monthlyAirlinePreview;
+    if (reports.length === 0) {
+      toast({ title: "No data", description: "No approved service reports for that airline & month.", variant: "destructive" });
+      return;
+    }
+    const detailRows = reports.map((r: any) => ({
+      date: r.arrival_date || "",
+      flight: r.flight_no || "",
+      reg: r.registration || "",
+      route: r.route || "",
+      station: r.station || "",
+      type: r.handling_type || "",
+      civil: Number(r.civil_aviation_fee) || 0,
+      handling: Number(r.handling_fee) || 0,
+      airport: Number(r.airport_charge) || 0,
+      other: 0,
+      total: Number(r.total_cost) || 0,
+    }));
+    const headerNote = `Monthly consolidated invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${reports.length} approved service reports across ${new Set(reports.map((r: any) => r.station)).size} station(s). See Annex A for per-flight detail.`;
+    const inv: Partial<InvoiceRow> = {
+      invoice_no: `LNK-${monthlyAirlineMonth.replace("-", "")}-${monthlyAirlineOperator.replace(/\s+/g, "").slice(0, 4).toUpperCase()}`,
+      date: new Date().toISOString().slice(0, 10),
+      due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      operator: monthlyAirlineOperator,
+      station: "ALL",
+      billing_period: monthlyAirlineMonth,
+      civil_aviation: totals.civil,
+      handling: totals.handling,
+      airport_charges: totals.airport,
+      catering: 0, other: 0, vat: 0,
+      subtotal: totals.civil + totals.handling + totals.airport,
+      total: totals.civil + totals.handling + totals.airport,
+      currency: "USD" as InvoiceCurrency,
+      status: "Draft" as InvoiceStatus,
+      invoice_type: "Preliminary" as InvoiceType,
+      description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (all stations consolidated)`,
+      flight_ref: `${reports.length} flights`,
+      notes: `${headerNote}\n__DETAIL__:${JSON.stringify(detailRows)}`,
+    };
+    await add(inv as any);
+    setShowMonthlyAirline(false);
+    toast({ title: "✅ Monthly Invoice Created", description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${reports.length} flights, all stations).` });
+  };
+
+
 
   return (
     <div className="space-y-5">
