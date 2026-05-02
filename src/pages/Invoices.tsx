@@ -981,8 +981,63 @@ export default function InvoicesPage() {
                     </div>
                   </div>
 
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground">Per-Station × Service Type Breakdown</div>
+                  {/* Validation panel — flag missing/unusual data before generating */}
+                  <div className={`border rounded-lg overflow-hidden ${
+                    monthlyValidation.errorCount > 0 ? "border-destructive/50" :
+                    monthlyValidation.warningCount > 0 ? "border-warning/50" :
+                    "border-success/40"
+                  }`}>
+                    <div className={`px-3 py-2 text-xs font-bold uppercase flex items-center justify-between ${
+                      monthlyValidation.errorCount > 0 ? "bg-destructive/10 text-destructive" :
+                      monthlyValidation.warningCount > 0 ? "bg-warning/10 text-warning" :
+                      "bg-success/10 text-success"
+                    }`}>
+                      <span className="flex items-center gap-2">
+                        <AlertCircle size={14} /> Pre-Invoice Validation
+                      </span>
+                      <span className="font-mono normal-case">
+                        {monthlyValidation.cleanCount} clean · {monthlyValidation.warningCount} warning{monthlyValidation.warningCount === 1 ? "" : "s"} · {monthlyValidation.errorCount} error{monthlyValidation.errorCount === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    {monthlyValidation.issues.length === 0 ? (
+                      <div className="p-3 text-sm text-success flex items-center gap-2">
+                        <CheckCircle size={14} /> All {monthlyAirlinePreview.reports.length} reports passed validation.
+                      </div>
+                    ) : (
+                      <div className="max-h-48 overflow-y-auto">
+                        <table className="w-full text-xs">
+                          <thead className="bg-muted/30 sticky top-0">
+                            <tr className="text-left text-muted-foreground uppercase">
+                              <th className="px-3 py-1.5">Severity</th>
+                              <th className="px-3 py-1.5">Date</th>
+                              <th className="px-3 py-1.5">Flight</th>
+                              <th className="px-3 py-1.5">Station</th>
+                              <th className="px-3 py-1.5">Issues</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {monthlyValidation.issues.map((iss) => (
+                              <tr key={iss.id} className={`border-t ${iss.severity === "error" ? "bg-destructive/5" : "bg-warning/5"}`}>
+                                <td className="px-3 py-1.5">
+                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                    iss.severity === "error" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning"
+                                  }`}>
+                                    {iss.severity}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-1.5 font-mono">{iss.date}</td>
+                                <td className="px-3 py-1.5 font-mono font-semibold">{iss.flight}</td>
+                                <td className="px-3 py-1.5">{iss.station}</td>
+                                <td className="px-3 py-1.5 text-foreground">{iss.issues.join("; ")}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b bg-muted/20 text-xs uppercase text-muted-foreground">
