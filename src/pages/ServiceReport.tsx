@@ -377,6 +377,7 @@ function HandlingServiceReportContent() {
   const [editData, setEditData] = useState<Partial<ReportFormData>>({});
   const [activeClearanceStatus, setActiveClearanceStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showUnbilled, setShowUnbilled] = useState(false);
 
   const { station: userStation, isStationScoped } = useUserStation();
 
@@ -398,6 +399,17 @@ function HandlingServiceReportContent() {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Receivables: load invoices to detect billed flights (matched by flight_ref ↔ flight_no)
+  const { data: dbInvoices = [] } = useQuery({
+    queryKey: ["invoices_for_receivables_panel"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("invoices").select("id,invoice_no,flight_ref,operator,status").neq("status", "Cancelled");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isReceivablesView,
   });
 
   const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
@@ -764,6 +776,47 @@ function HandlingServiceReportContent() {
     });
   }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab, isStationScoped, userStation, reviewIdsFilter]);
 
+  // Receivables-only: every approved service report whose flight has not been billed yet
+  const unbilledRows = useMemo(() => {
+    const billedFlightRefs = new Set(
+      (dbInvoices as any[])
+        .map((inv: any) => String(inv.flight_ref || "").trim().toUpperCase())
+        .filter(Boolean)
+    );
+    const rows = mergedRows
+      .filter(r => r.isLinked && r.reviewStatus === "approved")
+      .filter(r => !billedFlightRefs.has(String(r.flightNo || "").trim().toUpperCase()))
+      .map(r => {
+        const civil = Number(r.civilAviationFee) || 0;
+        const handling = Number(r.handlingFee) || 0;
+        const airport = Number(r.airportCharge) || 0;
+        return {
+          id: r.id,
+          flightNo: r.flightNo,
+          operator: r.operator,
+          route: r.route,
+          arrivalDate: r.arrivalDate,
+          handlingType: r.handlingType,
+          station: r.station,
+          civil, handling, airport,
+          total: civil + handling + airport,
+        };
+      })
+      .sort((a, b) => (a.arrivalDate || "").localeCompare(b.arrivalDate || "") || (a.flightNo || "").localeCompare(b.flightNo || ""));
+    const totals = rows.reduce(
+      (acc, r) => { acc.civil += r.civil; acc.handling += r.handling; acc.airport += r.airport; acc.total += r.total; return acc; },
+      { civil: 0, handling: 0, airport: 0, total: 0 }
+    );
+    const byOperator = new Map<string, { operator: string; count: number; total: number }>();
+    for (const r of rows) {
+      const key = r.operator || "—";
+      const e = byOperator.get(key) || { operator: key, count: 0, total: 0 };
+      e.count += 1; e.total += r.total;
+      byOperator.set(key, e);
+    }
+    return { rows, totals, byOperator: Array.from(byOperator.values()).sort((a, b) => b.total - a.total) };
+  }, [mergedRows, dbInvoices]);
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -1112,6 +1165,16 @@ function HandlingServiceReportContent() {
               <CheckCircle2 size={14} /> {bulkApproving ? "Approving…" : `Approve All Shown (${filtered.filter(r => r.isLinked && r.reviewStatus !== "approved").length})`}
             </button>
           )}
+          {isReceivablesView && (
+            <button
+              onClick={() => setShowUnbilled(true)}
+              className="toolbar-btn-primary"
+              title="Open all approved flights that have not been invoiced yet, with per-flight receivables"
+            >
+              <Receipt size={14} />
+              Unbilled Flights ({unbilledRows.rows.length})
+            </button>
+          )}
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
         </div>
 
@@ -1351,6 +1414,112 @@ function HandlingServiceReportContent() {
             setEditId(null);
           }}
         />
+      )}
+      {showUnbilled && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-auto" onClick={() => setShowUnbilled(false)}>
+          <div className="bg-card rounded-lg shadow-2xl w-full max-w-6xl my-8" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b">
+              <div className="flex items-center gap-2">
+                <Receipt size={18} className="text-primary" />
+                <h2 className="text-base font-bold text-foreground">Unbilled Approved Flights — Per-Flight Receivables</h2>
+              </div>
+              <button onClick={() => setShowUnbilled(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+            </div>
+            <div className="px-5 py-3 bg-primary/5 border-b flex flex-wrap gap-x-6 gap-y-1 text-xs">
+              <span><span className="text-muted-foreground">Flights:</span> <span className="font-mono font-bold">{unbilledRows.rows.length}</span></span>
+              <span><span className="text-muted-foreground">Operators:</span> <span className="font-mono font-bold">{unbilledRows.byOperator.length}</span></span>
+              <span><span className="text-muted-foreground">Civil Aviation:</span> <span className="font-mono font-bold">${unbilledRows.totals.civil.toFixed(2)}</span></span>
+              <span><span className="text-muted-foreground">Handling:</span> <span className="font-mono font-bold">${unbilledRows.totals.handling.toFixed(2)}</span></span>
+              <span><span className="text-muted-foreground">Airport:</span> <span className="font-mono font-bold">${unbilledRows.totals.airport.toFixed(2)}</span></span>
+              <span className="ms-auto"><span className="text-muted-foreground">Total Receivables:</span> <span className="font-mono font-bold text-success">${unbilledRows.totals.total.toFixed(2)}</span></span>
+            </div>
+            {unbilledRows.byOperator.length > 0 && (
+              <div className="px-5 py-2 bg-muted/10 border-b">
+                <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Per-Operator Subtotal</div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                  {unbilledRows.byOperator.map(o => (
+                    <span key={o.operator} className="inline-flex items-center gap-1">
+                      <span className="font-semibold text-foreground">{o.operator}</span>
+                      <span className="text-muted-foreground">({o.count})</span>
+                      <span className="font-mono text-success">${o.total.toFixed(2)}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="max-h-[55vh] overflow-auto">
+              {unbilledRows.rows.length === 0 ? (
+                <div className="px-5 py-12 text-center text-muted-foreground text-sm">
+                  No unbilled approved flights — every approved service report already has a matching invoice.
+                </div>
+              ) : (
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/40 sticky top-0">
+                    <tr className="text-left text-muted-foreground uppercase">
+                      <th className="px-3 py-2">#</th>
+                      <th className="px-3 py-2">Date</th>
+                      <th className="px-3 py-2">Flight</th>
+                      <th className="px-3 py-2">Operator</th>
+                      <th className="px-3 py-2">Route</th>
+                      <th className="px-3 py-2">Type</th>
+                      <th className="px-3 py-2">Station</th>
+                      <th className="px-3 py-2 text-right">Civil ($)</th>
+                      <th className="px-3 py-2 text-right">Handling ($)</th>
+                      <th className="px-3 py-2 text-right">Airport ($)</th>
+                      <th className="px-3 py-2 text-right">Total ($)</th>
+                      <th className="px-3 py-2 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unbilledRows.rows.map((r, i) => (
+                      <tr key={r.id || i} className="border-t hover:bg-muted/20">
+                        <td className="px-3 py-2 font-mono text-muted-foreground">{i + 1}</td>
+                        <td className="px-3 py-2 font-mono">{r.arrivalDate || "—"}</td>
+                        <td className="px-3 py-2 font-mono font-semibold text-foreground">{r.flightNo || "—"}</td>
+                        <td className="px-3 py-2">{r.operator || "—"}</td>
+                        <td className="px-3 py-2">{r.route || "—"}</td>
+                        <td className="px-3 py-2">{r.handlingType || "—"}</td>
+                        <td className="px-3 py-2">{r.station || "—"}</td>
+                        <td className="px-3 py-2 text-right font-mono">{r.civil.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{r.handling.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{r.airport.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-mono font-semibold text-success">{r.total.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-center">
+                          <button
+                            onClick={() => {
+                              const params = new URLSearchParams({
+                                operator: r.operator || "",
+                                flightRef: r.flightNo || "",
+                                description: `${r.handlingType || ""} – ${r.route || ""}`,
+                                civilAviation: String(r.civil),
+                                handling: String(r.handling),
+                                airportCharges: String(r.airport),
+                              });
+                              navigate(`/invoices?${params.toString()}`);
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-medium"
+                          >
+                            <Receipt size={11} /> Invoice
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-muted/40 font-bold border-t-2">
+                      <td colSpan={7} className="px-3 py-2 text-right uppercase text-xs">Grand Total</td>
+                      <td className="px-3 py-2 text-right font-mono">{unbilledRows.totals.civil.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{unbilledRows.totals.handling.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{unbilledRows.totals.airport.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-success">{unbilledRows.totals.total.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
