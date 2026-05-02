@@ -631,11 +631,24 @@ export default function InvoicesPage() {
     };
     // Cross-check vs preview totals (the values that will be written to the invoice header)
     const headerTotals = monthlySecurityPreview.totals;
-    const mismatch =
+    const totalsMismatch =
       Math.abs(totals.base - headerTotals.base) > 0.5 ||
       Math.abs(totals.overtime - headerTotals.overtime) > 0.5 ||
       Math.abs(totals.total - headerTotals.total) > 0.5;
-    return { rows, totals, counts, mismatch };
+    // Count-integrity: rows missing identifying fields will collapse in distinct sets,
+    // creating a divergence between exported row count and what the printed Annex A summarises.
+    const sourceRowCount = monthlySecurityPreview.rows.length;
+    const missingStation = rows.filter(r => !(r.station || "").trim()).length;
+    const missingFlight = rows.filter(r => !(r.flight || "").trim()).length;
+    const missingDate = rows.filter(r => !(r.date || "").trim()).length;
+    const rowCountMismatch = rows.length !== sourceRowCount;
+    const countMismatch = rowCountMismatch || missingStation > 0 || missingFlight > 0 || missingDate > 0;
+    const mismatch = totalsMismatch || countMismatch;
+    return {
+      rows, totals, counts, mismatch,
+      totalsMismatch, countMismatch,
+      integrity: { sourceRowCount, missingStation, missingFlight, missingDate, rowCountMismatch },
+    };
   }, [monthlySecurityPreview]);
 
   const generateMonthlySecurityInvoice = async () => {
