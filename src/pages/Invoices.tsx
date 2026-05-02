@@ -1417,6 +1417,88 @@ export default function InvoicesPage() {
                       </table>
                     </div>
 
+                    {/* Annex A — Per-flight detail preview (mirrors PDF/print export) */}
+                    <div className="border rounded-lg overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setShowSecurityAnnexPreview(v => !v)}
+                        className="w-full px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground flex items-center justify-between hover:bg-muted/60 transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Eye size={14} /> Annex A — Per-Flight Detail Preview
+                          <span className="font-mono normal-case text-[11px] text-foreground">
+                            ({securityAnnexExport.rows.length} row{securityAnnexExport.rows.length === 1 ? "" : "s"})
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          {securityAnnexExport.mismatch && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning/15 text-warning text-[10px]">
+                              <AlertCircle size={10} /> Totals mismatch
+                            </span>
+                          )}
+                          <span className="text-foreground">{showSecurityAnnexPreview ? "Hide ▲" : "Show ▼"}</span>
+                        </span>
+                      </button>
+                      {showSecurityAnnexPreview && (
+                        <div className="border-t">
+                          <div className="px-3 py-2 bg-muted/10 text-[11px] text-muted-foreground italic">
+                            This is exactly what will be exported to the printed invoice's Annex A page (and CSV). Rows are sorted by date then flight number.
+                          </div>
+                          <div className="max-h-72 overflow-auto">
+                            <table className="w-full text-xs">
+                              <thead className="bg-muted/30 sticky top-0">
+                                <tr className="text-left text-muted-foreground uppercase">
+                                  <th className="px-3 py-1.5">#</th>
+                                  <th className="px-3 py-1.5">Date</th>
+                                  <th className="px-3 py-1.5">Flight</th>
+                                  <th className="px-3 py-1.5">Station</th>
+                                  <th className="px-3 py-1.5">Service Type</th>
+                                  <th className="px-3 py-1.5 text-right">Base ($)</th>
+                                  <th className="px-3 py-1.5 text-right">Overtime ($)</th>
+                                  <th className="px-3 py-1.5 text-right">Total ($)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {securityAnnexExport.rows.map((r, i) => (
+                                  <tr key={i} className="border-t">
+                                    <td className="px-3 py-1.5 font-mono text-muted-foreground">{i + 1}</td>
+                                    <td className="px-3 py-1.5 font-mono">{formatDateDMY(r.date)}</td>
+                                    <td className="px-3 py-1.5 font-mono font-semibold text-foreground">{r.flight || "—"}</td>
+                                    <td className="px-3 py-1.5">{r.station || "—"}</td>
+                                    <td className="px-3 py-1.5">{r.type || "—"}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono">{r.base.toFixed(2)}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono">{r.overtime.toFixed(2)}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono font-semibold text-foreground">{r.total.toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr className="bg-muted/40 font-bold border-t-2">
+                                  <td colSpan={5} className="px-3 py-2 text-right uppercase text-xs">Annex A Grand Total</td>
+                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexExport.totals.base.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexExport.totals.overtime.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-success">{securityAnnexExport.totals.total.toFixed(2)}</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                          {securityAnnexExport.mismatch && (
+                            <div className="px-3 py-2 bg-warning/10 border-t border-warning/30 text-xs text-warning flex items-start gap-2">
+                              <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                              <div>
+                                <div className="font-bold">Totals mismatch detected</div>
+                                <div className="font-mono text-[11px] mt-0.5">
+                                  Annex rows: base {securityAnnexExport.totals.base.toFixed(2)} · overtime {securityAnnexExport.totals.overtime.toFixed(2)} · total {securityAnnexExport.totals.total.toFixed(2)}
+                                  <br />
+                                  Invoice header: base {monthlySecurityPreview.totals.base.toFixed(2)} · overtime {monthlySecurityPreview.totals.overtime.toFixed(2)} · total {monthlySecurityPreview.totals.total.toFixed(2)}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex justify-end pt-2">
                       <button onClick={generateMonthlySecurityInvoice} className="toolbar-btn-primary">
                         <Plus size={14} /> Create Security Consolidated Invoice
