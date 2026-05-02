@@ -31,7 +31,9 @@ const statusBadge = (s: string) => {
 
 export default function AirlinesPage() {
   const navigate = useNavigate();
-  const readOnly = useReadOnly();
+  const baseReadOnly = useReadOnly();
+  const { activeChannel } = useChannel();
+  const readOnly = baseReadOnly || activeChannel === "receivables";
   const { data, isLoading, add, update, remove } = useSupabaseTable<AirlineRow>("airlines", { orderBy: "name", ascending: true });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
