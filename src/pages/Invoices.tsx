@@ -619,13 +619,23 @@ export default function InvoicesPage() {
       (acc, r) => { acc.base += r.base; acc.overtime += r.overtime; acc.total += r.total; return acc; },
       { base: 0, overtime: 0, total: 0 }
     );
+    // Distinct counts for summary line (flights, stations, dates)
+    const stations = new Set(rows.map(r => (r.station || "").trim()).filter(Boolean));
+    const flights = new Set(rows.map(r => (r.flight || "").trim()).filter(Boolean));
+    const dates = new Set(rows.map(r => (r.date || "").trim()).filter(Boolean));
+    const counts = {
+      rows: rows.length,
+      flights: flights.size,
+      stations: stations.size,
+      dates: dates.size,
+    };
     // Cross-check vs preview totals (the values that will be written to the invoice header)
     const headerTotals = monthlySecurityPreview.totals;
     const mismatch =
       Math.abs(totals.base - headerTotals.base) > 0.5 ||
       Math.abs(totals.overtime - headerTotals.overtime) > 0.5 ||
       Math.abs(totals.total - headerTotals.total) > 0.5;
-    return { rows, totals, mismatch };
+    return { rows, totals, counts, mismatch };
   }, [monthlySecurityPreview]);
 
   const generateMonthlySecurityInvoice = async () => {
@@ -1441,6 +1451,29 @@ export default function InvoicesPage() {
                       </button>
                       {showSecurityAnnexPreview && (
                         <div className="border-t">
+                          <div className="px-3 py-2 bg-primary/5 border-b border-primary/20 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+                            <span className="font-semibold text-foreground uppercase tracking-wide">Export Summary:</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-muted-foreground">Rows:</span>
+                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.rows}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-muted-foreground">Flights:</span>
+                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.flights}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-muted-foreground">Stations:</span>
+                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.stations}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-muted-foreground">Distinct Dates:</span>
+                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.dates}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1 ms-auto">
+                              <span className="text-muted-foreground">Grand Total:</span>
+                              <span className="font-mono font-bold text-success">${securityAnnexExport.totals.total.toFixed(2)}</span>
+                            </span>
+                          </div>
                           <div className="px-3 py-2 bg-muted/10 text-[11px] text-muted-foreground italic">
                             This is exactly what will be exported to the printed invoice's Annex A page (and CSV). Rows are sorted by date then flight number.
                           </div>
