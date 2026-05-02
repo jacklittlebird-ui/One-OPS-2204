@@ -785,6 +785,105 @@ export default function InvoicesPage() {
           </div>
         </div>
       )}
+
+      {/* Monthly Airline Invoice Modal */}
+      {showMonthlyAirline && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
+          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4">
+            <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
+              <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
+                <Calendar size={18} className="text-primary" /> Monthly Airline Invoice
+              </h2>
+              <button onClick={() => setShowMonthlyAirline(false)} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Creates <span className="font-semibold text-foreground">one consolidated invoice per airline per month</span>, sourced from approved Service Reports across all stations. Per-flight detail is attached as Annex A in the printed invoice.
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Airline</label>
+                  <select className={selectCls} value={monthlyAirlineOperator} onChange={e => setMonthlyAirlineOperator(e.target.value)}>
+                    <option value="Air Cairo">Air Cairo</option>
+                    {allOperators.filter(o => o !== "Air Cairo").map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Billing Month</label>
+                  <input type="month" className={inputCls} value={monthlyAirlineMonth} onChange={e => setMonthlyAirlineMonth(e.target.value)} />
+                </div>
+              </div>
+
+              {monthlyAirlinePreview.reports.length === 0 ? (
+                <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
+                  <FileText size={32} className="mx-auto mb-2 opacity-40" />
+                  <p className="font-semibold">No approved service reports</p>
+                  <p className="text-xs mt-1">Approve service reports for {monthlyAirlineOperator} in {monthlyAirlineMonth} first.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="bg-muted/30 border rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground">Flights</div>
+                      <div className="text-xl font-bold text-foreground">{monthlyAirlinePreview.reports.length}</div>
+                    </div>
+                    <div className="bg-muted/30 border rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground">Civil Aviation</div>
+                      <div className="text-xl font-bold text-foreground">${monthlyAirlinePreview.totals.civil.toFixed(0)}</div>
+                    </div>
+                    <div className="bg-muted/30 border rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground">Handling</div>
+                      <div className="text-xl font-bold text-foreground">${monthlyAirlinePreview.totals.handling.toFixed(0)}</div>
+                    </div>
+                    <div className="bg-muted/30 border rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground">Airport</div>
+                      <div className="text-xl font-bold text-foreground">${monthlyAirlinePreview.totals.airport.toFixed(0)}</div>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground">Per-Station × Service Type Breakdown</div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/20 text-xs uppercase text-muted-foreground">
+                          <th className="text-left px-3 py-2">Station</th>
+                          <th className="text-left px-3 py-2">Service Type</th>
+                          <th className="text-right px-3 py-2">Flights</th>
+                          <th className="text-right px-3 py-2">Total ($)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthlyAirlinePreview.breakdown.map((b, i) => (
+                          <tr key={i} className="border-b last:border-0">
+                            <td className="px-3 py-2 font-semibold text-foreground">{b.station || "—"}</td>
+                            <td className="px-3 py-2 text-foreground">{b.type || "—"}</td>
+                            <td className="px-3 py-2 text-right font-mono text-foreground">{b.flights}</td>
+                            <td className="px-3 py-2 text-right font-mono text-foreground">{b.total.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-muted/30 font-bold">
+                          <td colSpan={2} className="px-3 py-2 text-right">Grand Total</td>
+                          <td className="px-3 py-2 text-right font-mono">{monthlyAirlinePreview.reports.length}</td>
+                          <td className="px-3 py-2 text-right font-mono text-success">${monthlyAirlinePreview.totals.total.toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button onClick={generateMonthlyAirlineInvoice} className="toolbar-btn-primary">
+                      <Plus size={14} /> Create Consolidated Invoice
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
