@@ -31,24 +31,36 @@ type DetailRow = {
   type?: string; civil?: number; handling?: number; airport?: number; other?: number; total?: number;
 };
 
+type ParseStatus = "ok" | "missing" | "malformed" | "empty";
+
 /**
  * Robust parser for the __DETAIL__:[...] payload embedded in invoice notes.
- * Handles: missing notes, no marker, malformed JSON, non-array payloads,
- * trailing/leading whitespace, and rows missing fields. Always returns
- * a stable `{ detail, cleanNotes }` shape — never throws.
+ * Returns:
+ *   - detail: parsed/sanitized rows (always an array)
+ *   - cleanNotes: notes with the marker payload stripped
+ *   - status: 'ok' | 'missing' (no marker) | 'malformed' (parse failed) | 'empty' (marker present but 0 rows)
+ *   - parseError: human-readable reason when status !== 'ok'
  */
-function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; cleanNotes: string } {
+function parseDetail(notes: string | null | undefined): {
+  detail: DetailRow[];
+  cleanNotes: string;
+  status: ParseStatus;
+  parseError?: string;
+} {
   const raw = (notes ?? "").toString();
-  if (!raw.trim()) return { detail: [], cleanNotes: "" };
+  if (!raw.trim()) return { detail: [], cleanNotes: "", status: "missing" };
 
-  // Locate the marker. Use a balanced-bracket scan instead of a non-greedy regex
-  // so payloads containing nested arrays/objects don't get truncated.
   const markerIdx = raw.indexOf("__DETAIL__:");
-  if (markerIdx === -1) return { detail: [], cleanNotes: raw.trim() };
+  if (markerIdx === -1) return { detail: [], cleanNotes: raw.trim(), status: "missing" };
 
   const startBracket = raw.indexOf("[", markerIdx);
   if (startBracket === -1) {
-    return { detail: [], cleanNotes: raw.replace(/__DETAIL__:.*$/s, "").trim() };
+    return {
+      detail: [],
+      cleanNotes: raw.replace(/__DETAIL__:.*$/s, "").trim(),
+      status: "malformed",
+      parseError: "Detail marker present but no JSON array found.",
+    };
   }
 
   let depth = 0;
@@ -69,8 +81,12 @@ function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; c
   }
 
   if (endBracket === -1) {
-    // Unterminated payload — strip marker, treat as plain notes
-    return { detail: [], cleanNotes: raw.slice(0, markerIdx).trim() };
+    return {
+      detail: [],
+      cleanNotes: raw.slice(0, markerIdx).trim(),
+      status: "malformed",
+      parseError: "Detail JSON array is unterminated.",
+    };
   }
 
   const jsonStr = raw.slice(startBracket, endBracket + 1);
@@ -78,8 +94,9 @@ function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; c
 
   try {
     const parsed = JSON.parse(jsonStr);
-    if (!Array.isArray(parsed)) return { detail: [], cleanNotes };
-    // Sanitize: coerce numeric fields, drop obviously empty rows
+    if (!Array.isArray(parsed)) {
+      return { detail: [], cleanNotes, status: "malformed", parseError: "Detail payload is not a JSON array." };
+    }
     const detail: DetailRow[] = parsed
       .filter((r): r is Record<string, unknown> => r != null && typeof r === "object")
       .map((r: any) => ({
@@ -95,13 +112,53 @@ function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; c
         other: Number(r.other) || 0,
         total: Number(r.total) || 0,
       }));
-    return { detail, cleanNotes };
-  } catch {
-    return { detail: [], cleanNotes };
+    if (detail.length === 0) {
+      return { detail, cleanNotes, status: "empty", parseError: "Detail array is empty." };
+    }
+    return { detail, cleanNotes, status: "ok" };
+  } catch (e: any) {
+    return { detail: [], cleanNotes, status: "malformed", parseError: `Invalid JSON: ${e?.message || "parse error"}` };
   }
 }
 
 const ROWS_PER_PAGE = 22; // keeps each annex page within standard A4 print height
+
+function csvEscape(v: unknown): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function downloadAnnexCsv(invoiceNo: string, detail: DetailRow[]) {
+  const headers = ["Date", "Flight", "Reg", "Route", "Station", "Service", "Civil Aviation", "Handling", "Airport", "Other", "Total"];
+  const lines = [headers.join(",")];
+  detail.forEach(d => {
+    lines.push([
+      d.date, d.flight, d.reg, d.route, d.station, d.type,
+      (d.civil || 0).toFixed(2),
+      (d.handling || 0).toFixed(2),
+      (d.airport || 0).toFixed(2),
+      (d.other || 0).toFixed(2),
+      (d.total || 0).toFixed(2),
+    ].map(csvEscape).join(","));
+  });
+  // Grand totals row
+  const sum = (k: keyof DetailRow) => detail.reduce((s, d) => s + (Number(d[k]) || 0), 0);
+  lines.push(["", "", "", "", "", "TOTAL",
+    sum("civil").toFixed(2), sum("handling").toFixed(2),
+    sum("airport").toFixed(2), sum("other").toFixed(2), sum("total").toFixed(2),
+  ].map(csvEscape).join(","));
+
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Annex-A-${invoiceNo || "invoice"}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 
 
 export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewProps) {
