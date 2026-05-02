@@ -1464,23 +1464,35 @@ export default function InvoicesPage() {
                       </button>
                       {showSecurityAnnexPreview && (
                         <div className="border-t">
-                          <div className="px-3 py-2 bg-primary/5 border-b border-primary/20 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+                          <div className={`px-3 py-2 border-b flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] ${securityAnnexExport.countMismatch ? "bg-warning/10 border-warning/40" : "bg-primary/5 border-primary/20"}`}>
                             <span className="font-semibold text-foreground uppercase tracking-wide">Export Summary:</span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Rows:</span>
-                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.rows}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.rowCountMismatch ? "text-destructive" : "text-foreground"}`}>{securityAnnexExport.counts.rows}</span>
+                              {securityAnnexExport.integrity.rowCountMismatch && (
+                                <span className="text-destructive">/ source {securityAnnexExport.integrity.sourceRowCount}</span>
+                              )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Flights:</span>
-                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.flights}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingFlight > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.flights}</span>
+                              {securityAnnexExport.integrity.missingFlight > 0 && (
+                                <span className="text-warning">({securityAnnexExport.integrity.missingFlight} missing)</span>
+                              )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Stations:</span>
-                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.stations}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingStation > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.stations}</span>
+                              {securityAnnexExport.integrity.missingStation > 0 && (
+                                <span className="text-warning">({securityAnnexExport.integrity.missingStation} missing)</span>
+                              )}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <span className="text-muted-foreground">Distinct Dates:</span>
-                              <span className="font-mono font-bold text-foreground">{securityAnnexExport.counts.dates}</span>
+                              <span className={`font-mono font-bold ${securityAnnexExport.integrity.missingDate > 0 ? "text-warning" : "text-foreground"}`}>{securityAnnexExport.counts.dates}</span>
+                              {securityAnnexExport.integrity.missingDate > 0 && (
+                                <span className="text-warning">({securityAnnexExport.integrity.missingDate} missing)</span>
+                              )}
                             </span>
                             <span className="inline-flex items-center gap-1 ms-auto">
                               <span className="text-muted-foreground">Grand Total:</span>
