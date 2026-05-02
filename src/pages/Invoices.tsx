@@ -6,7 +6,7 @@ import {
   TrendingUp, Filter, Calendar, BarChart3, Zap
 } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
