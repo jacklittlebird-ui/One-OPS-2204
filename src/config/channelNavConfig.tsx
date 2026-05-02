@@ -154,7 +154,6 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Financial Reports", path: "/financial-reports" },
       ],
     },
-    TREASURY_SECTION,
     {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
       children: [
