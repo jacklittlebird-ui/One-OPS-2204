@@ -1038,6 +1038,7 @@ function HandlingServiceReportContent() {
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
           {isOperationsView && (
             <button
+              disabled={bulkApproving}
               onClick={async () => {
                 const targets = filtered.filter(r => r.isLinked && r.id && r.reviewStatus !== "approved");
                 if (targets.length === 0) {
@@ -1046,20 +1047,37 @@ function HandlingServiceReportContent() {
                 }
                 if (!confirm(`Approve ${targets.length} service report(s) shown on this view?`)) return;
                 const ids = targets.map(r => r.id!) as string[];
-                const { error } = await supabase
-                  .from("service_reports")
-                  .update({ review_status: "approved", reviewed_by: "Operations (bulk)", reviewed_at: new Date().toISOString() } as any)
-                  .in("id", ids);
-                if (error) {
-                  toast({ title: "Error", description: error.message, variant: "destructive" });
-                  return;
+                setBulkApproving(true);
+                const CHUNK = 200;
+                let approved = 0;
+                let firstError: string | null = null;
+                try {
+                  const reviewedAt = new Date().toISOString();
+                  for (let i = 0; i < ids.length; i += CHUNK) {
+                    const slice = ids.slice(i, i + CHUNK);
+                    const { error } = await supabase
+                      .from("service_reports")
+                      .update({ review_status: "approved", reviewed_by: "Operations (bulk)", reviewed_at: reviewedAt } as any)
+                      .in("id", slice);
+                    if (error) {
+                      firstError = error.message;
+                      break;
+                    }
+                    approved += slice.length;
+                  }
+                } finally {
+                  setBulkApproving(false);
+                  queryClient.invalidateQueries({ queryKey: ["service_reports"] });
                 }
-                queryClient.invalidateQueries({ queryKey: ["service_reports"] });
-                toast({ title: "✅ Bulk Approved", description: `${ids.length} service report(s) approved and forwarded to Receivables.` });
+                if (firstError) {
+                  toast({ title: `Partial approval (${approved}/${ids.length})`, description: firstError, variant: "destructive" });
+                } else {
+                  toast({ title: "✅ Bulk Approved", description: `${approved} service report(s) approved and forwarded to Receivables.` });
+                }
               }}
-              className="toolbar-btn-primary"
+              className="toolbar-btn-primary disabled:opacity-60"
             >
-              <CheckCircle2 size={14} /> Approve All Shown ({filtered.filter(r => r.isLinked && r.reviewStatus !== "approved").length})
+              <CheckCircle2 size={14} /> {bulkApproving ? "Approving…" : `Approve All Shown (${filtered.filter(r => r.isLinked && r.reviewStatus !== "approved").length})`}
             </button>
           )}
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleUpload} />
