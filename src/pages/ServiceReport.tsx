@@ -1362,9 +1362,15 @@ import { Shield, Wrench } from "lucide-react";
 import SecurityServiceReportsPage from "@/pages/SecurityServiceReports";
 
 export default function ServiceReportPage() {
+  const loc = useLocation();
+  const initialTab = (() => {
+    const p = new URLSearchParams(loc.search);
+    if (p.get("tab") === "handling") return "handling";
+    return "security";
+  })();
   return (
     <div className="p-6 space-y-4">
-      <Tabs defaultValue="security" className="w-full">
+      <Tabs defaultValue={initialTab} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="security" className="gap-1.5">
             <Shield size={14} /> Security

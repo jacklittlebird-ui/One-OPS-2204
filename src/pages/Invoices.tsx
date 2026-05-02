@@ -182,6 +182,7 @@ export default function InvoicesPage() {
   const [showMonthlyAirline, setShowMonthlyAirline] = useState(false);
   const [monthlyAirlineMonth, setMonthlyAirlineMonth] = useState(new Date().toISOString().slice(0, 7));
   const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
+  const [monthlyTab, setMonthlyTab] = useState<"handling" | "security">("handling");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: serviceReports } = useSupabaseTable<any>("service_reports");
 
@@ -459,8 +460,11 @@ export default function InvoicesPage() {
   }, [serviceReports, monthlyAirlineOperator, monthlyAirlineMonth]);
 
   const allOperators = useMemo(
-    () => Array.from(new Set((serviceReports || []).map((r: any) => r.operator).filter(Boolean))).sort() as string[],
-    [serviceReports]
+    () => Array.from(new Set([
+      ...(serviceReports || []).map((r: any) => r.operator),
+      ...(dispatches || []).map((d: any) => d.airline),
+    ].filter(Boolean))).sort() as string[],
+    [serviceReports, dispatches]
   );
 
   // Validation: flag service reports with missing fields or unusual values
@@ -531,6 +535,126 @@ export default function InvoicesPage() {
     const warningCount = issues.filter(i => i.severity === "warning").length;
     return { issues, errorCount, warningCount, cleanCount: reports.length - issues.length };
   }, [monthlyAirlinePreview]);
+
+  // ============================================================
+  // SECURITY: monthly airline invoice (sourced from dispatch_assignments)
+  // ============================================================
+  const monthlySecurityPreview = useMemo(() => {
+    const rows = (dispatches || []).filter((d: any) =>
+      (d.review_status || "").toLowerCase() === "approved" &&
+      d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      (d.flight_date || "").startsWith(monthlyAirlineMonth)
+    );
+    const totals = rows.reduce(
+      (acc: any, d: any) => {
+        const base = Number(d.base_fee) || 0;
+        const ot = Number(d.overtime_charge) || 0;
+        const t = Number(d.total_charge) || base + ot;
+        acc.base += base; acc.overtime += ot; acc.total += t;
+        return acc;
+      },
+      { base: 0, overtime: 0, total: 0 }
+    );
+    const byStationType: Record<string, { station: string; type: string; flights: number; total: number }> = {};
+    rows.forEach((d: any) => {
+      const key = `${d.station}__${d.service_type}`;
+      if (!byStationType[key]) byStationType[key] = { station: d.station, type: d.service_type, flights: 0, total: 0 };
+      byStationType[key].flights++;
+      byStationType[key].total += Number(d.total_charge) || 0;
+    });
+    return { rows, totals, breakdown: Object.values(byStationType) };
+  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth]);
+
+  type SecIssue = { id: string; flight: string; date: string; station: string; severity: "error" | "warning"; issues: string[] };
+  const monthlySecurityValidation = useMemo(() => {
+    const issues: SecIssue[] = [];
+    const rows = monthlySecurityPreview.rows;
+    if (rows.length === 0) return { issues, errorCount: 0, warningCount: 0, cleanCount: 0 };
+    const totals = rows.map((d: any) => Number(d.total_charge) || 0).filter((t: number) => t > 0).sort((a: number, b: number) => a - b);
+    const median = totals.length ? totals[Math.floor(totals.length / 2)] : 0;
+    const outlierHigh = median * 5;
+    const outlierLow = median > 0 ? median / 10 : 0;
+    rows.forEach((d: any) => {
+      const rowIssues: string[] = [];
+      let severity: "error" | "warning" = "warning";
+      if (!d.flight_no?.trim()) { rowIssues.push("Missing flight number"); severity = "error"; }
+      if (!d.station?.trim()) { rowIssues.push("Missing station"); severity = "error"; }
+      if (!d.flight_date) { rowIssues.push("Missing flight date"); severity = "error"; }
+      if (!d.service_type?.trim()) { rowIssues.push("Missing service type"); }
+      const total = Number(d.total_charge) || 0;
+      if (total <= 0) { rowIssues.push("Total charge is zero"); severity = "error"; }
+      if ((Number(d.base_fee) || 0) < 0 || (Number(d.overtime_charge) || 0) < 0) {
+        rowIssues.push("Negative charge amount"); severity = "error";
+      }
+      const partsSum = (Number(d.base_fee) || 0) + (Number(d.overtime_charge) || 0);
+      if (total > 0 && partsSum > 0 && Math.abs(total - partsSum) > 0.5) {
+        rowIssues.push(`Total ${total.toFixed(2)} ≠ base+overtime ${partsSum.toFixed(2)}`);
+      }
+      if (median > 0 && total > outlierHigh) rowIssues.push(`Unusually high total (${total.toFixed(0)} vs median ${median.toFixed(0)})`);
+      if (median > 0 && total > 0 && total < outlierLow) rowIssues.push(`Unusually low total (${total.toFixed(0)} vs median ${median.toFixed(0)})`);
+      if (rowIssues.length > 0) {
+        issues.push({ id: d.id, flight: d.flight_no || "—", date: d.flight_date || "—", station: d.station || "—", severity, issues: rowIssues });
+      }
+    });
+    const errorCount = issues.filter(i => i.severity === "error").length;
+    const warningCount = issues.filter(i => i.severity === "warning").length;
+    return { issues, errorCount, warningCount, cleanCount: rows.length - issues.length };
+  }, [monthlySecurityPreview]);
+
+  const generateMonthlySecurityInvoice = async () => {
+    const { rows, totals } = monthlySecurityPreview;
+    if (rows.length === 0) {
+      toast({ title: "No data", description: "No approved security assignments for that airline & month.", variant: "destructive" });
+      return;
+    }
+    if (monthlySecurityValidation.errorCount > 0) {
+      toast({ title: `Cannot generate — ${monthlySecurityValidation.errorCount} assignment(s) have errors`, description: "Fix highlighted rows first.", variant: "destructive" });
+      return;
+    }
+    if (monthlySecurityValidation.warningCount > 0) {
+      const ok = window.confirm(`${monthlySecurityValidation.warningCount} security assignment(s) have validation warnings.\n\nGenerate the invoice anyway?`);
+      if (!ok) return;
+    }
+    const baseNo = `LNK-${monthlyAirlineMonth.replace("-", "")}-${monthlyAirlineOperator.replace(/\s+/g, "").slice(0, 4).toUpperCase()}-SEC`;
+    const existingSec = (invoices || []).filter((inv: any) =>
+      inv.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      inv.billing_period === monthlyAirlineMonth && inv.station === "ALL" &&
+      (inv.invoice_no || "").includes("-SEC")
+    );
+    const duplicate = existingSec.find((inv: any) => (inv.status || "").toLowerCase() !== "cancelled");
+    if (duplicate) {
+      const ok = window.confirm(`A monthly Security invoice already exists for ${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${duplicate.invoice_no}, ${duplicate.status}).\n\nCreate another anyway?`);
+      if (!ok) { toast({ title: "Duplicate skipped", description: `Existing invoice ${duplicate.invoice_no} kept.` }); return; }
+    }
+    const invoiceNo = existingSec.length > 0 ? `${baseNo}-R${existingSec.length + 1}` : baseNo;
+    const detailRows = rows.map((d: any) => ({
+      date: d.flight_date || "", flight: d.flight_no || "", reg: "",
+      route: "", station: d.station || "", type: d.service_type || "",
+      civil: 0,
+      handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
+      airport: 0,
+      other: Number(d.overtime_charge) || 0,       // overtime → other column in Annex A
+      total: Number(d.total_charge) || 0,
+    }));
+    const headerNote = `Monthly Security invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${rows.length} approved security assignments across ${new Set(rows.map((d: any) => d.station)).size} station(s). See Annex A for per-flight detail.`;
+    const subtotal = totals.total;
+    const inv: Partial<InvoiceRow> = {
+      invoice_no: invoiceNo,
+      date: new Date().toISOString().slice(0, 10),
+      due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      operator: monthlyAirlineOperator, station: "ALL", billing_period: monthlyAirlineMonth,
+      civil_aviation: 0, handling: totals.base, airport_charges: 0, catering: 0, other: totals.overtime, vat: 0,
+      subtotal, total: subtotal,
+      currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus, invoice_type: "Preliminary" as InvoiceType,
+      description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} Security (all stations consolidated)`,
+      flight_ref: `${rows.length} security flights`,
+      notes: `${headerNote}\n__DETAIL__:${JSON.stringify(detailRows)}`,
+    };
+    await add(inv as any);
+    setShowMonthlyAirline(false);
+    toast({ title: "✅ Monthly Security Invoice Created", description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${rows.length} security assignments).` });
+  };
+
 
 
   const generateMonthlyAirlineInvoice = async () => {
@@ -938,8 +1062,30 @@ export default function InvoicesPage() {
             </div>
             <div className="p-6 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Creates <span className="font-semibold text-foreground">one consolidated invoice per airline per month</span>, sourced from approved Service Reports across all stations. Per-flight detail is attached as Annex A in the printed invoice.
+                Creates <span className="font-semibold text-foreground">one consolidated invoice per airline per month</span>. Choose the service category below — Handling pulls from approved Service Reports, Security pulls from approved Security Service assignments. Per-flight detail is attached as Annex A in the printed invoice.
               </p>
+
+              {/* Service category tabs — Handling vs Security (project rule: always split) */}
+              <div className="flex border-b">
+                <button
+                  type="button"
+                  onClick={() => setMonthlyTab("handling")}
+                  className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                    monthlyTab === "handling" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Handling <span className="ml-1.5 text-xs font-mono opacity-70">({monthlyAirlinePreview.reports.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMonthlyTab("security")}
+                  className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                    monthlyTab === "security" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Security <span className="ml-1.5 text-xs font-mono opacity-70">({monthlySecurityPreview.rows.length})</span>
+                </button>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -955,7 +1101,8 @@ export default function InvoicesPage() {
                 </div>
               </div>
 
-              {monthlyAirlinePreview.reports.length === 0 ? (
+              {monthlyTab === "handling" && (
+              monthlyAirlinePreview.reports.length === 0 ? (
                 <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
                   <FileText size={32} className="mx-auto mb-2 opacity-40" />
                   <p className="font-semibold">No approved service reports</p>
@@ -1102,6 +1249,154 @@ export default function InvoicesPage() {
                     </button>
                   </div>
                 </>
+              ))}
+
+              {monthlyTab === "security" && (
+                monthlySecurityPreview.rows.length === 0 ? (
+                  <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
+                    <FileText size={32} className="mx-auto mb-2 opacity-40" />
+                    <p className="font-semibold">No approved security assignments</p>
+                    <p className="text-xs mt-1">Approve Security Service assignments for {monthlyAirlineOperator} in {monthlyAirlineMonth} first.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="bg-muted/30 border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Assignments</div>
+                        <div className="text-xl font-bold text-foreground">{monthlySecurityPreview.rows.length}</div>
+                      </div>
+                      <div className="bg-muted/30 border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Base Fees</div>
+                        <div className="text-xl font-bold text-foreground">${monthlySecurityPreview.totals.base.toFixed(0)}</div>
+                      </div>
+                      <div className="bg-muted/30 border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Overtime</div>
+                        <div className="text-xl font-bold text-foreground">${monthlySecurityPreview.totals.overtime.toFixed(0)}</div>
+                      </div>
+                      <div className="bg-muted/30 border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Total</div>
+                        <div className="text-xl font-bold text-success">${monthlySecurityPreview.totals.total.toFixed(0)}</div>
+                      </div>
+                    </div>
+
+                    {/* Security validation panel */}
+                    <div className={`border rounded-lg overflow-hidden ${
+                      monthlySecurityValidation.errorCount > 0 ? "border-destructive/50" :
+                      monthlySecurityValidation.warningCount > 0 ? "border-warning/50" :
+                      "border-success/40"
+                    }`}>
+                      <div className={`px-3 py-2 text-xs font-bold uppercase flex items-center justify-between ${
+                        monthlySecurityValidation.errorCount > 0 ? "bg-destructive/10 text-destructive" :
+                        monthlySecurityValidation.warningCount > 0 ? "bg-warning/10 text-warning" :
+                        "bg-success/10 text-success"
+                      }`}>
+                        <span className="flex items-center gap-2">
+                          <AlertCircle size={14} /> Pre-Invoice Validation (Security)
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono normal-case">
+                            {monthlySecurityValidation.cleanCount} clean · {monthlySecurityValidation.warningCount} warning{monthlySecurityValidation.warningCount === 1 ? "" : "s"} · {monthlySecurityValidation.errorCount} error{monthlySecurityValidation.errorCount === 1 ? "" : "s"}
+                          </span>
+                          {monthlySecurityValidation.issues.length > 0 && (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 rounded-md border border-current px-2 py-0.5 text-[11px] font-bold uppercase normal-case hover:bg-current hover:text-background transition-colors"
+                              title="Open Security Service Reports filtered to the flagged rows"
+                              onClick={() => {
+                                const ids = monthlySecurityValidation.issues.map(i => i.id).join(",");
+                                navigate(`/service-report?tab=security&reviewIds=${encodeURIComponent(ids)}`);
+                              }}
+                            >
+                              Fix these reports →
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {monthlySecurityValidation.issues.length === 0 ? (
+                        <div className="p-3 text-sm text-success flex items-center gap-2">
+                          <CheckCircle size={14} /> All {monthlySecurityPreview.rows.length} security assignments passed validation.
+                        </div>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-muted/30 sticky top-0">
+                              <tr className="text-left text-muted-foreground uppercase">
+                                <th className="px-3 py-1.5">Severity</th>
+                                <th className="px-3 py-1.5">Date</th>
+                                <th className="px-3 py-1.5">Flight</th>
+                                <th className="px-3 py-1.5">Station</th>
+                                <th className="px-3 py-1.5">Issues</th>
+                                <th className="px-3 py-1.5 text-right">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {monthlySecurityValidation.issues.map((iss) => (
+                                <tr key={iss.id} className={`border-t ${iss.severity === "error" ? "bg-destructive/5" : "bg-warning/5"}`}>
+                                  <td className="px-3 py-1.5">
+                                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                      iss.severity === "error" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning"
+                                    }`}>{iss.severity}</span>
+                                  </td>
+                                  <td className="px-3 py-1.5 font-mono">{iss.date}</td>
+                                  <td className="px-3 py-1.5 font-mono font-semibold">{iss.flight}</td>
+                                  <td className="px-3 py-1.5">{iss.station}</td>
+                                  <td className="px-3 py-1.5 text-foreground">{iss.issues.join("; ")}</td>
+                                  <td className="px-3 py-1.5 text-right whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      className="text-primary hover:underline font-semibold"
+                                      title="Open this Security assignment to fix"
+                                      onClick={() => navigate(`/service-report?tab=security&reviewIds=${encodeURIComponent(iss.id)}`)}
+                                    >
+                                      Fix →
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground">Per-Station × Service Type Breakdown</div>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-muted/20 text-xs uppercase text-muted-foreground">
+                            <th className="text-left px-3 py-2">Station</th>
+                            <th className="text-left px-3 py-2">Service Type</th>
+                            <th className="text-right px-3 py-2">Assignments</th>
+                            <th className="text-right px-3 py-2">Total ($)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {monthlySecurityPreview.breakdown.map((b, i) => (
+                            <tr key={i} className="border-b last:border-0">
+                              <td className="px-3 py-2 font-semibold text-foreground">{b.station || "—"}</td>
+                              <td className="px-3 py-2 text-foreground">{b.type || "—"}</td>
+                              <td className="px-3 py-2 text-right font-mono text-foreground">{b.flights}</td>
+                              <td className="px-3 py-2 text-right font-mono text-foreground">{b.total.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-muted/30 font-bold">
+                            <td colSpan={2} className="px-3 py-2 text-right">Grand Total</td>
+                            <td className="px-3 py-2 text-right font-mono">{monthlySecurityPreview.rows.length}</td>
+                            <td className="px-3 py-2 text-right font-mono text-success">${monthlySecurityPreview.totals.total.toFixed(2)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <button onClick={generateMonthlySecurityInvoice} className="toolbar-btn-primary">
+                        <Plus size={14} /> Create Security Consolidated Invoice
+                      </button>
+                    </div>
+                  </>
+                )
               )}
             </div>
           </div>

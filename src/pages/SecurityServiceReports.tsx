@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
   FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -100,6 +100,18 @@ function timeDiffHours(start: string, end: string): number {
 
 export default function SecurityServiceReportsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [reviewIdsFilter, setReviewIdsFilter] = useState<string[] | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const reviewIds = params.get("reviewIds");
+    if (reviewIds) {
+      const ids = reviewIds.split(",").map(s => s.trim()).filter(Boolean);
+      setReviewIdsFilter(ids.length > 0 ? ids : null);
+    } else {
+      setReviewIdsFilter(null);
+    }
+  }, [location.search]);
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const { activeChannel, isAdmin } = useChannel();
@@ -420,6 +432,10 @@ export default function SecurityServiceReportsPage() {
     }
     // Station "Rejected" tab
     if (isStationView && stationTab === "rejected") rows = rows.filter(r => r.review_status === "Rejected");
+    if (reviewIdsFilter && reviewIdsFilter.length > 0) {
+      const set = new Set(reviewIdsFilter);
+      rows = rows.filter(r => set.has(r.id));
+    }
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
     if (reviewFilter !== "All") rows = rows.filter(r => r.review_status === reviewFilter);
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
@@ -448,7 +464,7 @@ export default function SecurityServiceReportsPage() {
       if (!bd) return -1;
       return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
-  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById]);
+  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -788,6 +804,21 @@ export default function SecurityServiceReportsPage() {
           <button onClick={openNewForm} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
         )}
       </div>
+
+      {reviewIdsFilter && reviewIdsFilter.length > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
+          <div>
+            <span className="font-semibold text-warning-foreground">Filtered to {reviewIdsFilter.length} security assignment{reviewIdsFilter.length === 1 ? "" : "s"}</span>
+            <span className="text-muted-foreground ml-2">flagged by Pre-Invoice Validation. Fix issues, then approve.</span>
+          </div>
+          <button
+            className="text-xs font-semibold text-primary hover:underline"
+            onClick={() => { setReviewIdsFilter(null); navigate("/service-report?tab=security", { replace: true }); }}
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
 
       {/* Station-only sub-tabs (All vs Rejected) */}
       {isStationView && (
