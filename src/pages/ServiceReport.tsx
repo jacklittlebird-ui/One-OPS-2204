@@ -776,6 +776,47 @@ function HandlingServiceReportContent() {
     });
   }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab, isStationScoped, userStation, reviewIdsFilter]);
 
+  // Receivables-only: every approved service report whose flight has not been billed yet
+  const unbilledRows = useMemo(() => {
+    const billedFlightRefs = new Set(
+      (dbInvoices as any[])
+        .map((inv: any) => String(inv.flight_ref || "").trim().toUpperCase())
+        .filter(Boolean)
+    );
+    const rows = mergedRows
+      .filter(r => r.isLinked && r.reviewStatus === "approved")
+      .filter(r => !billedFlightRefs.has(String(r.flightNo || "").trim().toUpperCase()))
+      .map(r => {
+        const civil = Number(r.civilAviationFee) || 0;
+        const handling = Number(r.handlingFee) || 0;
+        const airport = Number(r.airportCharge) || 0;
+        return {
+          id: r.id,
+          flightNo: r.flightNo,
+          operator: r.operator,
+          route: r.route,
+          arrivalDate: r.arrivalDate,
+          handlingType: r.handlingType,
+          station: r.station,
+          civil, handling, airport,
+          total: civil + handling + airport,
+        };
+      })
+      .sort((a, b) => (a.arrivalDate || "").localeCompare(b.arrivalDate || "") || (a.flightNo || "").localeCompare(b.flightNo || ""));
+    const totals = rows.reduce(
+      (acc, r) => { acc.civil += r.civil; acc.handling += r.handling; acc.airport += r.airport; acc.total += r.total; return acc; },
+      { civil: 0, handling: 0, airport: 0, total: 0 }
+    );
+    const byOperator = new Map<string, { operator: string; count: number; total: number }>();
+    for (const r of rows) {
+      const key = r.operator || "—";
+      const e = byOperator.get(key) || { operator: key, count: 0, total: 0 };
+      e.count += 1; e.total += r.total;
+      byOperator.set(key, e);
+    }
+    return { rows, totals, byOperator: Array.from(byOperator.values()).sort((a, b) => b.total - a.total) };
+  }, [mergedRows, dbInvoices]);
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
