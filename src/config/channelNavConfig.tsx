@@ -212,13 +212,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Airline Incentives", path: "/airline-incentives" },
       ],
     },
-    {
-      label: "RECEIVABLES (READ-ONLY)", icon: <Eye size={18} />, collapsible: true,
-      children: [
-        { label: "Client Invoices", path: "/invoices" },
-        { label: "Aging Reports", path: "/aging-reports" },
-      ],
-    },
+    
     TREASURY_SECTION,
     {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
