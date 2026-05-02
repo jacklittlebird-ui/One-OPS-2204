@@ -100,6 +100,18 @@ function timeDiffHours(start: string, end: string): number {
 
 export default function SecurityServiceReportsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [reviewIdsFilter, setReviewIdsFilter] = useState<string[] | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const reviewIds = params.get("reviewIds");
+    if (reviewIds) {
+      const ids = reviewIds.split(",").map(s => s.trim()).filter(Boolean);
+      setReviewIdsFilter(ids.length > 0 ? ids : null);
+    } else {
+      setReviewIdsFilter(null);
+    }
+  }, [location.search]);
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const { activeChannel, isAdmin } = useChannel();
