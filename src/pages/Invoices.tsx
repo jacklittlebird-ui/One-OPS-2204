@@ -1062,8 +1062,30 @@ export default function InvoicesPage() {
             </div>
             <div className="p-6 space-y-4">
               <p className="text-sm text-muted-foreground">
-                Creates <span className="font-semibold text-foreground">one consolidated invoice per airline per month</span>, sourced from approved Service Reports across all stations. Per-flight detail is attached as Annex A in the printed invoice.
+                Creates <span className="font-semibold text-foreground">one consolidated invoice per airline per month</span>. Choose the service category below — Handling pulls from approved Service Reports, Security pulls from approved Security Service assignments. Per-flight detail is attached as Annex A in the printed invoice.
               </p>
+
+              {/* Service category tabs — Handling vs Security (project rule: always split) */}
+              <div className="flex border-b">
+                <button
+                  type="button"
+                  onClick={() => setMonthlyTab("handling")}
+                  className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                    monthlyTab === "handling" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Handling <span className="ml-1.5 text-xs font-mono opacity-70">({monthlyAirlinePreview.reports.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMonthlyTab("security")}
+                  className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                    monthlyTab === "security" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Security <span className="ml-1.5 text-xs font-mono opacity-70">({monthlySecurityPreview.rows.length})</span>
+                </button>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
