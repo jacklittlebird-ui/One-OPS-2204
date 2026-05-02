@@ -1029,6 +1029,7 @@ export default function InvoicesPage() {
                               <th className="px-3 py-1.5">Flight</th>
                               <th className="px-3 py-1.5">Station</th>
                               <th className="px-3 py-1.5">Issues</th>
+                              <th className="px-3 py-1.5 text-right">Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1045,6 +1046,16 @@ export default function InvoicesPage() {
                                 <td className="px-3 py-1.5 font-mono font-semibold">{iss.flight}</td>
                                 <td className="px-3 py-1.5">{iss.station}</td>
                                 <td className="px-3 py-1.5 text-foreground">{iss.issues.join("; ")}</td>
+                                <td className="px-3 py-1.5 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    className="text-primary hover:underline font-semibold"
+                                    title="Open this Service Report to fix"
+                                    onClick={() => navigate(`/service-report?reviewIds=${encodeURIComponent(iss.id)}`)}
+                                  >
+                                    Fix →
+                                  </button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
