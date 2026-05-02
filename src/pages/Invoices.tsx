@@ -533,6 +533,126 @@ export default function InvoicesPage() {
     return { issues, errorCount, warningCount, cleanCount: reports.length - issues.length };
   }, [monthlyAirlinePreview]);
 
+  // ============================================================
+  // SECURITY: monthly airline invoice (sourced from dispatch_assignments)
+  // ============================================================
+  const monthlySecurityPreview = useMemo(() => {
+    const rows = (dispatches || []).filter((d: any) =>
+      (d.review_status || "").toLowerCase() === "approved" &&
+      d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      (d.flight_date || "").startsWith(monthlyAirlineMonth)
+    );
+    const totals = rows.reduce(
+      (acc: any, d: any) => {
+        const base = Number(d.base_fee) || 0;
+        const ot = Number(d.overtime_charge) || 0;
+        const t = Number(d.total_charge) || base + ot;
+        acc.base += base; acc.overtime += ot; acc.total += t;
+        return acc;
+      },
+      { base: 0, overtime: 0, total: 0 }
+    );
+    const byStationType: Record<string, { station: string; type: string; flights: number; total: number }> = {};
+    rows.forEach((d: any) => {
+      const key = `${d.station}__${d.service_type}`;
+      if (!byStationType[key]) byStationType[key] = { station: d.station, type: d.service_type, flights: 0, total: 0 };
+      byStationType[key].flights++;
+      byStationType[key].total += Number(d.total_charge) || 0;
+    });
+    return { rows, totals, breakdown: Object.values(byStationType) };
+  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth]);
+
+  type SecIssue = { id: string; flight: string; date: string; station: string; severity: "error" | "warning"; issues: string[] };
+  const monthlySecurityValidation = useMemo(() => {
+    const issues: SecIssue[] = [];
+    const rows = monthlySecurityPreview.rows;
+    if (rows.length === 0) return { issues, errorCount: 0, warningCount: 0, cleanCount: 0 };
+    const totals = rows.map((d: any) => Number(d.total_charge) || 0).filter((t: number) => t > 0).sort((a: number, b: number) => a - b);
+    const median = totals.length ? totals[Math.floor(totals.length / 2)] : 0;
+    const outlierHigh = median * 5;
+    const outlierLow = median > 0 ? median / 10 : 0;
+    rows.forEach((d: any) => {
+      const rowIssues: string[] = [];
+      let severity: "error" | "warning" = "warning";
+      if (!d.flight_no?.trim()) { rowIssues.push("Missing flight number"); severity = "error"; }
+      if (!d.station?.trim()) { rowIssues.push("Missing station"); severity = "error"; }
+      if (!d.flight_date) { rowIssues.push("Missing flight date"); severity = "error"; }
+      if (!d.service_type?.trim()) { rowIssues.push("Missing service type"); }
+      const total = Number(d.total_charge) || 0;
+      if (total <= 0) { rowIssues.push("Total charge is zero"); severity = "error"; }
+      if ((Number(d.base_fee) || 0) < 0 || (Number(d.overtime_charge) || 0) < 0) {
+        rowIssues.push("Negative charge amount"); severity = "error";
+      }
+      const partsSum = (Number(d.base_fee) || 0) + (Number(d.overtime_charge) || 0);
+      if (total > 0 && partsSum > 0 && Math.abs(total - partsSum) > 0.5) {
+        rowIssues.push(`Total ${total.toFixed(2)} ≠ base+overtime ${partsSum.toFixed(2)}`);
+      }
+      if (median > 0 && total > outlierHigh) rowIssues.push(`Unusually high total (${total.toFixed(0)} vs median ${median.toFixed(0)})`);
+      if (median > 0 && total > 0 && total < outlierLow) rowIssues.push(`Unusually low total (${total.toFixed(0)} vs median ${median.toFixed(0)})`);
+      if (rowIssues.length > 0) {
+        issues.push({ id: d.id, flight: d.flight_no || "—", date: d.flight_date || "—", station: d.station || "—", severity, issues: rowIssues });
+      }
+    });
+    const errorCount = issues.filter(i => i.severity === "error").length;
+    const warningCount = issues.filter(i => i.severity === "warning").length;
+    return { issues, errorCount, warningCount, cleanCount: rows.length - issues.length };
+  }, [monthlySecurityPreview]);
+
+  const generateMonthlySecurityInvoice = async () => {
+    const { rows, totals } = monthlySecurityPreview;
+    if (rows.length === 0) {
+      toast({ title: "No data", description: "No approved security assignments for that airline & month.", variant: "destructive" });
+      return;
+    }
+    if (monthlySecurityValidation.errorCount > 0) {
+      toast({ title: `Cannot generate — ${monthlySecurityValidation.errorCount} assignment(s) have errors`, description: "Fix highlighted rows first.", variant: "destructive" });
+      return;
+    }
+    if (monthlySecurityValidation.warningCount > 0) {
+      const ok = window.confirm(`${monthlySecurityValidation.warningCount} security assignment(s) have validation warnings.\n\nGenerate the invoice anyway?`);
+      if (!ok) return;
+    }
+    const baseNo = `LNK-${monthlyAirlineMonth.replace("-", "")}-${monthlyAirlineOperator.replace(/\s+/g, "").slice(0, 4).toUpperCase()}-SEC`;
+    const existingSec = (invoices || []).filter((inv: any) =>
+      inv.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      inv.billing_period === monthlyAirlineMonth && inv.station === "ALL" &&
+      (inv.invoice_no || "").includes("-SEC")
+    );
+    const duplicate = existingSec.find((inv: any) => (inv.status || "").toLowerCase() !== "cancelled");
+    if (duplicate) {
+      const ok = window.confirm(`A monthly Security invoice already exists for ${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${duplicate.invoice_no}, ${duplicate.status}).\n\nCreate another anyway?`);
+      if (!ok) { toast({ title: "Duplicate skipped", description: `Existing invoice ${duplicate.invoice_no} kept.` }); return; }
+    }
+    const invoiceNo = existingSec.length > 0 ? `${baseNo}-R${existingSec.length + 1}` : baseNo;
+    const detailRows = rows.map((d: any) => ({
+      date: d.flight_date || "", flight: d.flight_no || "", reg: "",
+      route: "", station: d.station || "", type: d.service_type || "",
+      civil: 0,
+      handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
+      airport: 0,
+      other: Number(d.overtime_charge) || 0,       // overtime → other column in Annex A
+      total: Number(d.total_charge) || 0,
+    }));
+    const headerNote = `Monthly Security invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${rows.length} approved security assignments across ${new Set(rows.map((d: any) => d.station)).size} station(s). See Annex A for per-flight detail.`;
+    const subtotal = totals.total;
+    const inv: Partial<InvoiceRow> = {
+      invoice_no: invoiceNo,
+      date: new Date().toISOString().slice(0, 10),
+      due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      operator: monthlyAirlineOperator, station: "ALL", billing_period: monthlyAirlineMonth,
+      civil_aviation: 0, handling: totals.base, airport_charges: 0, catering: 0, other: totals.overtime, vat: 0,
+      subtotal, total: subtotal,
+      currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus, invoice_type: "Preliminary" as InvoiceType,
+      description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} Security (all stations consolidated)`,
+      flight_ref: `${rows.length} security flights`,
+      notes: `${headerNote}\n__DETAIL__:${JSON.stringify(detailRows)}`,
+    };
+    await add(inv as any);
+    setShowMonthlyAirline(false);
+    toast({ title: "✅ Monthly Security Invoice Created", description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${rows.length} security assignments).` });
+  };
+
+
 
   const generateMonthlyAirlineInvoice = async () => {
     const { reports, totals } = monthlyAirlinePreview;
