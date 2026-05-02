@@ -239,18 +239,6 @@ export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewP
           </div>
 
           {/* Footer */}
-          <div className="grid grid-cols-2 gap-12 mt-12 pt-4">
-            <div>
-              <div className="border-b border-gray-300 mb-2 h-12"></div>
-              <p className="text-xs text-gray-500">Authorized Signature (Link Aero)</p>
-            </div>
-            <div>
-              <div className="border-b border-gray-300 mb-2 h-12"></div>
-              <p className="text-xs text-gray-500">Client Signature / Stamp</p>
-            </div>
-          </div>
-
-          {/* Footer */}
           <div className="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
             <p>Link Aero · Aviation Ground Handling Services · Cairo, Egypt</p>
             <p className="mt-0.5">Thank you for your business</p>
