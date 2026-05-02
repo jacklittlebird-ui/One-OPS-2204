@@ -377,6 +377,7 @@ function HandlingServiceReportContent() {
   const [editData, setEditData] = useState<Partial<ReportFormData>>({});
   const [activeClearanceStatus, setActiveClearanceStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showUnbilled, setShowUnbilled] = useState(false);
 
   const { station: userStation, isStationScoped } = useUserStation();
 
