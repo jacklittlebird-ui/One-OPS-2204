@@ -805,6 +805,21 @@ export default function SecurityServiceReportsPage() {
         )}
       </div>
 
+      {reviewIdsFilter && reviewIdsFilter.length > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
+          <div>
+            <span className="font-semibold text-warning-foreground">Filtered to {reviewIdsFilter.length} security assignment{reviewIdsFilter.length === 1 ? "" : "s"}</span>
+            <span className="text-muted-foreground ml-2">flagged by Pre-Invoice Validation. Fix issues, then approve.</span>
+          </div>
+          <button
+            className="text-xs font-semibold text-primary hover:underline"
+            onClick={() => { setReviewIdsFilter(null); navigate("/service-report?tab=security", { replace: true }); }}
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
+
       {/* Station-only sub-tabs (All vs Rejected) */}
       {isStationView && (
         <div className="flex items-center gap-2 border-b">
