@@ -146,14 +146,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Aging Reports", path: "/aging-reports" },
       ],
     },
-    {
-      label: "ACCOUNTING", icon: <Calculator size={18} />, collapsible: true,
-      children: [
-        { label: "Chart of Accounts", path: "/chart-of-accounts" },
-        { label: "Journal Entries", path: "/journal-entries" },
-        { label: "Financial Reports", path: "/financial-reports" },
-      ],
-    },
+    
     {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
       children: [
