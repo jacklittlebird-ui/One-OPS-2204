@@ -31,18 +31,78 @@ type DetailRow = {
   type?: string; civil?: number; handling?: number; airport?: number; other?: number; total?: number;
 };
 
-function parseDetail(notes: string): { detail: DetailRow[]; cleanNotes: string } {
-  if (!notes) return { detail: [], cleanNotes: "" };
-  const m = notes.match(/__DETAIL__:(\[.*?\])(?:\s|$)/s);
-  if (!m) return { detail: [], cleanNotes: notes };
+/**
+ * Robust parser for the __DETAIL__:[...] payload embedded in invoice notes.
+ * Handles: missing notes, no marker, malformed JSON, non-array payloads,
+ * trailing/leading whitespace, and rows missing fields. Always returns
+ * a stable `{ detail, cleanNotes }` shape — never throws.
+ */
+function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; cleanNotes: string } {
+  const raw = (notes ?? "").toString();
+  if (!raw.trim()) return { detail: [], cleanNotes: "" };
+
+  // Locate the marker. Use a balanced-bracket scan instead of a non-greedy regex
+  // so payloads containing nested arrays/objects don't get truncated.
+  const markerIdx = raw.indexOf("__DETAIL__:");
+  if (markerIdx === -1) return { detail: [], cleanNotes: raw.trim() };
+
+  const startBracket = raw.indexOf("[", markerIdx);
+  if (startBracket === -1) {
+    return { detail: [], cleanNotes: raw.replace(/__DETAIL__:.*$/s, "").trim() };
+  }
+
+  let depth = 0;
+  let endBracket = -1;
+  let inString = false;
+  let escape = false;
+  for (let i = startBracket; i < raw.length; i++) {
+    const ch = raw[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "[") depth++;
+    else if (ch === "]") {
+      depth--;
+      if (depth === 0) { endBracket = i; break; }
+    }
+  }
+
+  if (endBracket === -1) {
+    // Unterminated payload — strip marker, treat as plain notes
+    return { detail: [], cleanNotes: raw.slice(0, markerIdx).trim() };
+  }
+
+  const jsonStr = raw.slice(startBracket, endBracket + 1);
+  const cleanNotes = (raw.slice(0, markerIdx) + raw.slice(endBracket + 1)).trim();
+
   try {
-    const arr = JSON.parse(m[1]) as DetailRow[];
-    const cleanNotes = notes.replace(m[0], "").trim();
-    return { detail: Array.isArray(arr) ? arr : [], cleanNotes };
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed)) return { detail: [], cleanNotes };
+    // Sanitize: coerce numeric fields, drop obviously empty rows
+    const detail: DetailRow[] = parsed
+      .filter((r): r is Record<string, unknown> => r != null && typeof r === "object")
+      .map((r: any) => ({
+        date: r.date ? String(r.date) : "",
+        flight: r.flight ? String(r.flight) : "",
+        reg: r.reg ? String(r.reg) : "",
+        route: r.route ? String(r.route) : "",
+        station: r.station ? String(r.station) : "",
+        type: r.type ? String(r.type) : "",
+        civil: Number(r.civil) || 0,
+        handling: Number(r.handling) || 0,
+        airport: Number(r.airport) || 0,
+        other: Number(r.other) || 0,
+        total: Number(r.total) || 0,
+      }));
+    return { detail, cleanNotes };
   } catch {
-    return { detail: [], cleanNotes: notes };
+    return { detail: [], cleanNotes };
   }
 }
+
+const ROWS_PER_PAGE = 22; // keeps each annex page within standard A4 print height
+
 
 export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewProps) {
   const handlePrint = () => window.print();
