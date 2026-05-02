@@ -671,7 +671,8 @@ function HandlingServiceReportContent() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Auto-fill from FlightSchedule query params
+  // Auto-fill from FlightSchedule query params + deep-link filters from Invoices validation panel
+  const [reviewIdsFilter, setReviewIdsFilter] = useState<string[] | null>(null);
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const flightNo = params.get("flightNo");
@@ -686,6 +687,16 @@ function HandlingServiceReportContent() {
         std: params.get("std") || "",
       }));
       setShowAdd(true);
+    }
+    const searchParam = params.get("search");
+    if (searchParam) { setSearch(searchParam); setPage(1); }
+    const reviewIds = params.get("reviewIds");
+    if (reviewIds) {
+      const ids = reviewIds.split(",").map(s => s.trim()).filter(Boolean);
+      setReviewIdsFilter(ids.length > 0 ? ids : null);
+      setPage(1);
+    } else {
+      setReviewIdsFilter(null);
     }
   }, [location.search]);
 
@@ -720,6 +731,10 @@ function HandlingServiceReportContent() {
     if (isOperationsView) r = r.filter(x => x.isLinked);
     // Operations sub-tab: filter to Modified reports
     if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
+    if (reviewIdsFilter && reviewIdsFilter.length > 0) {
+      const set = new Set(reviewIdsFilter);
+      r = r.filter(x => set.has(x.id));
+    }
     // Station view: when "Rejected" tab is active, only show rejected reports
     if (isStationView && stationTab === "rejected") r = r.filter(x => x.isLinked && x.reviewStatus === "rejected");
     if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
@@ -747,7 +762,7 @@ function HandlingServiceReportContent() {
       if (!bd) return -1;
       return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
     });
-  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab, isStationScoped, userStation]);
+  }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab, isStationScoped, userStation, reviewIdsFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -986,6 +1001,22 @@ function HandlingServiceReportContent() {
           <div><div className="text-xl md:text-2xl font-bold text-foreground">${totalHandlingFees.toLocaleString()}</div><div className="text-xs text-muted-foreground">Handling Fees</div></div>
         </div>
       </div>
+
+      {/* Deep-link filter banner from Invoices validation panel */}
+      {reviewIdsFilter && reviewIdsFilter.length > 0 && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
+          <div className="text-warning-foreground">
+            <span className="font-semibold">Filtered to {reviewIdsFilter.length} report{reviewIdsFilter.length === 1 ? "" : "s"}</span>
+            <span className="text-muted-foreground ml-2">flagged by Pre-Invoice Validation. Fix issues, then approve.</span>
+          </div>
+          <button
+            className="text-xs font-semibold text-primary hover:underline"
+            onClick={() => { setReviewIdsFilter(null); navigate("/service-report", { replace: true }); }}
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">

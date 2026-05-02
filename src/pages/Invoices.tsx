@@ -6,7 +6,7 @@ import {
   TrendingUp, Filter, Calendar, BarChart3, Zap
 } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
@@ -134,6 +134,7 @@ const PAGE_SIZE = 15;
 
 export default function InvoicesPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { activeChannel } = useChannel();
   const readOnly = activeChannel === "payables";
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices", { stationFilter: true });
@@ -995,9 +996,24 @@ export default function InvoicesPage() {
                       <span className="flex items-center gap-2">
                         <AlertCircle size={14} /> Pre-Invoice Validation
                       </span>
-                      <span className="font-mono normal-case">
-                        {monthlyValidation.cleanCount} clean · {monthlyValidation.warningCount} warning{monthlyValidation.warningCount === 1 ? "" : "s"} · {monthlyValidation.errorCount} error{monthlyValidation.errorCount === 1 ? "" : "s"}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono normal-case">
+                          {monthlyValidation.cleanCount} clean · {monthlyValidation.warningCount} warning{monthlyValidation.warningCount === 1 ? "" : "s"} · {monthlyValidation.errorCount} error{monthlyValidation.errorCount === 1 ? "" : "s"}
+                        </span>
+                        {monthlyValidation.issues.length > 0 && (
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded-md border border-current px-2 py-0.5 text-[11px] font-bold uppercase normal-case hover:bg-current hover:text-background transition-colors"
+                            title="Open Service Reports filtered to the flagged rows"
+                            onClick={() => {
+                              const ids = monthlyValidation.issues.map(i => i.id).join(",");
+                              navigate(`/service-report?reviewIds=${encodeURIComponent(ids)}`);
+                            }}
+                          >
+                            Fix these reports →
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {monthlyValidation.issues.length === 0 ? (
                       <div className="p-3 text-sm text-success flex items-center gap-2">
@@ -1013,6 +1029,7 @@ export default function InvoicesPage() {
                               <th className="px-3 py-1.5">Flight</th>
                               <th className="px-3 py-1.5">Station</th>
                               <th className="px-3 py-1.5">Issues</th>
+                              <th className="px-3 py-1.5 text-right">Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1029,6 +1046,16 @@ export default function InvoicesPage() {
                                 <td className="px-3 py-1.5 font-mono font-semibold">{iss.flight}</td>
                                 <td className="px-3 py-1.5">{iss.station}</td>
                                 <td className="px-3 py-1.5 text-foreground">{iss.issues.join("; ")}</td>
+                                <td className="px-3 py-1.5 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    className="text-primary hover:underline font-semibold"
+                                    title="Open this Service Report to fix"
+                                    onClick={() => navigate(`/service-report?reviewIds=${encodeURIComponent(iss.id)}`)}
+                                  >
+                                    Fix →
+                                  </button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
