@@ -462,11 +462,97 @@ export default function InvoicesPage() {
     [serviceReports]
   );
 
+  // Validation: flag service reports with missing fields or unusual values
+  // BEFORE generating the monthly invoice. Helps users catch data issues early.
+  type ReportIssue = {
+    id: string; flight: string; date: string; station: string;
+    severity: "error" | "warning";
+    issues: string[];
+  };
+  const monthlyValidation = useMemo(() => {
+    const issues: ReportIssue[] = [];
+    const reports = monthlyAirlinePreview.reports;
+    if (reports.length === 0) return { issues, errorCount: 0, warningCount: 0, cleanCount: 0 };
+
+    // Compute median total for outlier detection (simple, no deps)
+    const totals = reports.map((r: any) => rollupReport(r).total).filter(t => t > 0).sort((a, b) => a - b);
+    const median = totals.length ? totals[Math.floor(totals.length / 2)] : 0;
+    const outlierHigh = median * 5;
+    const outlierLow = median > 0 ? median / 10 : 0;
+
+    reports.forEach((r: any) => {
+      const m = rollupReport(r);
+      const rowIssues: string[] = [];
+      let severity: "error" | "warning" = "warning";
+
+      // Required fields
+      if (!r.flight_no?.trim()) { rowIssues.push("Missing flight number"); severity = "error"; }
+      if (!r.station?.trim()) { rowIssues.push("Missing station"); severity = "error"; }
+      if (!r.arrival_date) { rowIssues.push("Missing arrival date"); severity = "error"; }
+      if (!r.registration?.trim()) { rowIssues.push("Missing aircraft registration"); }
+      if (!r.handling_type?.trim()) { rowIssues.push("Missing service type"); }
+      if (!r.route?.trim()) { rowIssues.push("Missing route"); }
+
+      // Numeric sanity
+      if (m.total <= 0) { rowIssues.push("Total cost is zero"); severity = "error"; }
+      if (m.civil < 0 || m.handling < 0 || m.airport < 0 || m.other < 0) {
+        rowIssues.push("Negative charge amount"); severity = "error";
+      }
+
+      // Total mismatch with sum-of-parts (flag if reported total differs from rolled-up parts)
+      const partsSum = m.civil + m.handling + m.airport + m.other;
+      const reported = Number(r.total_cost) || 0;
+      if (reported > 0 && partsSum > 0 && Math.abs(reported - partsSum) > 0.5) {
+        rowIssues.push(`Total ${reported.toFixed(2)} ≠ sum of parts ${partsSum.toFixed(2)}`);
+      }
+
+      // Outliers vs median
+      if (median > 0 && m.total > outlierHigh) {
+        rowIssues.push(`Unusually high total (${m.total.toFixed(0)} vs median ${median.toFixed(0)})`);
+      }
+      if (median > 0 && m.total > 0 && m.total < outlierLow) {
+        rowIssues.push(`Unusually low total (${m.total.toFixed(0)} vs median ${median.toFixed(0)})`);
+      }
+
+      if (rowIssues.length > 0) {
+        issues.push({
+          id: r.id,
+          flight: r.flight_no || "—",
+          date: r.arrival_date || "—",
+          station: r.station || "—",
+          severity,
+          issues: rowIssues,
+        });
+      }
+    });
+
+    const errorCount = issues.filter(i => i.severity === "error").length;
+    const warningCount = issues.filter(i => i.severity === "warning").length;
+    return { issues, errorCount, warningCount, cleanCount: reports.length - issues.length };
+  }, [monthlyAirlinePreview]);
+
+
   const generateMonthlyAirlineInvoice = async () => {
     const { reports, totals } = monthlyAirlinePreview;
     if (reports.length === 0) {
       toast({ title: "No data", description: "No approved service reports for that airline & month.", variant: "destructive" });
       return;
+    }
+
+    // Validation guard: block on errors, prompt on warnings
+    if (monthlyValidation.errorCount > 0) {
+      toast({
+        title: `Cannot generate — ${monthlyValidation.errorCount} report(s) have errors`,
+        description: "Fix the highlighted reports in the validation panel before generating the invoice.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (monthlyValidation.warningCount > 0) {
+      const ok = window.confirm(
+        `${monthlyValidation.warningCount} service report(s) have validation warnings (e.g., missing fields, unusual values).\n\nGenerate the invoice anyway?`
+      );
+      if (!ok) return;
     }
 
     // Duplicate guard: refuse if a non-cancelled monthly invoice already exists for this operator+month
@@ -894,6 +980,63 @@ export default function InvoicesPage() {
                       <div className="text-xl font-bold text-foreground">${monthlyAirlinePreview.totals.airport.toFixed(0)}</div>
                     </div>
                   </div>
+
+                  {/* Validation panel — flag missing/unusual data before generating */}
+                  <div className={`border rounded-lg overflow-hidden ${
+                    monthlyValidation.errorCount > 0 ? "border-destructive/50" :
+                    monthlyValidation.warningCount > 0 ? "border-warning/50" :
+                    "border-success/40"
+                  }`}>
+                    <div className={`px-3 py-2 text-xs font-bold uppercase flex items-center justify-between ${
+                      monthlyValidation.errorCount > 0 ? "bg-destructive/10 text-destructive" :
+                      monthlyValidation.warningCount > 0 ? "bg-warning/10 text-warning" :
+                      "bg-success/10 text-success"
+                    }`}>
+                      <span className="flex items-center gap-2">
+                        <AlertCircle size={14} /> Pre-Invoice Validation
+                      </span>
+                      <span className="font-mono normal-case">
+                        {monthlyValidation.cleanCount} clean · {monthlyValidation.warningCount} warning{monthlyValidation.warningCount === 1 ? "" : "s"} · {monthlyValidation.errorCount} error{monthlyValidation.errorCount === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    {monthlyValidation.issues.length === 0 ? (
+                      <div className="p-3 text-sm text-success flex items-center gap-2">
+                        <CheckCircle size={14} /> All {monthlyAirlinePreview.reports.length} reports passed validation.
+                      </div>
+                    ) : (
+                      <div className="max-h-48 overflow-y-auto">
+                        <table className="w-full text-xs">
+                          <thead className="bg-muted/30 sticky top-0">
+                            <tr className="text-left text-muted-foreground uppercase">
+                              <th className="px-3 py-1.5">Severity</th>
+                              <th className="px-3 py-1.5">Date</th>
+                              <th className="px-3 py-1.5">Flight</th>
+                              <th className="px-3 py-1.5">Station</th>
+                              <th className="px-3 py-1.5">Issues</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {monthlyValidation.issues.map((iss) => (
+                              <tr key={iss.id} className={`border-t ${iss.severity === "error" ? "bg-destructive/5" : "bg-warning/5"}`}>
+                                <td className="px-3 py-1.5">
+                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                    iss.severity === "error" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning"
+                                  }`}>
+                                    {iss.severity}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-1.5 font-mono">{iss.date}</td>
+                                <td className="px-3 py-1.5 font-mono font-semibold">{iss.flight}</td>
+                                <td className="px-3 py-1.5">{iss.station}</td>
+                                <td className="px-3 py-1.5 text-foreground">{iss.issues.join("; ")}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
 
                   <div className="border rounded-lg overflow-hidden">
                     <div className="px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground">Per-Station × Service Type Breakdown</div>
