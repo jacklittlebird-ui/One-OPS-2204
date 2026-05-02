@@ -183,6 +183,7 @@ export default function InvoicesPage() {
   const [monthlyAirlineMonth, setMonthlyAirlineMonth] = useState(new Date().toISOString().slice(0, 7));
   const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
   const [monthlyTab, setMonthlyTab] = useState<"handling" | "security">("handling");
+  const [showSecurityAnnexPreview, setShowSecurityAnnexPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: serviceReports } = useSupabaseTable<any>("service_reports");
 
@@ -599,6 +600,32 @@ export default function InvoicesPage() {
     const errorCount = issues.filter(i => i.severity === "error").length;
     const warningCount = issues.filter(i => i.severity === "warning").length;
     return { issues, errorCount, warningCount, cleanCount: rows.length - issues.length };
+  }, [monthlySecurityPreview]);
+
+  // Annex A export-mirror: identical shape to detailRows used in generateMonthlySecurityInvoice
+  const securityAnnexExport = useMemo(() => {
+    const rows = monthlySecurityPreview.rows.map((d: any) => ({
+      date: d.flight_date || "",
+      flight: d.flight_no || "",
+      station: d.station || "",
+      type: d.service_type || "",
+      base: Number(d.base_fee) || 0,            // → "Handling" column in printed Annex A
+      overtime: Number(d.overtime_charge) || 0, // → "Other" column in printed Annex A
+      total: Number(d.total_charge) || 0,
+    }));
+    // Stable ordering (matches print/CSV): date asc, then flight no
+    rows.sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.flight || "").localeCompare(b.flight || ""));
+    const totals = rows.reduce(
+      (acc, r) => { acc.base += r.base; acc.overtime += r.overtime; acc.total += r.total; return acc; },
+      { base: 0, overtime: 0, total: 0 }
+    );
+    // Cross-check vs preview totals (the values that will be written to the invoice header)
+    const headerTotals = monthlySecurityPreview.totals;
+    const mismatch =
+      Math.abs(totals.base - headerTotals.base) > 0.5 ||
+      Math.abs(totals.overtime - headerTotals.overtime) > 0.5 ||
+      Math.abs(totals.total - headerTotals.total) > 0.5;
+    return { rows, totals, mismatch };
   }, [monthlySecurityPreview]);
 
   const generateMonthlySecurityInvoice = async () => {
@@ -1388,6 +1415,88 @@ export default function InvoicesPage() {
                           </tr>
                         </tfoot>
                       </table>
+                    </div>
+
+                    {/* Annex A — Per-flight detail preview (mirrors PDF/print export) */}
+                    <div className="border rounded-lg overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setShowSecurityAnnexPreview(v => !v)}
+                        className="w-full px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground flex items-center justify-between hover:bg-muted/60 transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Eye size={14} /> Annex A — Per-Flight Detail Preview
+                          <span className="font-mono normal-case text-[11px] text-foreground">
+                            ({securityAnnexExport.rows.length} row{securityAnnexExport.rows.length === 1 ? "" : "s"})
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          {securityAnnexExport.mismatch && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning/15 text-warning text-[10px]">
+                              <AlertCircle size={10} /> Totals mismatch
+                            </span>
+                          )}
+                          <span className="text-foreground">{showSecurityAnnexPreview ? "Hide ▲" : "Show ▼"}</span>
+                        </span>
+                      </button>
+                      {showSecurityAnnexPreview && (
+                        <div className="border-t">
+                          <div className="px-3 py-2 bg-muted/10 text-[11px] text-muted-foreground italic">
+                            This is exactly what will be exported to the printed invoice's Annex A page (and CSV). Rows are sorted by date then flight number.
+                          </div>
+                          <div className="max-h-72 overflow-auto">
+                            <table className="w-full text-xs">
+                              <thead className="bg-muted/30 sticky top-0">
+                                <tr className="text-left text-muted-foreground uppercase">
+                                  <th className="px-3 py-1.5">#</th>
+                                  <th className="px-3 py-1.5">Date</th>
+                                  <th className="px-3 py-1.5">Flight</th>
+                                  <th className="px-3 py-1.5">Station</th>
+                                  <th className="px-3 py-1.5">Service Type</th>
+                                  <th className="px-3 py-1.5 text-right">Base ($)</th>
+                                  <th className="px-3 py-1.5 text-right">Overtime ($)</th>
+                                  <th className="px-3 py-1.5 text-right">Total ($)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {securityAnnexExport.rows.map((r, i) => (
+                                  <tr key={i} className="border-t">
+                                    <td className="px-3 py-1.5 font-mono text-muted-foreground">{i + 1}</td>
+                                    <td className="px-3 py-1.5 font-mono">{formatDateDMY(r.date)}</td>
+                                    <td className="px-3 py-1.5 font-mono font-semibold text-foreground">{r.flight || "—"}</td>
+                                    <td className="px-3 py-1.5">{r.station || "—"}</td>
+                                    <td className="px-3 py-1.5">{r.type || "—"}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono">{r.base.toFixed(2)}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono">{r.overtime.toFixed(2)}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono font-semibold text-foreground">{r.total.toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr className="bg-muted/40 font-bold border-t-2">
+                                  <td colSpan={5} className="px-3 py-2 text-right uppercase text-xs">Annex A Grand Total</td>
+                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexExport.totals.base.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexExport.totals.overtime.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-success">{securityAnnexExport.totals.total.toFixed(2)}</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                          {securityAnnexExport.mismatch && (
+                            <div className="px-3 py-2 bg-warning/10 border-t border-warning/30 text-xs text-warning flex items-start gap-2">
+                              <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                              <div>
+                                <div className="font-bold">Totals mismatch detected</div>
+                                <div className="font-mono text-[11px] mt-0.5">
+                                  Annex rows: base {securityAnnexExport.totals.base.toFixed(2)} · overtime {securityAnnexExport.totals.overtime.toFixed(2)} · total {securityAnnexExport.totals.total.toFixed(2)}
+                                  <br />
+                                  Invoice header: base {monthlySecurityPreview.totals.base.toFixed(2)} · overtime {monthlySecurityPreview.totals.overtime.toFixed(2)} · total {monthlySecurityPreview.totals.total.toFixed(2)}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex justify-end pt-2">
