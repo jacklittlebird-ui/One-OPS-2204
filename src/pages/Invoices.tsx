@@ -178,7 +178,11 @@ export default function InvoicesPage() {
   const [showBillingPreview, setShowBillingPreview] = useState(false);
   const [billingMonth, setBillingMonth] = useState(new Date().toISOString().slice(0, 7));
   const [billingStation, setBillingStation] = useState("All");
+  const [showMonthlyAirline, setShowMonthlyAirline] = useState(false);
+  const [monthlyAirlineMonth, setMonthlyAirlineMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: serviceReports } = useSupabaseTable<any>("service_reports");
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -406,6 +410,81 @@ export default function InvoicesPage() {
     toast({ title: "✅ Invoice Created", description: `Draft invoice for ${group.airline} at ${group.station}` });
   };
 
+  // ===== Monthly Airline Invoice (1 invoice per airline per month, source = Service Reports) =====
+  const monthlyAirlinePreview = useMemo(() => {
+    const reports = (serviceReports || []).filter((r: any) =>
+      r.review_status === "approved" &&
+      r.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      (r.arrival_date || "").startsWith(monthlyAirlineMonth)
+    );
+    const totals = reports.reduce((acc: any, r: any) => {
+      acc.civil += Number(r.civil_aviation_fee) || 0;
+      acc.handling += Number(r.handling_fee) || 0;
+      acc.airport += Number(r.airport_charge) || 0;
+      acc.total += Number(r.total_cost) || 0;
+      return acc;
+    }, { civil: 0, handling: 0, airport: 0, total: 0 });
+    // Group by station + service type for the breakdown
+    const byStationType: Record<string, { station: string; type: string; flights: number; total: number }> = {};
+    reports.forEach((r: any) => {
+      const key = `${r.station}__${r.handling_type}`;
+      if (!byStationType[key]) byStationType[key] = { station: r.station, type: r.handling_type, flights: 0, total: 0 };
+      byStationType[key].flights++;
+      byStationType[key].total += Number(r.total_cost) || 0;
+    });
+    return { reports, totals, breakdown: Object.values(byStationType) };
+  }, [serviceReports, monthlyAirlineOperator, monthlyAirlineMonth]);
+
+  const allOperators = useMemo(
+    () => Array.from(new Set((serviceReports || []).map((r: any) => r.operator).filter(Boolean))).sort() as string[],
+    [serviceReports]
+  );
+
+  const generateMonthlyAirlineInvoice = async () => {
+    const { reports, totals } = monthlyAirlinePreview;
+    if (reports.length === 0) {
+      toast({ title: "No data", description: "No approved service reports for that airline & month.", variant: "destructive" });
+      return;
+    }
+    const detailRows = reports.map((r: any) => ({
+      date: r.arrival_date || "",
+      flight: r.flight_no || "",
+      reg: r.registration || "",
+      route: r.route || "",
+      station: r.station || "",
+      type: r.handling_type || "",
+      civil: Number(r.civil_aviation_fee) || 0,
+      handling: Number(r.handling_fee) || 0,
+      airport: Number(r.airport_charge) || 0,
+      other: 0,
+      total: Number(r.total_cost) || 0,
+    }));
+    const headerNote = `Monthly consolidated invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${reports.length} approved service reports across ${new Set(reports.map((r: any) => r.station)).size} station(s). See Annex A for per-flight detail.`;
+    const inv: Partial<InvoiceRow> = {
+      invoice_no: `LNK-${monthlyAirlineMonth.replace("-", "")}-${monthlyAirlineOperator.replace(/\s+/g, "").slice(0, 4).toUpperCase()}`,
+      date: new Date().toISOString().slice(0, 10),
+      due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      operator: monthlyAirlineOperator,
+      station: "ALL",
+      billing_period: monthlyAirlineMonth,
+      civil_aviation: totals.civil,
+      handling: totals.handling,
+      airport_charges: totals.airport,
+      catering: 0, other: 0, vat: 0,
+      subtotal: totals.civil + totals.handling + totals.airport,
+      total: totals.civil + totals.handling + totals.airport,
+      currency: "USD" as InvoiceCurrency,
+      status: "Draft" as InvoiceStatus,
+      invoice_type: "Preliminary" as InvoiceType,
+      description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (all stations consolidated)`,
+      flight_ref: `${reports.length} flights`,
+      notes: `${headerNote}\n__DETAIL__:${JSON.stringify(detailRows)}`,
+    };
+    await add(inv as any);
+    setShowMonthlyAirline(false);
+    toast({ title: "✅ Monthly Invoice Created", description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${reports.length} flights, all stations).` });
+  };
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
   return (
@@ -418,6 +497,7 @@ export default function InvoicesPage() {
         {!readOnly && (
           <div className="flex gap-2">
             <button onClick={() => setShowBillingPreview(true)} className="toolbar-btn-outline"><Zap size={14} /> Generate from Dispatches</button>
+            <button onClick={() => setShowMonthlyAirline(true)} className="toolbar-btn-outline"><Calendar size={14} /> Monthly Airline Invoice</button>
             <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
           </div>
         )}
@@ -700,6 +780,105 @@ export default function InvoicesPage() {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Monthly Airline Invoice Modal */}
+      {showMonthlyAirline && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
+          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4">
+            <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
+              <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
+                <Calendar size={18} className="text-primary" /> Monthly Airline Invoice
+              </h2>
+              <button onClick={() => setShowMonthlyAirline(false)} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Creates <span className="font-semibold text-foreground">one consolidated invoice per airline per month</span>, sourced from approved Service Reports across all stations. Per-flight detail is attached as Annex A in the printed invoice.
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Airline</label>
+                  <select className={selectCls} value={monthlyAirlineOperator} onChange={e => setMonthlyAirlineOperator(e.target.value)}>
+                    <option value="Air Cairo">Air Cairo</option>
+                    {allOperators.filter(o => o !== "Air Cairo").map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Billing Month</label>
+                  <input type="month" className={inputCls} value={monthlyAirlineMonth} onChange={e => setMonthlyAirlineMonth(e.target.value)} />
+                </div>
+              </div>
+
+              {monthlyAirlinePreview.reports.length === 0 ? (
+                <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
+                  <FileText size={32} className="mx-auto mb-2 opacity-40" />
+                  <p className="font-semibold">No approved service reports</p>
+                  <p className="text-xs mt-1">Approve service reports for {monthlyAirlineOperator} in {monthlyAirlineMonth} first.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="bg-muted/30 border rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground">Flights</div>
+                      <div className="text-xl font-bold text-foreground">{monthlyAirlinePreview.reports.length}</div>
+                    </div>
+                    <div className="bg-muted/30 border rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground">Civil Aviation</div>
+                      <div className="text-xl font-bold text-foreground">${monthlyAirlinePreview.totals.civil.toFixed(0)}</div>
+                    </div>
+                    <div className="bg-muted/30 border rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground">Handling</div>
+                      <div className="text-xl font-bold text-foreground">${monthlyAirlinePreview.totals.handling.toFixed(0)}</div>
+                    </div>
+                    <div className="bg-muted/30 border rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground">Airport</div>
+                      <div className="text-xl font-bold text-foreground">${monthlyAirlinePreview.totals.airport.toFixed(0)}</div>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground">Per-Station × Service Type Breakdown</div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/20 text-xs uppercase text-muted-foreground">
+                          <th className="text-left px-3 py-2">Station</th>
+                          <th className="text-left px-3 py-2">Service Type</th>
+                          <th className="text-right px-3 py-2">Flights</th>
+                          <th className="text-right px-3 py-2">Total ($)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthlyAirlinePreview.breakdown.map((b, i) => (
+                          <tr key={i} className="border-b last:border-0">
+                            <td className="px-3 py-2 font-semibold text-foreground">{b.station || "—"}</td>
+                            <td className="px-3 py-2 text-foreground">{b.type || "—"}</td>
+                            <td className="px-3 py-2 text-right font-mono text-foreground">{b.flights}</td>
+                            <td className="px-3 py-2 text-right font-mono text-foreground">{b.total.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-muted/30 font-bold">
+                          <td colSpan={2} className="px-3 py-2 text-right">Grand Total</td>
+                          <td className="px-3 py-2 text-right font-mono">{monthlyAirlinePreview.reports.length}</td>
+                          <td className="px-3 py-2 text-right font-mono text-success">${monthlyAirlinePreview.totals.total.toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button onClick={generateMonthlyAirlineInvoice} className="toolbar-btn-primary">
+                      <Plus size={14} /> Create Consolidated Invoice
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>

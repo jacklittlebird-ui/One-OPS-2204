@@ -26,8 +26,27 @@ interface InvoicePrintViewProps {
   onClose: () => void;
 }
 
+type DetailRow = {
+  date?: string; flight?: string; route?: string; reg?: string; station?: string;
+  type?: string; civil?: number; handling?: number; airport?: number; other?: number; total?: number;
+};
+
+function parseDetail(notes: string): { detail: DetailRow[]; cleanNotes: string } {
+  if (!notes) return { detail: [], cleanNotes: "" };
+  const m = notes.match(/__DETAIL__:(\[.*?\])(?:\s|$)/s);
+  if (!m) return { detail: [], cleanNotes: notes };
+  try {
+    const arr = JSON.parse(m[1]) as DetailRow[];
+    const cleanNotes = notes.replace(m[0], "").trim();
+    return { detail: Array.isArray(arr) ? arr : [], cleanNotes };
+  } catch {
+    return { detail: [], cleanNotes: notes };
+  }
+}
+
 export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewProps) {
   const handlePrint = () => window.print();
+  const { detail, cleanNotes } = parseDetail(invoice.notes || "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
@@ -121,9 +140,89 @@ export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewP
           </div>
 
           {/* Notes */}
-          {invoice.notes && (
+          {cleanNotes && (
             <div className="mb-8 p-3 bg-gray-50 rounded text-sm text-gray-600">
-              <span className="font-semibold">Notes:</span> {invoice.notes}
+              <span className="font-semibold">Notes:</span> {cleanNotes}
+            </div>
+          )}
+
+          {/* Per-Flight Detail Annex */}
+          {detail.length > 0 && (
+            <div className="mt-10 pt-6 border-t-2 border-gray-300 break-before-page print:break-before-page">
+              <h3 className="text-lg font-bold text-gray-800 mb-1">Annex A — Per-Flight Service Detail</h3>
+              <p className="text-xs text-gray-500 mb-4">
+                {detail.length} flight{detail.length === 1 ? "" : "s"} included in this invoice
+              </p>
+              <table className="w-full text-[11px]">
+                <thead>
+                  <tr className="border-b-2 border-gray-300 bg-gray-50">
+                    {["Date","Flight","Reg","Route","Station","Service","Civil Av.","Handling","Airport","Other","Total"].map(h => (
+                      <th key={h} className="px-2 py-1.5 text-left font-bold text-gray-600 uppercase whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {detail.map((d, i) => (
+                    <tr key={i} className="border-b border-gray-100">
+                      <td className="px-2 py-1.5 whitespace-nowrap">{d.date || "—"}</td>
+                      <td className="px-2 py-1.5 font-mono whitespace-nowrap">{d.flight || "—"}</td>
+                      <td className="px-2 py-1.5 font-mono whitespace-nowrap">{d.reg || "—"}</td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">{d.route || "—"}</td>
+                      <td className="px-2 py-1.5 font-semibold whitespace-nowrap">{d.station || "—"}</td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">{d.type || "—"}</td>
+                      <td className="px-2 py-1.5 text-right font-mono">{(d.civil || 0).toFixed(2)}</td>
+                      <td className="px-2 py-1.5 text-right font-mono">{(d.handling || 0).toFixed(2)}</td>
+                      <td className="px-2 py-1.5 text-right font-mono">{(d.airport || 0).toFixed(2)}</td>
+                      <td className="px-2 py-1.5 text-right font-mono">{(d.other || 0).toFixed(2)}</td>
+                      <td className="px-2 py-1.5 text-right font-mono font-bold">{(d.total || 0).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-gray-700 bg-gray-50 font-bold">
+                    <td colSpan={6} className="px-2 py-2 text-right">Annex Total</td>
+                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.civil||0),0).toFixed(2)}</td>
+                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.handling||0),0).toFixed(2)}</td>
+                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.airport||0),0).toFixed(2)}</td>
+                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.other||0),0).toFixed(2)}</td>
+                    <td className="px-2 py-2 text-right font-mono">{detail.reduce((s,d)=>s+(d.total||0),0).toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Per-station subtotals */}
+              {(() => {
+                const byStation: Record<string, { flights: number; total: number }> = {};
+                detail.forEach(d => {
+                  const k = d.station || "—";
+                  if (!byStation[k]) byStation[k] = { flights: 0, total: 0 };
+                  byStation[k].flights++;
+                  byStation[k].total += d.total || 0;
+                });
+                const rows = Object.entries(byStation);
+                if (rows.length <= 1) return null;
+                return (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-bold text-gray-800 mb-2">Subtotals by Station</h4>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b-2 border-gray-300 bg-gray-50">
+                          <th className="px-2 py-1.5 text-left font-bold text-gray-600 uppercase">Station</th>
+                          <th className="px-2 py-1.5 text-right font-bold text-gray-600 uppercase">Flights</th>
+                          <th className="px-2 py-1.5 text-right font-bold text-gray-600 uppercase">Total ({invoice.currency})</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map(([st, v]) => (
+                          <tr key={st} className="border-b border-gray-100">
+                            <td className="px-2 py-1.5 font-semibold">{st}</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{v.flights}</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{v.total.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
