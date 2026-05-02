@@ -1634,7 +1634,7 @@ export default function InvoicesPage() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {securityAnnexExport.rows.map((r, i) => (
+                                {securityAnnexFiltered.rows.map((r, i) => (
                                   <tr key={i} className="border-t">
                                     <td className="px-3 py-1.5 font-mono text-muted-foreground">{i + 1}</td>
                                     <td className="px-3 py-1.5 font-mono">{formatDateDMY(r.date)}</td>
@@ -1646,14 +1646,27 @@ export default function InvoicesPage() {
                                     <td className="px-3 py-1.5 text-right font-mono font-semibold text-foreground">{r.total.toFixed(2)}</td>
                                   </tr>
                                 ))}
+                                {securityAnnexFiltered.rows.length === 0 && (
+                                  <tr><td colSpan={8} className="px-3 py-4 text-center text-muted-foreground italic">No rows match the selected date range.</td></tr>
+                                )}
                               </tbody>
                               <tfoot>
                                 <tr className="bg-muted/40 font-bold border-t-2">
-                                  <td colSpan={5} className="px-3 py-2 text-right uppercase text-xs">Annex A Grand Total</td>
-                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexExport.totals.base.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexExport.totals.overtime.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-right font-mono text-success">{securityAnnexExport.totals.total.toFixed(2)}</td>
+                                  <td colSpan={5} className="px-3 py-2 text-right uppercase text-xs">
+                                    {securityAnnexFiltered.isFiltered ? "Filtered Subtotal" : "Annex A Grand Total"}
+                                  </td>
+                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexFiltered.totals.base.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-right font-mono">{securityAnnexFiltered.totals.overtime.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-success">{securityAnnexFiltered.totals.total.toFixed(2)}</td>
                                 </tr>
+                                {securityAnnexFiltered.isFiltered && (
+                                  <tr className="bg-muted/20 text-muted-foreground border-t">
+                                    <td colSpan={5} className="px-3 py-1.5 text-right uppercase text-[10px]">Annex A Grand Total (export)</td>
+                                    <td className="px-3 py-1.5 text-right font-mono text-[11px]">{securityAnnexExport.totals.base.toFixed(2)}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono text-[11px]">{securityAnnexExport.totals.overtime.toFixed(2)}</td>
+                                    <td className="px-3 py-1.5 text-right font-mono text-[11px] text-success">{securityAnnexExport.totals.total.toFixed(2)}</td>
+                                  </tr>
+                                )}
                               </tfoot>
                             </table>
                           </div>
