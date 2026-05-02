@@ -401,7 +401,16 @@ function HandlingServiceReportContent() {
     },
   });
 
-  const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
+  // Receivables: load invoices to detect billed flights (matched by flight_ref ↔ flight_no)
+  const { data: dbInvoices = [] } = useQuery({
+    queryKey: ["invoices_for_receivables_panel"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("invoices").select("id,invoice_no,flight_ref,operator,status").neq("status", "Cancelled");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isReceivablesView,
+  });
     queryKey: ["flight_schedules", isStationScoped ? userStation : null],
     queryFn: async () => {
       let q = supabase
