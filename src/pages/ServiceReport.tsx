@@ -731,6 +731,10 @@ function HandlingServiceReportContent() {
     if (isOperationsView) r = r.filter(x => x.isLinked);
     // Operations sub-tab: filter to Modified reports
     if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
+    if (reviewIdsFilter && reviewIdsFilter.length > 0) {
+      const set = new Set(reviewIdsFilter);
+      r = r.filter(x => set.has(x.id));
+    }
     // Station view: when "Rejected" tab is active, only show rejected reports
     if (isStationView && stationTab === "rejected") r = r.filter(x => x.isLinked && x.reviewStatus === "rejected");
     if (statusFilter === "Completed") r = r.filter(x => x.isLinked);
