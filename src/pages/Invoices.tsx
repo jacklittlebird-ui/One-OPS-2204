@@ -1038,6 +1038,8 @@ export default function InvoicesPage() {
                   </div>
 
 
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="px-3 py-2 bg-muted/40 text-xs font-bold uppercase text-muted-foreground">Per-Station × Service Type Breakdown</div>
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b bg-muted/20 text-xs uppercase text-muted-foreground">
