@@ -1017,7 +1017,7 @@ export default function InvoicesPage() {
                       {!readOnly && (
                         <>
                           <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
-                          <button onClick={() => remove(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
+                          <button onClick={() => auditedRemove(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
                         </>
                       )}
                     </div>
