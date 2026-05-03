@@ -152,29 +152,28 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {stations.map(([st, g], idx) => (
-                  <tbody key={st} className="contents">
-                    {g.security > 0 && (
-                      <tr className="border-b border-gray-300">
-                        <td className="px-3 py-1.5 w-32 text-xs">
-                          {idx === 0 && periodFrom ? periodFrom : ""}
-                        </td>
+                {stations.flatMap(([st, g], idx) => {
+                  const rows = [];
+                  if (g.security > 0) {
+                    rows.push(
+                      <tr key={`${st}-sec`} className="border-b border-gray-300">
+                        <td className="px-3 py-1.5 w-32 text-xs">{idx === 0 && periodFrom ? periodFrom : ""}</td>
                         <td className="px-3 py-1.5 border-r border-gray-300">{st}-Ramp Security Service</td>
                         <td className="px-3 py-1.5 text-right">{fmtMoney(g.security, invoice.currency)}</td>
                       </tr>
-                    )}
-                    {g.extra > 0 && (
-                      <tr className="border-b border-gray-300">
-                        <td className="px-3 py-1.5 text-xs">
-                          {idx === 0 && periodTo && g.security === 0 ? periodTo : ""}
-                          {idx === 0 && periodTo && g.security > 0 ? periodTo : ""}
-                        </td>
+                    );
+                  }
+                  if (g.extra > 0) {
+                    rows.push(
+                      <tr key={`${st}-ext`} className="border-b border-gray-300">
+                        <td className="px-3 py-1.5 text-xs">{idx === 0 && periodTo ? periodTo : ""}</td>
                         <td className="px-3 py-1.5 border-r border-gray-300">{st}-Ramp Extra Service</td>
                         <td className="px-3 py-1.5 text-right">{fmtMoney(g.extra, invoice.currency)}</td>
                       </tr>
-                    )}
-                  </tbody>
-                ))}
+                    );
+                  }
+                  return rows;
+                })}
                 {/* VAT row */}
                 <tr className="border-t border-gray-700">
                   <td colSpan={2} className="px-3 py-2 font-bold border-r border-gray-700">
