@@ -285,6 +285,10 @@ export default function FinancialReportsPage() {
     logAudit({ action: "export", entity_type: "balance_sheet", details: { format: "pdf" } });
   };
 
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Financial Reports</h1>
         <p className="text-muted-foreground text-sm">التقارير المالية · Trial Balance, P&L, Balance Sheet</p>
       </div>
 
