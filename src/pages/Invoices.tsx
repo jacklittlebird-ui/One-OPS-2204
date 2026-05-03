@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { useChannel } from "@/contexts/ChannelContext";
 import InvoicePrintView from "@/components/InvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
+import { logAudit } from "@/lib/auditLogger";
 
 type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
 type InvoiceCurrency = "USD" | "EUR" | "EGP";
