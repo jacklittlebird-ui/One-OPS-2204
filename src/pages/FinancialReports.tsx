@@ -591,7 +591,8 @@ export default function FinancialReportsPage() {
         {/* Balance Sheet */}
         <TabsContent value="bs">
           <div className="flex justify-end mb-2">
-            <Button variant="outline" size="sm" onClick={handleExportBalanceSheet}><Download size={14} className="mr-1.5" /> Export Excel</Button>
+            <Button variant="outline" size="sm" onClick={handleExportBalanceSheet}><Download size={14} className="mr-1.5" /> Excel</Button>
+            <Button variant="outline" size="sm" onClick={handlePdfBalanceSheet}><Download size={14} className="mr-1.5" /> PDF</Button>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Card>
