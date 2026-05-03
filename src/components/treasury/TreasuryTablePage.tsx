@@ -154,7 +154,7 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
                 <TableRow><TableCell colSpan={columns.length + 1} className="text-center py-8 text-muted-foreground">No records</TableCell></TableRow>
               ) : filtered.map(r => (
                 <TableRow key={r.id}>
-                  {columns.map(c => <TableCell key={c.key}>{c.render ? c.render(r) : (r[c.key] ?? "—")}</TableCell>)}
+                  {columns.map(c => <TableCell key={c.key}>{c.render ? c.render(r) : (fieldTypeMap[c.key] === "date" ? formatDateDMY(r[c.key]) : (r[c.key] ?? "—"))}</TableCell>)}
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil size={14} /></Button>
                     <Button variant="ghost" size="icon" onClick={() => remove(r.id)}><Trash2 size={14} /></Button>
