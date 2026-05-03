@@ -6,6 +6,8 @@ import { exportToExcel } from "@/lib/exportExcel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MaskedTimeInput } from "@/components/ui/masked-time-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
@@ -173,47 +175,55 @@ export default function StaffRosterPage() {
           <DialogHeader><DialogTitle>{editItem ? "Edit Staff" : "Add Staff"}</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Employee ID *" value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })} />
-              <Input placeholder="Full Name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              <div><Label className="text-xs">Employee ID *</Label><Input value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })} /></div>
+              <div><Label className="text-xs">Full Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Select value={form.role || "Agent"} onValueChange={v => setForm({ ...form, role: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{(["Admin","Agent","Check-In","Dispatcher","Ramp","Security","Supervisor","VIP"] as StaffRole[]).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-              </Select>
-              <Input placeholder="Department" value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} />
-              <Input placeholder="Station" value={form.station} onChange={e => setForm({ ...form, station: e.target.value.toUpperCase() })} />
+              <div><Label className="text-xs">Role</Label>
+                <Select value={form.role || "Agent"} onValueChange={v => setForm({ ...form, role: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{(["Admin","Agent","Check-In","Dispatcher","Ramp","Security","Supervisor","VIP"] as StaffRole[]).map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Department</Label><Input value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} /></div>
+              <div><Label className="text-xs">Station</Label><Input value={form.station} onChange={e => setForm({ ...form, station: e.target.value.toUpperCase() })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Select value={form.shift} onValueChange={v => setForm({ ...form, shift: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Afternoon">Afternoon</SelectItem><SelectItem value="Morning">Morning</SelectItem><SelectItem value="Night">Night</SelectItem><SelectItem value="Off">Off</SelectItem><SelectItem value="Split">Split</SelectItem></SelectContent>
-              </Select>
-              <Input type="time" placeholder="Shift Start" value={form.shift_start} onChange={e => setForm({ ...form, shift_start: e.target.value })} />
-              <Input type="time" placeholder="Shift End" value={form.shift_end} onChange={e => setForm({ ...form, shift_end: e.target.value })} />
+              <div><Label className="text-xs">Shift</Label>
+                <Select value={form.shift} onValueChange={v => setForm({ ...form, shift: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="Afternoon">Afternoon</SelectItem><SelectItem value="Morning">Morning</SelectItem><SelectItem value="Night">Night</SelectItem><SelectItem value="Off">Off</SelectItem><SelectItem value="Split">Split</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Shift Start</Label><MaskedTimeInput value={form.shift_start || ""} onChange={v => setForm({ ...form, shift_start: v })} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><Label className="text-xs">Shift End</Label><MaskedTimeInput value={form.shift_end || ""} onChange={v => setForm({ ...form, shift_end: v })} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-              <Input placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
+              <div><Label className="text-xs">Email</Label><Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Qualification" value={form.qualification} onChange={e => setForm({ ...form, qualification: e.target.value })} />
-              <Input placeholder="License No" value={form.license_no} onChange={e => setForm({ ...form, license_no: e.target.value })} />
+              <div><Label className="text-xs">Qualification</Label><Input value={form.qualification} onChange={e => setForm({ ...form, qualification: e.target.value })} /></div>
+              <div><Label className="text-xs">License No</Label><Input value={form.license_no} onChange={e => setForm({ ...form, license_no: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Select value={form.training_status} onValueChange={v => setForm({ ...form, training_status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Current">Current</SelectItem><SelectItem value="Due Soon">Due Soon</SelectItem><SelectItem value="Expired">Expired</SelectItem><SelectItem value="N/A">N/A</SelectItem></SelectContent>
-              </Select>
-              <div><label className="text-xs text-muted-foreground">Cert Expiry</label><Input type="date" value={form.cert_expiry} onChange={e => setForm({ ...form, cert_expiry: e.target.value })} /></div>
-              <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="On Leave">On Leave</SelectItem><SelectItem value="Training">Training</SelectItem><SelectItem value="Suspended">Suspended</SelectItem></SelectContent>
-              </Select>
+              <div><Label className="text-xs">Training Status</Label>
+                <Select value={form.training_status} onValueChange={v => setForm({ ...form, training_status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="Current">Current</SelectItem><SelectItem value="Due Soon">Due Soon</SelectItem><SelectItem value="Expired">Expired</SelectItem><SelectItem value="N/A">N/A</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Cert Expiry</Label><Input type="date" value={form.cert_expiry} onChange={e => setForm({ ...form, cert_expiry: e.target.value })} /></div>
+              <div><Label className="text-xs">Status</Label>
+                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="On Leave">On Leave</SelectItem><SelectItem value="Training">Training</SelectItem><SelectItem value="Suspended">Suspended</SelectItem></SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-xs text-muted-foreground">Join Date</label><Input type="date" value={form.join_date} onChange={e => setForm({ ...form, join_date: e.target.value })} /></div>
-              <Input placeholder="Emergency Contact" value={form.emergency_contact} onChange={e => setForm({ ...form, emergency_contact: e.target.value })} />
+              <div><Label className="text-xs">Join Date</Label><Input type="date" value={form.join_date} onChange={e => setForm({ ...form, join_date: e.target.value })} /></div>
+              <div><Label className="text-xs">Emergency Contact</Label><Input value={form.emergency_contact} onChange={e => setForm({ ...form, emergency_contact: e.target.value })} /></div>
             </div>
             <Button className="w-full" onClick={handleSave}>{editItem ? "Update" : "Add Staff"}</Button>
           </div>

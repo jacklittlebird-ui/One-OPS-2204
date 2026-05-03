@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SECURITY_CLEARANCE_TYPES, getServiceCategory, type ServiceCategory } from "@/components/clearances/ClearanceTypes";
+import { MaskedTimeInput } from "@/components/ui/masked-time-input";
 
 type FlightRow = {
   id: string;
@@ -619,13 +620,13 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
                 <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2"><Clock size={14} /> Time Tracking</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div><label className="text-xs font-semibold text-muted-foreground">Scheduled Start</label>
-                    <input type="time" className={inputCls} value={formData.scheduled_start || ""} onChange={e => updateFormField("scheduled_start", e.target.value)} /></div>
+                    <MaskedTimeInput value={formData.scheduled_start || ""} onChange={v => updateFormField("scheduled_start", v)} className={inputCls} /></div>
                   <div><label className="text-xs font-semibold text-muted-foreground">Scheduled End</label>
-                    <input type="time" className={inputCls} value={formData.scheduled_end || ""} onChange={e => updateFormField("scheduled_end", e.target.value)} /></div>
+                    <MaskedTimeInput value={formData.scheduled_end || ""} onChange={v => updateFormField("scheduled_end", v)} className={inputCls} /></div>
                   <div><label className="text-xs font-semibold text-muted-foreground">Actual Start</label>
-                    <input type="time" className={inputCls} value={formData.actual_start || ""} onChange={e => updateFormField("actual_start", e.target.value)} /></div>
+                    <MaskedTimeInput value={formData.actual_start || ""} onChange={v => updateFormField("actual_start", v)} className={inputCls} /></div>
                   <div><label className="text-xs font-semibold text-muted-foreground">Actual End</label>
-                    <input type="time" className={inputCls} value={formData.actual_end || ""} onChange={e => updateFormField("actual_end", e.target.value)} /></div>
+                    <MaskedTimeInput value={formData.actual_end || ""} onChange={v => updateFormField("actual_end", v)} className={inputCls} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 mt-3">
                   <div><label className="text-xs font-semibold text-muted-foreground">Contract Duration (hrs)</label>

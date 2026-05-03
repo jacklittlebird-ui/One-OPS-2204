@@ -5,6 +5,7 @@ import { toast } from "@/components/ui/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { MaskedTimeInput } from "@/components/ui/masked-time-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -497,8 +498,8 @@ function NotificationPreferencesTab() {
           </div>
           {prefs.quiet_hours_enabled && (
             <div className="grid grid-cols-2 gap-4 mt-2">
-              <div><Label>Start</Label><Input type="time" value={prefs.quiet_hours_start} onChange={e => setPrefs(p => ({ ...p, quiet_hours_start: e.target.value }))} /></div>
-              <div><Label>End</Label><Input type="time" value={prefs.quiet_hours_end} onChange={e => setPrefs(p => ({ ...p, quiet_hours_end: e.target.value }))} /></div>
+              <div><Label>Start</Label><MaskedTimeInput value={prefs.quiet_hours_start || ""} onChange={v => setPrefs(p => ({ ...p, quiet_hours_start: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><Label>End</Label><MaskedTimeInput value={prefs.quiet_hours_end || ""} onChange={v => setPrefs(p => ({ ...p, quiet_hours_end: v }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
             </div>
           )}
         </CardContent>
