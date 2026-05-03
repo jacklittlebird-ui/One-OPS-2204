@@ -230,6 +230,7 @@ export default function JournalEntriesPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <AdvancedFilters
