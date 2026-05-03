@@ -201,84 +201,105 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
             </div>
           </div>
 
-          {/* Per-station Annex pages — one per station, mirrors source PDF layout */}
+          {/* Per-station Annex pages — mirrors page 2 layout of source PDF */}
           {stations.map(([st, g]) => {
             const secRows = g.rows.filter(r => (r.handling || 0) > 0);
             const extRows = g.rows.filter(r => (r.other || 0) > 0);
+
+            const renderAnnex = (
+              title: string,
+              rows: DetailRow[],
+              amountKey: "handling" | "other",
+              total: number,
+              key: string,
+            ) => (
+              <div key={key} className="mt-10 break-before-page print:break-before-page">
+                <div className="border-2 border-gray-800 p-6">
+                  {/* Header band */}
+                  <div className="flex items-start justify-between mb-4 pb-3 border-b border-gray-400">
+                    <div className="border border-gray-400 p-1.5">
+                      <img src={linkAeroLogo} alt="Link Aero" className="h-16 w-auto object-contain" />
+                    </div>
+                    <div className="text-right">
+                      <img src={ighcLogo} alt="IGHC" className="h-10 w-auto object-contain ml-auto mb-1" />
+                      <p className="text-xs text-gray-600">Tax ID : 215-137-108</p>
+                    </div>
+                  </div>
+
+                  {/* Title block */}
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl font-bold tracking-wide uppercase">{title}</h2>
+                    <p className="text-base font-semibold mt-1">{invoice.operator}</p>
+                  </div>
+
+                  {/* Meta grid */}
+                  <div className="grid grid-cols-3 text-sm mb-4 border border-gray-500 rounded-sm overflow-hidden">
+                    <div className="px-3 py-1.5 border-r border-gray-500 bg-gray-50">
+                      <span className="font-semibold">Station :</span> {st}
+                    </div>
+                    <div className="px-3 py-1.5 border-r border-gray-500 bg-gray-50">
+                      <span className="font-semibold">From :</span> {periodFrom || "—"}
+                    </div>
+                    <div className="px-3 py-1.5 bg-gray-50">
+                      <span className="font-semibold">To :</span> {periodTo || "—"}
+                    </div>
+                  </div>
+
+                  {/* Flights table */}
+                  <table className="w-full text-xs border border-gray-700 border-collapse">
+                    <thead>
+                      <tr className="bg-gray-200">
+                        <th className="border border-gray-600 px-2 py-1.5 w-10 text-center">S</th>
+                        <th className="border border-gray-600 px-2 py-1.5 w-24 text-center">Date</th>
+                        <th className="border border-gray-600 px-2 py-1.5 w-28 text-center">Flight No.</th>
+                        <th className="border border-gray-600 px-2 py-1.5 w-24 text-center">Reg.</th>
+                        <th className="border border-gray-600 px-2 py-1.5 text-left">Route</th>
+                        <th className="border border-gray-600 px-2 py-1.5 w-32 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, i) => (
+                        <tr key={i} className={i % 2 ? "bg-gray-50" : ""}>
+                          <td className="border border-gray-400 px-2 py-1 text-center">{i + 1}</td>
+                          <td className="border border-gray-400 px-2 py-1 text-center whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
+                          <td className="border border-gray-400 px-2 py-1 text-center font-mono">{r.flight || "—"}</td>
+                          <td className="border border-gray-400 px-2 py-1 text-center font-mono">{r.reg || "—"}</td>
+                          <td className="border border-gray-400 px-2 py-1">{r.route || "—"}</td>
+                          <td className="border border-gray-400 px-2 py-1 text-right font-mono">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={5} className="border border-gray-600 px-2 py-1.5 text-right font-semibold bg-gray-50">Total</td>
+                        <td className="border border-gray-600 px-2 py-1.5 text-right font-mono bg-gray-50">{fmtMoney(total, invoice.currency)}</td>
+                      </tr>
+                      <tr>
+                        <td colSpan={5} className="border border-gray-600 px-2 py-1.5 text-right bg-gray-50">Admin</td>
+                        <td className="border border-gray-600 px-2 py-1.5 text-right font-mono bg-gray-50">{fmtMoney(0, invoice.currency)}</td>
+                      </tr>
+                      <tr className="font-bold">
+                        <td colSpan={5} className="border border-gray-700 px-2 py-2 text-right bg-gray-100">Grand total</td>
+                        <td className="border border-gray-700 px-2 py-2 text-right font-mono bg-gray-100">{fmtMoney(total, invoice.currency)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+
+                  {/* Footer */}
+                  <div className="mt-6 pt-3 border-t border-gray-400 text-center text-[10px] text-gray-700">
+                    P.O.BOX 203,-ZAMALEK, CAIRO, EGYPT&nbsp;&nbsp;
+                    <strong>TEL</strong>: +202-27351555&nbsp;&nbsp;
+                    <strong>Email</strong>: acc.receivables@linkagency.com&nbsp;&nbsp;
+                    <strong>Website</strong>: www.linkagency.com
+                  </div>
+                </div>
+              </div>
+            );
+
             return (
               <div key={`annex-${st}`}>
-                {secRows.length > 0 && (
-                  <div className="mt-8 break-before-page print:break-before-page">
-                    <div className="mb-3">
-                      <p className="font-bold">Security Service&nbsp;&nbsp;&nbsp;{invoice.operator}</p>
-                      <p className="text-sm">Station : {st}</p>
-                      {periodFrom && <p className="text-sm">From : {periodFrom}</p>}
-                      {periodTo && <p className="text-sm">To : {periodTo}</p>}
-                    </div>
-                    <table className="w-full text-xs border border-gray-700 border-collapse">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          {["S", "Date", "Flight No.,", "Reg.,", "Amount", "Route"].map(h => (
-                            <th key={h} className="border border-gray-500 px-2 py-1 text-left">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {secRows.map((r, i) => (
-                          <tr key={i}>
-                            <td className="border border-gray-400 px-2 py-1">{i + 1}</td>
-                            <td className="border border-gray-400 px-2 py-1 whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
-                            <td className="border border-gray-400 px-2 py-1 font-mono">{r.flight || "—"}</td>
-                            <td className="border border-gray-400 px-2 py-1 font-mono">{r.reg || "—"}</td>
-                            <td className="border border-gray-400 px-2 py-1">{fmtMoney(r.handling || 0, invoice.currency)}</td>
-                            <td className="border border-gray-400 px-2 py-1">{r.route || "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="font-bold"><td colSpan={4} className="border border-gray-500 px-2 py-1 text-right">Total</td><td colSpan={2} className="border border-gray-500 px-2 py-1">{fmtMoney(g.security, invoice.currency)}</td></tr>
-                        <tr><td colSpan={4} className="border border-gray-500 px-2 py-1 text-right">Admin</td><td colSpan={2} className="border border-gray-500 px-2 py-1">{fmtMoney(0, invoice.currency)}</td></tr>
-                        <tr className="font-bold"><td colSpan={4} className="border border-gray-500 px-2 py-1 text-right">Grand total</td><td colSpan={2} className="border border-gray-500 px-2 py-1">{fmtMoney(g.security, invoice.currency)}</td></tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                )}
-                {extRows.length > 0 && (
-                  <div className="mt-8 break-before-page print:break-before-page">
-                    <div className="mb-3">
-                      <p className="font-bold">Extra Service&nbsp;&nbsp;&nbsp;{invoice.operator}</p>
-                      <p className="text-sm">Station : {st}</p>
-                      {periodFrom && <p className="text-sm">From : {periodFrom}</p>}
-                      {periodTo && <p className="text-sm">To : {periodTo}</p>}
-                    </div>
-                    <table className="w-full text-xs border border-gray-700 border-collapse">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          {["S", "Date", "Flight No.,", "Reg.,", "Amount", "Route"].map(h => (
-                            <th key={h} className="border border-gray-500 px-2 py-1 text-left">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {extRows.map((r, i) => (
-                          <tr key={i}>
-                            <td className="border border-gray-400 px-2 py-1">{i + 1}</td>
-                            <td className="border border-gray-400 px-2 py-1 whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
-                            <td className="border border-gray-400 px-2 py-1 font-mono">{r.flight || "—"}</td>
-                            <td className="border border-gray-400 px-2 py-1 font-mono">{r.reg || "—"}</td>
-                            <td className="border border-gray-400 px-2 py-1">{fmtMoney(r.other || 0, invoice.currency)}</td>
-                            <td className="border border-gray-400 px-2 py-1">{r.route || "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="font-bold"><td colSpan={4} className="border border-gray-500 px-2 py-1 text-right">Total</td><td colSpan={2} className="border border-gray-500 px-2 py-1">{fmtMoney(g.extra, invoice.currency)}</td></tr>
-                        <tr><td colSpan={4} className="border border-gray-500 px-2 py-1 text-right">Admin</td><td colSpan={2} className="border border-gray-500 px-2 py-1">{fmtMoney(0, invoice.currency)}</td></tr>
-                        <tr className="font-bold"><td colSpan={4} className="border border-gray-500 px-2 py-1 text-right">Grand total</td><td colSpan={2} className="border border-gray-500 px-2 py-1">{fmtMoney(g.extra, invoice.currency)}</td></tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                )}
+                {secRows.length > 0 && renderAnnex("Security Service", secRows, "handling", g.security, `${st}-sec`)}
+                {extRows.length > 0 && renderAnnex("Extra Service", extRows, "other", g.extra, `${st}-ext`)}
               </div>
             );
           })}
