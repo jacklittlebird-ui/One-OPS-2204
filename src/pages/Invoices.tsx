@@ -444,8 +444,10 @@ export default function InvoicesPage() {
       }
     });
     const subtotal = civil + handling + airport + other;
+    const isSecurityGroup = categoryTab === "security" || (group.sources.dispatches > 0 && group.sources.reports === 0);
+    const suffix = isSecurityGroup ? "-SEC" : "";
     const inv: Partial<InvoiceRow> = {
-      invoice_no: `LNK-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+      invoice_no: `LNK-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}${suffix}`,
       date: new Date().toISOString().slice(0, 10),
       due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       operator: group.airline,
@@ -459,9 +461,9 @@ export default function InvoicesPage() {
       subtotal, vat: 0, total: subtotal,
       currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus,
       invoice_type: "Preliminary" as InvoiceType,
-      description: `${group.flights} flights — ${group.station} — ${billingMonth}`,
+      description: `${isSecurityGroup ? "Security" : "Handling"} — ${group.flights} flights — ${group.station} — ${billingMonth}`,
       flight_ref: group.items.map((d: any) => d.flight_no).filter(Boolean).join(", "),
-      notes: `Auto-generated from ${group.sources.dispatches} dispatch + ${group.sources.reports} service-report record(s)`,
+      notes: `${isSecurityGroup ? "Security " : ""}Auto-generated from ${group.sources.dispatches} dispatch + ${group.sources.reports} service-report record(s)`,
     };
     await add(inv as any);
     toast({ title: "✅ Invoice Created", description: `Draft invoice for ${group.airline} at ${group.station}` });
