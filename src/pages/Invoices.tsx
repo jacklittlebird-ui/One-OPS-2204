@@ -404,7 +404,7 @@ export default function InvoicesPage() {
       const station = r.station || "—";
       const key = `${airline}__${station}`;
       if (!grouped[key]) grouped[key] = { airline, station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
-      const m = rollupReport(r);
+      const m = _rollupReport(r);
       grouped[key].flights++;
       grouped[key].sources.reports++;
       grouped[key].baseFees += m.civil;
