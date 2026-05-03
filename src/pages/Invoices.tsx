@@ -236,7 +236,7 @@ export default function InvoicesPage() {
     if (maxT !== null) r = r.filter(i => (i.total || 0) <= maxT);
     if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s) || (i.notes || "").toLowerCase().includes(s)); }
     return r;
-  }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search]);
+  }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search, categoryTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
