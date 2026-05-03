@@ -105,6 +105,21 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
     toast({ title: "Deleted" }); load();
   };
 
+  const fieldTypeMap = useMemo(() => Object.fromEntries(fields.map(f => [f.key, f.type])), [fields]);
+
+  const handleExport = () => {
+    if (!filtered.length) { toast({ title: "No data", description: "Nothing to export." }); return; }
+    const rows = filtered.map(r => {
+      const o: Record<string, any> = {};
+      columns.forEach(c => {
+        const v = r[c.key];
+        o[c.label] = fieldTypeMap[c.key] === "date" ? formatDateDMY(v) : (v ?? "");
+      });
+      return o;
+    });
+    exportToExcel(rows, title.slice(0, 28), `${title.replace(/\s+/g, "_")}.xlsx`);
+  };
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -112,7 +127,10 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
           <h1 className="text-2xl font-bold">{title}</h1>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
-        <Button onClick={openAdd}><Plus size={16} className="mr-1" /> New</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport}><Download size={16} className="mr-1" /> Export</Button>
+          <Button onClick={openAdd}><Plus size={16} className="mr-1" /> New</Button>
+        </div>
       </div>
 
       <div className="relative max-w-md">
