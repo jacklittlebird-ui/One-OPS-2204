@@ -184,7 +184,7 @@ export default function InvoicesPage() {
   const [showMonthlyAirline, setShowMonthlyAirline] = useState(false);
   const [monthlyAirlineMonth, setMonthlyAirlineMonth] = useState(new Date().toISOString().slice(0, 7));
   const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
-  const [monthlyTab, setMonthlyTab] = useState<"handling" | "security">("handling");
+  const [monthlyTab, setMonthlyTab] = useState<"security" | "handling">("security");
   const [showSecurityAnnexPreview, setShowSecurityAnnexPreview] = useState(false);
   const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
   const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
@@ -1283,7 +1283,7 @@ export default function InvoicesPage() {
       {/* Monthly Airline Invoice Modal */}
       {showMonthlyAirline && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4">
+          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto m-4">
             <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
               <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
                 <Calendar size={18} className="text-primary" /> Monthly Airline Invoice
@@ -1299,21 +1299,21 @@ export default function InvoicesPage() {
               <div className="flex border-b">
                 <button
                   type="button"
-                  onClick={() => setMonthlyTab("handling")}
-                  className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
-                    monthlyTab === "handling" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Handling <span className="ml-1.5 text-xs font-mono opacity-70">({monthlyAirlinePreview.reports.length})</span>
-                </button>
-                <button
-                  type="button"
                   onClick={() => setMonthlyTab("security")}
                   className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
                     monthlyTab === "security" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Security <span className="ml-1.5 text-xs font-mono opacity-70">({monthlySecurityPreview.rows.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMonthlyTab("handling")}
+                  className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                    monthlyTab === "handling" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Handling <span className="ml-1.5 text-xs font-mono opacity-70">({monthlyAirlinePreview.reports.length})</span>
                 </button>
               </div>
 
