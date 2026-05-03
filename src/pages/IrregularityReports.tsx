@@ -157,14 +157,14 @@ export default function IrregularityReportsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {["ID", "Flight", "Airline", "Station", "Date", "Severity", "Category", "Status"].map(h => (
+                {["ID", "Flight", "Airline", "Station", "Date", "Severity", "Category", "Status", ""].map(h => (
                   <th key={h} className="data-table-header px-4 py-3 text-left whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {pageData.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-16">
+                <tr><td colSpan={9} className="text-center py-16">
                   <AlertTriangle size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                   <p className="font-semibold text-foreground">No incidents found</p>
                 </td></tr>
@@ -176,13 +176,18 @@ export default function IrregularityReportsPage() {
                   <td className="px-4 py-3">
                     <span className="text-xs font-mono font-bold bg-muted px-1.5 py-0.5 rounded">{r.station}</span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.incident_date}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{formatDateDMY(r.incident_date)}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${severityColors[r.severity] || ""}`}>{r.severity}</span>
                   </td>
                   <td className="px-4 py-3 text-foreground">{r.category}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusColors[r.status] || ""}`}>{r.status}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => setDeleteId(r.id)} className="text-destructive/70 hover:text-destructive p-1 rounded hover:bg-destructive/10" title="Delete">
+                      <Trash2 size={14} />
+                    </button>
                   </td>
                 </tr>
               ))}
