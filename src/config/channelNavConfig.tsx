@@ -291,6 +291,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
     { label: "SETTINGS", icon: <Settings size={18} />, path: "/settings" },
     { label: "USERS", icon: <Users size={18} />, path: "/users" },
     { label: "AUDIT LOG", icon: <ScrollText size={18} />, path: "/audit-log" },
+    { label: "SECURITY STATUS", icon: <Shield size={18} />, path: "/security-status" },
   ],
 };
 
