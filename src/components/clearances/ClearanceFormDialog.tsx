@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { CalendarIcon, ChevronsUpDown, Check, Plane, MapPin, ShieldCheck, CalendarRange, FileText, Building2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MaskedTimeInput } from "@/components/ui/masked-time-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -352,32 +353,18 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">STA (24h) <span className="text-destructive">*</span></label>
-                <Input
-                  placeholder="HH:MM"
-                  maxLength={5}
-                  className="font-mono"
+                <MaskedTimeInput
                   value={form.sta || ""}
-                  onChange={e => {
-                    let v = e.target.value.replace(/[^0-9:]/g, "");
-                    if (v.length === 2 && !v.includes(":") && form.sta?.length !== 3) v += ":";
-                    if (v.length > 5) v = v.slice(0, 5);
-                    setForm({ ...form, sta: v });
-                  }}
+                  onChange={v => setForm({ ...form, sta: v })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                 />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">STD (24h) <span className="text-destructive">*</span></label>
-                <Input
-                  placeholder="HH:MM"
-                  maxLength={5}
-                  className="font-mono"
+                <MaskedTimeInput
                   value={form.std || ""}
-                  onChange={e => {
-                    let v = e.target.value.replace(/[^0-9:]/g, "");
-                    if (v.length === 2 && !v.includes(":") && form.std?.length !== 3) v += ":";
-                    if (v.length > 5) v = v.slice(0, 5);
-                    setForm({ ...form, std: v });
-                  }}
+                  onChange={v => setForm({ ...form, std: v })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                 />
               </div>
             </div>
