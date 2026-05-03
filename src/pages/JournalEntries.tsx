@@ -161,6 +161,9 @@ export default function JournalEntriesPage() {
           <h1 className="text-2xl font-bold text-foreground">Journal Entries</h1>
           <p className="text-muted-foreground text-sm">القيود اليومية · {entries.length} entries</p>
         </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportExcel}><Download size={14} className="mr-1" /> Excel</Button>
+          <Button variant="outline" size="sm" onClick={handleExportPdf}><Download size={14} className="mr-1" /> PDF</Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild><Button onClick={openAdd}><Plus size={16} className="mr-1" /> New Entry</Button></DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
