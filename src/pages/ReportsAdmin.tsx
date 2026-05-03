@@ -124,7 +124,11 @@ export default function ReportsAdminPage() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+          <div className="md:col-span-2">
+            <label className="text-xs text-muted-foreground">Search (Ref / Party / User)</label>
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="..." />
+          </div>
           <div>
             <label className="text-xs text-muted-foreground">Date From</label>
             <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
@@ -132,6 +136,18 @@ export default function ReportsAdminPage() {
           <div>
             <label className="text-xs text-muted-foreground">Date To</label>
             <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Type</label>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="invoice">Customer Invoices</SelectItem>
+                <SelectItem value="vendor">Vendor Invoices</SelectItem>
+                <SelectItem value="journal">Journal Entries</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Status (Invoices)</label>
@@ -147,8 +163,8 @@ export default function ReportsAdminPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
-            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); setStatusFilter("all"); }}>Clear</Button>
+          <div className="md:col-span-6 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); setStatusFilter("all"); setTypeFilter("all"); setSearch(""); }}>Clear filters</Button>
           </div>
         </CardContent>
       </Card>
