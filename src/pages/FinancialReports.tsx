@@ -204,6 +204,51 @@ export default function FinancialReportsPage() {
     XLSX.writeFile(wb, `PL_Monthly_${selectedYear}.xlsx`);
   };
 
+  const handleExportTrialBalance = () => {
+    const rows = trialBalance
+      .filter(a => a.balanceDebit > 0 || a.balanceCredit > 0)
+      .map(a => ({
+        Code: a.code, Account: a.name, "الحساب": a.name_ar,
+        Type: a.account_type,
+        Debit: a.balanceDebit, Credit: a.balanceCredit,
+      }));
+    rows.push({ Code: "", Account: "TOTAL", "الحساب": "", Type: "", Debit: tbTotalDebit, Credit: tbTotalCredit } as any);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 10 }, { wch: 30 }, { wch: 25 }, { wch: 12 }, { wch: 14 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Trial Balance");
+    XLSX.writeFile(wb, `TrialBalance_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  const handleExportPL = () => {
+    const aoa: any[][] = [["Profit & Loss Statement"], [], ["Account", "الحساب", "Amount"], ["REVENUE / الإيرادات"]];
+    revenues.filter(a => a.balanceCredit > 0).forEach(a => aoa.push([`  ${a.name}`, a.name_ar, a.balanceCredit]));
+    aoa.push(["Total Revenue", "", totalRevenue], [], ["EXPENSES / المصروفات"]);
+    expenses.filter(a => a.balanceDebit > 0).forEach(a => aoa.push([`  ${a.name}`, a.name_ar, a.balanceDebit]));
+    aoa.push(["Total Expenses", "", totalExpenses], [], ["NET INCOME / صافي الربح", "", netIncome]);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 35 }, { wch: 25 }, { wch: 16 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "P&L");
+    XLSX.writeFile(wb, `PL_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  const handleExportBalanceSheet = () => {
+    const aoa: any[][] = [["Balance Sheet — الميزانية"], [], ["Account", "الحساب", "Amount"], ["ASSETS / الأصول"]];
+    assets.filter(a => a.balanceDebit > 0).forEach(a => aoa.push([`  ${a.name}`, a.name_ar, a.balanceDebit]));
+    aoa.push(["Total Assets", "", totalAssets], [], ["LIABILITIES / الالتزامات"]);
+    liabilities.filter(a => a.balanceCredit > 0).forEach(a => aoa.push([`  ${a.name}`, a.name_ar, a.balanceCredit]));
+    aoa.push(["Total Liabilities", "", totalLiabilities], [], ["EQUITY / حقوق الملكية"]);
+    equity.filter(a => a.balanceCredit > 0).forEach(a => aoa.push([`  ${a.name}`, a.name_ar, a.balanceCredit]));
+    aoa.push(["  Net Income (Current Year)", "", netIncome], ["Total Equity", "", totalEquity], [],
+      ["Check: Assets = Liabilities + Equity", "", `${totalAssets} = ${totalLiabilities + totalEquity}`]);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 35 }, { wch: 25 }, { wch: 16 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Balance Sheet");
+    XLSX.writeFile(wb, `BalanceSheet_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   return (
     <div className="space-y-4">
       <div>
