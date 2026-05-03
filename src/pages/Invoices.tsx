@@ -418,6 +418,17 @@ export default function InvoicesPage() {
   }, [dispatches, serviceReports, billingMonth, billingStation]);
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
+    let civil = 0, handling = 0, airport = 0, other = 0;
+    group.items.forEach((it: any) => {
+      if (it._source === "report") {
+        const m = _rollupReport(it);
+        civil += m.civil; handling += m.handling; airport += m.airport; other += m.other;
+      } else {
+        handling += (it.total_security_charges || it.service_rate || 0) + (it.base_fee || 0);
+        other += (it.overtime_charge || 0);
+      }
+    });
+    const subtotal = civil + handling + airport + other;
     const inv: Partial<InvoiceRow> = {
       invoice_no: `LNK-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
       date: new Date().toISOString().slice(0, 10),
@@ -425,15 +436,17 @@ export default function InvoicesPage() {
       operator: group.airline,
       station: group.station,
       billing_period: billingMonth,
-      handling: group.serviceCharges + group.baseFees,
-      other: group.overtime,
-      civil_aviation: 0, airport_charges: 0, catering: 0,
-      subtotal: group.total, vat: 0, total: group.total,
+      civil_aviation: civil,
+      handling,
+      airport_charges: airport,
+      catering: 0,
+      other,
+      subtotal, vat: 0, total: subtotal,
       currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus,
       invoice_type: "Preliminary" as InvoiceType,
       description: `${group.flights} flights — ${group.station} — ${billingMonth}`,
-      flight_ref: group.items.map((d: any) => d.flight_no).join(", "),
-      notes: `Auto-generated from ${group.flights} completed dispatch records`,
+      flight_ref: group.items.map((d: any) => d.flight_no).filter(Boolean).join(", "),
+      notes: `Auto-generated from ${group.sources.dispatches} dispatch + ${group.sources.reports} service-report record(s)`,
     };
     await add(inv as any);
     toast({ title: "✅ Invoice Created", description: `Draft invoice for ${group.airline} at ${group.station}` });
