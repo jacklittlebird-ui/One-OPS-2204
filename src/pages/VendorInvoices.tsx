@@ -276,7 +276,7 @@ export default function VendorInvoicesPage() {
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" onClick={() => setDetailItem(v)}><Eye size={14} /></Button>
                         <Button size="icon" variant="ghost" onClick={() => openEdit(v)}><Pencil size={14} /></Button>
-                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(v.id)}><Trash2 size={14} /></Button>
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => auditedRemove(v)}><Trash2 size={14} /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
