@@ -128,34 +128,43 @@ export default function VendorInvoicesPage() {
               <DialogHeader><DialogTitle>{editItem ? "Edit Vendor Invoice" : "New Vendor Invoice"}</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <Input placeholder="Invoice No" value={form.invoice_no} onChange={e => setForm({ ...form, invoice_no: e.target.value })} />
-                  <Select value={form.vendor_id || "none"} onValueChange={v => {
-                    const provider = (providers || []).find(p => p.id === v);
-                    setForm({ ...form, vendor_id: v === "none" ? "" : v, vendor_name: provider?.name || form.vendor_name });
-                  }}>
-                    <SelectTrigger><SelectValue placeholder="Select Vendor" /></SelectTrigger>
-                    <SelectContent><SelectItem value="none">Manual Entry</SelectItem>{(providers || []).map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <div><label className="text-xs text-muted-foreground">Invoice No</label><Input value={form.invoice_no} onChange={e => setForm({ ...form, invoice_no: e.target.value })} /></div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Vendor</label>
+                    <Select value={form.vendor_id || "none"} onValueChange={v => {
+                      const provider = (providers || []).find(p => p.id === v);
+                      setForm({ ...form, vendor_id: v === "none" ? "" : v, vendor_name: provider?.name || form.vendor_name });
+                    }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="none">Manual Entry</SelectItem>{(providers || []).map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <Input placeholder="Vendor Name" value={form.vendor_name} onChange={e => setForm({ ...form, vendor_name: e.target.value })} />
+                <div><label className="text-xs text-muted-foreground">Vendor Name</label><Input value={form.vendor_name} onChange={e => setForm({ ...form, vendor_name: e.target.value })} /></div>
                 <div className="grid grid-cols-3 gap-2">
                   <div><label className="text-xs text-muted-foreground">Date</label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
                   <div><label className="text-xs text-muted-foreground">Due Date</label><Input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} /></div>
-                  <Select value={form.currency} onValueChange={v => setForm({ ...form, currency: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="EUR">EUR</SelectItem><SelectItem value="EGP">EGP</SelectItem></SelectContent>
-                  </Select>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Currency</label>
+                    <Select value={form.currency} onValueChange={v => setForm({ ...form, currency: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="EUR">EUR</SelectItem><SelectItem value="EGP">EGP</SelectItem></SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <Input type="number" placeholder="Amount" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
-                  <Input type="number" placeholder="VAT" value={form.vat} onChange={e => setForm({ ...form, vat: e.target.value })} />
-                  <div className="flex items-center px-3 bg-muted rounded text-sm font-mono">{(Number(form.amount) + Number(form.vat)).toLocaleString()}</div>
+                  <div><label className="text-xs text-muted-foreground">Amount</label><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></div>
+                  <div><label className="text-xs text-muted-foreground">VAT</label><Input type="number" value={form.vat} onChange={e => setForm({ ...form, vat: e.target.value })} /></div>
+                  <div><label className="text-xs text-muted-foreground">Total</label><div className="flex items-center px-3 h-10 bg-muted rounded text-sm font-mono">{(Number(form.amount) + Number(form.vat)).toLocaleString()}</div></div>
                 </div>
-                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Received">Received</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Paid">Paid</SelectItem><SelectItem value="Overdue">Overdue</SelectItem></SelectContent>
-                </Select>
-                <Input placeholder="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+                <div>
+                  <label className="text-xs text-muted-foreground">Status</label>
+                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Received">Received</SelectItem><SelectItem value="Approved">Approved</SelectItem><SelectItem value="Paid">Paid</SelectItem><SelectItem value="Overdue">Overdue</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div><label className="text-xs text-muted-foreground">Notes</label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
                 <Button className="w-full" onClick={handleSave}>{editItem ? "Update" : "Save"}</Button>
               </div>
             </DialogContent>
