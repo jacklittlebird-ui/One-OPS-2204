@@ -404,14 +404,16 @@ export default function InvoicesPage() {
     });
 
     // 2) Service Reports (handling side) — approved & in selected month/station
-    const matchedReports = (serviceReports || []).filter((r: any) => {
+    const matchedReports = includeHandling ? (serviceReports || []).filter((r: any) => {
       const dt = (r.arrival_date || r.flight_date || "").toString();
       const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || r.station === billingStation;
       const status = (r.review_status || "").toString().toLowerCase();
       const isApproved = status === "approved" || status.includes("billing");
-      return isApproved && matchMonth && matchStation;
-    });
+      const ht = (r.handling_type || "").toString().toLowerCase();
+      const isSecurityReport = ht.includes("security");
+      return isApproved && matchMonth && matchStation && !isSecurityReport;
+    }) : [];
     matchedReports.forEach((r: any) => {
       const airline = r.operator || r.airline || "Unknown";
       const station = r.station || "—";
@@ -428,7 +430,7 @@ export default function InvoicesPage() {
     });
 
     return Object.values(grouped);
-  }, [dispatches, serviceReports, billingMonth, billingStation]);
+  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab]);
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
     let civil = 0, handling = 0, airport = 0, other = 0;
