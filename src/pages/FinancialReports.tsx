@@ -251,10 +251,40 @@ export default function FinancialReportsPage() {
     XLSX.writeFile(wb, `BalanceSheet_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Financial Reports</h1>
+  // PDF exports
+  const handlePdfTrialBalance = () => {
+    exportToPdf({
+      title: "Trial Balance", subtitle: `As of ${new Date().toLocaleDateString()}`,
+      head: [["Code", "Account", "Type", "Debit", "Credit"]],
+      body: trialBalance.filter(a => a.balanceDebit > 0 || a.balanceCredit > 0).map(a => [a.code, a.name, a.account_type, a.balanceDebit.toLocaleString(), a.balanceCredit.toLocaleString()])
+        .concat([["", "TOTAL", "", tbTotalDebit.toLocaleString(), tbTotalCredit.toLocaleString()]]),
+      fileName: `TrialBalance_${new Date().toISOString().slice(0,10)}.pdf`, orientation: "portrait",
+    });
+    logAudit({ action: "export", entity_type: "trial_balance", details: { format: "pdf" } });
+  };
+
+  const handlePdfPL = () => {
+    const body: (string | number)[][] = [["REVENUE", ""]];
+    revenues.filter(a => a.balanceCredit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceCredit.toLocaleString()]));
+    body.push(["Total Revenue", totalRevenue.toLocaleString()], ["EXPENSES", ""]);
+    expenses.filter(a => a.balanceDebit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceDebit.toLocaleString()]));
+    body.push(["Total Expenses", totalExpenses.toLocaleString()], ["NET INCOME", netIncome.toLocaleString()]);
+    exportToPdf({ title: "Profit & Loss Statement", head: [["Account", "Amount"]], body, fileName: `PL_${new Date().toISOString().slice(0,10)}.pdf` });
+    logAudit({ action: "export", entity_type: "profit_loss", details: { format: "pdf" } });
+  };
+
+  const handlePdfBalanceSheet = () => {
+    const body: (string | number)[][] = [["ASSETS", ""]];
+    assets.filter(a => a.balanceDebit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceDebit.toLocaleString()]));
+    body.push(["Total Assets", totalAssets.toLocaleString()], ["LIABILITIES", ""]);
+    liabilities.filter(a => a.balanceCredit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceCredit.toLocaleString()]));
+    body.push(["Total Liabilities", totalLiabilities.toLocaleString()], ["EQUITY", ""]);
+    equity.filter(a => a.balanceCredit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceCredit.toLocaleString()]));
+    body.push(["  Net Income", netIncome.toLocaleString()], ["Total Equity", totalEquity.toLocaleString()]);
+    exportToPdf({ title: "Balance Sheet", head: [["Account", "Amount"]], body, fileName: `BalanceSheet_${new Date().toISOString().slice(0,10)}.pdf` });
+    logAudit({ action: "export", entity_type: "balance_sheet", details: { format: "pdf" } });
+  };
+
         <p className="text-muted-foreground text-sm">التقارير المالية · Trial Balance, P&L, Balance Sheet</p>
       </div>
 
