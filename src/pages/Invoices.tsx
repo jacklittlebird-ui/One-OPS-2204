@@ -14,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useChannel } from "@/contexts/ChannelContext";
 import InvoicePrintView from "@/components/InvoicePrintView";
+import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
 
@@ -356,6 +357,9 @@ export default function InvoicesPage() {
     airportCharges: inv.airport_charges, catering: inv.catering, other: inv.other,
     subtotal: inv.subtotal, vat: inv.vat, total: inv.total, currency: inv.currency,
     status: inv.status, notes: inv.notes,
+    station: inv.station, billingPeriod: inv.billing_period,
+    _isSecurity: ((inv.invoice_no || "").toUpperCase().includes("-SEC")) ||
+      `${inv.description || ""} ${inv.notes || ""}`.toLowerCase().includes("security"),
   });
 
   const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
@@ -1208,7 +1212,10 @@ export default function InvoicesPage() {
       {/* Modals */}
       {showAdd && <InvoiceForm title="New Invoice" data={newInvoice} onChange={setNewInvoice} onSave={saveNew} onCancel={() => setShowAdd(false)} />}
       {editId && <InvoiceForm title="Edit Invoice" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} />}
-      {printInvoice && <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />}
+      {printInvoice && (printInvoice._isSecurity
+        ? <SecurityInvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
+        : <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
+      )}
       {detailInvoice && (
         <InvoiceDetailModal
           invoice={detailInvoice as any}
