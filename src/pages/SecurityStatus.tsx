@@ -54,7 +54,7 @@ export default function SecurityStatus() {
     const { data } = await supabase
       .from("security_check_runs")
       .select("*").order("created_at", { ascending: false }).limit(2);
-    setHistory((data as StoredRun[]) ?? []);
+    setHistory(((data ?? []) as unknown) as StoredRun[]);
   };
 
   const run = async () => {
