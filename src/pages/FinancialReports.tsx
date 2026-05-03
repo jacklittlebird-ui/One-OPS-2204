@@ -279,7 +279,10 @@ export default function FinancialReportsPage() {
         {/* Trial Balance */}
         <TabsContent value="trial-balance">
           <Card>
-            <CardHeader><CardTitle className="text-lg">Trial Balance — ميزان المراجعة</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Trial Balance — ميزان المراجعة</CardTitle>
+              <Button variant="outline" size="sm" onClick={handleExportTrialBalance}><Download size={14} className="mr-1.5" /> Export Excel</Button>
+            </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
