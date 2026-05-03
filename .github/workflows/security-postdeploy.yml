@@ -1,0 +1,34 @@
+name: Security Post-Deploy Check
+
+on:
+  deployment_status:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  postdeploy-check:
+    if: ${{ github.event.deployment_status.state == 'success' || github.event_name != 'deployment_status' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invoke security-postdeploy-check
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -e
+          response=$(curl -sS -o /tmp/out.json -w "%{http_code}" \
+            -X POST "$SUPABASE_URL/functions/v1/security-postdeploy-check" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "apikey: $SUPABASE_ANON_KEY")
+          cat /tmp/out.json
+          echo "HTTP: $response"
+          if [ "$response" != "200" ]; then
+            echo "::error::Security post-deploy check FAILED"
+            exit 1
+          fi
+          passed=$(jq -r '.passed' /tmp/out.json)
+          if [ "$passed" != "true" ]; then
+            echo "::error::One or more security checks did not pass"
+            exit 1
+          fi
