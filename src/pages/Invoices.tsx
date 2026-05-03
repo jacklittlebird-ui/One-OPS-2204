@@ -1036,8 +1036,8 @@ export default function InvoicesPage() {
           {/* Category tabs — Handling vs Security (system-wide split) */}
           <div className="flex border-b -mx-4 px-4">
             {([
-              { k: "handling", label: "Handling" },
               { k: "security", label: "Security" },
+              { k: "handling", label: "Handling" },
             ] as const).map(t => (
               <button
                 key={t.k}
