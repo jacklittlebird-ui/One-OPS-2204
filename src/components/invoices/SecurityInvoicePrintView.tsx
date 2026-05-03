@@ -153,9 +153,9 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
               </thead>
               <tbody>
                 {stations.map(([st, g], idx) => (
-                  <>
+                  <tbody key={st} className="contents">
                     {g.security > 0 && (
-                      <tr key={`${st}-sec`} className="border-b border-gray-300">
+                      <tr className="border-b border-gray-300">
                         <td className="px-3 py-1.5 w-32 text-xs">
                           {idx === 0 && periodFrom ? periodFrom : ""}
                         </td>
@@ -164,7 +164,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                       </tr>
                     )}
                     {g.extra > 0 && (
-                      <tr key={`${st}-ext`} className="border-b border-gray-300">
+                      <tr className="border-b border-gray-300">
                         <td className="px-3 py-1.5 text-xs">
                           {idx === 0 && periodTo && g.security === 0 ? periodTo : ""}
                           {idx === 0 && periodTo && g.security > 0 ? periodTo : ""}
@@ -173,7 +173,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                         <td className="px-3 py-1.5 text-right">{fmtMoney(g.extra, invoice.currency)}</td>
                       </tr>
                     )}
-                  </>
+                  </tbody>
                 ))}
                 {/* VAT row */}
                 <tr className="border-t border-gray-700">
