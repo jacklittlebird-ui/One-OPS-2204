@@ -159,6 +159,7 @@ export default function InvoicesPage() {
   }, [regByFlightNo]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [categoryTab, setCategoryTab] = useState<"all" | "handling" | "security">("all");
   const [typeFilter, setTypeFilter] = useState("All");
   const [currencyFilter, setCurrencyFilter] = useState("All");
   const [operatorFilter, setOperatorFilter] = useState("All");
@@ -213,6 +214,14 @@ export default function InvoicesPage() {
 
   const filtered = useMemo(() => {
     let r = invoices;
+    // Category split — Security invoices are tagged via invoice_no suffix "-SEC" or description/notes containing "Security"
+    const isSecurity = (i: any) => {
+      const no = (i.invoice_no || "").toUpperCase();
+      const d = `${i.description || ""} ${i.notes || ""}`.toLowerCase();
+      return no.includes("-SEC") || d.includes("security");
+    };
+    if (categoryTab === "handling") r = r.filter(i => !isSecurity(i));
+    else if (categoryTab === "security") r = r.filter(i => isSecurity(i));
     if (statusFilter !== "All") r = r.filter(i => i.status === statusFilter);
     if (typeFilter !== "All") r = r.filter(i => (i.invoice_type || "Preliminary") === typeFilter);
     if (currencyFilter !== "All") r = r.filter(i => i.currency === currencyFilter);
@@ -227,7 +236,7 @@ export default function InvoicesPage() {
     if (maxT !== null) r = r.filter(i => (i.total || 0) <= maxT);
     if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s) || (i.notes || "").toLowerCase().includes(s)); }
     return r;
-  }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search]);
+  }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search, categoryTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -1018,6 +1027,25 @@ export default function InvoicesPage() {
       <div className="bg-card rounded-lg border overflow-hidden">
         {/* Toolbar */}
         <div className="p-4 border-b space-y-3">
+          {/* Category tabs — Handling vs Security (system-wide split) */}
+          <div className="flex border-b -mx-4 px-4">
+            {([
+              { k: "all", label: "All Invoices" },
+              { k: "handling", label: "Handling" },
+              { k: "security", label: "Security" },
+            ] as const).map(t => (
+              <button
+                key={t.k}
+                type="button"
+                onClick={() => { setCategoryTab(t.k); setPage(1); }}
+                className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                  categoryTab === t.k ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-base font-semibold text-foreground mr-auto">Invoice Records</h2>
             <div className="relative">
