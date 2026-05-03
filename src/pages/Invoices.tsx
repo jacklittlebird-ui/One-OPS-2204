@@ -159,7 +159,7 @@ export default function InvoicesPage() {
   }, [regByFlightNo]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [categoryTab, setCategoryTab] = useState<"all" | "handling" | "security">("all");
+  const [categoryTab, setCategoryTab] = useState<"handling" | "security">("handling");
   const [typeFilter, setTypeFilter] = useState("All");
   const [currencyFilter, setCurrencyFilter] = useState("All");
   const [operatorFilter, setOperatorFilter] = useState("All");
@@ -1036,7 +1036,6 @@ export default function InvoicesPage() {
           {/* Category tabs — Handling vs Security (system-wide split) */}
           <div className="flex border-b -mx-4 px-4">
             {([
-              { k: "all", label: "All Invoices" },
               { k: "handling", label: "Handling" },
               { k: "security", label: "Security" },
             ] as const).map(t => (
