@@ -352,27 +352,83 @@ export default function InvoicesPage() {
   const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
 
   // Billing preview: group completed dispatches by airline+station for the month
+  const _rollupReport = (r: any) => {
+    const civil = Number(r.civil_aviation_fee) || 0;
+    const handling = Number(r.handling_fee) || 0;
+    const airport =
+      (Number(r.airport_charge) || 0) +
+      (Number(r.landing_charge) || 0) +
+      (Number(r.parking_charge) || 0) +
+      (Number(r.housing_charge) || 0);
+    const other =
+      (Number(r.fuel_charge) || 0) +
+      (Number(r.catering_charge) || 0) +
+      (Number(r.hotac_charge) || 0);
+    const lineTotal = Number(r.total_cost) || (civil + handling + airport + other);
+    return { civil, handling, airport, other, total: lineTotal };
+  };
+
   const billingPreviewData = useMemo(() => {
-    const completed = dispatches.filter((d: any) => {
+    type Group = { airline: string; station: string; flights: number; baseFees: number; serviceCharges: number; overtime: number; total: number; items: any[]; sources: { dispatches: number; reports: number } };
+    const grouped: Record<string, Group> = {};
+
+    // 1) Dispatch assignments (security side)
+    const completedDispatches = dispatches.filter((d: any) => {
       const matchMonth = d.flight_date?.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
       return d.status === "Completed" && matchMonth && matchStation;
     });
-    const grouped: Record<string, { airline: string; station: string; flights: number; baseFees: number; serviceCharges: number; overtime: number; total: number; items: any[] }> = {};
-    completed.forEach((d: any) => {
+    completedDispatches.forEach((d: any) => {
       const key = `${d.airline}__${d.station}`;
-      if (!grouped[key]) grouped[key] = { airline: d.airline, station: d.station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [] };
+      if (!grouped[key]) grouped[key] = { airline: d.airline, station: d.station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
       grouped[key].flights++;
+      grouped[key].sources.dispatches++;
       grouped[key].baseFees += d.base_fee || 0;
-      grouped[key].serviceCharges += d.service_rate || 0;
+      grouped[key].serviceCharges += (d.total_security_charges || d.service_rate || 0);
       grouped[key].overtime += d.overtime_charge || 0;
-      grouped[key].total += d.total_charge || 0;
-      grouped[key].items.push(d);
+      grouped[key].total += (d.total_security_charges || d.total_charge || 0);
+      grouped[key].items.push({ ...d, _source: "dispatch" });
     });
+
+    // 2) Service Reports (handling side) — approved & in selected month/station
+    const matchedReports = (serviceReports || []).filter((r: any) => {
+      const dt = (r.arrival_date || r.flight_date || "").toString();
+      const matchMonth = dt.startsWith(billingMonth);
+      const matchStation = billingStation === "All" || r.station === billingStation;
+      const status = (r.review_status || "").toString().toLowerCase();
+      const isApproved = status === "approved" || status.includes("billing");
+      return isApproved && matchMonth && matchStation;
+    });
+    matchedReports.forEach((r: any) => {
+      const airline = r.operator || r.airline || "Unknown";
+      const station = r.station || "—";
+      const key = `${airline}__${station}`;
+      if (!grouped[key]) grouped[key] = { airline, station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
+      const m = _rollupReport(r);
+      grouped[key].flights++;
+      grouped[key].sources.reports++;
+      grouped[key].baseFees += m.civil;
+      grouped[key].serviceCharges += m.handling + m.airport;
+      grouped[key].overtime += m.other;
+      grouped[key].total += m.total;
+      grouped[key].items.push({ ...r, _source: "report" });
+    });
+
     return Object.values(grouped);
-  }, [dispatches, billingMonth, billingStation]);
+  }, [dispatches, serviceReports, billingMonth, billingStation]);
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
+    let civil = 0, handling = 0, airport = 0, other = 0;
+    group.items.forEach((it: any) => {
+      if (it._source === "report") {
+        const m = _rollupReport(it);
+        civil += m.civil; handling += m.handling; airport += m.airport; other += m.other;
+      } else {
+        handling += (it.total_security_charges || it.service_rate || 0) + (it.base_fee || 0);
+        other += (it.overtime_charge || 0);
+      }
+    });
+    const subtotal = civil + handling + airport + other;
     const inv: Partial<InvoiceRow> = {
       invoice_no: `LNK-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
       date: new Date().toISOString().slice(0, 10),
@@ -380,15 +436,17 @@ export default function InvoicesPage() {
       operator: group.airline,
       station: group.station,
       billing_period: billingMonth,
-      handling: group.serviceCharges + group.baseFees,
-      other: group.overtime,
-      civil_aviation: 0, airport_charges: 0, catering: 0,
-      subtotal: group.total, vat: 0, total: group.total,
+      civil_aviation: civil,
+      handling,
+      airport_charges: airport,
+      catering: 0,
+      other,
+      subtotal, vat: 0, total: subtotal,
       currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus,
       invoice_type: "Preliminary" as InvoiceType,
       description: `${group.flights} flights — ${group.station} — ${billingMonth}`,
-      flight_ref: group.items.map((d: any) => d.flight_no).join(", "),
-      notes: `Auto-generated from ${group.flights} completed dispatch records`,
+      flight_ref: group.items.map((d: any) => d.flight_no).filter(Boolean).join(", "),
+      notes: `Auto-generated from ${group.sources.dispatches} dispatch + ${group.sources.reports} service-report record(s)`,
     };
     await add(inv as any);
     toast({ title: "✅ Invoice Created", description: `Draft invoice for ${group.airline} at ${group.station}` });
@@ -1084,14 +1142,14 @@ export default function InvoicesPage() {
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Showing completed dispatches grouped by airline & station for <span className="font-semibold text-foreground">{billingMonth}</span>
+                Showing completed dispatches <span className="font-semibold">and approved Service Reports</span> grouped by airline &amp; station for <span className="font-semibold text-foreground">{billingMonth}</span>
               </p>
 
               {billingPreviewData.length === 0 ? (
                 <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
                   <FileText size={32} className="mx-auto mb-2 opacity-40" />
-                  <p className="font-semibold">No completed dispatches found</p>
-                  <p className="text-xs mt-1">Complete dispatch assignments to generate invoices</p>
+                  <p className="font-semibold">No billable flights found</p>
+                  <p className="text-xs mt-1">Approve Service Reports or complete dispatch assignments to generate invoices</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1100,7 +1158,7 @@ export default function InvoicesPage() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <div className="font-semibold text-foreground">{g.airline}</div>
-                          <div className="text-xs text-muted-foreground">{g.station} — {g.flights} flights</div>
+                          <div className="text-xs text-muted-foreground">{g.station} — {g.flights} flights · {g.sources.reports} report{g.sources.reports === 1 ? "" : "s"} + {g.sources.dispatches} dispatch{g.sources.dispatches === 1 ? "" : "es"}</div>
                         </div>
                         <button onClick={() => generateInvoiceFromBilling(g)} className="toolbar-btn-primary text-xs py-1.5">
                           <Plus size={12} /> Create Draft Invoice
