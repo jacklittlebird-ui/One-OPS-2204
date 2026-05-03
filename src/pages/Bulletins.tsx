@@ -157,32 +157,38 @@ export default function BulletinsPage() {
           <DialogHeader><DialogTitle>{editItem ? "Edit Bulletin" : "New Bulletin"}</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Bulletin ID" value={form.bulletin_id} onChange={e => setForm({ ...form, bulletin_id: e.target.value })} />
-              <Input placeholder="Category Code" value={form.category_code} onChange={e => setForm({ ...form, category_code: e.target.value })} />
+              <div><label className="text-xs text-muted-foreground">Bulletin ID</label><Input value={form.bulletin_id} onChange={e => setForm({ ...form, bulletin_id: e.target.value })} /></div>
+              <div><label className="text-xs text-muted-foreground">Category Code</label><Input value={form.category_code} onChange={e => setForm({ ...form, category_code: e.target.value })} /></div>
             </div>
-            <Input placeholder="Title *" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+            <div><label className="text-xs text-muted-foreground">Title *</label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
             <div className="grid grid-cols-3 gap-2">
-              <Select value={form.type} onValueChange={v => setForm({ ...form, type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-              </Select>
-              <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="High">High</SelectItem><SelectItem value="Low">Low</SelectItem><SelectItem value="Medium">Medium</SelectItem></SelectContent>
-              </Select>
-              <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Expired">Expired</SelectItem><SelectItem value="Superseded">Superseded</SelectItem></SelectContent>
-              </Select>
+              <div><label className="text-xs text-muted-foreground">Type</label>
+                <Select value={form.type} onValueChange={v => setForm({ ...form, type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><label className="text-xs text-muted-foreground">Priority</label>
+                <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="High">High</SelectItem><SelectItem value="Low">Low</SelectItem><SelectItem value="Medium">Medium</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div><label className="text-xs text-muted-foreground">Status</label>
+                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Expired">Expired</SelectItem><SelectItem value="Superseded">Superseded</SelectItem></SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div><label className="text-xs text-muted-foreground">Issued</label><Input type="date" value={form.issued_date} onChange={e => setForm({ ...form, issued_date: e.target.value })} /></div>
               <div><label className="text-xs text-muted-foreground">Effective</label><Input type="date" value={form.effective_date} onChange={e => setForm({ ...form, effective_date: e.target.value })} /></div>
               <div><label className="text-xs text-muted-foreground">Expiry</label><Input type="date" value={form.expiry_date} onChange={e => setForm({ ...form, expiry_date: e.target.value })} /></div>
             </div>
-            <Input placeholder="Issued By" value={form.issued_by} onChange={e => setForm({ ...form, issued_by: e.target.value })} />
-            <Input placeholder="Recipients (comma-separated)" value={form.recipients} onChange={e => setForm({ ...form, recipients: e.target.value })} />
-            <textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full text-sm border rounded px-3 py-2 bg-card text-foreground min-h-[80px]" />
+            <div><label className="text-xs text-muted-foreground">Issued By</label><Input value={form.issued_by} onChange={e => setForm({ ...form, issued_by: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground">Recipients (comma-separated)</label><Input value={form.recipients} onChange={e => setForm({ ...form, recipients: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground">Description</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full text-sm border rounded px-3 py-2 bg-card text-foreground min-h-[80px]" /></div>
             <Button className="w-full" onClick={handleSave}>{editItem ? "Update" : "Create"}</Button>
           </div>
         </DialogContent>

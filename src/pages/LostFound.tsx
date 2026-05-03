@@ -193,41 +193,47 @@ export default function LostFoundPage() {
           <DialogHeader><DialogTitle>{editItem ? "Edit Item" : "Report Lost Item"}</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Item ID" value={form.item_id} onChange={e => setForm({ ...form, item_id: e.target.value })} />
-              <Input type="date" value={form.report_date} onChange={e => setForm({ ...form, report_date: e.target.value })} />
+              <div><label className="text-xs text-muted-foreground">Item ID</label><Input value={form.item_id} onChange={e => setForm({ ...form, item_id: e.target.value })} /></div>
+              <div><label className="text-xs text-muted-foreground">Report Date</label><Input type="date" value={form.report_date} onChange={e => setForm({ ...form, report_date: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Input placeholder="Flight No" value={form.flight_no} onChange={e => setForm({ ...form, flight_no: e.target.value.toUpperCase() })} />
-              <Input placeholder="Airline" value={form.airline} onChange={e => setForm({ ...form, airline: e.target.value })} />
-              <Input placeholder="Station" value={form.station} onChange={e => setForm({ ...form, station: e.target.value.toUpperCase() })} />
+              <div><label className="text-xs text-muted-foreground">Flight No</label><Input value={form.flight_no} onChange={e => setForm({ ...form, flight_no: e.target.value.toUpperCase() })} /></div>
+              <div><label className="text-xs text-muted-foreground">Airline</label><Input value={form.airline} onChange={e => setForm({ ...form, airline: e.target.value })} /></div>
+              <div><label className="text-xs text-muted-foreground">Station</label><Input value={form.station} onChange={e => setForm({ ...form, station: e.target.value.toUpperCase() })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Select value={form.terminal || "T1"} onValueChange={v => setForm({ ...form, terminal: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="T1">Terminal 1</SelectItem><SelectItem value="T2">Terminal 2</SelectItem><SelectItem value="T3">Terminal 3</SelectItem></SelectContent>
-              </Select>
-              <Select value={form.category || "Bag"} onValueChange={v => setForm({ ...form, category: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-              </Select>
-              <Input placeholder="Weight" value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} />
+              <div><label className="text-xs text-muted-foreground">Terminal</label>
+                <Select value={form.terminal || "T1"} onValueChange={v => setForm({ ...form, terminal: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="T1">Terminal 1</SelectItem><SelectItem value="T2">Terminal 2</SelectItem><SelectItem value="T3">Terminal 3</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div><label className="text-xs text-muted-foreground">Category</label>
+                <Select value={form.category || "Bag"} onValueChange={v => setForm({ ...form, category: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><label className="text-xs text-muted-foreground">Weight</label><Input value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} /></div>
             </div>
-            <Input placeholder="Description *" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            <div><label className="text-xs text-muted-foreground">Description *</label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Color" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
-              <Input placeholder="Brand" value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} />
+              <div><label className="text-xs text-muted-foreground">Color</label><Input value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} /></div>
+              <div><label className="text-xs text-muted-foreground">Brand</label><Input value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} /></div>
             </div>
-            <Input placeholder="Found By" value={form.found_by} onChange={e => setForm({ ...form, found_by: e.target.value })} />
+            <div><label className="text-xs text-muted-foreground">Found By</label><Input value={form.found_by} onChange={e => setForm({ ...form, found_by: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Owner Name" value={form.owner_name} onChange={e => setForm({ ...form, owner_name: e.target.value })} />
-              <Input placeholder="Owner Contact" value={form.owner_contact} onChange={e => setForm({ ...form, owner_contact: e.target.value })} />
+              <div><label className="text-xs text-muted-foreground">Owner Name</label><Input value={form.owner_name} onChange={e => setForm({ ...form, owner_name: e.target.value })} /></div>
+              <div><label className="text-xs text-muted-foreground">Owner Contact</label><Input value={form.owner_contact} onChange={e => setForm({ ...form, owner_contact: e.target.value })} /></div>
             </div>
-            <Input placeholder="Storage Location" value={form.storage_location} onChange={e => setForm({ ...form, storage_location: e.target.value })} />
-            <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="Reported">Reported</SelectItem><SelectItem value="In Storage">In Storage</SelectItem><SelectItem value="Claimed">Claimed</SelectItem><SelectItem value="Forwarded">Forwarded</SelectItem><SelectItem value="Disposed">Disposed</SelectItem></SelectContent>
-            </Select>
-            <Input placeholder="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+            <div><label className="text-xs text-muted-foreground">Storage Location</label><Input value={form.storage_location} onChange={e => setForm({ ...form, storage_location: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground">Status</label>
+              <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="Reported">Reported</SelectItem><SelectItem value="In Storage">In Storage</SelectItem><SelectItem value="Claimed">Claimed</SelectItem><SelectItem value="Forwarded">Forwarded</SelectItem><SelectItem value="Disposed">Disposed</SelectItem></SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-xs text-muted-foreground">Notes</label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
             <Button className="w-full" onClick={handleSave}>{editItem ? "Update" : "Report Item"}</Button>
           </div>
         </DialogContent>
