@@ -462,13 +462,19 @@ function HandlingServiceReportContent() {
       return isStationOriginated && c.status !== "Approved";
     };
 
+    // Exclude Security Service flights entirely from the Handling Service Report.
+    // Security flights belong only to the Security tab and must NOT appear in Handling
+    // (prevents double-billing and category overlap).
+    const isSecurityFlight = (c: any) => {
+      const remarks = (c.remarks || "") as string;
+      return c.purpose === "Security Service" || remarks.includes("Added from Security Service");
+    };
+
     return (dbFlights as any[])
       .filter((c: any) => getScheduleFlightNo(c))
+      .filter((c: any) => !isSecurityFlight(c))
       .filter((c: any) => !isStationOriginatedPending(c))
       .filter((c: any) => {
-        // When station-scoped, include any flight that touches the user's station
-        // anywhere in the route (origin, intermediate, or destination), or is
-        // explicitly assigned to that station by authority.
         if (!isStationScoped) return true;
         return flightTouchesStation(c, userStation);
       })
@@ -554,9 +560,11 @@ function HandlingServiceReportContent() {
     });
 
     reports.forEach(r => {
-      if (!usedReportIds.has(r.id!)) {
-        rows.push({ ...r, isLinked: true });
-      }
+      if (usedReportIds.has(r.id!)) return;
+      // Skip security-typed reports — they belong to the Security tab only
+      const ht = (r.handlingType || "").toString().toLowerCase();
+      if (ht.includes("security")) return;
+      rows.push({ ...r, isLinked: true });
     });
 
     return rows;
