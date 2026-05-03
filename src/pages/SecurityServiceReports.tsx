@@ -520,6 +520,43 @@ export default function SecurityServiceReportsPage() {
 
   const saveEdit = () => {};
 
+  const [bulkSaving, setBulkSaving] = useState(false);
+  // Receivables bulk action: compute & persist Security Charges for ALL eligible
+  // rows (Station + Operations done) in one click — instead of opening Edit
+  // dialog per flight to press "Save Security Charges".
+  const saveAllSecurityCharges = async () => {
+    const eligible = filtered.filter(r => {
+      if ((r as any).isPending) return false;
+      const reviewDone = (r.review_status || "").toLowerCase() === "approved" || (r.review_status || "").toLowerCase().includes("billing");
+      return r.status === "Completed" && reviewDone && r.contract_id;
+    });
+    if (eligible.length === 0) {
+      toast({ title: "No eligible flights", description: "Only completed & operations-approved flights with a linked contract can be auto-billed.", variant: "destructive" });
+      return;
+    }
+    setBulkSaving(true);
+    let ok = 0, skipped = 0, failed = 0;
+    for (const r of eligible) {
+      const c = computeRowCharges(r);
+      if (!c.amount) { skipped++; continue; }
+      const { error } = await supabase.from("dispatch_assignments").update({
+        charges_breakdown: c.lines,
+        total_security_charges: c.amount,
+        charges_currency: c.currency,
+        review_status: "Ready for Billing",
+      } as any).eq("id", r.id);
+      if (error) failed++; else ok++;
+    }
+    setBulkSaving(false);
+    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+    toast({
+      title: failed ? "Completed with errors" : "✅ All charges saved",
+      description: `${ok} saved, ${skipped} skipped (no rate), ${failed} failed. Marked Ready for Billing.`,
+      variant: failed ? "destructive" : undefined,
+    });
+  };
+
+
   const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
     const shiftStart = taskSheet.shift_start || row.actual_start || "";
     const shiftEnd = taskSheet.shift_end || row.actual_end || "";
