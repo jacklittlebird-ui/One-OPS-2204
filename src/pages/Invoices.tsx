@@ -265,17 +265,24 @@ export default function InvoicesPage() {
       if ((data as any)?.error) throw new Error((data as any).error);
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["journal_entries"] });
+      logAudit({ action: "approve", entity_type: "invoice", entity_id: inv.id, details: { invoice_no: inv.invoice_no, total: inv.total, currency: inv.currency, journal_entry_no: (data as any)?.entry_no } });
       toast({ title: "✅ Invoice Finalized", description: `Journal entry ${(data as any)?.entry_no} created and posted.` });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
 
+  const auditedRemove = async (id: string) => {
+    const inv = invoices?.find((i: InvoiceRow) => i.id === id);
+    await remove(id);
+    logAudit({ action: "delete", entity_type: "invoice", entity_id: id, details: { invoice_no: inv?.invoice_no, total: inv?.total } });
+  };
+
   // Bulk actions
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     if (!confirm(`Delete ${selectedIds.size} selected invoice(s)?`)) return;
-    for (const id of selectedIds) { await remove(id); }
+    for (const id of selectedIds) { await auditedRemove(id); }
     setSelectedIds(new Set());
   };
 
@@ -283,11 +290,13 @@ export default function InvoicesPage() {
     if (selectedIds.size === 0) return;
     for (const id of selectedIds) {
       await supabase.from("invoices").update({ status: newStatus } as any).eq("id", id);
+      logAudit({ action: "update", entity_type: "invoice", entity_id: id, details: { status: newStatus } });
     }
     queryClient.invalidateQueries({ queryKey: ["invoices"] });
     setSelectedIds(new Set());
     toast({ title: "Updated", description: `${selectedIds.size} invoice(s) marked as ${newStatus}` });
   };
+
 
   const toggleSelect = (id: string) => {
     const next = new Set(selectedIds);
