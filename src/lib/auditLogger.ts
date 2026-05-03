@@ -45,9 +45,11 @@ export async function logAudit(payload: AuditPayload): Promise<void> {
     let userEmail = payload.user_email;
     if (!userId || !userEmail) {
       const { data } = await supabase.auth.getUser();
-      userId = userId || data.user?.id || "00000000-0000-0000-0000-000000000000";
+      userId = userId || data.user?.id;
       userEmail = userEmail || data.user?.email || "anonymous";
     }
+    // RLS now requires user_id = auth.uid(); skip silently if unauthenticated
+    if (!userId) return;
     const ip = await getClientIp();
     await supabase.from("audit_logs").insert({
       user_id: userId,
