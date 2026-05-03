@@ -9,8 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { formatDateDMY } from "@/lib/utils";
+import { exportToExcel } from "@/lib/exportExcel";
 
 export type FieldType = "text" | "number" | "date" | "select" | "textarea";
 
@@ -103,6 +105,21 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
     toast({ title: "Deleted" }); load();
   };
 
+  const fieldTypeMap = useMemo(() => Object.fromEntries(fields.map(f => [f.key, f.type])), [fields]);
+
+  const handleExport = () => {
+    if (!filtered.length) { toast({ title: "No data", description: "Nothing to export." }); return; }
+    const rows = filtered.map(r => {
+      const o: Record<string, any> = {};
+      columns.forEach(c => {
+        const v = r[c.key];
+        o[c.label] = fieldTypeMap[c.key] === "date" ? formatDateDMY(v) : (v ?? "");
+      });
+      return o;
+    });
+    exportToExcel(rows, title.slice(0, 28), `${title.replace(/\s+/g, "_")}.xlsx`);
+  };
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -110,7 +127,10 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
           <h1 className="text-2xl font-bold">{title}</h1>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
-        <Button onClick={openAdd}><Plus size={16} className="mr-1" /> New</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport}><Download size={16} className="mr-1" /> Export</Button>
+          <Button onClick={openAdd}><Plus size={16} className="mr-1" /> New</Button>
+        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -134,7 +154,7 @@ export default function TreasuryTablePage({ title, description, table, orderBy, 
                 <TableRow><TableCell colSpan={columns.length + 1} className="text-center py-8 text-muted-foreground">No records</TableCell></TableRow>
               ) : filtered.map(r => (
                 <TableRow key={r.id}>
-                  {columns.map(c => <TableCell key={c.key}>{c.render ? c.render(r) : (r[c.key] ?? "—")}</TableCell>)}
+                  {columns.map(c => <TableCell key={c.key}>{c.render ? c.render(r) : (fieldTypeMap[c.key] === "date" ? formatDateDMY(r[c.key]) : (r[c.key] ?? "—"))}</TableCell>)}
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil size={14} /></Button>
                     <Button variant="ghost" size="icon" onClick={() => remove(r.id)}><Trash2 size={14} /></Button>
