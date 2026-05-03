@@ -73,10 +73,10 @@ export default function ReportsAdminPage() {
     return true;
   };
 
-  const fInvoices = useMemo(() => invoices.filter((i: any) => within(i.date) && (statusFilter === "all" || i.status === statusFilter)), [invoices, dateFrom, dateTo, statusFilter]);
-  const fVendor = useMemo(() => vendorInv.filter((v: any) => within(v.date) && (statusFilter === "all" || v.status === statusFilter)), [vendorInv, dateFrom, dateTo, statusFilter]);
-  const fJournal = useMemo(() => journalEntries.filter((j: any) => within(j.entry_date)), [journalEntries, dateFrom, dateTo]);
-  const fAudit = useMemo(() => auditLogs.filter((a: any) => within(a.created_at)), [auditLogs, dateFrom, dateTo]);
+  const fInvoices = useMemo(() => invoices.filter((i: any) => typeOk("invoice") && within(i.date) && (statusFilter === "all" || i.status === statusFilter) && matchesSearch(`${i.invoice_no} ${i.operator}`)), [invoices, dateFrom, dateTo, statusFilter, typeFilter, search]);
+  const fVendor = useMemo(() => vendorInv.filter((v: any) => typeOk("vendor") && within(v.date) && (statusFilter === "all" || v.status === statusFilter) && matchesSearch(`${v.invoice_no} ${v.vendor_name}`)), [vendorInv, dateFrom, dateTo, statusFilter, typeFilter, search]);
+  const fJournal = useMemo(() => journalEntries.filter((j: any) => typeOk("journal") && within(j.entry_date) && matchesSearch(`${j.entry_no} ${j.description}`)), [journalEntries, dateFrom, dateTo, typeFilter, search]);
+  const fAudit = useMemo(() => auditLogs.filter((a: any) => within(a.created_at) && matchesSearch(`${a.user_email} ${a.action} ${a.entity_type}`)), [auditLogs, dateFrom, dateTo, search]);
 
   const totalRevenue = fInvoices.reduce((s: number, i: any) => s + (Number(i.total) || 0), 0);
   const totalPayables = fVendor.reduce((s: number, v: any) => s + (Number(v.total) || 0), 0);
