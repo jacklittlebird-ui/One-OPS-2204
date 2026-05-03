@@ -352,6 +352,22 @@ export default function InvoicesPage() {
   const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
 
   // Billing preview: group completed dispatches by airline+station for the month
+  const _rollupReport = (r: any) => {
+    const civil = Number(r.civil_aviation_fee) || 0;
+    const handling = Number(r.handling_fee) || 0;
+    const airport =
+      (Number(r.airport_charge) || 0) +
+      (Number(r.landing_charge) || 0) +
+      (Number(r.parking_charge) || 0) +
+      (Number(r.housing_charge) || 0);
+    const other =
+      (Number(r.fuel_charge) || 0) +
+      (Number(r.catering_charge) || 0) +
+      (Number(r.hotac_charge) || 0);
+    const lineTotal = Number(r.total_cost) || (civil + handling + airport + other);
+    return { civil, handling, airport, other, total: lineTotal };
+  };
+
   const billingPreviewData = useMemo(() => {
     type Group = { airline: string; station: string; flights: number; baseFees: number; serviceCharges: number; overtime: number; total: number; items: any[]; sources: { dispatches: number; reports: number } };
     const grouped: Record<string, Group> = {};
