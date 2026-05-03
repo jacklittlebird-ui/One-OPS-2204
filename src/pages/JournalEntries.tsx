@@ -8,9 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Trash2, BookOpen, Check, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, BookOpen, Check, X, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
+import { logAudit } from "@/lib/auditLogger";
+import { exportToExcel } from "@/lib/exportExcel";
+import { exportToPdf } from "@/lib/exportPdf";
 
 type JournalEntry = { id: string; entry_no: string; entry_date: string; description: string; reference: string; reference_type: string; status: string; total_debit: number; total_credit: number; created_by: string; };
 type JournalLine = { id: string; entry_id: string; account_id: string; debit: number; credit: number; description: string; sort_order: number; };
