@@ -23,7 +23,7 @@ const BUCKET_COLORS = {
 };
 
 export default function AgingReportsPage() {
-  const { data: invoices = [], isLoading } = useSupabaseTable<InvoiceRow>("invoices", { orderBy: { column: "date", ascending: false } });
+  const { data: invoices = [], isLoading } = useSupabaseTable<InvoiceRow>("invoices", { orderBy: "date", ascending: false });
   const [search, setSearch] = useState("");
 
   const todayMs = useMemo(() => Date.now(), []);
