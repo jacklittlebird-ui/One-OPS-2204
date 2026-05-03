@@ -142,33 +142,42 @@ export default function ChartOfAccountsPage() {
               <DialogHeader><DialogTitle>{editItem ? "Edit Account" : "Add Account"}</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-2">
-                  <Input placeholder="Code (e.g. 1111)" value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} />
-                  <Input placeholder="Name (EN)" className="col-span-2" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                  <div><label className="text-xs text-muted-foreground">Code</label><Input value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} /></div>
+                  <div className="col-span-2"><label className="text-xs text-muted-foreground">Name (EN)</label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
                 </div>
-                <Input placeholder="الاسم بالعربي" value={form.name_ar} onChange={e => setForm({ ...form, name_ar: e.target.value })} />
+                <div><label className="text-xs text-muted-foreground">الاسم بالعربي</label><Input value={form.name_ar} onChange={e => setForm({ ...form, name_ar: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-2">
-                  <Select value={form.account_type} onValueChange={v => setForm({ ...form, account_type: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{["Asset", "Equity", "Expense", "Liability", "Revenue"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                  </Select>
-                  <Select value={form.parent_id || "none"} onValueChange={v => setForm({ ...form, parent_id: v === "none" ? "" : v })}>
-                    <SelectTrigger><SelectValue placeholder="Parent Account" /></SelectTrigger>
-                    <SelectContent><SelectItem value="none">No Parent (Root)</SelectItem>{groupAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} - {a.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Account Type</label>
+                    <Select value={form.account_type} onValueChange={v => setForm({ ...form, account_type: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{["Asset", "Equity", "Expense", "Liability", "Revenue"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Parent Account</label>
+                    <Select value={form.parent_id || "none"} onValueChange={v => setForm({ ...form, parent_id: v === "none" ? "" : v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="none">No Parent (Root)</SelectItem>{groupAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} - {a.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <Input type="number" placeholder="Level" value={form.level} onChange={e => setForm({ ...form, level: parseInt(e.target.value) || 1 })} min={1} />
-                  <Select value={form.currency} onValueChange={v => setForm({ ...form, currency: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="EGP">EGP</SelectItem><SelectItem value="EUR">EUR</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent>
-                  </Select>
-                  <Input type="number" placeholder="Opening Balance" value={form.opening_balance} onChange={e => setForm({ ...form, opening_balance: e.target.value })} />
+                  <div><label className="text-xs text-muted-foreground">Level</label><Input type="number" value={form.level} onChange={e => setForm({ ...form, level: parseInt(e.target.value) || 1 })} min={1} /></div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Currency</label>
+                    <Select value={form.currency} onValueChange={v => setForm({ ...form, currency: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="EGP">EGP</SelectItem><SelectItem value="EUR">EUR</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  <div><label className="text-xs text-muted-foreground">Opening Balance</label><Input type="number" value={form.opening_balance} onChange={e => setForm({ ...form, opening_balance: e.target.value })} /></div>
                 </div>
                 <div className="flex items-center gap-2">
                   <input type="checkbox" checked={form.is_group} onChange={e => setForm({ ...form, is_group: e.target.checked })} id="is_group" />
                   <label htmlFor="is_group" className="text-sm">Group Account (حساب تجميعي)</label>
                 </div>
-                <Input placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                <div><label className="text-xs text-muted-foreground">Description</label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
                 <Button className="w-full" onClick={handleSave}>{editItem ? "Update" : "Add"}</Button>
               </div>
             </DialogContent>

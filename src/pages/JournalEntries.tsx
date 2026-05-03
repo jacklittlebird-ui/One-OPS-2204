@@ -137,15 +137,18 @@ export default function JournalEntriesPage() {
             <DialogHeader><DialogTitle>{editEntry ? "Edit Journal Entry" : "New Journal Entry"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-4 gap-2">
-                <Input placeholder="Entry No" value={form.entry_no} onChange={e => setForm({ ...form, entry_no: e.target.value })} />
-                <Input type="date" value={form.entry_date} onChange={e => setForm({ ...form, entry_date: e.target.value })} />
-                <Input placeholder="Reference" value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} />
-                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Posted">Posted</SelectItem><SelectItem value="Void">Void</SelectItem></SelectContent>
-                </Select>
+                <div><label className="text-xs text-muted-foreground">Entry No</label><Input value={form.entry_no} onChange={e => setForm({ ...form, entry_no: e.target.value })} /></div>
+                <div><label className="text-xs text-muted-foreground">Entry Date</label><Input type="date" value={form.entry_date} onChange={e => setForm({ ...form, entry_date: e.target.value })} /></div>
+                <div><label className="text-xs text-muted-foreground">Reference</label><Input value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} /></div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Status</label>
+                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Posted">Posted</SelectItem><SelectItem value="Void">Void</SelectItem></SelectContent>
+                  </Select>
+                </div>
               </div>
-              <Input placeholder="Description / البيان" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+              <div><label className="text-xs text-muted-foreground">Description / البيان</label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
 
               {/* Lines */}
               <div className="border rounded-lg p-3 space-y-2">
