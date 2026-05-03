@@ -92,8 +92,8 @@ function FlightForm({ data, onChange, onSave, onCancel, title, isSaving }: {
               <FormField label="Origin"><input className={inputCls} value={data.origin || ""} onChange={e => set("origin", e.target.value)} placeholder="CAI" maxLength={3} /></FormField>
               <FormField label="Destination"><input className={inputCls} value={data.destination || ""} onChange={e => set("destination", e.target.value)} placeholder="AMS" maxLength={3} /></FormField>
               <FormField label="Terminal"><input className={inputCls} value={data.terminal || ""} onChange={e => set("terminal", e.target.value)} placeholder="T2" /></FormField>
-              <FormField label="Departure (LT)"><input type="time" className={inputCls} value={data.departure || ""} onChange={e => set("departure", e.target.value)} /></FormField>
-              <FormField label="Arrival (LT)"><input type="time" className={inputCls} value={data.arrival || ""} onChange={e => set("arrival", e.target.value)} /></FormField>
+              <FormField label="Departure (LT)"><MaskedTimeInput className={inputCls} value={data.departure || ""} onChange={v => set("departure", v)} /></FormField>
+              <FormField label="Arrival (LT)"><MaskedTimeInput className={inputCls} value={data.arrival || ""} onChange={v => set("arrival", v)} /></FormField>
               <FormField label="Days of Week"><input className={inputCls} value={data.days || ""} onChange={e => set("days", e.target.value)} placeholder="1.3.5.7" /></FormField>
             </div>
           </div>
