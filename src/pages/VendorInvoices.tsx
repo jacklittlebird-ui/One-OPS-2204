@@ -95,8 +95,19 @@ export default function VendorInvoicesPage() {
     const payload: any = { ...form, amount: Number(form.amount) || 0, vat: Number(form.vat) || 0 };
     if (!payload.vendor_id) delete payload.vendor_id;
     if (!payload.due_date) payload.due_date = new Date(new Date(payload.date).getTime() + 30 * 86400000).toISOString().slice(0, 10);
-    if (editItem) { await update({ id: editItem.id, ...payload }); } else { await add(payload); }
+    if (editItem) {
+      await update({ id: editItem.id, ...payload });
+      logAudit({ action: "update", entity_type: "vendor_invoice", entity_id: editItem.id, details: { invoice_no: payload.invoice_no, vendor: payload.vendor_name, amount: payload.amount } });
+    } else {
+      const created: any = await add(payload);
+      logAudit({ action: "create", entity_type: "vendor_invoice", entity_id: created?.id, details: { invoice_no: payload.invoice_no, vendor: payload.vendor_name, amount: payload.amount } });
+    }
     setDialogOpen(false);
+  };
+
+  const auditedRemove = async (v: VendorInvoiceRow) => {
+    await remove(v.id);
+    logAudit({ action: "delete", entity_type: "vendor_invoice", entity_id: v.id, details: { invoice_no: v.invoice_no, vendor: v.vendor_name } });
   };
 
   const handleExport = () => {
@@ -105,7 +116,20 @@ export default function VendorInvoicesPage() {
       "Due Date": v.due_date, Amount: v.amount, VAT: v.vat, Total: v.total,
       Currency: v.currency, Status: v.status, Notes: v.notes,
     })), "Vendor Invoices", "vendor_invoices.xlsx");
+    logAudit({ action: "export", entity_type: "vendor_invoices", details: { format: "xlsx", count: filtered.length } });
     toast({ title: "Exported", description: "Vendor invoices exported to Excel." });
+  };
+
+  const handleExportPdf = () => {
+    exportToPdf({
+      title: "Vendor Invoices",
+      subtitle: `${filtered.length} invoices`,
+      head: [["Invoice No", "Vendor", "Date", "Due Date", "Amount", "VAT", "Total", "Currency", "Status"]],
+      body: filtered.map(v => [v.invoice_no, v.vendor_name, v.date, v.due_date, v.amount?.toLocaleString(), v.vat?.toLocaleString(), v.total?.toLocaleString(), v.currency, v.status]),
+      fileName: `vendor_invoices_${new Date().toISOString().slice(0,10)}.pdf`,
+      orientation: "landscape",
+    });
+    logAudit({ action: "export", entity_type: "vendor_invoices", details: { format: "pdf", count: filtered.length } });
   };
 
   const daysUntilDue = (dueDate: string) => {
