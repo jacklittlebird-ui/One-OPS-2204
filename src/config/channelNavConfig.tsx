@@ -248,6 +248,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Vendor Invoices", path: "/vendor-invoices" },
         { label: "Aging Reports", path: "/aging-reports" },
         { label: "Financial Reports", path: "/financial-reports" },
+        { label: "Reports / Admin", path: "/reports-admin" },
         { label: "Airline Incentives", path: "/airline-incentives" },
       ],
     },
