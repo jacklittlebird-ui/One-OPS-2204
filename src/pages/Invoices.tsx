@@ -1142,14 +1142,14 @@ export default function InvoicesPage() {
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Showing completed dispatches grouped by airline & station for <span className="font-semibold text-foreground">{billingMonth}</span>
+                Showing completed dispatches <span className="font-semibold">and approved Service Reports</span> grouped by airline &amp; station for <span className="font-semibold text-foreground">{billingMonth}</span>
               </p>
 
               {billingPreviewData.length === 0 ? (
                 <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
                   <FileText size={32} className="mx-auto mb-2 opacity-40" />
-                  <p className="font-semibold">No completed dispatches found</p>
-                  <p className="text-xs mt-1">Complete dispatch assignments to generate invoices</p>
+                  <p className="font-semibold">No billable flights found</p>
+                  <p className="text-xs mt-1">Approve Service Reports or complete dispatch assignments to generate invoices</p>
                 </div>
               ) : (
                 <div className="space-y-3">
