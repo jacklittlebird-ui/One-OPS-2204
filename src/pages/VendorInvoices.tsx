@@ -147,7 +147,8 @@ export default function VendorInvoicesPage() {
           <p className="text-muted-foreground text-sm">فواتير الموردين · {data.length} invoices</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport}><Download size={14} className="mr-1" /> Export</Button>
+          <Button variant="outline" size="sm" onClick={handleExport}><Download size={14} className="mr-1" /> Excel</Button>
+          <Button variant="outline" size="sm" onClick={handleExportPdf}><Download size={14} className="mr-1" /> PDF</Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild><Button onClick={openAdd}><Plus size={16} className="mr-1" /> New Vendor Invoice</Button></DialogTrigger>
             <DialogContent>
