@@ -13,6 +13,7 @@ import {
   AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
+import { MaskedTimeInput } from "@/components/ui/masked-time-input";
 
 const PAGE_SIZE = 25;
 
