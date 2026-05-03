@@ -92,7 +92,7 @@ export default function AgingReportsPage() {
         Status: i.status,
       };
     });
-    exportToExcel(rows, `aging-detail-${new Date().toISOString().slice(0, 10)}`);
+    exportToExcel(rows, "Aging Detail", `aging-detail-${new Date().toISOString().slice(0, 10)}`);
   };
 
   if (isLoading) {
