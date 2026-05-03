@@ -353,24 +353,53 @@ export default function InvoicesPage() {
 
   // Billing preview: group completed dispatches by airline+station for the month
   const billingPreviewData = useMemo(() => {
-    const completed = dispatches.filter((d: any) => {
+    type Group = { airline: string; station: string; flights: number; baseFees: number; serviceCharges: number; overtime: number; total: number; items: any[]; sources: { dispatches: number; reports: number } };
+    const grouped: Record<string, Group> = {};
+
+    // 1) Dispatch assignments (security side)
+    const completedDispatches = dispatches.filter((d: any) => {
       const matchMonth = d.flight_date?.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
       return d.status === "Completed" && matchMonth && matchStation;
     });
-    const grouped: Record<string, { airline: string; station: string; flights: number; baseFees: number; serviceCharges: number; overtime: number; total: number; items: any[] }> = {};
-    completed.forEach((d: any) => {
+    completedDispatches.forEach((d: any) => {
       const key = `${d.airline}__${d.station}`;
-      if (!grouped[key]) grouped[key] = { airline: d.airline, station: d.station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [] };
+      if (!grouped[key]) grouped[key] = { airline: d.airline, station: d.station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
       grouped[key].flights++;
+      grouped[key].sources.dispatches++;
       grouped[key].baseFees += d.base_fee || 0;
-      grouped[key].serviceCharges += d.service_rate || 0;
+      grouped[key].serviceCharges += (d.total_security_charges || d.service_rate || 0);
       grouped[key].overtime += d.overtime_charge || 0;
-      grouped[key].total += d.total_charge || 0;
-      grouped[key].items.push(d);
+      grouped[key].total += (d.total_security_charges || d.total_charge || 0);
+      grouped[key].items.push({ ...d, _source: "dispatch" });
     });
+
+    // 2) Service Reports (handling side) — approved & in selected month/station
+    const matchedReports = (serviceReports || []).filter((r: any) => {
+      const dt = (r.arrival_date || r.flight_date || "").toString();
+      const matchMonth = dt.startsWith(billingMonth);
+      const matchStation = billingStation === "All" || r.station === billingStation;
+      const status = (r.review_status || "").toString().toLowerCase();
+      const isApproved = status === "approved" || status.includes("billing");
+      return isApproved && matchMonth && matchStation;
+    });
+    matchedReports.forEach((r: any) => {
+      const airline = r.operator || r.airline || "Unknown";
+      const station = r.station || "—";
+      const key = `${airline}__${station}`;
+      if (!grouped[key]) grouped[key] = { airline, station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
+      const m = rollupReport(r);
+      grouped[key].flights++;
+      grouped[key].sources.reports++;
+      grouped[key].baseFees += m.civil;
+      grouped[key].serviceCharges += m.handling + m.airport;
+      grouped[key].overtime += m.other;
+      grouped[key].total += m.total;
+      grouped[key].items.push({ ...r, _source: "report" });
+    });
+
     return Object.values(grouped);
-  }, [dispatches, billingMonth, billingStation]);
+  }, [dispatches, serviceReports, billingMonth, billingStation]);
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
     const inv: Partial<InvoiceRow> = {
