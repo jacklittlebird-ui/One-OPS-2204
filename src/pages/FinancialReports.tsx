@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from "recharts";
 import { Download, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 import * as XLSX from "xlsx";
+import { exportToPdf } from "@/lib/exportPdf";
+import { logAudit } from "@/lib/auditLogger";
 
 type AccountRow = { id: string; code: string; name: string; name_ar: string; account_type: string; is_group: boolean; current_balance: number; opening_balance: number; parent_id: string | null; };
 type JournalLineWithDate = { account_id: string; debit: number; credit: number; entry_id: string; };
@@ -249,6 +251,40 @@ export default function FinancialReportsPage() {
     XLSX.writeFile(wb, `BalanceSheet_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
+  // PDF exports
+  const handlePdfTrialBalance = () => {
+    exportToPdf({
+      title: "Trial Balance", subtitle: `As of ${new Date().toLocaleDateString()}`,
+      head: [["Code", "Account", "Type", "Debit", "Credit"]],
+      body: trialBalance.filter(a => a.balanceDebit > 0 || a.balanceCredit > 0).map(a => [a.code, a.name, a.account_type, a.balanceDebit.toLocaleString(), a.balanceCredit.toLocaleString()])
+        .concat([["", "TOTAL", "", tbTotalDebit.toLocaleString(), tbTotalCredit.toLocaleString()]]),
+      fileName: `TrialBalance_${new Date().toISOString().slice(0,10)}.pdf`, orientation: "portrait",
+    });
+    logAudit({ action: "export", entity_type: "trial_balance", details: { format: "pdf" } });
+  };
+
+  const handlePdfPL = () => {
+    const body: (string | number)[][] = [["REVENUE", ""]];
+    revenues.filter(a => a.balanceCredit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceCredit.toLocaleString()]));
+    body.push(["Total Revenue", totalRevenue.toLocaleString()], ["EXPENSES", ""]);
+    expenses.filter(a => a.balanceDebit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceDebit.toLocaleString()]));
+    body.push(["Total Expenses", totalExpenses.toLocaleString()], ["NET INCOME", netIncome.toLocaleString()]);
+    exportToPdf({ title: "Profit & Loss Statement", head: [["Account", "Amount"]], body, fileName: `PL_${new Date().toISOString().slice(0,10)}.pdf` });
+    logAudit({ action: "export", entity_type: "profit_loss", details: { format: "pdf" } });
+  };
+
+  const handlePdfBalanceSheet = () => {
+    const body: (string | number)[][] = [["ASSETS", ""]];
+    assets.filter(a => a.balanceDebit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceDebit.toLocaleString()]));
+    body.push(["Total Assets", totalAssets.toLocaleString()], ["LIABILITIES", ""]);
+    liabilities.filter(a => a.balanceCredit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceCredit.toLocaleString()]));
+    body.push(["Total Liabilities", totalLiabilities.toLocaleString()], ["EQUITY", ""]);
+    equity.filter(a => a.balanceCredit > 0).forEach(a => body.push([`  ${a.name}`, a.balanceCredit.toLocaleString()]));
+    body.push(["  Net Income", netIncome.toLocaleString()], ["Total Equity", totalEquity.toLocaleString()]);
+    exportToPdf({ title: "Balance Sheet", head: [["Account", "Amount"]], body, fileName: `BalanceSheet_${new Date().toISOString().slice(0,10)}.pdf` });
+    logAudit({ action: "export", entity_type: "balance_sheet", details: { format: "pdf" } });
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -281,7 +317,8 @@ export default function FinancialReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Trial Balance — ميزان المراجعة</CardTitle>
-              <Button variant="outline" size="sm" onClick={handleExportTrialBalance}><Download size={14} className="mr-1.5" /> Export Excel</Button>
+              <Button variant="outline" size="sm" onClick={handleExportTrialBalance}><Download size={14} className="mr-1.5" /> Excel</Button>
+              <Button variant="outline" size="sm" onClick={handlePdfTrialBalance}><Download size={14} className="mr-1.5" /> PDF</Button>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -316,7 +353,8 @@ export default function FinancialReportsPage() {
         {/* P&L */}
         <TabsContent value="pl">
           <div className="flex justify-end mb-2">
-            <Button variant="outline" size="sm" onClick={handleExportPL}><Download size={14} className="mr-1.5" /> Export Excel</Button>
+            <Button variant="outline" size="sm" onClick={handleExportPL}><Download size={14} className="mr-1.5" /> Excel</Button>
+            <Button variant="outline" size="sm" onClick={handlePdfPL}><Download size={14} className="mr-1.5" /> PDF</Button>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Card>
@@ -553,7 +591,8 @@ export default function FinancialReportsPage() {
         {/* Balance Sheet */}
         <TabsContent value="bs">
           <div className="flex justify-end mb-2">
-            <Button variant="outline" size="sm" onClick={handleExportBalanceSheet}><Download size={14} className="mr-1.5" /> Export Excel</Button>
+            <Button variant="outline" size="sm" onClick={handleExportBalanceSheet}><Download size={14} className="mr-1.5" /> Excel</Button>
+            <Button variant="outline" size="sm" onClick={handlePdfBalanceSheet}><Download size={14} className="mr-1.5" /> PDF</Button>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Card>

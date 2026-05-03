@@ -8,9 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Trash2, BookOpen, Check, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, BookOpen, Check, X, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
+import { logAudit } from "@/lib/auditLogger";
+import { exportToExcel } from "@/lib/exportExcel";
+import { exportToPdf } from "@/lib/exportPdf";
 
 type JournalEntry = { id: string; entry_no: string; entry_date: string; description: string; reference: string; reference_type: string; status: string; total_debit: number; total_credit: number; created_by: string; };
 type JournalLine = { id: string; entry_id: string; account_id: string; debit: number; credit: number; description: string; sort_order: number; };
@@ -102,11 +105,13 @@ export default function JournalEntriesPage() {
         await supabase.from("journal_entries" as any).update({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).eq("id", editEntry.id);
         await supabase.from("journal_entry_lines" as any).delete().eq("entry_id", editEntry.id);
         await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => ({ entry_id: editEntry.id, account_id: l.account_id, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description || "", sort_order: i })) as any);
+        logAudit({ action: "update", entity_type: "journal_entry", entity_id: editEntry.id, details: { entry_no: form.entry_no, total_debit: totalDebit, total_credit: totalCredit, status: form.status } });
       } else {
         const { data: entry, error } = await supabase.from("journal_entries" as any).insert({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).select().single();
         if (error) throw error;
         const entryId = (entry as any).id;
         await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => ({ entry_id: entryId, account_id: l.account_id, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description || "", sort_order: i })) as any);
+        logAudit({ action: "create", entity_type: "journal_entry", entity_id: entryId, details: { entry_no: form.entry_no, total_debit: totalDebit, total_credit: totalCredit, status: form.status } });
       }
     },
     onSuccess: () => {
@@ -118,9 +123,34 @@ export default function JournalEntriesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { await supabase.from("journal_entries" as any).delete().eq("id", id); },
+    mutationFn: async (id: string) => {
+      const ent = entries.find(e => e.id === id);
+      await supabase.from("journal_entries" as any).delete().eq("id", id);
+      logAudit({ action: "delete", entity_type: "journal_entry", entity_id: id, details: { entry_no: ent?.entry_no } });
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["journal_entries"] }); toast({ title: "Deleted" }); },
   });
+
+  const handleExportExcel = () => {
+    exportToExcel(filtered.map(e => ({
+      "Entry No": e.entry_no, "Date": e.entry_date, "Description": e.description,
+      "Reference": e.reference, "Debit": e.total_debit, "Credit": e.total_credit, "Status": e.status,
+    })), "Journal Entries", `journal_entries_${new Date().toISOString().slice(0,10)}.xlsx`);
+    logAudit({ action: "export", entity_type: "journal_entries", details: { format: "xlsx", count: filtered.length } });
+  };
+
+  const handleExportPdf = () => {
+    exportToPdf({
+      title: "Journal Entries",
+      subtitle: `${filtered.length} entries`,
+      head: [["Entry No", "Date", "Description", "Reference", "Debit", "Credit", "Status"]],
+      body: filtered.map(e => [e.entry_no, e.entry_date, e.description, e.reference || "—", (e.total_debit ?? 0).toLocaleString(), (e.total_credit ?? 0).toLocaleString(), e.status]),
+      fileName: `journal_entries_${new Date().toISOString().slice(0,10)}.pdf`,
+      orientation: "landscape",
+    });
+    logAudit({ action: "export", entity_type: "journal_entries", details: { format: "pdf", count: filtered.length } });
+  };
+
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
@@ -131,6 +161,9 @@ export default function JournalEntriesPage() {
           <h1 className="text-2xl font-bold text-foreground">Journal Entries</h1>
           <p className="text-muted-foreground text-sm">القيود اليومية · {entries.length} entries</p>
         </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportExcel}><Download size={14} className="mr-1" /> Excel</Button>
+          <Button variant="outline" size="sm" onClick={handleExportPdf}><Download size={14} className="mr-1" /> PDF</Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild><Button onClick={openAdd}><Plus size={16} className="mr-1" /> New Entry</Button></DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -197,6 +230,7 @@ export default function JournalEntriesPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <AdvancedFilters

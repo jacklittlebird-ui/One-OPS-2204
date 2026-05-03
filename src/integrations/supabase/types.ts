@@ -2863,6 +2863,8 @@ export type Database = {
         | "receivables"
         | "payables"
         | "general_accounts"
+        | "accountant"
+        | "viewer"
       clearance_status:
         | "Pending"
         | "Approved"
@@ -3060,6 +3062,8 @@ export const Constants = {
         "receivables",
         "payables",
         "general_accounts",
+        "accountant",
+        "viewer",
       ],
       clearance_status: [
         "Pending",
