@@ -159,7 +159,7 @@ export default function InvoicesPage() {
   }, [regByFlightNo]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [categoryTab, setCategoryTab] = useState<"handling" | "security">("handling");
+  const [categoryTab, setCategoryTab] = useState<"handling" | "security">("security");
   const [typeFilter, setTypeFilter] = useState("All");
   const [currencyFilter, setCurrencyFilter] = useState("All");
   const [operatorFilter, setOperatorFilter] = useState("All");
