@@ -123,6 +123,9 @@ export default function IrregularityReportsPage() {
           <button onClick={() => setShowFilters(f => !f)} className="toolbar-btn-outline">
             <Filter size={14} /> Filter
           </button>
+          <button onClick={handleExport} className="toolbar-btn-outline">
+            <Download size={14} /> Export
+          </button>
           <button onClick={() => { setNewReport(emptyReport()); setShowAdd(true); }} className="toolbar-btn-primary bg-destructive hover:bg-destructive/90 text-destructive-foreground">
             <AlertTriangle size={14} /> Report Incident
           </button>
