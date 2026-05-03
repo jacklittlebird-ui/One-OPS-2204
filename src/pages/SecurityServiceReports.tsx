@@ -499,9 +499,9 @@ export default function SecurityServiceReportsPage() {
   // Used in the receivables view to always show an up-to-date charge even
   // when the saved record hasn't been recomputed since the contract changed.
   const computeRowCharges = useCallback((r: DispatchRow) => {
-    if (!r.contract_id) return { amount: 0, currency: "USD" };
+    if (!r.contract_id) return { amount: 0, currency: "USD", lines: [] as any[] };
     const rates = (allRates as any[]).filter(x => x.contract_id === r.contract_id);
-    if (!rates.length) return { amount: 0, currency: "USD" };
+    if (!rates.length) return { amount: 0, currency: "USD", lines: [] as any[] };
     const gt = r.actual_duration_hours || 0;
     // Detect ADHOC SKD type from the linked flight schedule (or merged meta).
     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
@@ -515,7 +515,7 @@ export default function SecurityServiceReportsPage() {
       isAdhoc,
       rates: rates as any,
     });
-    return { amount: result.total, currency: result.currency };
+    return { amount: result.total, currency: result.currency, lines: result.lines || [] };
   }, [allRates, flightDetailsById]);
 
   const saveEdit = () => {};
