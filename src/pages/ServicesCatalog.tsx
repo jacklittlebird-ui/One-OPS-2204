@@ -80,19 +80,23 @@ export default function ServicesCatalogPage() {
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>{editItem ? "Edit Service" : "Add Service"}</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <Input placeholder="Service Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-                <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{CATEGORY_ICONS[c]} {c}</SelectItem>)}</SelectContent>
-                </Select>
-                <Textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} />
-                <Input placeholder="Related Reports" value={form.related_reports} onChange={e => setForm({ ...form, related_reports: e.target.value })} />
-                <Input placeholder="Related Documents" value={form.related_documents} onChange={e => setForm({ ...form, related_documents: e.target.value })} />
-                <Input placeholder="Report Template" value={form.report_template} onChange={e => setForm({ ...form, report_template: e.target.value })} />
-                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent>
-                </Select>
+                <div><label className="text-xs text-muted-foreground">Service Name</label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
+                <div><label className="text-xs text-muted-foreground">Category</label>
+                  <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{CATEGORY_ICONS[c]} {c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><label className="text-xs text-muted-foreground">Description</label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} /></div>
+                <div><label className="text-xs text-muted-foreground">Related Reports</label><Input value={form.related_reports} onChange={e => setForm({ ...form, related_reports: e.target.value })} /></div>
+                <div><label className="text-xs text-muted-foreground">Related Documents</label><Input value={form.related_documents} onChange={e => setForm({ ...form, related_documents: e.target.value })} /></div>
+                <div><label className="text-xs text-muted-foreground">Report Template</label><Input value={form.report_template} onChange={e => setForm({ ...form, report_template: e.target.value })} /></div>
+                <div><label className="text-xs text-muted-foreground">Status</label>
+                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent>
+                  </Select>
+                </div>
                 <Button className="w-full" onClick={handleSave}>{editItem ? "Update" : "Add"}</Button>
               </div>
             </DialogContent>
