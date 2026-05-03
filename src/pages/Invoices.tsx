@@ -381,12 +381,16 @@ export default function InvoicesPage() {
     type Group = { airline: string; station: string; flights: number; baseFees: number; serviceCharges: number; overtime: number; total: number; items: any[]; sources: { dispatches: number; reports: number } };
     const grouped: Record<string, Group> = {};
 
+    // Scope source by active category tab — Security uses dispatches, Handling uses service reports
+    const includeSecurity = categoryTab !== "handling";
+    const includeHandling = categoryTab !== "security";
+
     // 1) Dispatch assignments (security side)
-    const completedDispatches = dispatches.filter((d: any) => {
+    const completedDispatches = includeSecurity ? dispatches.filter((d: any) => {
       const matchMonth = d.flight_date?.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
       return d.status === "Completed" && matchMonth && matchStation;
-    });
+    }) : [];
     completedDispatches.forEach((d: any) => {
       const key = `${d.airline}__${d.station}`;
       if (!grouped[key]) grouped[key] = { airline: d.airline, station: d.station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
@@ -400,14 +404,16 @@ export default function InvoicesPage() {
     });
 
     // 2) Service Reports (handling side) — approved & in selected month/station
-    const matchedReports = (serviceReports || []).filter((r: any) => {
+    const matchedReports = includeHandling ? (serviceReports || []).filter((r: any) => {
       const dt = (r.arrival_date || r.flight_date || "").toString();
       const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || r.station === billingStation;
       const status = (r.review_status || "").toString().toLowerCase();
       const isApproved = status === "approved" || status.includes("billing");
-      return isApproved && matchMonth && matchStation;
-    });
+      const ht = (r.handling_type || "").toString().toLowerCase();
+      const isSecurityReport = ht.includes("security");
+      return isApproved && matchMonth && matchStation && !isSecurityReport;
+    }) : [];
     matchedReports.forEach((r: any) => {
       const airline = r.operator || r.airline || "Unknown";
       const station = r.station || "—";
@@ -424,7 +430,7 @@ export default function InvoicesPage() {
     });
 
     return Object.values(grouped);
-  }, [dispatches, serviceReports, billingMonth, billingStation]);
+  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab]);
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
     let civil = 0, handling = 0, airport = 0, other = 0;
