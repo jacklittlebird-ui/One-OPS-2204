@@ -214,6 +214,14 @@ export default function InvoicesPage() {
 
   const filtered = useMemo(() => {
     let r = invoices;
+    // Category split — Security invoices are tagged via invoice_no suffix "-SEC" or description/notes containing "Security"
+    const isSecurity = (i: any) => {
+      const no = (i.invoice_no || "").toUpperCase();
+      const d = `${i.description || ""} ${i.notes || ""}`.toLowerCase();
+      return no.includes("-SEC") || d.includes("security");
+    };
+    if (categoryTab === "handling") r = r.filter(i => !isSecurity(i));
+    else if (categoryTab === "security") r = r.filter(i => isSecurity(i));
     if (statusFilter !== "All") r = r.filter(i => i.status === statusFilter);
     if (typeFilter !== "All") r = r.filter(i => (i.invoice_type || "Preliminary") === typeFilter);
     if (currencyFilter !== "All") r = r.filter(i => i.currency === currencyFilter);
