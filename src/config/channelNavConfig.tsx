@@ -203,6 +203,10 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Aging Reports", path: "/aging-reports" },
         { label: "Financial Reports", path: "/financial-reports" },
         { label: "Reports / Admin", path: "/reports-admin" },
+        { label: "Airline Incentives", path: "/airline-incentives" },
+      ],
+    },
+    TREASURY_SECTION,
     {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
       children: [
