@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from "recharts";
 import { Download, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 import * as XLSX from "xlsx";
+import { exportToPdf } from "@/lib/exportPdf";
+import { logAudit } from "@/lib/auditLogger";
 
 type AccountRow = { id: string; code: string; name: string; name_ar: string; account_type: string; is_group: boolean; current_balance: number; opening_balance: number; parent_id: string | null; };
 type JournalLineWithDate = { account_id: string; debit: number; credit: number; entry_id: string; };
