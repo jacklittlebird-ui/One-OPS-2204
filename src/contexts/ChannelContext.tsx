@@ -36,7 +36,8 @@ function rolesToChannels(roles: string[]): Channel[] {
   if (roles.includes("operations")) channels.push("operations");
   if (roles.includes("receivables")) channels.push("receivables");
   if (roles.includes("payables")) channels.push("payables");
-  if (roles.includes("general_accounts")) channels.push("general_accounts");
+  if (roles.includes("general_accounts") || roles.includes("accountant")) channels.push("general_accounts");
+  if (roles.includes("viewer") && channels.length === 0) channels.push("general_accounts");
   return channels.length > 0 ? channels : ["station"]; // default fallback
 }
 
