@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,10 +12,41 @@ import { exportToExcel } from "@/lib/exportExcel";
 import { exportToPdf } from "@/lib/exportPdf";
 import { logAudit } from "@/lib/auditLogger";
 
+const FILTER_STORAGE_KEY = "reports_admin_filters_v1";
+
+interface SavedFilters {
+  dateFrom: string;
+  dateTo: string;
+  statusFilter: string;
+  typeFilter: string;
+  search: string;
+}
+
+function loadFilters(): SavedFilters {
+  try {
+    const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { dateFrom: "", dateTo: "", statusFilter: "all", typeFilter: "all", search: "" };
+}
+
 export default function ReportsAdminPage() {
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const initial = loadFilters();
+  const [dateFrom, setDateFrom] = useState(initial.dateFrom);
+  const [dateTo, setDateTo] = useState(initial.dateTo);
+  const [statusFilter, setStatusFilter] = useState(initial.statusFilter);
+  const [typeFilter, setTypeFilter] = useState(initial.typeFilter);
+  const [search, setSearch] = useState(initial.search);
+
+  // Persist filters
+  useEffect(() => {
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({ dateFrom, dateTo, statusFilter, typeFilter, search }));
+    } catch {}
+  }, [dateFrom, dateTo, statusFilter, typeFilter, search]);
+
+  const matchesSearch = (txt: string) => !search.trim() || txt.toLowerCase().includes(search.trim().toLowerCase());
+  const typeOk = (t: string) => typeFilter === "all" || typeFilter === t;
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["reports_invoices"],
@@ -42,10 +73,10 @@ export default function ReportsAdminPage() {
     return true;
   };
 
-  const fInvoices = useMemo(() => invoices.filter((i: any) => within(i.date) && (statusFilter === "all" || i.status === statusFilter)), [invoices, dateFrom, dateTo, statusFilter]);
-  const fVendor = useMemo(() => vendorInv.filter((v: any) => within(v.date) && (statusFilter === "all" || v.status === statusFilter)), [vendorInv, dateFrom, dateTo, statusFilter]);
-  const fJournal = useMemo(() => journalEntries.filter((j: any) => within(j.entry_date)), [journalEntries, dateFrom, dateTo]);
-  const fAudit = useMemo(() => auditLogs.filter((a: any) => within(a.created_at)), [auditLogs, dateFrom, dateTo]);
+  const fInvoices = useMemo(() => invoices.filter((i: any) => typeOk("invoice") && within(i.date) && (statusFilter === "all" || i.status === statusFilter) && matchesSearch(`${i.invoice_no} ${i.operator}`)), [invoices, dateFrom, dateTo, statusFilter, typeFilter, search]);
+  const fVendor = useMemo(() => vendorInv.filter((v: any) => typeOk("vendor") && within(v.date) && (statusFilter === "all" || v.status === statusFilter) && matchesSearch(`${v.invoice_no} ${v.vendor_name}`)), [vendorInv, dateFrom, dateTo, statusFilter, typeFilter, search]);
+  const fJournal = useMemo(() => journalEntries.filter((j: any) => typeOk("journal") && within(j.entry_date) && matchesSearch(`${j.entry_no} ${j.description}`)), [journalEntries, dateFrom, dateTo, typeFilter, search]);
+  const fAudit = useMemo(() => auditLogs.filter((a: any) => within(a.created_at) && matchesSearch(`${a.user_email} ${a.action} ${a.entity_type}`)), [auditLogs, dateFrom, dateTo, search]);
 
   const totalRevenue = fInvoices.reduce((s: number, i: any) => s + (Number(i.total) || 0), 0);
   const totalPayables = fVendor.reduce((s: number, v: any) => s + (Number(v.total) || 0), 0);
@@ -93,7 +124,11 @@ export default function ReportsAdminPage() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+          <div className="md:col-span-2">
+            <label className="text-xs text-muted-foreground">Search (Ref / Party / User)</label>
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="..." />
+          </div>
           <div>
             <label className="text-xs text-muted-foreground">Date From</label>
             <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
@@ -101,6 +136,18 @@ export default function ReportsAdminPage() {
           <div>
             <label className="text-xs text-muted-foreground">Date To</label>
             <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Type</label>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="invoice">Customer Invoices</SelectItem>
+                <SelectItem value="vendor">Vendor Invoices</SelectItem>
+                <SelectItem value="journal">Journal Entries</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Status (Invoices)</label>
@@ -116,8 +163,8 @@ export default function ReportsAdminPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
-            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); setStatusFilter("all"); }}>Clear</Button>
+          <div className="md:col-span-6 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); setStatusFilter("all"); setTypeFilter("all"); setSearch(""); }}>Clear filters</Button>
           </div>
         </CardContent>
       </Card>
