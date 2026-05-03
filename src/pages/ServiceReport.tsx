@@ -560,9 +560,11 @@ function HandlingServiceReportContent() {
     });
 
     reports.forEach(r => {
-      if (!usedReportIds.has(r.id!)) {
-        rows.push({ ...r, isLinked: true });
-      }
+      if (usedReportIds.has(r.id!)) return;
+      // Skip security-typed reports — they belong to the Security tab only
+      const ht = (r.handlingType || "").toString().toLowerCase();
+      if (ht.includes("security")) return;
+      rows.push({ ...r, isLinked: true });
     });
 
     return rows;
