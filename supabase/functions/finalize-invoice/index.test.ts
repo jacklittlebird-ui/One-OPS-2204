@@ -79,12 +79,12 @@ async function cleanup(userId: string, invoiceIds: string[]) {
   await admin.auth.admin.deleteUser(userId);
 }
 
-Deno.test("rejects unauthenticated requests with 401", async () => {
+Deno.test({ name: "rejects unauthenticated requests with 401", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const { status } = await call(null, { invoice_id: "00000000-0000-0000-0000-000000000000" });
   assertEquals(status, 401);
-});
+} });
 
-Deno.test("rejects user without finance role with 403", async () => {
+Deno.test({ name: "rejects user without finance role with 403", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const user = await makeUser("station_ops");
   const inv = await makeInvoice("-noRole");
   try {
@@ -97,9 +97,9 @@ Deno.test("rejects user without finance role with 403", async () => {
   } finally {
     await cleanup(user.id, [inv.id]);
   }
-});
+} });
 
-Deno.test("finance role finalizes invoice and writes audit log", async () => {
+Deno.test({ name: "finance role finalizes invoice and writes audit log", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   await ensureAccounts();
   const user = await makeUser("receivables");
   const inv = await makeInvoice("-ok");
@@ -123,9 +123,9 @@ Deno.test("finance role finalizes invoice and writes audit log", async () => {
   } finally {
     await cleanup(user.id, [inv.id]);
   }
-});
+} });
 
-Deno.test("rejects double-finalization with 409", async () => {
+Deno.test({ name: "rejects double-finalization with 409", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   await ensureAccounts();
   const user = await makeUser("admin");
   const inv = await makeInvoice("-dup");
@@ -137,9 +137,9 @@ Deno.test("rejects double-finalization with 409", async () => {
   } finally {
     await cleanup(user.id, [inv.id]);
   }
-});
+} });
 
-Deno.test("rejects missing invoice_id with 400", async () => {
+Deno.test({ name: "rejects missing invoice_id with 400", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const user = await makeUser("admin");
   try {
     const { status } = await call(user.token, {});
@@ -147,4 +147,4 @@ Deno.test("rejects missing invoice_id with 400", async () => {
   } finally {
     await cleanup(user.id, []);
   }
-});
+} });
