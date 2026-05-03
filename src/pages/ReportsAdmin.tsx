@@ -12,10 +12,41 @@ import { exportToExcel } from "@/lib/exportExcel";
 import { exportToPdf } from "@/lib/exportPdf";
 import { logAudit } from "@/lib/auditLogger";
 
+const FILTER_STORAGE_KEY = "reports_admin_filters_v1";
+
+interface SavedFilters {
+  dateFrom: string;
+  dateTo: string;
+  statusFilter: string;
+  typeFilter: string;
+  search: string;
+}
+
+function loadFilters(): SavedFilters {
+  try {
+    const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { dateFrom: "", dateTo: "", statusFilter: "all", typeFilter: "all", search: "" };
+}
+
 export default function ReportsAdminPage() {
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const initial = loadFilters();
+  const [dateFrom, setDateFrom] = useState(initial.dateFrom);
+  const [dateTo, setDateTo] = useState(initial.dateTo);
+  const [statusFilter, setStatusFilter] = useState(initial.statusFilter);
+  const [typeFilter, setTypeFilter] = useState(initial.typeFilter);
+  const [search, setSearch] = useState(initial.search);
+
+  // Persist filters
+  useEffect(() => {
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({ dateFrom, dateTo, statusFilter, typeFilter, search }));
+    } catch {}
+  }, [dateFrom, dateTo, statusFilter, typeFilter, search]);
+
+  const matchesSearch = (txt: string) => !search.trim() || txt.toLowerCase().includes(search.trim().toLowerCase());
+  const typeOk = (t: string) => typeFilter === "all" || typeFilter === t;
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["reports_invoices"],
