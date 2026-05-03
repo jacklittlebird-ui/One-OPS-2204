@@ -1027,6 +1027,25 @@ export default function InvoicesPage() {
       <div className="bg-card rounded-lg border overflow-hidden">
         {/* Toolbar */}
         <div className="p-4 border-b space-y-3">
+          {/* Category tabs — Handling vs Security (system-wide split) */}
+          <div className="flex border-b -mx-4 px-4">
+            {([
+              { k: "all", label: "All Invoices" },
+              { k: "handling", label: "Handling" },
+              { k: "security", label: "Security" },
+            ] as const).map(t => (
+              <button
+                key={t.k}
+                type="button"
+                onClick={() => { setCategoryTab(t.k); setPage(1); }}
+                className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                  categoryTab === t.k ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-base font-semibold text-foreground mr-auto">Invoice Records</h2>
             <div className="relative">
