@@ -1088,6 +1088,16 @@ export default function SecurityServiceReportsPage() {
           </select>
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
+          {isReceivablesView && (
+            <button
+              onClick={saveAllSecurityCharges}
+              disabled={bulkSaving}
+              className="toolbar-btn-primary"
+              title="Compute & save Security Charges for every eligible flight, then mark Ready for Billing"
+            >
+              <DollarSign size={14} /> {bulkSaving ? "Saving…" : "Save All Security Charges"}
+            </button>
+          )}
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
         </div>
 
