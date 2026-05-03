@@ -1813,9 +1813,9 @@ export default function InvoicesPage() {
                       )}
                     </div>
 
-                    <div className="flex justify-end pt-2">
-                      <button onClick={generateMonthlySecurityInvoice} className="toolbar-btn-primary">
-                        <Plus size={14} /> Create Security Consolidated Invoice
+                    <div className="flex justify-end pt-2 gap-2">
+                      <button onClick={generateCombinedMonthlyInvoice} className="toolbar-btn-primary">
+                        <Plus size={14} /> Create Combined Invoice (Handling + Security)
                       </button>
                     </div>
                   </>
