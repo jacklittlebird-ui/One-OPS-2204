@@ -1158,7 +1158,7 @@ export default function InvoicesPage() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <div className="font-semibold text-foreground">{g.airline}</div>
-                          <div className="text-xs text-muted-foreground">{g.station} — {g.flights} flights</div>
+                          <div className="text-xs text-muted-foreground">{g.station} — {g.flights} flights · {g.sources.reports} report{g.sources.reports === 1 ? "" : "s"} + {g.sources.dispatches} dispatch{g.sources.dispatches === 1 ? "" : "es"}</div>
                         </div>
                         <button onClick={() => generateInvoiceFromBilling(g)} className="toolbar-btn-primary text-xs py-1.5">
                           <Plus size={12} /> Create Draft Invoice
