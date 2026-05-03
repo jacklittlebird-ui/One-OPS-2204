@@ -317,7 +317,8 @@ export default function FinancialReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Trial Balance — ميزان المراجعة</CardTitle>
-              <Button variant="outline" size="sm" onClick={handleExportTrialBalance}><Download size={14} className="mr-1.5" /> Export Excel</Button>
+              <Button variant="outline" size="sm" onClick={handleExportTrialBalance}><Download size={14} className="mr-1.5" /> Excel</Button>
+              <Button variant="outline" size="sm" onClick={handlePdfTrialBalance}><Download size={14} className="mr-1.5" /> PDF</Button>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
