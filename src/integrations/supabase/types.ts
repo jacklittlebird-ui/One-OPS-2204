@@ -2108,6 +2108,30 @@ export type Database = {
           },
         ]
       }
+      security_check_runs: {
+        Row: {
+          checks: Json
+          created_at: string
+          id: string
+          passed: boolean
+          source: string
+        }
+        Insert: {
+          checks?: Json
+          created_at?: string
+          id?: string
+          passed: boolean
+          source?: string
+        }
+        Update: {
+          checks?: Json
+          created_at?: string
+          id?: string
+          passed?: boolean
+          source?: string
+        }
+        Relationships: []
+      }
       service_providers: {
         Row: {
           airport_id: string | null

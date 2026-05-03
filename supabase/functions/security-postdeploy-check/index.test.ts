@@ -53,12 +53,14 @@ Deno.test({
 });
 
 Deno.test({
-  name: "realtime.messages: cannot receive payloads from another user's topic",
+  name: "realtime.messages: blocks subscribe, receive AND broadcast on another user's topic",
   ignore: !url || !anon,
   fn: async () => {
     const c = createClient(url!, anon!);
     const otherTopic = "notifications:11111111-1111-1111-1111-111111111111";
-    const channel = c.channel(otherTopic, { config: { private: true, broadcast: { self: false } } });
+    const channel = c.channel(otherTopic, {
+      config: { private: true, broadcast: { self: true, ack: true } },
+    });
 
     let received = false;
     channel.on("broadcast", { event: "*" }, () => { received = true; });
@@ -69,12 +71,22 @@ Deno.test({
       channel.subscribe((s) => { clearTimeout(t); resolve(s); });
     });
 
-    // Wait a brief moment to see if any messages leak in.
-    await new Promise((r) => setTimeout(r, 1500));
+    let sendResult: string = "no_attempt";
+    try {
+      sendResult = await channel.send({
+        type: "broadcast",
+        event: "intrusion",
+        payload: { msg: "should be rejected" },
+      });
+    } catch {
+      sendResult = "threw";
+    }
 
+    await new Promise((r) => setTimeout(r, 1500));
     await c.removeChannel(channel);
 
-    assert(status !== "SUBSCRIBED", `must not fully subscribe, got: ${status}`);
+    assert(status !== "SUBSCRIBED", `must not subscribe, got: ${status}`);
     assert(!received, "must not receive any messages from another user's topic");
+    assert(sendResult !== "ok", `broadcast must be rejected, got: ${sendResult}`);
   },
 });
