@@ -1,7 +1,8 @@
-import { useState, useMemo, useRef, useCallback } from "react";
-import { AlertTriangle, Search, Plus, Filter, X, Download } from "lucide-react";
+import { useState, useMemo } from "react";
+import { AlertTriangle, Search, Filter, X, Download, Trash2, Pencil } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { formatDateDMY } from "@/lib/utils";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
