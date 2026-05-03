@@ -58,6 +58,7 @@ import PaymentsPage from "./pages/treasury/Payments";
 import ReceiptsPage from "./pages/treasury/Receipts";
 import BankTransfersPage from "./pages/treasury/BankTransfers";
 import BankReconciliationPage from "./pages/treasury/BankReconciliation";
+import ReportsAdminPage from "./pages/ReportsAdmin";
 
 
 const queryClient = new QueryClient();
