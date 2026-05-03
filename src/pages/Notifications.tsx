@@ -365,20 +365,18 @@ export default function NotificationsPage() {
                 <div className="flex items-center gap-4 pt-2">
                   <div>
                     <Label className="text-sm">Start</Label>
-                    <Input
-                      type="time"
-                      value={prefs.quiet_hours_start}
-                      onChange={(e) => updatePref("quiet_hours_start", e.target.value)}
-                      className="w-[130px]"
+                    <MaskedTimeInput
+                      value={prefs.quiet_hours_start || ""}
+                      onChange={(v) => updatePref("quiet_hours_start", v)}
+                      className="w-[130px] flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                     />
                   </div>
                   <div>
                     <Label className="text-sm">End</Label>
-                    <Input
-                      type="time"
-                      value={prefs.quiet_hours_end}
-                      onChange={(e) => updatePref("quiet_hours_end", e.target.value)}
-                      className="w-[130px]"
+                    <MaskedTimeInput
+                      value={prefs.quiet_hours_end || ""}
+                      onChange={(v) => updatePref("quiet_hours_end", v)}
+                      className="w-[130px] flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
