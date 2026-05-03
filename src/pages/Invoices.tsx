@@ -786,6 +786,72 @@ export default function InvoicesPage() {
 
 
 
+  // Combined: ONE invoice per airline per month containing BOTH Handling (service reports) AND Security (dispatch assignments)
+  const generateCombinedMonthlyInvoice = async () => {
+    const { reports, totals: hT } = monthlyAirlinePreview;
+    const { rows: secRows, totals: sT } = monthlySecurityPreview;
+    if (reports.length === 0 && secRows.length === 0) {
+      toast({ title: "No data", description: "No approved Handling reports or Security assignments for that airline & month.", variant: "destructive" });
+      return;
+    }
+    if (monthlyValidation.errorCount > 0 || monthlySecurityValidation.errorCount > 0) {
+      toast({ title: `Cannot generate — ${monthlyValidation.errorCount + monthlySecurityValidation.errorCount} record(s) have errors`, description: "Fix highlighted rows in both tabs first.", variant: "destructive" });
+      return;
+    }
+    const totalWarnings = monthlyValidation.warningCount + monthlySecurityValidation.warningCount;
+    if (totalWarnings > 0) {
+      const ok = window.confirm(`${totalWarnings} record(s) have validation warnings.\n\nGenerate the combined invoice anyway?`);
+      if (!ok) return;
+    }
+
+    const baseNo = `LNK-${monthlyAirlineMonth.replace("-", "")}-${monthlyAirlineOperator.replace(/\s+/g, "").slice(0, 4).toUpperCase()}`;
+    const existingCount = (invoices || []).filter((inv: any) =>
+      inv.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+      inv.billing_period === monthlyAirlineMonth && inv.station === "ALL" &&
+      (inv.status || "").toLowerCase() !== "cancelled"
+    ).length;
+    if (existingCount > 0) {
+      const ok = window.confirm(`A monthly invoice already exists for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}.\n\nCreate another anyway?`);
+      if (!ok) return;
+    }
+    const invoiceNo = existingCount > 0 ? `${baseNo}-R${existingCount + 1}` : baseNo;
+
+    const handlingRows = reports.map((r: any) => {
+      const m = rollupReport(r);
+      return { date: r.arrival_date || "", flight: r.flight_no || "", reg: r.registration || "", route: r.route || "", station: r.station || "", type: r.handling_type || "", category: "Handling", civil: m.civil, handling: m.handling, airport: m.airport, other: m.other, total: m.total };
+    });
+    const securityRows = secRows.map((d: any) => ({
+      date: d.flight_date || "", flight: d.flight_no || "", reg: "", route: "", station: d.station || "", type: d.service_type || "", category: "Security",
+      civil: 0, handling: Number(d.base_fee) || 0, airport: 0, other: Number(d.overtime_charge) || 0, total: Number(d.total_charge) || 0,
+    }));
+    const detailRows = [...handlingRows, ...securityRows];
+
+    const civil_aviation = hT.civil;
+    const handling = hT.handling + sT.base;        // merge handling base + security base
+    const airport_charges = hT.airport;
+    const other = hT.other + sT.overtime;          // merge other + security overtime
+    const subtotal = civil_aviation + handling + airport_charges + other;
+
+    const stations = new Set([...reports.map((r: any) => r.station), ...secRows.map((d: any) => d.station)].filter(Boolean));
+    const headerNote = `Combined monthly invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${reports.length} Handling report(s) + ${secRows.length} Security assignment(s) across ${stations.size} station(s). See Annex A for per-flight detail.`;
+
+    const inv: Partial<InvoiceRow> = {
+      invoice_no: invoiceNo,
+      date: new Date().toISOString().slice(0, 10),
+      due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      operator: monthlyAirlineOperator, station: "ALL", billing_period: monthlyAirlineMonth,
+      civil_aviation, handling, airport_charges, catering: 0, other, vat: 0,
+      subtotal, total: subtotal,
+      currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus, invoice_type: "Preliminary" as InvoiceType,
+      description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (Handling + Security combined)`,
+      flight_ref: `${reports.length + secRows.length} flights (H:${reports.length} / S:${secRows.length})`,
+      notes: `${headerNote}\n__DETAIL__:${JSON.stringify(detailRows)}`,
+    };
+    await add(inv as any);
+    setShowMonthlyAirline(false);
+    toast({ title: "✅ Combined Monthly Invoice Created", description: `${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${reports.length} handling + ${secRows.length} security).` });
+  };
+
   const generateMonthlyAirlineInvoice = async () => {
     const { reports, totals } = monthlyAirlinePreview;
     if (reports.length === 0) {
