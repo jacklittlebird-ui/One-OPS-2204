@@ -210,8 +210,8 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
               ))}
             </ul>
             <div className="mt-1 text-[11px] opacity-80">
-              The receivables module will fall back to the available counterpart
-              (e.g. Departure Security) when computing charges.
+              Charges for the missing service type will be flagged as an error
+              in the receivables module until a rate is defined here.
             </div>
           </div>
         </div>

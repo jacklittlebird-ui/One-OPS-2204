@@ -55,37 +55,30 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
   // Maintenance Security, Turnaround. Overtime applies above included_hours.
   const effectiveType = flightType;
 
-  // Primary lookup
-  let baseRate = findRate(rates, airport, effectiveType);
-  let usedFallback: string | null = null;
-
-  // Fallback: if Arrival Security is missing for this airport, fall back to
-  // Departure Security at the same airport (same contract). This mirrors the
-  // common SGHA practice where security charges per movement are symmetrical
-  // unless the contract explicitly differentiates.
-  if (!baseRate && /arrival\s*security/i.test(effectiveType)) {
-    baseRate = findRate(rates, airport, "Departure Security");
-    if (baseRate) usedFallback = "Departure Security";
-  }
-  // Reverse fallback for Departure → Arrival, in case only Arrival is defined.
-  if (!baseRate && /departure\s*security/i.test(effectiveType)) {
-    baseRate = findRate(rates, airport, "Arrival Security");
-    if (baseRate) usedFallback = "Arrival Security";
-  }
-
+  // Primary lookup — NO fallback. If the rate is missing we surface an
+  // explicit error line so the operator must define it in the contract.
+  const baseRate = findRate(rates, airport, effectiveType);
   const currency = baseRate?.currency || "USD";
 
-  if (baseRate && !input.returnToRampWithLoadChange) {
-    const labelSuffix = usedFallback ? ` (using ${usedFallback} as fallback)` : "";
+  if (!baseRate && !input.returnToRampWithLoadChange) {
     lines.push({
-      label: `${effectiveType} – ${airport}${labelSuffix}`,
+      label: `⚠ Missing rate: ${effectiveType} – ${airport}`,
+      qty: 0,
+      unit: "—",
+      rate: 0,
+      amount: 0,
+      notes: `No ${effectiveType} rate defined for ${airport} in this contract. Please add it in Contracts → Security Rates.`,
+    });
+  }
+
+  if (baseRate && !input.returnToRampWithLoadChange) {
+    lines.push({
+      label: `${effectiveType} – ${airport}`,
       qty: 1,
       unit: baseRate.unit || "Per Flight",
       rate: baseRate.rate,
       amount: baseRate.rate,
-      notes: usedFallback
-        ? `No ${effectiveType} rate defined for ${airport}; falling back to ${usedFallback}. ${baseRate.notes || ""}`.trim()
-        : baseRate.notes,
+      notes: baseRate.notes,
     });
 
     // Overtime calculation — only when DURATION exceeds 3h.
