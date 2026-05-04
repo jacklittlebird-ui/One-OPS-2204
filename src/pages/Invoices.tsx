@@ -492,9 +492,13 @@ export default function InvoicesPage() {
         const base = (it.total_security_charges || it.service_rate || 0) + (it.base_fee || 0);
         const ot = (it.overtime_charge || 0);
         handling += base; other += ot;
+        const fi = lookupFlightInfo(it);
         detailRows.push({
-          date: it.flight_date || "", flight: it.flight_no || "", reg: it.registration || "",
-          route: it.route || "", station: it.station || group.station, type: it.service_type || "",
+          date: it.flight_date || "", flight: it.flight_no || "",
+          reg: it.registration || fi.reg || "",
+          route: it.route || fi.route || "",
+          station: it.station || group.station,
+          type: buildServiceTypeLabel(it),
           category: "Security", civil: 0, handling: base, airport: 0, other: ot, total: base + ot,
         });
       }
