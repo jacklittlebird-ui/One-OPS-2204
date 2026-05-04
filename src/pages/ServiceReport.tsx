@@ -1485,6 +1485,7 @@ function HandlingServiceReportContent() {
                         <td className="px-3 py-2 font-mono text-muted-foreground">{i + 1}</td>
                         <td className="px-3 py-2 font-mono">{r.arrivalDate || "—"}</td>
                         <td className="px-3 py-2 font-mono font-semibold text-foreground">{r.flightNo || "—"}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{r.registration || "—"}</td>
                         <td className="px-3 py-2">{r.operator || "—"}</td>
                         <td className="px-3 py-2">{r.route || "—"}</td>
                         <td className="px-3 py-2">{r.handlingType || "—"}</td>
