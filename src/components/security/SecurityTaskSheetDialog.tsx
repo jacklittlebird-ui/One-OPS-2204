@@ -1041,18 +1041,35 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                       </tr>
                     </thead>
                     <tbody>
-                      {computedCharges.lines.map((l: ChargeLine, i: number) => (
-                        <tr key={i} className="border-t">
-                          <td className="px-3 py-2 text-foreground">
-                            {l.label}
-                            {l.notes && <div className="text-[11px] text-muted-foreground">{l.notes}</div>}
-                          </td>
-                          <td className="px-3 py-2 text-right text-foreground">{l.qty}</td>
-                          <td className="px-3 py-2 text-foreground">{l.unit}</td>
-                          <td className="px-3 py-2 text-right font-mono text-foreground">{computedCharges.currency} {l.rate.toFixed(2)}</td>
-                          <td className="px-3 py-2 text-right font-mono font-semibold text-foreground">{computedCharges.currency} {l.amount.toFixed(2)}</td>
-                        </tr>
-                      ))}
+                      {computedCharges.lines.map((l: ChargeLine, i: number) => {
+                        const isMissing = !!l.missingDetail;
+                        return (
+                          <tr key={i} className={`border-t ${isMissing ? "bg-destructive/5" : ""}`}>
+                            <td className="px-3 py-2 text-foreground">
+                              <span
+                                className={isMissing ? "text-destructive font-semibold" : ""}
+                                title={isMissing ? l.missingDetail!.location : undefined}
+                              >
+                                {l.label}
+                              </span>
+                              {isMissing && (
+                                <div className="mt-1 text-[11px] text-destructive/90 bg-destructive/10 border border-destructive/20 rounded px-2 py-1">
+                                  <div className="font-semibold">Missing contract field:</div>
+                                  <div className="font-mono">{l.missingDetail!.location}</div>
+                                  <div className="opacity-80 mt-0.5">
+                                    Open the contract and add a rate row for airport <span className="font-mono font-semibold">{l.missingDetail!.airport}</span> with flight type <span className="font-mono font-semibold">{l.missingDetail!.flightType}</span>.
+                                  </div>
+                                </div>
+                              )}
+                              {!isMissing && l.notes && <div className="text-[11px] text-muted-foreground">{l.notes}</div>}
+                            </td>
+                            <td className="px-3 py-2 text-right text-foreground">{l.qty}</td>
+                            <td className="px-3 py-2 text-foreground">{l.unit}</td>
+                            <td className="px-3 py-2 text-right font-mono text-foreground">{computedCharges.currency} {l.rate.toFixed(2)}</td>
+                            <td className="px-3 py-2 text-right font-mono font-semibold text-foreground">{computedCharges.currency} {l.amount.toFixed(2)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                     <tfoot className="bg-success/10 border-t-2 border-success/30">
                       <tr>

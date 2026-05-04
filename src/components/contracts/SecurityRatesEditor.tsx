@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Shield, Plus, Trash2, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Shield, Plus, Trash2, Save, AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { SecurityRateRow } from "./ContractTypes";
@@ -53,6 +53,40 @@ function buildCoverageReport(rows: SecurityRateRow[]) {
   return { byAirport, missing };
 }
 
+/**
+ * Export a CSV report of contract_service_rates coverage for the current
+ * contract: one row per (airport, security type) with present/missing status.
+ */
+function exportCoverageCsv(rows: SecurityRateRow[], contractId: string) {
+  const { byAirport } = buildCoverageReport(rows);
+  const airports = Object.keys(byAirport).sort();
+  const types = ["Arrival Security", "Departure Security"];
+  const csvRows: string[] = ["Contract ID,Airport,Service Type,Status,Rate,Currency,Unit"];
+  if (airports.length === 0) {
+    csvRows.push(`${contractId},,,No security rates defined,,,`);
+  } else {
+    airports.forEach(ap => {
+      types.forEach(t => {
+        const row = rows.find(r => (r.airport || "").toUpperCase() === ap && r.flight_type === t);
+        if (row) {
+          csvRows.push(`${contractId},${ap},${t},Present,${row.rate},${row.currency || ""},${row.unit || ""}`);
+        } else {
+          csvRows.push(`${contractId},${ap},${t},MISSING,,,`);
+        }
+      });
+    });
+  }
+  const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `contract-rates-coverage-${contractId.slice(0, 8)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = false }: Props) {
   const [rows, setRows] = useState<RowWithMeta[]>([]);
   const [originalRows, setOriginalRows] = useState<RowWithMeta[]>([]);
@@ -88,7 +122,23 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
   const updateRow = (key: string, patch: Partial<SecurityRateRow>) =>
     setRows(prev => prev.map(r => (r._localKey === key ? { ...r, ...patch, _dirty: true } : r)));
 
-  const handleSave = async () => {
+  const handleSave = async (force = false) => {
+    // Block save when coverage gaps exist for any airport (Arrival/Departure
+    // pair incomplete) — receivables for those flights would otherwise emit
+    // Missing-rate errors. The user can override with the explicit "Save anyway"
+    // action.
+    const preCoverage = buildCoverageReport(rows);
+    if (!force && preCoverage.missing.length > 0) {
+      const summary = preCoverage.missing
+        .map(m => `${m.airport}: ${m.missing.join(", ")}`)
+        .join(" • ");
+      toast({
+        title: "Cannot save — missing security rates",
+        description: `Add the missing Arrival/Departure pairs before saving: ${summary}. Use "Save anyway" to bypass.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setSaving(true);
     try {
       // 1) Determine deletes (rows that existed before but are no longer in state)
@@ -185,13 +235,30 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
           <Shield size={13} /> Security Service Rates
         </h4>
         {!readOnly && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => exportCoverageCsv(rows, contractId)} className="text-xs flex items-center gap-1 px-2 py-1 rounded border hover:bg-muted text-foreground">
+              <Download size={12} /> Export CSV
+            </button>
             <button onClick={addRow} className="text-xs flex items-center gap-1 px-2 py-1 rounded border hover:bg-muted text-foreground">
               <Plus size={12} /> Add
             </button>
-            <button onClick={handleSave} disabled={saving} className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <button
+              onClick={() => handleSave(false)}
+              disabled={saving}
+              className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
               <Save size={12} /> {saving ? "Saving…" : "Save Rates"}
             </button>
+            {coverage.missing.length > 0 && (
+              <button
+                onClick={() => handleSave(true)}
+                disabled={saving}
+                className="text-xs flex items-center gap-1 px-2 py-1 rounded border border-destructive/50 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                title="Save even though Arrival/Departure security pairs are incomplete"
+              >
+                Save anyway
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -242,8 +309,19 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
                   No security rates defined. Click "Add" to create rate rows.
                 </td>
               </tr>
-            ) : rows.map((r) => (
-              <tr key={r._localKey} className="border-t">
+            ) : rows.map((r) => {
+              const ap = (r.airport || "").toUpperCase().trim();
+              const gap = coverage.missing.find(m => m.airport === ap);
+              // Highlight rows whose airport has a gap; mark the row whose
+              // counterpart is missing (e.g. if Departure exists but Arrival
+              // is missing, the Departure row is highlighted as the partner
+              // that needs a sibling).
+              const isPartnerOfGap = !!gap && /security/i.test(r.flight_type || "");
+              const rowCls = isPartnerOfGap
+                ? "border-t bg-amber-500/10"
+                : "border-t";
+              return (
+              <tr key={r._localKey} className={rowCls} title={isPartnerOfGap ? `${ap} is missing: ${gap!.missing.join(", ")}` : undefined}>
                 <td className="px-2 py-1">
                   {readOnly ? <span className="font-mono">{r.airport}</span> : (
                     <input className={inputCls} value={r.airport} onChange={e => updateRow(r._localKey, { airport: e.target.value.toUpperCase() })} maxLength={4} />
@@ -291,7 +369,8 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
                   </td>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
