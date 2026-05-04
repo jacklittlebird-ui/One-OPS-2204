@@ -203,6 +203,9 @@ export default function ContractsPage() {
         </div>
       )}
 
+      {/* Contract Rates Audit — surfaces missing Arrival/Departure Security pairs */}
+      <ContractRatesAuditPanel />
+
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">
         <div className="p-4 border-b flex flex-wrap items-center gap-3">
