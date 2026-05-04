@@ -406,7 +406,7 @@ function HandlingServiceReportContent() {
     },
   });
 
-  // Receivables: load invoices to detect billed flights (matched by flight_ref ↔ flight_no)
+  // Receivables / pipeline: load invoices to detect billed & paid flights (matched by flight_ref ↔ flight_no)
   const { data: dbInvoices = [] } = useQuery({
     queryKey: ["invoices_for_receivables_panel"],
     queryFn: async () => {
@@ -414,8 +414,24 @@ function HandlingServiceReportContent() {
       if (error) throw error;
       return data || [];
     },
-    enabled: isReceivablesView,
   });
+
+  // Map flight_ref (uppercased) -> invoice progress so the pipeline can mark
+  // Receivables as completed only when the invoice is fully Paid.
+  const invoiceStatusByFlight = useMemo(() => {
+    const m = new Map<string, "issued" | "paid">();
+    for (const inv of (dbInvoices as any[])) {
+      const key = String(inv.flight_ref || "").trim().toUpperCase();
+      if (!key) continue;
+      const status = String(inv.status || "").toLowerCase();
+      const isPaid = status === "paid";
+      const prev = m.get(key);
+      // Prefer "paid" if any invoice for this flight is paid.
+      if (isPaid) m.set(key, "paid");
+      else if (!prev) m.set(key, "issued");
+    }
+    return m;
+  }, [dbInvoices]);
 
   const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
     queryKey: ["flight_schedules", isStationScoped ? userStation : null],
