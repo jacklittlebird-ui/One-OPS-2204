@@ -76,13 +76,16 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
   const currency = baseRate?.currency || "USD";
 
   if (baseRate && !input.returnToRampWithLoadChange) {
+    const labelSuffix = usedFallback ? ` (using ${usedFallback} as fallback)` : "";
     lines.push({
-      label: `${effectiveType} – ${airport}`,
+      label: `${effectiveType} – ${airport}${labelSuffix}`,
       qty: 1,
       unit: baseRate.unit || "Per Flight",
       rate: baseRate.rate,
       amount: baseRate.rate,
-      notes: baseRate.notes,
+      notes: usedFallback
+        ? `No ${effectiveType} rate defined for ${airport}; falling back to ${usedFallback}. ${baseRate.notes || ""}`.trim()
+        : baseRate.notes,
     });
 
     // Overtime calculation — only when DURATION exceeds 3h.
