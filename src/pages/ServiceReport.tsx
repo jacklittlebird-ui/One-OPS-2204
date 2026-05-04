@@ -801,6 +801,7 @@ function HandlingServiceReportContent() {
         return {
           id: r.id,
           flightNo: r.flightNo,
+          registration: r.registration,
           operator: r.operator,
           route: r.route,
           arrivalDate: r.arrivalDate,
@@ -1467,6 +1468,7 @@ function HandlingServiceReportContent() {
                       <th className="px-3 py-2">#</th>
                       <th className="px-3 py-2">Date</th>
                       <th className="px-3 py-2">Flight</th>
+                      <th className="px-3 py-2">Reg.</th>
                       <th className="px-3 py-2">Operator</th>
                       <th className="px-3 py-2">Route</th>
                       <th className="px-3 py-2">Type</th>
@@ -1484,6 +1486,7 @@ function HandlingServiceReportContent() {
                         <td className="px-3 py-2 font-mono text-muted-foreground">{i + 1}</td>
                         <td className="px-3 py-2 font-mono">{r.arrivalDate || "—"}</td>
                         <td className="px-3 py-2 font-mono font-semibold text-foreground">{r.flightNo || "—"}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{r.registration || "—"}</td>
                         <td className="px-3 py-2">{r.operator || "—"}</td>
                         <td className="px-3 py-2">{r.route || "—"}</td>
                         <td className="px-3 py-2">{r.handlingType || "—"}</td>
