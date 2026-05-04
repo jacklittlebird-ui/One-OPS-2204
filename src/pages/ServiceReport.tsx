@@ -1467,6 +1467,7 @@ function HandlingServiceReportContent() {
                       <th className="px-3 py-2">#</th>
                       <th className="px-3 py-2">Date</th>
                       <th className="px-3 py-2">Flight</th>
+                      <th className="px-3 py-2">Reg.</th>
                       <th className="px-3 py-2">Operator</th>
                       <th className="px-3 py-2">Route</th>
                       <th className="px-3 py-2">Type</th>
