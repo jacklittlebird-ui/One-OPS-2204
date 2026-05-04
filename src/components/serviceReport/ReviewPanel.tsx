@@ -40,14 +40,19 @@ export default function ReviewPanel({ reportId, currentStatus, reviewComment, re
   const handleReview = async (newStatus: "approved" | "rejected") => {
     setSubmitting(true);
     try {
+      const reviewedAt = new Date().toISOString();
       const { error } = await supabase.from("service_reports").update({
         review_status: newStatus,
         review_comment: comment,
         reviewed_by: "Operations",
-        reviewed_at: new Date().toISOString(),
+        reviewed_at: reviewedAt,
       } as any).eq("id", reportId);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      // Update cache in place to preserve current row order (no refetch / no re-sort)
+      queryClient.setQueriesData({ queryKey: ["service_reports"] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((row: any) => row.id === reportId ? { ...row, review_status: newStatus, review_comment: comment, reviewed_by: "Operations", reviewed_at: reviewedAt } : row);
+      });
       toast({ title: newStatus === "approved" ? "✅ Report Approved" : "❌ Report Rejected", description: comment || `Report has been ${newStatus}.` });
       onReviewComplete();
       setOpen(false);
