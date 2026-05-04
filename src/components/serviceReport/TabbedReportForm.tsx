@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import {
   FileBarChart2, X, Plane, Clock, Users, DollarSign, UtensilsCrossed,
   BedDouble, Fuel, Plus, Trash2, Building2, CalendarIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useQuery } from "@tanstack/react-query";
 import { Constants } from "@/integrations/supabase/types";
 import {
   ReportFormData, ReportTab, REPORT_TABS, FLIGHT_STATUSES,
@@ -267,6 +268,30 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
   const { data: delayCodes } = useSupabaseTable<DelayCodeRow>("delay_codes", { orderBy: "code", ascending: true });
   const { data: airportCharges } = useSupabaseTable<AirportChargeRow>("airport_charges", { orderBy: "created_at", ascending: true });
 
+  // Look up invoice status for this flight so the Receivables pipeline step
+  // only marks complete when the invoice is fully Paid.
+  const formFlightRef = String(data.flightNo || "").trim().toUpperCase();
+  const { data: formInvoiceRows = [] } = useQuery({
+    queryKey: ["invoice_for_pipeline_handling", formFlightRef],
+    queryFn: async () => {
+      if (!formFlightRef) return [];
+      const { data: rows, error } = await supabase
+        .from("invoices")
+        .select("status")
+        .eq("flight_ref", formFlightRef)
+        .neq("status", "Cancelled");
+      if (error) throw error;
+      return rows || [];
+    },
+    enabled: !!formFlightRef && !!data.id,
+  });
+  const formInvoiceStatus: "none" | "issued" | "paid" = useMemo(() => {
+    const rows = (formInvoiceRows as any[]) || [];
+    if (rows.length === 0) return "none";
+    const anyPaid = rows.some((r) => String(r.status || "").toLowerCase() === "paid");
+    return anyPaid ? "paid" : "issued";
+  }, [formInvoiceRows]);
+
   const lookupMtowByReg = useCallback(async (reg: string) => {
     if (!reg || reg.length < 2) return;
     const { data: aircraft } = await supabase
@@ -509,6 +534,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               clearanceStatus: clearanceStatus,
               dispatchStatus: data.id ? "Completed" : "Pending",
               channel: activeChannel,
+              invoiceStatus: formInvoiceStatus,
             })}
           />
         </div>
