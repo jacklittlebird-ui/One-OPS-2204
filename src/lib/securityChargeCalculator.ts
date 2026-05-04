@@ -55,7 +55,24 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
   // Maintenance Security, Turnaround. Overtime applies above included_hours.
   const effectiveType = flightType;
 
-  const baseRate = findRate(rates, airport, effectiveType);
+  // Primary lookup
+  let baseRate = findRate(rates, airport, effectiveType);
+  let usedFallback: string | null = null;
+
+  // Fallback: if Arrival Security is missing for this airport, fall back to
+  // Departure Security at the same airport (same contract). This mirrors the
+  // common SGHA practice where security charges per movement are symmetrical
+  // unless the contract explicitly differentiates.
+  if (!baseRate && /arrival\s*security/i.test(effectiveType)) {
+    baseRate = findRate(rates, airport, "Departure Security");
+    if (baseRate) usedFallback = "Departure Security";
+  }
+  // Reverse fallback for Departure → Arrival, in case only Arrival is defined.
+  if (!baseRate && /departure\s*security/i.test(effectiveType)) {
+    baseRate = findRate(rates, airport, "Arrival Security");
+    if (baseRate) usedFallback = "Arrival Security";
+  }
+
   const currency = baseRate?.currency || "USD";
 
   if (baseRate && !input.returnToRampWithLoadChange) {
