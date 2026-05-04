@@ -1,10 +1,12 @@
 import { ShieldCheck, Building2, ClipboardCheck, Receipt } from "lucide-react";
 
+// Each pipeline step has its own semantic color token so the four stages are
+// visually distinct in every portal (Clearance, Station, Operations, Receivables).
 const STEPS = [
-  { key: "clearance", label: "Clearance", icon: ShieldCheck },
-  { key: "station", label: "Security Service", icon: Building2 },
-  { key: "operations", label: "Operations", icon: ClipboardCheck },
-  { key: "receivables", label: "Receivables", icon: Receipt },
+  { key: "clearance",   label: "Clearance",        icon: ShieldCheck,    colorVar: "--info" },     // blue
+  { key: "station",     label: "Security Service", icon: Building2,      colorVar: "--violet" },   // violet
+  { key: "operations",  label: "Operations",       icon: ClipboardCheck, colorVar: "--warning" },  // amber/orange
+  { key: "receivables", label: "Receivables",      icon: Receipt,        colorVar: "--success" },  // green
 ] as const;
 
 export type PipelineStage = "clearance" | "station" | "operations" | "receivables";
