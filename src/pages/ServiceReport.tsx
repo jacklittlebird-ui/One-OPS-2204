@@ -228,6 +228,7 @@ interface ScheduleSourceRow {
   flightNo: string;
   operator: string;
   aircraftType: string;
+  registration: string;
   route: string;
   sta: string;
   std: string;
@@ -421,7 +422,7 @@ function HandlingServiceReportContent() {
     queryFn: async () => {
       let q = supabase
         .from("flight_schedules")
-        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type")
+        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type")
         .order("arrival_date", { ascending: false, nullsFirst: false });
       if (isStationScoped && userStation) q = (q as any).or(`route.ilike.%${userStation}%,authority.eq.${userStation}`);
       const { data, error } = await q;
@@ -490,6 +491,7 @@ function HandlingServiceReportContent() {
           flightNo: getScheduleFlightNo(c),
           operator: airline?.name || airline?.code || c.handling_agent || "",
           aircraftType: c.aircraft_type || "",
+          registration: c.registration || "",
           route: c.route || "",
           sta: c.sta || "",
           std: c.std || "",
@@ -542,6 +544,7 @@ function HandlingServiceReportContent() {
         flightNo: source.flightNo,
         operator: source.operator,
         aircraftType: source.aircraftType,
+        registration: source.registration,
         route: source.route,
         sta: source.sta,
         std: source.std,
@@ -1267,6 +1270,7 @@ function HandlingServiceReportContent() {
                                 flightNo: r.flightNo,
                                 operator: r.operator,
                                 aircraftType: r.aircraftType,
+                                registration: r.registration,
                                 route: r.route,
                                 sta: r.sta,
                                 std: r.std,
