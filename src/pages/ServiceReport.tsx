@@ -544,6 +544,7 @@ function HandlingServiceReportContent() {
         flightNo: source.flightNo,
         operator: source.operator,
         aircraftType: source.aircraftType,
+        registration: source.registration,
         route: source.route,
         sta: source.sta,
         std: source.std,
