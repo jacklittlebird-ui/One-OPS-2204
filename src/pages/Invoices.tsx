@@ -158,6 +158,46 @@ export default function InvoicesPage() {
     const first = inv.flight_ref.split(",")[0].trim().toUpperCase();
     return regByFlightNo[first] || "";
   }, [regByFlightNo]);
+
+  // Lookup flight_schedules by id and by (flight_no + flight_date) so we can
+  // enrich dispatch rows (which don't carry registration / route columns).
+  const fsById = useMemo(() => {
+    const m: Record<string, any> = {};
+    (flightSchedules || []).forEach((f: any) => { if (f.id) m[f.id] = f; });
+    return m;
+  }, [flightSchedules]);
+  const fsByFlightDate = useMemo(() => {
+    const m: Record<string, any> = {};
+    (flightSchedules || []).forEach((f: any) => {
+      const k = `${(f.flight_no || "").trim().toUpperCase()}__${(f.flight_date || "").toString().slice(0, 10)}`;
+      if (k.trim() !== "__" && !m[k]) m[k] = f;
+    });
+    return m;
+  }, [flightSchedules]);
+  const lookupFlightInfo = useCallback((d: any): { reg: string; route: string } => {
+    const fromId = d?.flight_schedule_id ? fsById[d.flight_schedule_id] : null;
+    const key = `${(d?.flight_no || "").trim().toUpperCase()}__${(d?.flight_date || "").toString().slice(0, 10)}`;
+    const fromKey = fsByFlightDate[key];
+    const f = fromId || fromKey;
+    return { reg: f?.registration || "", route: f?.route || "" };
+  }, [fsById, fsByFlightDate]);
+
+  // Build a descriptive service-type label including overtime information.
+  const buildServiceTypeLabel = (d: any): string => {
+    const parts: string[] = [];
+    const base = (d?.service_type || "").toString().trim();
+    if (base) parts.push(base);
+    const ot = Number(d?.overtime_hours) || 0;
+    const otCharge = Number(d?.overtime_charge) || 0;
+    if (ot > 0 || otCharge > 0) {
+      parts.push(ot > 0 ? `Overtime ${ot}h` : "Overtime");
+    }
+    if (d?.short_notice) parts.push("Short-notice");
+    if (d?.return_to_ramp_with_load) parts.push("Return-to-ramp");
+    if (Number(d?.extra_manpower_count) > 0) parts.push(`+${d.extra_manpower_count} Manpower`);
+    if (Number(d?.ramp_vehicle_trips) > 0) parts.push(`${d.ramp_vehicle_trips} Ramp trip(s)`);
+    return parts.join(" • ");
+  };
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [categoryTab, setCategoryTab] = useState<"handling" | "security">("security");
