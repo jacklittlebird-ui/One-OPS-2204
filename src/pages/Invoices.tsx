@@ -476,6 +476,23 @@ export default function InvoicesPage() {
     return Object.values(grouped);
   }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab]);
 
+  // Guard: only allow "Generate from Dispatches" when every dispatch in the selected
+  // month/station is marked Completed. Pending/in-progress dispatches block generation.
+  const dispatchGenerationGuard = useMemo(() => {
+    const scoped = (dispatches || []).filter((d: any) => {
+      const matchMonth = d.flight_date?.startsWith(billingMonth);
+      const matchStation = billingStation === "All" || d.station === billingStation;
+      return matchMonth && matchStation;
+    });
+    const incomplete = scoped.filter((d: any) => (d.status || "").toLowerCase() !== "completed");
+    return {
+      total: scoped.length,
+      incompleteCount: incomplete.length,
+      allComplete: scoped.length > 0 && incomplete.length === 0,
+      hasAny: scoped.length > 0,
+    };
+  }, [dispatches, billingMonth, billingStation]);
+
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
     let civil = 0, handling = 0, airport = 0, other = 0;
     const detailRows: any[] = [];
