@@ -55,17 +55,37 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
   // Maintenance Security, Turnaround. Overtime applies above included_hours.
   const effectiveType = flightType;
 
-  const baseRate = findRate(rates, airport, effectiveType);
+  // Primary lookup
+  let baseRate = findRate(rates, airport, effectiveType);
+  let usedFallback: string | null = null;
+
+  // Fallback: if Arrival Security is missing for this airport, fall back to
+  // Departure Security at the same airport (same contract). This mirrors the
+  // common SGHA practice where security charges per movement are symmetrical
+  // unless the contract explicitly differentiates.
+  if (!baseRate && /arrival\s*security/i.test(effectiveType)) {
+    baseRate = findRate(rates, airport, "Departure Security");
+    if (baseRate) usedFallback = "Departure Security";
+  }
+  // Reverse fallback for Departure → Arrival, in case only Arrival is defined.
+  if (!baseRate && /departure\s*security/i.test(effectiveType)) {
+    baseRate = findRate(rates, airport, "Arrival Security");
+    if (baseRate) usedFallback = "Arrival Security";
+  }
+
   const currency = baseRate?.currency || "USD";
 
   if (baseRate && !input.returnToRampWithLoadChange) {
+    const labelSuffix = usedFallback ? ` (using ${usedFallback} as fallback)` : "";
     lines.push({
-      label: `${effectiveType} – ${airport}`,
+      label: `${effectiveType} – ${airport}${labelSuffix}`,
       qty: 1,
       unit: baseRate.unit || "Per Flight",
       rate: baseRate.rate,
       amount: baseRate.rate,
-      notes: baseRate.notes,
+      notes: usedFallback
+        ? `No ${effectiveType} rate defined for ${airport}; falling back to ${usedFallback}. ${baseRate.notes || ""}`.trim()
+        : baseRate.notes,
     });
 
     // Overtime calculation — only when DURATION exceeds 3h.

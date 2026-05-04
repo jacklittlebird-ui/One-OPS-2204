@@ -15,6 +15,7 @@ import { daysUntilExpiry, emptyContract, STATUSES, CONTRACT_TYPES, SERVICE_CATEG
 import { ContractStatusBadge, ContractTypeBadge } from "@/components/contracts/ContractStatusBadge";
 import { ContractForm } from "@/components/contracts/ContractForm";
 import { ContractDetailModal } from "@/components/contracts/ContractDetailModal";
+import { ContractRatesAuditPanel } from "@/components/contracts/ContractRatesAuditPanel";
 
 const PAGE_SIZE = 15;
 
@@ -201,6 +202,9 @@ export default function ContractsPage() {
           </div>
         </div>
       )}
+
+      {/* Contract Rates Audit — surfaces missing Arrival/Departure Security pairs */}
+      <ContractRatesAuditPanel />
 
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">
