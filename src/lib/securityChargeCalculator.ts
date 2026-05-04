@@ -67,13 +67,15 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
   const currency = baseRate?.currency || "USD";
 
   if (!baseRate && !input.returnToRampWithLoadChange) {
+    const location = `Contracts → Security Rates → ${airport} / ${effectiveType}`;
     lines.push({
       label: `⚠ Missing rate: ${effectiveType} – ${airport}`,
       qty: 0,
       unit: "—",
       rate: 0,
       amount: 0,
-      notes: `No ${effectiveType} rate defined for ${airport} in this contract. Please add it in Contracts → Security Rates.`,
+      notes: `No ${effectiveType} rate defined for ${airport} in this contract. Add it under: ${location}.`,
+      missingDetail: { airport, flightType: effectiveType, location },
     });
   }
 
