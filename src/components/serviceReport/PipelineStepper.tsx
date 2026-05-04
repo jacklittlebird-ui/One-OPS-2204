@@ -37,47 +37,43 @@ export function derivePipelineStage(opts: {
   channel?: "station" | "operations" | string;
   /** True when rendering the stepper inside the open form/dialog (not the table row). */
   formView?: boolean;
+  /** Receivables progress: "none" = no invoice yet, "issued" = invoice exists but unpaid,
+   *  "paid" = invoice fully paid. Receivables is only COMPLETE when "paid". */
+  invoiceStatus?: "none" | "issued" | "paid";
 }): PipelineStage {
   const rs = (opts.reviewStatus || "").toLowerCase();
   const ds = (opts.dispatchStatus || "").toLowerCase();
   const cs = (opts.clearanceStatus || "").toLowerCase();
   const ch = (opts.channel || "").toLowerCase();
+  const inv = opts.invoiceStatus || "none";
 
   // --- Step completion flags (record-view truth) ---
-  // Step 1 done when clearance is approved OR a dispatch already exists (linked).
   let step1Done = cs === "approved" || (opts.isLinked && cs !== "pending" && cs !== "rejected");
   if (!cs && opts.isLinked) step1Done = true;
 
-  // Step 2 done when the task sheet is saved (dispatch completed).
   let step2Done = ds === "completed";
 
-  // Step 3 done when operations approved (or already moved to billing).
   let step3Done =
     rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing";
+
+  // Step 4 (receivables) — only complete once the invoice is PAID.
+  const step4Done = inv === "paid";
 
   // --- Form-view overrides ---
   if (opts.formView) {
     if (ch === "station") {
-      // Opening the new/edit form in station = step 1 already complete and step 2
-      // is the ACTIVE stage (the work the station is doing right now). We don't
-      // advance to step 3 even if the record was previously saved — operations
-      // approval still belongs to the operations channel.
       step1Done = true;
       step2Done = false;
       step3Done = false;
     } else if (ch === "operations") {
-      // Opening the form in operations = steps 1 & 2 complete; step 3 is the active step
-      // (unless ops has already approved, in which case keep step3Done as-is).
       step1Done = true;
       step2Done = true;
     }
   }
 
-  // Rejected reports stay on step 2 (station) for rework.
   if (!opts.formView && rs === "rejected") {
     return "station";
   }
-  // Modified reports (resubmitted by station after rejection) sit at step 3 (operations review).
   if (!opts.formView && rs === "modified") {
     return "operations";
   }
@@ -86,12 +82,10 @@ export function derivePipelineStage(opts: {
   if (!step1Done) stage = "clearance";
   else if (!step2Done) stage = "station";
   else if (!step3Done) stage = "operations";
-  else stage = "receivables";
+  else stage = "receivables"; // active until step4Done; even if paid, last stage stays "receivables"
+  // (consumers use completedStages to render the paid checkmark)
+  void step4Done;
 
-  // Cap the pipeline display in station record/list view so it doesn't
-  // jump ahead to "receivables" — but DO allow it to advance to
-  // "operations" (which marks step 2 as completed) once the task sheet
-  // has been saved (dispatch.status === "Completed").
   if (!opts.formView) {
     const order: PipelineStage[] = ["clearance", "station", "operations", "receivables"];
     const cap: Record<string, PipelineStage> = {
@@ -107,33 +101,31 @@ export function derivePipelineStage(opts: {
 
 /**
  * Returns the explicit set of completed steps for a record, independent of the
- * "current" stage. Use this when steps may complete out of order (e.g. a
- * station saves the task sheet before clearance approves the flight, so step
- * 2 should still display as completed).
+ * "current" stage. Receivables is only included when the invoice is PAID.
  */
 export function derivePipelineCompletedStages(opts: {
   isLinked: boolean;
   reviewStatus: string;
   clearanceStatus?: string;
   dispatchStatus?: string;
+  invoiceStatus?: "none" | "issued" | "paid";
 }): PipelineStage[] {
   const rs = (opts.reviewStatus || "").toLowerCase();
   const ds = (opts.dispatchStatus || "").toLowerCase();
   const cs = (opts.clearanceStatus || "").toLowerCase();
+  const inv = opts.invoiceStatus || "none";
 
   const done: PipelineStage[] = [];
-  // Step 1 — clearance approved (or linked with no pending/rejected status).
   if (cs === "approved" || (opts.isLinked && cs && cs !== "pending" && cs !== "rejected")) {
     done.push("clearance");
   } else if (!cs && opts.isLinked) {
     done.push("clearance");
   }
-  // Step 2 — station saved the task sheet (dispatch completed).
   if (ds === "completed") done.push("station");
-  // Step 3 — operations approved (or moved to billing).
   if (rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing") {
     done.push("operations");
   }
+  if (inv === "paid") done.push("receivables");
   return done;
 }
 
