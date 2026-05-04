@@ -801,6 +801,7 @@ function HandlingServiceReportContent() {
         return {
           id: r.id,
           flightNo: r.flightNo,
+          registration: r.registration,
           operator: r.operator,
           route: r.route,
           arrivalDate: r.arrivalDate,
