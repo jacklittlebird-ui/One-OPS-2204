@@ -1066,15 +1066,8 @@ export default function InvoicesPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowBillingPreview(true)}
-              disabled={!dispatchGenerationGuard.allComplete}
-              title={
-                !dispatchGenerationGuard.hasAny
-                  ? `No dispatches found for ${billingMonth}${billingStation !== "All" ? ` (${billingStation})` : ""}`
-                  : !dispatchGenerationGuard.allComplete
-                    ? `${dispatchGenerationGuard.incompleteCount} dispatch(es) not yet completed for ${billingMonth}. Mark all flights complete to enable.`
-                    : "Generate invoices from completed dispatches"
-              }
-              className="toolbar-btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Generate invoices from completed dispatches for the selected period"
+              className="toolbar-btn-outline"
             ><Zap size={14} /> Generate from Dispatches</button>
             <button onClick={() => setShowMonthlyAirline(true)} className="toolbar-btn-outline"><Calendar size={14} /> Monthly Airline Invoice</button>
             <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
