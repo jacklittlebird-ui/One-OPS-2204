@@ -159,20 +159,28 @@ export default function PipelineStepper({ currentStage, completedStages, compact
         {STEPS.map((step, i) => {
           const isCompleted = stepIsCompleted(i, step.key);
           const isCurrent = i === currentIdx && !isCompleted;
+          const colorStyle = (isCompleted || isCurrent)
+            ? { backgroundColor: `hsl(var(${step.colorVar}))`, color: `hsl(var(${step.colorVar}-foreground))` }
+            : undefined;
+          const ringStyle = isCurrent
+            ? { boxShadow: `0 0 0 2px hsl(var(${step.colorVar}) / 0.3)` }
+            : undefined;
           return (
             <div key={step.key} className="flex items-center gap-0.5">
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold transition-colors
-                  ${isCompleted ? "bg-primary text-primary-foreground" : ""}
-                  ${isCurrent ? "bg-primary text-primary-foreground ring-2 ring-primary/30" : ""}
                   ${!isCompleted && !isCurrent ? "bg-muted text-muted-foreground" : ""}
                 `}
+                style={{ ...colorStyle, ...ringStyle }}
                 title={step.label}
               >
                 {i + 1}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-3 h-0.5 ${stepIsCompleted(i, step.key) ? "bg-primary" : "bg-border"}`} />
+                <div
+                  className={`w-3 h-0.5 ${stepIsCompleted(i, step.key) ? "" : "bg-border"}`}
+                  style={stepIsCompleted(i, step.key) ? { backgroundColor: `hsl(var(${step.colorVar}))` } : undefined}
+                />
               )}
             </div>
           );
@@ -187,24 +195,35 @@ export default function PipelineStepper({ currentStage, completedStages, compact
         const Icon = step.icon;
         const isCompleted = stepIsCompleted(i, step.key);
         const isCurrent = i === currentIdx && !isCompleted;
+        const colorStyle = (isCompleted || isCurrent)
+          ? { backgroundColor: `hsl(var(${step.colorVar}))`, color: `hsl(var(${step.colorVar}-foreground))` }
+          : undefined;
+        const ringStyle = isCurrent
+          ? { boxShadow: `0 0 0 2px hsl(var(${step.colorVar}) / 0.3)` }
+          : undefined;
         return (
           <div key={step.key} className="flex items-center gap-1">
             <div className="flex flex-col items-center gap-0.5">
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors
-                  ${isCompleted ? "bg-primary text-primary-foreground" : ""}
-                  ${isCurrent ? "bg-primary text-primary-foreground ring-2 ring-primary/30" : ""}
                   ${!isCompleted && !isCurrent ? "bg-muted text-muted-foreground" : ""}
                 `}
+                style={{ ...colorStyle, ...ringStyle }}
               >
                 <Icon size={13} />
               </div>
-              <span className={`text-[9px] leading-tight whitespace-nowrap ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+              <span
+                className={`text-[9px] leading-tight whitespace-nowrap ${isCurrent ? "font-semibold" : "text-muted-foreground"}`}
+                style={isCurrent ? { color: `hsl(var(${step.colorVar}))` } : undefined}
+              >
                 {step.label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`w-4 h-0.5 mb-3 ${stepIsCompleted(i, step.key) ? "bg-primary" : "bg-border"}`} />
+              <div
+                className={`w-4 h-0.5 mb-3 ${stepIsCompleted(i, step.key) ? "" : "bg-border"}`}
+                style={stepIsCompleted(i, step.key) ? { backgroundColor: `hsl(var(${step.colorVar}))` } : undefined}
+              />
             )}
           </div>
         );
