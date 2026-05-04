@@ -188,6 +188,31 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
   });
 
+  // Pipeline: load invoices to mark Receivables step complete only when paid.
+  const { data: dbInvoicesForPipeline = [] } = useQuery({
+    queryKey: ["invoices_for_security_pipeline"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("flight_ref,status")
+        .neq("status", "Cancelled");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!session,
+  });
+  const invoiceStatusByFlight = useMemo(() => {
+    const m = new Map<string, "issued" | "paid">();
+    for (const inv of (dbInvoicesForPipeline as any[])) {
+      const key = String(inv.flight_ref || "").trim().toUpperCase();
+      if (!key) continue;
+      const isPaid = String(inv.status || "").toLowerCase() === "paid";
+      if (isPaid) m.set(key, "paid");
+      else if (!m.get(key)) m.set(key, "issued");
+    }
+    return m;
+  }, [dbInvoicesForPipeline]);
+
   // Fetch flight schedules with security clearance types
   const { data: securityFlights = [] } = useQuery({
     queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null],
