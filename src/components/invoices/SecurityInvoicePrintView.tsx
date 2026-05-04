@@ -98,7 +98,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto m-4 print:m-0 print:shadow-none print:rounded-none print:max-h-none print:overflow-visible">
         {/* Toolbar — no print */}
-        <div className="flex items-center justify-between px-6 py-3 border-b print:hidden bg-gray-50">
+        <div className="flex items-center justify-between px-6 py-3 border-b print:hidden">
           <span className="text-sm font-semibold text-gray-700">Security Invoice Preview</span>
           <div className="flex gap-2">
             <button onClick={() => window.print()} className="toolbar-btn-primary inline-flex items-center gap-1.5">
@@ -182,7 +182,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                   <td className="px-3 py-2 text-right text-sm">VAT-Zero%&nbsp;&nbsp;{(invoice.vat || 0).toFixed(2)}</td>
                 </tr>
                 {/* Total */}
-                <tr className="border-t border-gray-700 bg-gray-50">
+                <tr className="border-t border-gray-700">
                   <td colSpan={2} className="px-3 py-2 border-r border-gray-700"></td>
                   <td className="px-3 py-2 text-right font-bold text-base">
                     Total&nbsp;&nbsp;{fmtMoney(invoice.total, invoice.currency)}
@@ -234,13 +234,13 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
 
                   {/* Meta grid */}
                   <div className="grid grid-cols-3 text-sm mb-4 border border-gray-500 rounded-sm overflow-hidden">
-                    <div className="px-3 py-1.5 border-r border-gray-500 bg-gray-50">
+                    <div className="px-3 py-1.5 border-r border-gray-500">
                       <span className="font-semibold">Station :</span> {st}
                     </div>
-                    <div className="px-3 py-1.5 border-r border-gray-500 bg-gray-50">
+                    <div className="px-3 py-1.5 border-r border-gray-500">
                       <span className="font-semibold">From :</span> {periodFrom || "—"}
                     </div>
-                    <div className="px-3 py-1.5 bg-gray-50">
+                    <div className="px-3 py-1.5">
                       <span className="font-semibold">To :</span> {periodTo || "—"}
                     </div>
                   </div>
