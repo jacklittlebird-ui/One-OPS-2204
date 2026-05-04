@@ -275,8 +275,19 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
                   No security rates defined. Click "Add" to create rate rows.
                 </td>
               </tr>
-            ) : rows.map((r) => (
-              <tr key={r._localKey} className="border-t">
+            ) : rows.map((r) => {
+              const ap = (r.airport || "").toUpperCase().trim();
+              const gap = coverage.missing.find(m => m.airport === ap);
+              // Highlight rows whose airport has a gap; mark the row whose
+              // counterpart is missing (e.g. if Departure exists but Arrival
+              // is missing, the Departure row is highlighted as the partner
+              // that needs a sibling).
+              const isPartnerOfGap = !!gap && /security/i.test(r.flight_type || "");
+              const rowCls = isPartnerOfGap
+                ? "border-t bg-amber-500/10"
+                : "border-t";
+              return (
+              <tr key={r._localKey} className={rowCls} title={isPartnerOfGap ? `${ap} is missing: ${gap!.missing.join(", ")}` : undefined}>
                 <td className="px-2 py-1">
                   {readOnly ? <span className="font-mono">{r.airport}</span> : (
                     <input className={inputCls} value={r.airport} onChange={e => updateRow(r._localKey, { airport: e.target.value.toUpperCase() })} maxLength={4} />
