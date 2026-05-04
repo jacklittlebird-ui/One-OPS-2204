@@ -1357,6 +1357,18 @@ export default function InvoicesPage() {
                 Showing completed dispatches <span className="font-semibold">and approved Service Reports</span> grouped by airline &amp; station for <span className="font-semibold text-foreground">{billingMonth}</span>
               </p>
 
+              {dispatchGenerationGuard.hasAny && !dispatchGenerationGuard.allComplete && (
+                <div className="bg-warning/10 border border-warning/40 text-warning-foreground rounded-lg p-3 text-sm flex items-start gap-2">
+                  <Zap size={16} className="text-warning shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold text-warning">Dispatches not fully completed</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {dispatchGenerationGuard.incompleteCount} of {dispatchGenerationGuard.total} dispatch(es) for {billingMonth}{billingStation !== "All" ? ` · ${billingStation}` : ""} are not marked Completed. Invoice generation is disabled until all flights are complete.
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {billingPreviewData.length === 0 ? (
                 <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
                   <FileText size={32} className="mx-auto mb-2 opacity-40" />
