@@ -19,6 +19,12 @@ export interface ChargeLine {
   rate: number;
   amount: number;
   notes?: string;
+  /** Set when this line represents a missing-rate error so UIs can render a tooltip. */
+  missingDetail?: {
+    airport: string;
+    flightType: string;
+    location: string; // human-readable path: "Contracts → Security Rates → <airport> / <flightType>"
+  };
 }
 
 export interface SecurityChargeResult {
