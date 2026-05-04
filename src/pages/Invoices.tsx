@@ -1384,7 +1384,12 @@ export default function InvoicesPage() {
                           <div className="font-semibold text-foreground">{g.airline}</div>
                           <div className="text-xs text-muted-foreground">{g.station} — {g.flights} flights · {g.sources.reports} report{g.sources.reports === 1 ? "" : "s"} + {g.sources.dispatches} dispatch{g.sources.dispatches === 1 ? "" : "es"}</div>
                         </div>
-                        <button onClick={() => generateInvoiceFromBilling(g)} className="toolbar-btn-primary text-xs py-1.5">
+                        <button
+                          onClick={() => generateInvoiceFromBilling(g)}
+                          disabled={!dispatchGenerationGuard.allComplete}
+                          title={!dispatchGenerationGuard.allComplete ? "All dispatches must be marked Completed first" : "Create draft invoice"}
+                          className="toolbar-btn-primary text-xs py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                           <Plus size={12} /> Create Draft Invoice
                         </button>
                       </div>
