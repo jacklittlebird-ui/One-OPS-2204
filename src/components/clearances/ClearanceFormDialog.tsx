@@ -140,6 +140,14 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.skd_type]);
+
+  // Auto-set skd_type to "Maintenance" when service type is Maintenance Security
+  useEffect(() => {
+    if (form.clearance_type === "Maintenance Security" && form.skd_type !== "Maintenance") {
+      setForm({ ...form, skd_type: "Maintenance" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.clearance_type]);
   const [airlineOpen, setAirlineOpen] = useState(false);
   const [stationOpen, setStationOpen] = useState(false);
   const { data: airports } = useQuery({
