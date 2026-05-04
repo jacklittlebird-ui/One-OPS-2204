@@ -53,6 +53,40 @@ function buildCoverageReport(rows: SecurityRateRow[]) {
   return { byAirport, missing };
 }
 
+/**
+ * Export a CSV report of contract_service_rates coverage for the current
+ * contract: one row per (airport, security type) with present/missing status.
+ */
+function exportCoverageCsv(rows: SecurityRateRow[], contractId: string) {
+  const { byAirport } = buildCoverageReport(rows);
+  const airports = Object.keys(byAirport).sort();
+  const types = ["Arrival Security", "Departure Security"];
+  const csvRows: string[] = ["Contract ID,Airport,Service Type,Status,Rate,Currency,Unit"];
+  if (airports.length === 0) {
+    csvRows.push(`${contractId},,,No security rates defined,,,`);
+  } else {
+    airports.forEach(ap => {
+      types.forEach(t => {
+        const row = rows.find(r => (r.airport || "").toUpperCase() === ap && r.flight_type === t);
+        if (row) {
+          csvRows.push(`${contractId},${ap},${t},Present,${row.rate},${row.currency || ""},${row.unit || ""}`);
+        } else {
+          csvRows.push(`${contractId},${ap},${t},MISSING,,,`);
+        }
+      });
+    });
+  }
+  const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `contract-rates-coverage-${contractId.slice(0, 8)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = false }: Props) {
   const [rows, setRows] = useState<RowWithMeta[]>([]);
   const [originalRows, setOriginalRows] = useState<RowWithMeta[]>([]);
