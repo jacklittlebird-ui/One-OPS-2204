@@ -1269,11 +1269,16 @@ function HandlingServiceReportContent() {
                   </td>
                   <td className="px-3 py-2.5 font-semibold text-success">{r.isLinked ? r.totalCost.toLocaleString() : "—"}</td>
                   <td className="px-3 py-2.5">
-                    <PipelineStepper
-                      currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel })}
-                      completedStages={derivePipelineCompletedStages({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending" })}
-                      compact
-                    />
+                    {(() => {
+                      const invStatus = invoiceStatusByFlight.get(String(r.flightNo || "").trim().toUpperCase()) || "none";
+                      return (
+                        <PipelineStepper
+                          currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel, invoiceStatus: invStatus })}
+                          completedStages={derivePipelineCompletedStages({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", invoiceStatus: invStatus })}
+                          compact
+                        />
+                      );
+                    })()}
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">
