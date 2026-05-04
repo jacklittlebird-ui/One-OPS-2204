@@ -491,6 +491,7 @@ function HandlingServiceReportContent() {
           flightNo: getScheduleFlightNo(c),
           operator: airline?.name || airline?.code || c.handling_agent || "",
           aircraftType: c.aircraft_type || "",
+          registration: c.registration || "",
           route: c.route || "",
           sta: c.sta || "",
           std: c.std || "",
