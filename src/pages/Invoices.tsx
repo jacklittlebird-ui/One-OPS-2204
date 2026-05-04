@@ -158,6 +158,46 @@ export default function InvoicesPage() {
     const first = inv.flight_ref.split(",")[0].trim().toUpperCase();
     return regByFlightNo[first] || "";
   }, [regByFlightNo]);
+
+  // Lookup flight_schedules by id and by (flight_no + flight_date) so we can
+  // enrich dispatch rows (which don't carry registration / route columns).
+  const fsById = useMemo(() => {
+    const m: Record<string, any> = {};
+    (flightSchedules || []).forEach((f: any) => { if (f.id) m[f.id] = f; });
+    return m;
+  }, [flightSchedules]);
+  const fsByFlightDate = useMemo(() => {
+    const m: Record<string, any> = {};
+    (flightSchedules || []).forEach((f: any) => {
+      const k = `${(f.flight_no || "").trim().toUpperCase()}__${(f.flight_date || "").toString().slice(0, 10)}`;
+      if (k.trim() !== "__" && !m[k]) m[k] = f;
+    });
+    return m;
+  }, [flightSchedules]);
+  const lookupFlightInfo = useCallback((d: any): { reg: string; route: string } => {
+    const fromId = d?.flight_schedule_id ? fsById[d.flight_schedule_id] : null;
+    const key = `${(d?.flight_no || "").trim().toUpperCase()}__${(d?.flight_date || "").toString().slice(0, 10)}`;
+    const fromKey = fsByFlightDate[key];
+    const f = fromId || fromKey;
+    return { reg: f?.registration || "", route: f?.route || "" };
+  }, [fsById, fsByFlightDate]);
+
+  // Build a descriptive service-type label including overtime information.
+  const buildServiceTypeLabel = (d: any): string => {
+    const parts: string[] = [];
+    const base = (d?.service_type || "").toString().trim();
+    if (base) parts.push(base);
+    const ot = Number(d?.overtime_hours) || 0;
+    const otCharge = Number(d?.overtime_charge) || 0;
+    if (ot > 0 || otCharge > 0) {
+      parts.push(ot > 0 ? `Overtime ${ot}h` : "Overtime");
+    }
+    if (d?.short_notice) parts.push("Short-notice");
+    if (d?.return_to_ramp_with_load) parts.push("Return-to-ramp");
+    if (Number(d?.extra_manpower_count) > 0) parts.push(`+${d.extra_manpower_count} Manpower`);
+    if (Number(d?.ramp_vehicle_trips) > 0) parts.push(`${d.ramp_vehicle_trips} Ramp trip(s)`);
+    return parts.join(" • ");
+  };
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [categoryTab, setCategoryTab] = useState<"handling" | "security">("security");
@@ -452,9 +492,13 @@ export default function InvoicesPage() {
         const base = (it.total_security_charges || it.service_rate || 0) + (it.base_fee || 0);
         const ot = (it.overtime_charge || 0);
         handling += base; other += ot;
+        const fi = lookupFlightInfo(it);
         detailRows.push({
-          date: it.flight_date || "", flight: it.flight_no || "", reg: it.registration || "",
-          route: it.route || "", station: it.station || group.station, type: it.service_type || "",
+          date: it.flight_date || "", flight: it.flight_no || "",
+          reg: it.registration || fi.reg || "",
+          route: it.route || fi.route || "",
+          station: it.station || group.station,
+          type: buildServiceTypeLabel(it),
           category: "Security", civil: 0, handling: base, airport: 0, other: ot, total: base + ot,
         });
       }
@@ -790,15 +834,21 @@ export default function InvoicesPage() {
       if (!ok) { toast({ title: "Duplicate skipped", description: `Existing invoice ${duplicate.invoice_no} kept.` }); return; }
     }
     const invoiceNo = existingSec.length > 0 ? `${baseNo}-R${existingSec.length + 1}` : baseNo;
-    const detailRows = rows.map((d: any) => ({
-      date: d.flight_date || "", flight: d.flight_no || "", reg: "",
-      route: "", station: d.station || "", type: d.service_type || "",
-      civil: 0,
-      handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
-      airport: 0,
-      other: Number(d.overtime_charge) || 0,       // overtime → other column in Annex A
-      total: Number(d.total_charge) || 0,
-    }));
+    const detailRows = rows.map((d: any) => {
+      const fi = lookupFlightInfo(d);
+      return {
+        date: d.flight_date || "", flight: d.flight_no || "",
+        reg: d.registration || fi.reg || "",
+        route: d.route || fi.route || "",
+        station: d.station || "",
+        type: buildServiceTypeLabel(d),
+        civil: 0,
+        handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
+        airport: 0,
+        other: Number(d.overtime_charge) || 0,       // overtime → other column in Annex A
+        total: Number(d.total_charge) || 0,
+      };
+    });
     const headerNote = `Monthly Security invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${rows.length} approved security assignments across ${new Set(rows.map((d: any) => d.station)).size} station(s). See Annex A for per-flight detail.`;
     const subtotal = totals.total;
     const inv: Partial<InvoiceRow> = {
@@ -854,10 +904,18 @@ export default function InvoicesPage() {
       const m = rollupReport(r);
       return { date: r.arrival_date || "", flight: r.flight_no || "", reg: r.registration || "", route: r.route || "", station: r.station || "", type: r.handling_type || "", category: "Handling", civil: m.civil, handling: m.handling, airport: m.airport, other: m.other, total: m.total };
     });
-    const securityRows = secRows.map((d: any) => ({
-      date: d.flight_date || "", flight: d.flight_no || "", reg: "", route: "", station: d.station || "", type: d.service_type || "", category: "Security",
-      civil: 0, handling: Number(d.base_fee) || 0, airport: 0, other: Number(d.overtime_charge) || 0, total: Number(d.total_charge) || 0,
-    }));
+    const securityRows = secRows.map((d: any) => {
+      const fi = lookupFlightInfo(d);
+      return {
+        date: d.flight_date || "", flight: d.flight_no || "",
+        reg: d.registration || fi.reg || "",
+        route: d.route || fi.route || "",
+        station: d.station || "",
+        type: buildServiceTypeLabel(d),
+        category: "Security",
+        civil: 0, handling: Number(d.base_fee) || 0, airport: 0, other: Number(d.overtime_charge) || 0, total: Number(d.total_charge) || 0,
+      };
+    });
     const detailRows = [...handlingRows, ...securityRows];
 
     const civil_aviation = hT.civil;
