@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Shield, Plus, Trash2, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Shield, Plus, Trash2, Save, AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { SecurityRateRow } from "./ContractTypes";
