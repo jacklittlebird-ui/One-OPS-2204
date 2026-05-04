@@ -673,6 +673,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               clearanceStatus: (currentRow as any)?.clearance_status,
               channel: activeChannel,
               formView: true,
+              invoiceStatus: dialogInvoiceStatus,
             })}
           />
         </div>
