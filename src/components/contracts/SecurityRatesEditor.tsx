@@ -335,7 +335,8 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
                   </td>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
