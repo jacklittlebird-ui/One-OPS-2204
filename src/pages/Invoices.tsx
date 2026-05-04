@@ -476,6 +476,23 @@ export default function InvoicesPage() {
     return Object.values(grouped);
   }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab]);
 
+  // Guard: only allow "Generate from Dispatches" when every dispatch in the selected
+  // month/station is marked Completed. Pending/in-progress dispatches block generation.
+  const dispatchGenerationGuard = useMemo(() => {
+    const scoped = (dispatches || []).filter((d: any) => {
+      const matchMonth = d.flight_date?.startsWith(billingMonth);
+      const matchStation = billingStation === "All" || d.station === billingStation;
+      return matchMonth && matchStation;
+    });
+    const incomplete = scoped.filter((d: any) => (d.status || "").toLowerCase() !== "completed");
+    return {
+      total: scoped.length,
+      incompleteCount: incomplete.length,
+      allComplete: scoped.length > 0 && incomplete.length === 0,
+      hasAny: scoped.length > 0,
+    };
+  }, [dispatches, billingMonth, billingStation]);
+
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
     let civil = 0, handling = 0, airport = 0, other = 0;
     const detailRows: any[] = [];
@@ -1047,7 +1064,18 @@ export default function InvoicesPage() {
         </div>
         {!readOnly && (
           <div className="flex gap-2">
-            <button onClick={() => setShowBillingPreview(true)} className="toolbar-btn-outline"><Zap size={14} /> Generate from Dispatches</button>
+            <button
+              onClick={() => setShowBillingPreview(true)}
+              disabled={!dispatchGenerationGuard.allComplete}
+              title={
+                !dispatchGenerationGuard.hasAny
+                  ? `No dispatches found for ${billingMonth}${billingStation !== "All" ? ` (${billingStation})` : ""}`
+                  : !dispatchGenerationGuard.allComplete
+                    ? `${dispatchGenerationGuard.incompleteCount} dispatch(es) not yet completed for ${billingMonth}. Mark all flights complete to enable.`
+                    : "Generate invoices from completed dispatches"
+              }
+              className="toolbar-btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
+            ><Zap size={14} /> Generate from Dispatches</button>
             <button onClick={() => setShowMonthlyAirline(true)} className="toolbar-btn-outline"><Calendar size={14} /> Monthly Airline Invoice</button>
             <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
           </div>
@@ -1329,6 +1357,18 @@ export default function InvoicesPage() {
                 Showing completed dispatches <span className="font-semibold">and approved Service Reports</span> grouped by airline &amp; station for <span className="font-semibold text-foreground">{billingMonth}</span>
               </p>
 
+              {dispatchGenerationGuard.hasAny && !dispatchGenerationGuard.allComplete && (
+                <div className="bg-warning/10 border border-warning/40 text-warning-foreground rounded-lg p-3 text-sm flex items-start gap-2">
+                  <Zap size={16} className="text-warning shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold text-warning">Dispatches not fully completed</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {dispatchGenerationGuard.incompleteCount} of {dispatchGenerationGuard.total} dispatch(es) for {billingMonth}{billingStation !== "All" ? ` · ${billingStation}` : ""} are not marked Completed. Invoice generation is disabled until all flights are complete.
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {billingPreviewData.length === 0 ? (
                 <div className="bg-muted/50 rounded-lg p-8 text-center text-muted-foreground">
                   <FileText size={32} className="mx-auto mb-2 opacity-40" />
@@ -1344,7 +1384,12 @@ export default function InvoicesPage() {
                           <div className="font-semibold text-foreground">{g.airline}</div>
                           <div className="text-xs text-muted-foreground">{g.station} — {g.flights} flights · {g.sources.reports} report{g.sources.reports === 1 ? "" : "s"} + {g.sources.dispatches} dispatch{g.sources.dispatches === 1 ? "" : "es"}</div>
                         </div>
-                        <button onClick={() => generateInvoiceFromBilling(g)} className="toolbar-btn-primary text-xs py-1.5">
+                        <button
+                          onClick={() => generateInvoiceFromBilling(g)}
+                          disabled={!dispatchGenerationGuard.allComplete}
+                          title={!dispatchGenerationGuard.allComplete ? "All dispatches must be marked Completed first" : "Create draft invoice"}
+                          className="toolbar-btn-primary text-xs py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                           <Plus size={12} /> Create Draft Invoice
                         </button>
                       </div>
