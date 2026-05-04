@@ -88,7 +88,23 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
   const updateRow = (key: string, patch: Partial<SecurityRateRow>) =>
     setRows(prev => prev.map(r => (r._localKey === key ? { ...r, ...patch, _dirty: true } : r)));
 
-  const handleSave = async () => {
+  const handleSave = async (force = false) => {
+    // Block save when coverage gaps exist for any airport (Arrival/Departure
+    // pair incomplete) — receivables for those flights would otherwise emit
+    // Missing-rate errors. The user can override with the explicit "Save anyway"
+    // action.
+    const preCoverage = buildCoverageReport(rows);
+    if (!force && preCoverage.missing.length > 0) {
+      const summary = preCoverage.missing
+        .map(m => `${m.airport}: ${m.missing.join(", ")}`)
+        .join(" • ");
+      toast({
+        title: "Cannot save — missing security rates",
+        description: `Add the missing Arrival/Departure pairs before saving: ${summary}. Use "Save anyway" to bypass.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setSaving(true);
     try {
       // 1) Determine deletes (rows that existed before but are no longer in state)
