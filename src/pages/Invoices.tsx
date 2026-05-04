@@ -1216,15 +1216,20 @@ export default function InvoicesPage() {
         ? <SecurityInvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
         : <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
       )}
-      {detailInvoice && (
-        <InvoiceDetailModal
-          invoice={detailInvoice as any}
-          onClose={() => setDetailInvoice(null)}
-          onEdit={(inv) => startEdit(inv as any)}
-          onFinalize={(inv) => handleFinalize(inv as any)}
-          onPrint={(inv) => setPrintInvoice(toPrintFormat(inv as any))}
-        />
-      )}
+      {detailInvoice && (() => {
+        const pf = toPrintFormat(detailInvoice as any);
+        return pf._isSecurity
+          ? <SecurityInvoicePrintView invoice={pf} onClose={() => setDetailInvoice(null)} />
+          : (
+            <InvoiceDetailModal
+              invoice={detailInvoice as any}
+              onClose={() => setDetailInvoice(null)}
+              onEdit={(inv) => startEdit(inv as any)}
+              onFinalize={(inv) => handleFinalize(inv as any)}
+              onPrint={(inv) => setPrintInvoice(toPrintFormat(inv as any))}
+            />
+          );
+      })()}
 
       {/* Billing Preview Modal */}
       {showBillingPreview && (
