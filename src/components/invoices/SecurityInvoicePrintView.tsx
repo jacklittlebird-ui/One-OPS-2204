@@ -251,9 +251,10 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                       <tr>
                         <th className="border border-gray-800 px-2 py-1.5 w-10 text-center font-bold">S</th>
                         <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Date</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-28 text-center font-bold">Flight No.</th>
+                        <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Flight No.</th>
                         <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Reg.</th>
-                        <th className="border border-gray-800 px-2 py-1.5 text-center font-bold">Route</th>
+                        <th className="border border-gray-800 px-2 py-1.5 w-28 text-center font-bold">Route</th>
+                        <th className="border border-gray-800 px-2 py-1.5 text-center font-bold">Service / Notes</th>
                         <th className="border border-gray-800 px-2 py-1.5 w-32 text-center font-bold">Amount</th>
                       </tr>
                     </thead>
@@ -265,21 +266,22 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                           <td className="border border-gray-800 px-2 py-1 text-center">{r.flight || "—"}</td>
                           <td className="border border-gray-800 px-2 py-1 text-center">{r.reg || "—"}</td>
                           <td className="border border-gray-800 px-2 py-1 text-center">{r.route || "—"}</td>
+                          <td className="border border-gray-800 px-2 py-1 text-left">{r.type || "—"}</td>
                           <td className="border border-gray-800 px-2 py-1 text-right">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td colSpan={5} className="border border-gray-800 px-2 py-1.5 text-right font-semibold">Total</td>
+                        <td colSpan={6} className="border border-gray-800 px-2 py-1.5 text-right font-semibold">Total</td>
                         <td className="border border-gray-800 px-2 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
                       </tr>
                       <tr>
-                        <td colSpan={5} className="border border-gray-800 px-2 py-1.5 text-right">Admin</td>
+                        <td colSpan={6} className="border border-gray-800 px-2 py-1.5 text-right">Admin</td>
                         <td className="border border-gray-800 px-2 py-1.5 text-right">{fmtMoney(0, invoice.currency)}</td>
                       </tr>
                       <tr className="font-bold">
-                        <td colSpan={5} className="border border-gray-800 px-2 py-2 text-right">Grand total</td>
+                        <td colSpan={6} className="border border-gray-800 px-2 py-2 text-right">Grand total</td>
                         <td className="border border-gray-800 px-2 py-2 text-right">{fmtMoney(total, invoice.currency)}</td>
                       </tr>
                     </tfoot>
