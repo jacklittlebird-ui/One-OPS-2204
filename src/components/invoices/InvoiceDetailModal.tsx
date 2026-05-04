@@ -1,5 +1,7 @@
-import { X, FileText, DollarSign, Plane, Calendar, MapPin, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, FileText, DollarSign, Plane, Calendar, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export type InvoiceRow = {
   id: string; invoice_no: string; date: string; due_date: string;
@@ -38,23 +40,68 @@ function DetailRow({ label, value, mono }: { label: string; value: React.ReactNo
   );
 }
 
-function ChargeRow({ label, amount, currency }: { label: string; amount: number; currency: string }) {
-  if (!amount) return null;
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-border/30 last:border-0">
-      <span className="text-sm text-foreground">{label}</span>
-      <span className="text-sm font-mono font-semibold text-foreground">{currency} {amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-    </div>
-  );
-}
+// Charge labels mirroring the Edit Service Report form fields
+const REPORT_CHARGE_FIELDS: { key: keyof ReportLite; label: string }[] = [
+  { key: "civil_aviation_fee", label: "Civil Aviation Fee" },
+  { key: "handling_fee",       label: "Handling Fee" },
+  { key: "landing_charge",     label: "Landing Charge" },
+  { key: "parking_charge",     label: "Parking Charge" },
+  { key: "housing_charge",     label: "Housing Charge" },
+  { key: "airport_charge",     label: "Airport Charge" },
+  { key: "catering_charge",    label: "Catering" },
+  { key: "hotac_charge",       label: "HOTAC" },
+  { key: "fuel_charge",        label: "Fuel" },
+];
+
+type ReportLite = {
+  id: string;
+  flight_no: string;
+  registration: string;
+  arrival_date: string | null;
+  route: string;
+  station: string;
+  currency: string;
+  civil_aviation_fee: number;
+  handling_fee: number;
+  landing_charge: number;
+  parking_charge: number;
+  housing_charge: number;
+  airport_charge: number;
+  catering_charge: number;
+  hotac_charge: number;
+  fuel_charge: number;
+  total_cost: number;
+};
 
 export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFinalize, onPrint }: Props) {
   const st = statusStyles[inv.status] || statusStyles.Draft;
   const daysUntilDue = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000);
 
+  const [reports, setReports] = useState<ReportLite[]>([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+
+  // Fetch the underlying service reports for every flight number on this invoice
+  // so we can show the same detailed charge breakdown as the Edit Service Report view.
+  useEffect(() => {
+    const flightNos = (inv.flight_ref || "")
+      .split(",").map(s => s.trim()).filter(Boolean);
+    if (flightNos.length === 0) { setReports([]); return; }
+    setLoadingReports(true);
+    (async () => {
+      const { data } = await supabase
+        .from("service_reports")
+        .select("id,flight_no,registration,arrival_date,route,station,currency,civil_aviation_fee,handling_fee,landing_charge,parking_charge,housing_charge,airport_charge,catering_charge,hotac_charge,fuel_charge,total_cost")
+        .in("flight_no", flightNos);
+      setReports((data as ReportLite[]) || []);
+      setLoadingReports(false);
+    })();
+  }, [inv.flight_ref]);
+
+  const fmt = (n: number) => `${inv.currency} ${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="sticky top-0 bg-card border-b px-4 md:px-6 py-3 md:py-4 flex items-center justify-between rounded-t-xl z-10">
           <div className="flex items-center gap-3">
@@ -75,13 +122,8 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
         </div>
 
         <div className="p-4 md:p-6 space-y-5 md:space-y-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-primary/5 rounded-lg p-3 text-center">
-              <DollarSign size={16} className="mx-auto text-primary mb-1" />
-              <div className="text-xl font-bold text-foreground">{inv.currency} {inv.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-              <div className="text-[10px] text-muted-foreground uppercase font-semibold">Total Amount</div>
-            </div>
+          {/* Quick Stats — Total Amount intentionally hidden on draft view */}
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-info/5 rounded-lg p-3 text-center">
               <Calendar size={16} className="mx-auto text-info mb-1" />
               <div className="text-xl font-bold text-foreground">{daysUntilDue > 0 ? daysUntilDue : 0}</div>
@@ -115,25 +157,82 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
             {inv.payment_date && <DetailRow label="Payment Date" value={formatDateDMY(inv.payment_date)} />}
           </div>
 
-          {/* Charges Breakdown */}
+          {/* Charges Breakdown — mirrors Edit Service Report fields, per linked flight */}
           <div className="bg-muted/30 rounded-lg p-4">
-            <h3 className="text-xs font-bold text-success uppercase tracking-wider mb-2 flex items-center gap-1.5"><DollarSign size={12} /> Charges Breakdown</h3>
-            <ChargeRow label="Civil Aviation Authority Fees" amount={inv.civil_aviation} currency={inv.currency} />
-            <ChargeRow label="Ground Handling Fee" amount={inv.handling} currency={inv.currency} />
-            <ChargeRow label="Airport Charges" amount={inv.airport_charges} currency={inv.currency} />
-            <ChargeRow label="Catering" amount={inv.catering} currency={inv.currency} />
-            <ChargeRow label="Other Charges" amount={inv.other} currency={inv.currency} />
-            <div className="flex justify-between items-center py-2 border-t-2 border-border mt-1">
-              <span className="text-sm font-semibold text-muted-foreground">Subtotal</span>
-              <span className="text-sm font-mono font-bold text-foreground">{inv.currency} {inv.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-sm text-muted-foreground">VAT</span>
-              <span className="text-sm font-mono text-foreground">{inv.currency} {inv.vat.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div className="flex justify-between items-center py-3 bg-primary/5 rounded-lg px-3 -mx-1 mt-1">
-              <span className="text-base font-bold text-primary">Total</span>
-              <span className="text-xl font-mono font-bold text-primary">{inv.currency} {inv.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <h3 className="text-xs font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-1.5"><DollarSign size={12} /> Charges Breakdown</h3>
+
+            {loadingReports ? (
+              <div className="text-sm text-muted-foreground py-4 text-center">Loading charge details…</div>
+            ) : reports.length === 0 ? (
+              <div className="text-xs text-muted-foreground py-3 text-center">
+                No linked Service Report found for flight(s) <span className="font-mono">{inv.flight_ref || "—"}</span>.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reports.map(r => (
+                  <div key={r.id} className="bg-card border border-border rounded-lg p-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2 mb-2 pb-2 border-b border-border/60">
+                      <div className="flex items-center gap-2">
+                        <Plane size={14} className="text-primary" />
+                        <span className="font-mono font-bold text-foreground text-sm">{r.flight_no}</span>
+                        {r.registration && <span className="text-xs text-muted-foreground font-mono">· {r.registration}</span>}
+                        {r.route && <span className="text-xs text-muted-foreground">· {r.route}</span>}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {r.arrival_date ? formatDateDMY(r.arrival_date) : ""} {r.station && `· ${r.station}`}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                      {REPORT_CHARGE_FIELDS.map(f => {
+                        const val = (r[f.key] as number) || 0;
+                        if (!val) return null;
+                        return (
+                          <div key={f.key as string} className="flex justify-between items-center py-1.5 border-b border-border/30">
+                            <span className="text-xs text-foreground">{f.label}</span>
+                            <span className="text-xs font-mono font-semibold text-foreground">
+                              {(r.currency || inv.currency)} {val.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between items-center pt-2 mt-1">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Flight Total</span>
+                      <span className="text-sm font-mono font-bold text-foreground">
+                        {(r.currency || inv.currency)} {(r.total_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Aggregated buckets stored on the invoice (kept for transparency) */}
+            <div className="mt-4 pt-3 border-t border-border/60">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Invoice Buckets</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                {[
+                  { l: "Civil Aviation Authority Fees", v: inv.civil_aviation },
+                  { l: "Ground Handling Fee",           v: inv.handling },
+                  { l: "Airport Charges",               v: inv.airport_charges },
+                  { l: "Catering",                      v: inv.catering },
+                  { l: "Other Charges",                 v: inv.other },
+                ].filter(x => x.v).map(x => (
+                  <div key={x.l} className="flex justify-between items-center py-1.5 border-b border-border/30">
+                    <span className="text-xs text-foreground">{x.l}</span>
+                    <span className="text-xs font-mono font-semibold text-foreground">{fmt(x.v)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between items-center pt-2 mt-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Subtotal</span>
+                <span className="text-sm font-mono font-semibold text-foreground">{fmt(inv.subtotal)}</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-xs text-muted-foreground">VAT</span>
+                <span className="text-xs font-mono text-foreground">{fmt(inv.vat)}</span>
+              </div>
+              {/* Total amount intentionally not displayed on this view */}
             </div>
           </div>
 
