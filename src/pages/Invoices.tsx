@@ -834,15 +834,21 @@ export default function InvoicesPage() {
       if (!ok) { toast({ title: "Duplicate skipped", description: `Existing invoice ${duplicate.invoice_no} kept.` }); return; }
     }
     const invoiceNo = existingSec.length > 0 ? `${baseNo}-R${existingSec.length + 1}` : baseNo;
-    const detailRows = rows.map((d: any) => ({
-      date: d.flight_date || "", flight: d.flight_no || "", reg: "",
-      route: "", station: d.station || "", type: d.service_type || "",
-      civil: 0,
-      handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
-      airport: 0,
-      other: Number(d.overtime_charge) || 0,       // overtime → other column in Annex A
-      total: Number(d.total_charge) || 0,
-    }));
+    const detailRows = rows.map((d: any) => {
+      const fi = lookupFlightInfo(d);
+      return {
+        date: d.flight_date || "", flight: d.flight_no || "",
+        reg: d.registration || fi.reg || "",
+        route: d.route || fi.route || "",
+        station: d.station || "",
+        type: buildServiceTypeLabel(d),
+        civil: 0,
+        handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
+        airport: 0,
+        other: Number(d.overtime_charge) || 0,       // overtime → other column in Annex A
+        total: Number(d.total_charge) || 0,
+      };
+    });
     const headerNote = `Monthly Security invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${rows.length} approved security assignments across ${new Set(rows.map((d: any) => d.station)).size} station(s). See Annex A for per-flight detail.`;
     const subtotal = totals.total;
     const inv: Partial<InvoiceRow> = {
