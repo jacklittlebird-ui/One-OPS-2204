@@ -438,18 +438,31 @@ export default function InvoicesPage() {
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
     let civil = 0, handling = 0, airport = 0, other = 0;
+    const detailRows: any[] = [];
     group.items.forEach((it: any) => {
       if (it._source === "report") {
         const m = _rollupReport(it);
         civil += m.civil; handling += m.handling; airport += m.airport; other += m.other;
+        detailRows.push({
+          date: it.arrival_date || "", flight: it.flight_no || "", reg: it.registration || "",
+          route: it.route || "", station: it.station || group.station, type: it.handling_type || "",
+          category: "Handling", civil: m.civil, handling: m.handling, airport: m.airport, other: m.other, total: m.total,
+        });
       } else {
-        handling += (it.total_security_charges || it.service_rate || 0) + (it.base_fee || 0);
-        other += (it.overtime_charge || 0);
+        const base = (it.total_security_charges || it.service_rate || 0) + (it.base_fee || 0);
+        const ot = (it.overtime_charge || 0);
+        handling += base; other += ot;
+        detailRows.push({
+          date: it.flight_date || "", flight: it.flight_no || "", reg: it.registration || "",
+          route: it.route || "", station: it.station || group.station, type: it.service_type || "",
+          category: "Security", civil: 0, handling: base, airport: 0, other: ot, total: base + ot,
+        });
       }
     });
     const subtotal = civil + handling + airport + other;
     const isSecurityGroup = categoryTab === "security" || (group.sources.dispatches > 0 && group.sources.reports === 0);
     const suffix = isSecurityGroup ? "-SEC" : "";
+    const headerNote = `${isSecurityGroup ? "Security " : ""}Auto-generated from ${group.sources.dispatches} dispatch + ${group.sources.reports} service-report record(s)`;
     const inv: Partial<InvoiceRow> = {
       invoice_no: `LNK-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}${suffix}`,
       date: new Date().toISOString().slice(0, 10),
@@ -467,7 +480,7 @@ export default function InvoicesPage() {
       invoice_type: "Preliminary" as InvoiceType,
       description: `${isSecurityGroup ? "Security" : "Handling"} — ${group.flights} flights — ${group.station} — ${billingMonth}`,
       flight_ref: group.items.map((d: any) => d.flight_no).filter(Boolean).join(", "),
-      notes: `${isSecurityGroup ? "Security " : ""}Auto-generated from ${group.sources.dispatches} dispatch + ${group.sources.reports} service-report record(s)`,
+      notes: `${headerNote}\n__DETAIL__:${JSON.stringify(detailRows)}`,
     };
     await add(inv as any);
     toast({ title: "✅ Invoice Created", description: `Draft invoice for ${group.airline} at ${group.station}` });
