@@ -401,6 +401,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowedServiceTypes.join("|")]);
 
+  // Auto-set SKD (flight_type) to "Maintenance" when service_type is Maintenance Security
+  useEffect(() => {
+    if (!editableRow) return;
+    if (editableRow.service_type === "Maintenance Security" && sheet.flight_type !== "Maintenance") {
+      setSheet(prev => ({ ...prev, flight_type: "Maintenance" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editableRow?.service_type]);
+
   const computedCharges = useMemo(() => {
     if (!contractRates.length || !currentRow) return null;
     const gtHours = groundTimeHours(sheet.shift_start || sheet.ata || sheet.sta, sheet.shift_end || sheet.atd || sheet.std);
