@@ -201,13 +201,30 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
           <Shield size={13} /> Security Service Rates
         </h4>
         {!readOnly && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => exportCoverageCsv(rows, contractId)} className="text-xs flex items-center gap-1 px-2 py-1 rounded border hover:bg-muted text-foreground">
+              <Download size={12} /> Export CSV
+            </button>
             <button onClick={addRow} className="text-xs flex items-center gap-1 px-2 py-1 rounded border hover:bg-muted text-foreground">
               <Plus size={12} /> Add
             </button>
-            <button onClick={handleSave} disabled={saving} className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <button
+              onClick={() => handleSave(false)}
+              disabled={saving}
+              className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
               <Save size={12} /> {saving ? "Saving…" : "Save Rates"}
             </button>
+            {coverage.missing.length > 0 && (
+              <button
+                onClick={() => handleSave(true)}
+                disabled={saving}
+                className="text-xs flex items-center gap-1 px-2 py-1 rounded border border-destructive/50 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                title="Save even though Arrival/Departure security pairs are incomplete"
+              >
+                Save anyway
+              </button>
+            )}
           </div>
         )}
       </div>
