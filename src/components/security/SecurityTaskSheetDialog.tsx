@@ -368,6 +368,30 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   const currentRow = isNew ? editableRow : (row || editableRow);
 
+  // Look up invoice status for this flight so the Receivables pipeline step
+  // only marks complete when the invoice is fully Paid.
+  const dialogFlightRef = String((currentRow as any)?.flight_no || "").trim().toUpperCase();
+  const { data: dialogInvoiceRows = [] } = useQuery({
+    queryKey: ["invoice_for_pipeline", dialogFlightRef],
+    queryFn: async () => {
+      if (!dialogFlightRef) return [];
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("status")
+        .eq("flight_ref", dialogFlightRef)
+        .neq("status", "Cancelled");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!dialogFlightRef && !isNew,
+  });
+  const dialogInvoiceStatus: "none" | "issued" | "paid" = useMemo(() => {
+    const rows = (dialogInvoiceRows as any[]) || [];
+    if (rows.length === 0) return "none";
+    const anyPaid = rows.some((r) => String(r.status || "").toLowerCase() === "paid");
+    return anyPaid ? "paid" : "issued";
+  }, [dialogInvoiceRows]);
+
   // Map service_type → flight_type used in contract rate rows.
   // Contract rates use SECURITY_FLIGHT_TYPES: Arrival Security,
   // Departure Security, Maintenance Security, Turnaround.
