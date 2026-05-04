@@ -1208,22 +1208,29 @@ export default function SecurityServiceReportsPage() {
                           )}
                         </td>
                         <td className="px-3 py-2.5">
-                          <PipelineStepper
-                            currentStage={derivePipelineStage({
-                              isLinked: r.status === "Completed",
-                              reviewStatus: r.review_status,
-                              clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
-                              dispatchStatus: r.status,
-                              channel: activeChannel,
-                            })}
-                            completedStages={derivePipelineCompletedStages({
-                              isLinked: r.status === "Completed",
-                              reviewStatus: r.review_status,
-                              clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
-                              dispatchStatus: r.status,
-                            })}
-                            compact
-                          />
+                          {(() => {
+                            const invStatus = invoiceStatusByFlight.get(String(r.flight_no || "").trim().toUpperCase()) || "none";
+                            return (
+                              <PipelineStepper
+                                currentStage={derivePipelineStage({
+                                  isLinked: r.status === "Completed",
+                                  reviewStatus: r.review_status,
+                                  clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+                                  dispatchStatus: r.status,
+                                  channel: activeChannel,
+                                  invoiceStatus: invStatus,
+                                })}
+                                completedStages={derivePipelineCompletedStages({
+                                  isLinked: r.status === "Completed",
+                                  reviewStatus: r.review_status,
+                                  clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+                                  dispatchStatus: r.status,
+                                  invoiceStatus: invStatus,
+                                })}
+                                compact
+                              />
+                            );
+                          })()}
                         </td>
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-1">
