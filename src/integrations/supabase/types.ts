@@ -2913,6 +2913,10 @@ export type Database = {
         | "AVSEC Only"
         | "Full Handling"
         | "Ramp Only"
+        | "Arrival Security"
+        | "Departure Security"
+        | "Maintenance Security"
+        | "Turnaround Security"
       incentive_period: "Monthly" | "Quarterly" | "Semi-Annual" | "Annual"
       incentive_type:
         | "Volume"
@@ -3114,6 +3118,10 @@ export const Constants = {
         "AVSEC Only",
         "Full Handling",
         "Ramp Only",
+        "Arrival Security",
+        "Departure Security",
+        "Maintenance Security",
+        "Turnaround Security",
       ],
       incentive_period: ["Monthly", "Quarterly", "Semi-Annual", "Annual"],
       incentive_type: ["Volume", "Revenue", "Growth", "Loyalty", "Performance"],
