@@ -1296,15 +1296,24 @@ function HandlingServiceReportContent() {
                           {(r.reviewStatus === "pending" || r.reviewStatus === "modified") && (
                             <>
                               <button onClick={async () => {
-                                await supabase.from("service_reports").update({ review_status: "approved", reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
-                                queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                                const reviewedAt = new Date().toISOString();
+                                await supabase.from("service_reports").update({ review_status: "approved", reviewed_by: "Operations", reviewed_at: reviewedAt } as any).eq("id", r.id);
+                                // Update cache in place to preserve current row order (no refetch / no re-sort)
+                                queryClient.setQueriesData({ queryKey: ["service_reports"] }, (old: any) => {
+                                  if (!Array.isArray(old)) return old;
+                                  return old.map((row: any) => row.id === r.id ? { ...row, review_status: "approved", reviewed_by: "Operations", reviewed_at: reviewedAt } : row);
+                                });
                                 toast({ title: "✅ Approved" });
                               }} className="text-success hover:text-success/80" title="Approve"><CheckCircle2 size={13} /></button>
                               <button onClick={async () => {
                                 const comment = prompt("Rejection reason:");
                                 if (comment === null) return;
-                                await supabase.from("service_reports").update({ review_status: "rejected", review_comment: comment, reviewed_by: "Operations", reviewed_at: new Date().toISOString() } as any).eq("id", r.id);
-                                queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                                const reviewedAt = new Date().toISOString();
+                                await supabase.from("service_reports").update({ review_status: "rejected", review_comment: comment, reviewed_by: "Operations", reviewed_at: reviewedAt } as any).eq("id", r.id);
+                                queryClient.setQueriesData({ queryKey: ["service_reports"] }, (old: any) => {
+                                  if (!Array.isArray(old)) return old;
+                                  return old.map((row: any) => row.id === r.id ? { ...row, review_status: "rejected", review_comment: comment, reviewed_by: "Operations", reviewed_at: reviewedAt } : row);
+                                });
                                 toast({ title: "❌ Rejected", description: comment });
                               }} className="text-destructive hover:text-destructive/80" title="Reject"><XCircle size={13} /></button>
                             </>
