@@ -904,10 +904,18 @@ export default function InvoicesPage() {
       const m = rollupReport(r);
       return { date: r.arrival_date || "", flight: r.flight_no || "", reg: r.registration || "", route: r.route || "", station: r.station || "", type: r.handling_type || "", category: "Handling", civil: m.civil, handling: m.handling, airport: m.airport, other: m.other, total: m.total };
     });
-    const securityRows = secRows.map((d: any) => ({
-      date: d.flight_date || "", flight: d.flight_no || "", reg: "", route: "", station: d.station || "", type: d.service_type || "", category: "Security",
-      civil: 0, handling: Number(d.base_fee) || 0, airport: 0, other: Number(d.overtime_charge) || 0, total: Number(d.total_charge) || 0,
-    }));
+    const securityRows = secRows.map((d: any) => {
+      const fi = lookupFlightInfo(d);
+      return {
+        date: d.flight_date || "", flight: d.flight_no || "",
+        reg: d.registration || fi.reg || "",
+        route: d.route || fi.route || "",
+        station: d.station || "",
+        type: buildServiceTypeLabel(d),
+        category: "Security",
+        civil: 0, handling: Number(d.base_fee) || 0, airport: 0, other: Number(d.overtime_charge) || 0, total: Number(d.total_charge) || 0,
+      };
+    });
     const detailRows = [...handlingRows, ...securityRows];
 
     const civil_aviation = hT.civil;
