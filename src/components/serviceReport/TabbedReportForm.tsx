@@ -537,6 +537,8 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               invoiceStatus: formInvoiceStatus,
               formView: true,
             })}
+            invoiceStatus={formInvoiceStatus}
+            showPendingHint
           />
         </div>
 
