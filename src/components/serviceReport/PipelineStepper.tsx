@@ -130,6 +130,33 @@ export function derivePipelineCompletedStages(opts: {
   return done;
 }
 
+/**
+ * Returns a short, human-readable description of what action is required to
+ * advance from the given stage to the next one. Used by the stepper to surface
+ * an inline hint/tooltip so users know who needs to approve next.
+ */
+export function derivePendingActionMessage(
+  currentStage: PipelineStage,
+  opts?: { invoiceStatus?: "none" | "issued" | "paid" }
+): string {
+  switch (currentStage) {
+    case "clearance":
+      return "Clearance must approve this flight to advance to the Security Service step.";
+    case "station":
+      return "Station must save the security task sheet to advance to the Operations step.";
+    case "operations":
+      return "Operations must approve this report to advance to the Receivables step.";
+    case "receivables": {
+      const inv = opts?.invoiceStatus || "none";
+      if (inv === "paid") return "All steps complete — invoice paid.";
+      if (inv === "issued") return "Invoice issued. Receivables completes once the invoice is fully paid.";
+      return "Receivables must issue and collect the invoice to complete the pipeline.";
+    }
+    default:
+      return "";
+  }
+}
+
 interface PipelineStepperProps {
   currentStage: PipelineStage;
   /** Optional explicit set of completed stages. When provided, it overrides
@@ -137,9 +164,14 @@ interface PipelineStepperProps {
    *  steps can complete out of order. */
   completedStages?: PipelineStage[];
   compact?: boolean;
+  /** Show an inline hint message under the stepper describing the next action.
+   *  Ignored when compact is true (compact uses the title attribute instead). */
+  showPendingHint?: boolean;
+  /** Receivables progress, used to refine the pending hint for the final step. */
+  invoiceStatus?: "none" | "issued" | "paid";
 }
 
-export default function PipelineStepper({ currentStage, completedStages, compact = false }: PipelineStepperProps) {
+export default function PipelineStepper({ currentStage, completedStages, compact = false, showPendingHint = false, invoiceStatus }: PipelineStepperProps) {
   const currentIdx = STEPS.findIndex(s => s.key === currentStage);
   const completedSet = completedStages ? new Set(completedStages) : null;
 
