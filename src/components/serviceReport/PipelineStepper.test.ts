@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   derivePipelineStage,
   derivePipelineCompletedStages,
+  derivePendingActionMessage,
 } from "./PipelineStepper";
 
 describe("derivePipelineCompletedStages — Receivables completion", () => {
