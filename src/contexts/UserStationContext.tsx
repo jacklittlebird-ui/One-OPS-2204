@@ -34,8 +34,12 @@ export function UserStationProvider({ children }: { children: ReactNode }) {
     })();
   }, [user]);
 
-  // Admins are never scoped. Otherwise, scope only if a station is explicitly set on the profile.
-  const isStationScoped = !isAdmin && !!station;
+  // Admins and central review/finance channels (operations, receivables, payables,
+  // general_accounts, contracts) see flights across all stations. Only station/clearance
+  // operational channels are scoped to the user's profile station.
+  const { activeChannel } = useChannel();
+  const centralChannels = new Set(["operations", "receivables", "payables", "general_accounts", "contracts", "admin"]);
+  const isStationScoped = !isAdmin && !!station && !centralChannels.has(activeChannel);
 
   return (
     <UserStationContext.Provider value={{ station, isStationScoped, loading }}>
