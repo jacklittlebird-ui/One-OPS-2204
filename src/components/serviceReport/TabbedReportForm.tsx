@@ -535,6 +535,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               dispatchStatus: data.id ? "Completed" : "Pending",
               channel: activeChannel,
               invoiceStatus: formInvoiceStatus,
+              formView: true,
             })}
           />
         </div>
