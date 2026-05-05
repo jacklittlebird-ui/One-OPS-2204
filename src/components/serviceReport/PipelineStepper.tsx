@@ -178,9 +178,11 @@ export default function PipelineStepper({ currentStage, completedStages, compact
   const stepIsCompleted = (i: number, key: PipelineStage) =>
     completedSet ? completedSet.has(key) : i < currentIdx;
 
+  const pendingHint = derivePendingActionMessage(currentStage, { invoiceStatus });
+
   if (compact) {
     return (
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-0.5" title={pendingHint}>
         {STEPS.map((step, i) => {
           const isCompleted = stepIsCompleted(i, step.key);
           const isCurrent = i === currentIdx && !isCompleted;
@@ -197,7 +199,7 @@ export default function PipelineStepper({ currentStage, completedStages, compact
                   ${!isCompleted && !isCurrent ? "bg-muted text-muted-foreground" : ""}
                 `}
                 style={{ ...colorStyle, ...ringStyle }}
-                title={step.label}
+                title={isCurrent ? `${step.label} — ${pendingHint}` : step.label}
               >
                 {i + 1}
               </div>
@@ -215,44 +217,51 @@ export default function PipelineStepper({ currentStage, completedStages, compact
   }
 
   return (
-    <div className="flex items-center gap-1">
-      {STEPS.map((step, i) => {
-        const Icon = step.icon;
-        const isCompleted = stepIsCompleted(i, step.key);
-        const isCurrent = i === currentIdx && !isCompleted;
-        const colorStyle = (isCompleted || isCurrent)
-          ? { backgroundColor: `hsl(var(${step.colorVar}))`, color: `hsl(var(${step.colorVar}-foreground))` }
-          : undefined;
-        const ringStyle = isCurrent
-          ? { boxShadow: `0 0 0 2px hsl(var(${step.colorVar}) / 0.3)` }
-          : undefined;
-        return (
-          <div key={step.key} className="flex items-center gap-1">
-            <div className="flex flex-col items-center gap-0.5">
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors
-                  ${!isCompleted && !isCurrent ? "bg-muted text-muted-foreground" : ""}
-                `}
-                style={{ ...colorStyle, ...ringStyle }}
-              >
-                <Icon size={13} />
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex items-center gap-1">
+        {STEPS.map((step, i) => {
+          const Icon = step.icon;
+          const isCompleted = stepIsCompleted(i, step.key);
+          const isCurrent = i === currentIdx && !isCompleted;
+          const colorStyle = (isCompleted || isCurrent)
+            ? { backgroundColor: `hsl(var(${step.colorVar}))`, color: `hsl(var(${step.colorVar}-foreground))` }
+            : undefined;
+          const ringStyle = isCurrent
+            ? { boxShadow: `0 0 0 2px hsl(var(${step.colorVar}) / 0.3)` }
+            : undefined;
+          return (
+            <div key={step.key} className="flex items-center gap-1">
+              <div className="flex flex-col items-center gap-0.5" title={isCurrent ? pendingHint : step.label}>
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors
+                    ${!isCompleted && !isCurrent ? "bg-muted text-muted-foreground" : ""}
+                  `}
+                  style={{ ...colorStyle, ...ringStyle }}
+                >
+                  <Icon size={13} />
+                </div>
+                <span
+                  className={`text-[9px] leading-tight whitespace-nowrap ${isCurrent ? "font-semibold" : "text-muted-foreground"}`}
+                  style={isCurrent ? { color: `hsl(var(${step.colorVar}))` } : undefined}
+                >
+                  {step.label}
+                </span>
               </div>
-              <span
-                className={`text-[9px] leading-tight whitespace-nowrap ${isCurrent ? "font-semibold" : "text-muted-foreground"}`}
-                style={isCurrent ? { color: `hsl(var(${step.colorVar}))` } : undefined}
-              >
-                {step.label}
-              </span>
+              {i < STEPS.length - 1 && (
+                <div
+                  className={`w-4 h-0.5 mb-3 ${stepIsCompleted(i, step.key) ? "" : "bg-border"}`}
+                  style={stepIsCompleted(i, step.key) ? { backgroundColor: `hsl(var(${step.colorVar}))` } : undefined}
+                />
+              )}
             </div>
-            {i < STEPS.length - 1 && (
-              <div
-                className={`w-4 h-0.5 mb-3 ${stepIsCompleted(i, step.key) ? "" : "bg-border"}`}
-                style={stepIsCompleted(i, step.key) ? { backgroundColor: `hsl(var(${step.colorVar}))` } : undefined}
-              />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      {showPendingHint && pendingHint && (
+        <div className="text-[11px] text-muted-foreground italic max-w-md text-center px-2">
+          {pendingHint}
+        </div>
+      )}
     </div>
   );
 }
