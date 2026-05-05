@@ -130,6 +130,33 @@ export function derivePipelineCompletedStages(opts: {
   return done;
 }
 
+/**
+ * Returns a short, human-readable description of what action is required to
+ * advance from the given stage to the next one. Used by the stepper to surface
+ * an inline hint/tooltip so users know who needs to approve next.
+ */
+export function derivePendingActionMessage(
+  currentStage: PipelineStage,
+  opts?: { invoiceStatus?: "none" | "issued" | "paid" }
+): string {
+  switch (currentStage) {
+    case "clearance":
+      return "Clearance must approve this flight to advance to the Security Service step.";
+    case "station":
+      return "Station must save the security task sheet to advance to the Operations step.";
+    case "operations":
+      return "Operations must approve this report to advance to the Receivables step.";
+    case "receivables": {
+      const inv = opts?.invoiceStatus || "none";
+      if (inv === "paid") return "All steps complete — invoice paid.";
+      if (inv === "issued") return "Invoice issued. Receivables completes once the invoice is fully paid.";
+      return "Receivables must issue and collect the invoice to complete the pipeline.";
+    }
+    default:
+      return "";
+  }
+}
+
 interface PipelineStepperProps {
   currentStage: PipelineStage;
   /** Optional explicit set of completed stages. When provided, it overrides
@@ -137,18 +164,25 @@ interface PipelineStepperProps {
    *  steps can complete out of order. */
   completedStages?: PipelineStage[];
   compact?: boolean;
+  /** Show an inline hint message under the stepper describing the next action.
+   *  Ignored when compact is true (compact uses the title attribute instead). */
+  showPendingHint?: boolean;
+  /** Receivables progress, used to refine the pending hint for the final step. */
+  invoiceStatus?: "none" | "issued" | "paid";
 }
 
-export default function PipelineStepper({ currentStage, completedStages, compact = false }: PipelineStepperProps) {
+export default function PipelineStepper({ currentStage, completedStages, compact = false, showPendingHint = false, invoiceStatus }: PipelineStepperProps) {
   const currentIdx = STEPS.findIndex(s => s.key === currentStage);
   const completedSet = completedStages ? new Set(completedStages) : null;
 
   const stepIsCompleted = (i: number, key: PipelineStage) =>
     completedSet ? completedSet.has(key) : i < currentIdx;
 
+  const pendingHint = derivePendingActionMessage(currentStage, { invoiceStatus });
+
   if (compact) {
     return (
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-0.5" title={pendingHint}>
         {STEPS.map((step, i) => {
           const isCompleted = stepIsCompleted(i, step.key);
           const isCurrent = i === currentIdx && !isCompleted;
@@ -165,7 +199,7 @@ export default function PipelineStepper({ currentStage, completedStages, compact
                   ${!isCompleted && !isCurrent ? "bg-muted text-muted-foreground" : ""}
                 `}
                 style={{ ...colorStyle, ...ringStyle }}
-                title={step.label}
+                title={isCurrent ? `${step.label} — ${pendingHint}` : step.label}
               >
                 {i + 1}
               </div>
@@ -183,44 +217,51 @@ export default function PipelineStepper({ currentStage, completedStages, compact
   }
 
   return (
-    <div className="flex items-center gap-1">
-      {STEPS.map((step, i) => {
-        const Icon = step.icon;
-        const isCompleted = stepIsCompleted(i, step.key);
-        const isCurrent = i === currentIdx && !isCompleted;
-        const colorStyle = (isCompleted || isCurrent)
-          ? { backgroundColor: `hsl(var(${step.colorVar}))`, color: `hsl(var(${step.colorVar}-foreground))` }
-          : undefined;
-        const ringStyle = isCurrent
-          ? { boxShadow: `0 0 0 2px hsl(var(${step.colorVar}) / 0.3)` }
-          : undefined;
-        return (
-          <div key={step.key} className="flex items-center gap-1">
-            <div className="flex flex-col items-center gap-0.5">
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors
-                  ${!isCompleted && !isCurrent ? "bg-muted text-muted-foreground" : ""}
-                `}
-                style={{ ...colorStyle, ...ringStyle }}
-              >
-                <Icon size={13} />
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex items-center gap-1">
+        {STEPS.map((step, i) => {
+          const Icon = step.icon;
+          const isCompleted = stepIsCompleted(i, step.key);
+          const isCurrent = i === currentIdx && !isCompleted;
+          const colorStyle = (isCompleted || isCurrent)
+            ? { backgroundColor: `hsl(var(${step.colorVar}))`, color: `hsl(var(${step.colorVar}-foreground))` }
+            : undefined;
+          const ringStyle = isCurrent
+            ? { boxShadow: `0 0 0 2px hsl(var(${step.colorVar}) / 0.3)` }
+            : undefined;
+          return (
+            <div key={step.key} className="flex items-center gap-1">
+              <div className="flex flex-col items-center gap-0.5" title={isCurrent ? pendingHint : step.label}>
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors
+                    ${!isCompleted && !isCurrent ? "bg-muted text-muted-foreground" : ""}
+                  `}
+                  style={{ ...colorStyle, ...ringStyle }}
+                >
+                  <Icon size={13} />
+                </div>
+                <span
+                  className={`text-[9px] leading-tight whitespace-nowrap ${isCurrent ? "font-semibold" : "text-muted-foreground"}`}
+                  style={isCurrent ? { color: `hsl(var(${step.colorVar}))` } : undefined}
+                >
+                  {step.label}
+                </span>
               </div>
-              <span
-                className={`text-[9px] leading-tight whitespace-nowrap ${isCurrent ? "font-semibold" : "text-muted-foreground"}`}
-                style={isCurrent ? { color: `hsl(var(${step.colorVar}))` } : undefined}
-              >
-                {step.label}
-              </span>
+              {i < STEPS.length - 1 && (
+                <div
+                  className={`w-4 h-0.5 mb-3 ${stepIsCompleted(i, step.key) ? "" : "bg-border"}`}
+                  style={stepIsCompleted(i, step.key) ? { backgroundColor: `hsl(var(${step.colorVar}))` } : undefined}
+                />
+              )}
             </div>
-            {i < STEPS.length - 1 && (
-              <div
-                className={`w-4 h-0.5 mb-3 ${stepIsCompleted(i, step.key) ? "" : "bg-border"}`}
-                style={stepIsCompleted(i, step.key) ? { backgroundColor: `hsl(var(${step.colorVar}))` } : undefined}
-              />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      {showPendingHint && pendingHint && (
+        <div className="text-[11px] text-muted-foreground italic max-w-md text-center px-2">
+          {pendingHint}
+        </div>
+      )}
     </div>
   );
 }

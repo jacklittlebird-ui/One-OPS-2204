@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   derivePipelineStage,
   derivePipelineCompletedStages,
+  derivePendingActionMessage,
 } from "./PipelineStepper";
 
 describe("derivePipelineCompletedStages — Receivables completion", () => {
@@ -84,5 +85,179 @@ describe("derivePipelineStage — Receivables stage", () => {
       invoiceStatus: "paid",
     });
     expect(stage).toBe("operations");
+  });
+});
+
+describe("derivePipelineStage — channel form views (create vs edit)", () => {
+  describe("station channel", () => {
+    it("CREATE: new record (no id, not linked) → station is the active stage", () => {
+      const stage = derivePipelineStage({
+        isLinked: false,
+        reviewStatus: "",
+        clearanceStatus: "pending",
+        dispatchStatus: "pending",
+        channel: "station",
+        formView: true,
+      });
+      expect(stage).toBe("station");
+    });
+
+    it("EDIT: linked, dispatch completed → station view caps at operations (does not jump to receivables)", () => {
+      const stage = derivePipelineStage({
+        isLinked: true,
+        reviewStatus: "approved",
+        clearanceStatus: "approved",
+        dispatchStatus: "completed",
+        channel: "station",
+        formView: false,
+      });
+      // Station portal must not "see" Receivables as the active stage
+      expect(stage).toBe("operations");
+    });
+  });
+
+  describe("operations channel", () => {
+    it("CREATE/EDIT formView: operations is the active stage until user approves", () => {
+      const stage = derivePipelineStage({
+        isLinked: true,
+        reviewStatus: "pending",
+        clearanceStatus: "approved",
+        dispatchStatus: "completed",
+        channel: "operations",
+        formView: true,
+      });
+      expect(stage).toBe("operations");
+    });
+
+    it("formView: even when backend says approved, the open form keeps operations as active (overrides until save)", () => {
+      // formView forces step3Done = false for operations channel so that
+      // the user must explicitly approve to move forward.
+      const stage = derivePipelineStage({
+        isLinked: true,
+        reviewStatus: "approved",
+        clearanceStatus: "approved",
+        dispatchStatus: "completed",
+        channel: "operations",
+        formView: true,
+      });
+      expect(stage).toBe("operations");
+    });
+
+    it("LIST view (not formView): once backend reviewStatus=approved, advances past operations", () => {
+      const stage = derivePipelineStage({
+        isLinked: true,
+        reviewStatus: "approved",
+        clearanceStatus: "approved",
+        dispatchStatus: "completed",
+        channel: "operations",
+        formView: false,
+        invoiceStatus: "none",
+      });
+      expect(stage).toBe("receivables");
+    });
+
+    it("never marks step 4 (receivables) as completed prematurely while operations is pending", () => {
+      const done = derivePipelineCompletedStages({
+        isLinked: true,
+        reviewStatus: "pending",
+        clearanceStatus: "approved",
+        dispatchStatus: "completed",
+        invoiceStatus: "none",
+      });
+      expect(done).not.toContain("receivables");
+      expect(done).not.toContain("operations");
+    });
+  });
+
+  describe("clearance channel (formView)", () => {
+    it("active stage is clearance for new flights with no approval yet", () => {
+      const stage = derivePipelineStage({
+        isLinked: false,
+        reviewStatus: "",
+        clearanceStatus: "pending",
+        dispatchStatus: "pending",
+        channel: "clearance",
+        formView: true,
+      });
+      expect(stage).toBe("clearance");
+    });
+  });
+
+  describe("receivables channel (list view)", () => {
+    it("stage is receivables and shows complete only when invoice is paid", () => {
+      const opts = {
+        isLinked: true,
+        reviewStatus: "approved",
+        clearanceStatus: "approved",
+        dispatchStatus: "completed",
+        channel: "receivables",
+      } as const;
+      expect(derivePipelineStage({ ...opts, invoiceStatus: "issued" })).toBe("receivables");
+      const doneIssued = derivePipelineCompletedStages({ ...opts, invoiceStatus: "issued" });
+      expect(doneIssued).not.toContain("receivables");
+
+      const donePaid = derivePipelineCompletedStages({ ...opts, invoiceStatus: "paid" });
+      expect(donePaid).toContain("receivables");
+    });
+  });
+});
+
+describe("derivePendingActionMessage — inline hint copy", () => {
+  it("explains the operations approval gate (step 3 → step 4)", () => {
+    const msg = derivePendingActionMessage("operations");
+    expect(msg.toLowerCase()).toContain("operations");
+    expect(msg.toLowerCase()).toContain("approve");
+    expect(msg.toLowerCase()).toContain("receivables");
+  });
+
+  it("explains station gate (step 2 → step 3)", () => {
+    const msg = derivePendingActionMessage("station");
+    expect(msg.toLowerCase()).toContain("task sheet");
+  });
+
+  it("explains clearance gate (step 1 → step 2)", () => {
+    const msg = derivePendingActionMessage("clearance");
+    expect(msg.toLowerCase()).toContain("clearance");
+  });
+
+  it("varies receivables hint by invoice status", () => {
+    expect(derivePendingActionMessage("receivables", { invoiceStatus: "none" }).toLowerCase()).toContain("issue");
+    expect(derivePendingActionMessage("receivables", { invoiceStatus: "issued" }).toLowerCase()).toContain("paid");
+    expect(derivePendingActionMessage("receivables", { invoiceStatus: "paid" }).toLowerCase()).toContain("complete");
+  });
+});
+
+describe("backend-derived completion when opening an edited record", () => {
+  // Simulate opening an existing record where the source-of-truth is the
+  // persisted backend fields (review_status, clearance_status, dispatch.status,
+  // invoice.status) — NOT any transient UI form state.
+  it("an edited but un-approved record keeps step 3 active and step 4 not complete", () => {
+    const backend = {
+      isLinked: true,
+      reviewStatus: "modified", // user made changes; ops review pending
+      clearanceStatus: "approved",
+      dispatchStatus: "completed",
+      invoiceStatus: "none" as const,
+    };
+    const stage = derivePipelineStage({ ...backend, channel: "operations", formView: false });
+    const done = derivePipelineCompletedStages(backend);
+    expect(stage).toBe("operations");
+    expect(done).toContain("clearance");
+    expect(done).toContain("station");
+    expect(done).not.toContain("operations");
+    expect(done).not.toContain("receivables");
+  });
+
+  it("once backend reviewStatus flips to 'approved', operations is marked complete", () => {
+    const backend = {
+      isLinked: true,
+      reviewStatus: "approved",
+      clearanceStatus: "approved",
+      dispatchStatus: "completed",
+      invoiceStatus: "none" as const,
+    };
+    const done = derivePipelineCompletedStages(backend);
+    expect(done).toContain("operations");
+    expect(done).not.toContain("receivables");
   });
 });
