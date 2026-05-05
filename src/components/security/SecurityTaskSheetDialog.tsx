@@ -346,8 +346,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         if (!restored.std && std) restored.std = std;
         if (!restored.ata && ata) restored.ata = ata;
         if (!restored.atd && atd) restored.atd = atd;
-        if (!restored.registration && registration) restored.registration = registration;
-        if (!restored.route && route) restored.route = route;
+        // Linked flight schedule is authoritative for registration & route — override
+        // any stale value cached in task_sheet_data so list view and edit form agree.
+        if (registration) restored.registration = registration;
+        if (route) restored.route = route;
         setSheet(restored);
       } else {
         setSheet({
