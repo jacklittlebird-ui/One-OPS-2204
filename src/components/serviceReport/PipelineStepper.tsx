@@ -68,6 +68,7 @@ export function derivePipelineStage(opts: {
     } else if (ch === "operations") {
       step1Done = true;
       step2Done = true;
+      step3Done = false;
     }
   }
 
