@@ -478,7 +478,7 @@ export default function SecurityServiceReportsPage() {
       );
     }
     // Sort by Arrival Date with flight_no/id tiebreaker so an edited row keeps its position
-    const ascending = isStationView || isOperationsView || isReceivablesView;
+    const ascending = true;
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
       const bMeta = (b as any).flightMeta;
