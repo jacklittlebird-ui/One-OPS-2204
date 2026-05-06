@@ -143,7 +143,7 @@ describe("derivePipelineStage — channel form views (create vs edit)", () => {
       expect(stage).toBe("operations");
     });
 
-    it("LIST view (not formView): once backend reviewStatus=approved, advances past operations", () => {
+    it("LIST view (operations channel): caps at operations even when approved (operations portal never shows receivables as active)", () => {
       const stage = derivePipelineStage({
         isLinked: true,
         reviewStatus: "approved",
@@ -153,7 +153,7 @@ describe("derivePipelineStage — channel form views (create vs edit)", () => {
         formView: false,
         invoiceStatus: "none",
       });
-      expect(stage).toBe("receivables");
+      expect(stage).toBe("operations");
     });
 
     it("never marks step 4 (receivables) as completed prematurely while operations is pending", () => {

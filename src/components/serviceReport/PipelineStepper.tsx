@@ -91,6 +91,7 @@ export function derivePipelineStage(opts: {
     const order: PipelineStage[] = ["clearance", "station", "operations", "receivables"];
     const cap: Record<string, PipelineStage> = {
       station: "operations",
+      operations: "operations",
     };
     const maxStage = cap[ch];
     if (maxStage && order.indexOf(stage) > order.indexOf(maxStage)) {
