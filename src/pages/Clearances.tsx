@@ -165,12 +165,20 @@ export default function ClearancesPage() {
     const mdt = !dateTo || flightDate <= dateTo;
     return categoryMatch && ms && mst && mt && mstation && mreg && mairline && mac && mpurp && mor && mdest && mpx && mdf && mdt;
   }).sort((a, b) => {
+    // Sort by Arrival Date (most recent first), then by ATA/STA time.
     const da = a.arrival_date || a.departure_date || "";
     const db = b.arrival_date || b.departure_date || "";
-    if (!da && !db) return 0;
-    if (!da) return 1;
-    if (!db) return -1;
-    return db.localeCompare(da);
+    if (da !== db) {
+      if (!da) return 1;
+      if (!db) return -1;
+      return db.localeCompare(da);
+    }
+    const ta = a.sta || a.std || "";
+    const tb = b.sta || b.std || "";
+    if (!ta && !tb) return 0;
+    if (!ta) return 1;
+    if (!tb) return -1;
+    return ta.localeCompare(tb);
   });
 
   // Stats are scoped to the active service category (Security or Handling)
