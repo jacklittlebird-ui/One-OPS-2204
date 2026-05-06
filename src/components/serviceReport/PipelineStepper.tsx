@@ -97,6 +97,11 @@ export function derivePipelineStage(opts: {
     if (maxStage && order.indexOf(stage) > order.indexOf(maxStage)) {
       stage = maxStage;
     }
+    // Receivables view: stage 4 only lights up once the invoice is PAID.
+    // Until then, show stage 3 (operations) as the active step.
+    if (ch === "receivables" && inv !== "paid" && order.indexOf(stage) >= order.indexOf("receivables")) {
+      stage = "operations";
+    }
   }
   return stage;
 }
