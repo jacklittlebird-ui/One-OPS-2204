@@ -425,12 +425,7 @@ function HandlingServiceReportContent() {
       if (!raw) continue;
       const status = String(inv.status || "").toLowerCase();
       const isPaid = status === "paid";
-      // flight_ref may be a comma/slash-separated list of flights — index each one
-      const refs = raw
-        .split(/[,;\n]+/)
-        .map(s => s.trim().toUpperCase())
-        .filter(Boolean);
-      for (const key of refs) {
+      for (const key of expandFlightRef(raw)) {
         const prev = m.get(key);
         if (isPaid) m.set(key, "paid");
         else if (!prev) m.set(key, "issued");
