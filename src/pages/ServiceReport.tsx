@@ -421,14 +421,20 @@ function HandlingServiceReportContent() {
   const invoiceStatusByFlight = useMemo(() => {
     const m = new Map<string, "issued" | "paid">();
     for (const inv of (dbInvoices as any[])) {
-      const key = String(inv.flight_ref || "").trim().toUpperCase();
-      if (!key) continue;
+      const raw = String(inv.flight_ref || "");
+      if (!raw) continue;
       const status = String(inv.status || "").toLowerCase();
       const isPaid = status === "paid";
-      const prev = m.get(key);
-      // Prefer "paid" if any invoice for this flight is paid.
-      if (isPaid) m.set(key, "paid");
-      else if (!prev) m.set(key, "issued");
+      // flight_ref may be a comma/slash-separated list of flights — index each one
+      const refs = raw
+        .split(/[,;\n]+/)
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
+      for (const key of refs) {
+        const prev = m.get(key);
+        if (isPaid) m.set(key, "paid");
+        else if (!prev) m.set(key, "issued");
+      }
     }
     return m;
   }, [dbInvoices]);
