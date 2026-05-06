@@ -296,6 +296,22 @@ export default function StationDispatchPage() {
       const s = search.toLowerCase();
       r = r.filter(d => d.flight_no.toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
     }
+    // Sort by flight date (newest first), then by ATA (actual_start) / scheduled_start.
+    r.sort((a, b) => {
+      const da = a.flight_date || "";
+      const db = b.flight_date || "";
+      if (da !== db) {
+        if (!da) return 1;
+        if (!db) return -1;
+        return db.localeCompare(da);
+      }
+      const ta = a.actual_start || a.scheduled_start || "";
+      const tb = b.actual_start || b.scheduled_start || "";
+      if (!ta && !tb) return 0;
+      if (!ta) return 1;
+      if (!tb) return -1;
+      return ta.localeCompare(tb);
+    });
     return r;
   }, [dispatches, stationFilter, dateFrom, dateTo, airlineFilter, search, serviceCategory]);
 
@@ -319,7 +335,21 @@ export default function StationDispatchPage() {
         if (aName.toLowerCase() !== airlineFilter.toLowerCase()) return false;
       }
       return true;
-    }).sort((a, b) => (b.arrival_date || b.departure_date || "").localeCompare(a.arrival_date || a.departure_date || ""));
+    }).sort((a, b) => {
+      const da = a.arrival_date || a.departure_date || "";
+      const db = b.arrival_date || b.departure_date || "";
+      if (da !== db) {
+        if (!da) return 1;
+        if (!db) return -1;
+        return db.localeCompare(da);
+      }
+      const ta = (a as any).sta || (a as any).std || "";
+      const tb = (b as any).sta || (b as any).std || "";
+      if (!ta && !tb) return 0;
+      if (!ta) return 1;
+      if (!tb) return -1;
+      return ta.localeCompare(tb);
+    });
   }, [flights, stationFilter, dateFrom, dateTo, airlineFilter, airlineMap, serviceCategory]);
 
   const assignedFlightIds = useMemo(() => new Set(dispatches.filter(d => d.flight_schedule_id).map(d => d.flight_schedule_id)), [dispatches]);
