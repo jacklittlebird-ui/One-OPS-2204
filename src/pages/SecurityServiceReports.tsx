@@ -7,6 +7,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+import { expandFlightRef, normalizeFlightKey } from "@/lib/flightRefMatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -207,12 +208,7 @@ export default function SecurityServiceReportsPage() {
       const raw = String(inv.flight_ref || "");
       if (!raw) continue;
       const isPaid = String(inv.status || "").toLowerCase() === "paid";
-      // flight_ref may be a comma/slash-separated list of flights — index each one
-      const refs = raw
-        .split(/[,;\n]+/)
-        .map(s => s.trim().toUpperCase())
-        .filter(Boolean);
-      for (const key of refs) {
+      for (const key of expandFlightRef(raw)) {
         if (isPaid) m.set(key, "paid");
         else if (!m.get(key)) m.set(key, "issued");
       }
@@ -1239,7 +1235,7 @@ export default function SecurityServiceReportsPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           {(() => {
-                            const invStatus = invoiceStatusByFlight.get(String(r.flight_no || "").trim().toUpperCase()) || "none";
+                            const invStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none";
                             return (
                               <PipelineStepper
                                 currentStage={derivePipelineStage({

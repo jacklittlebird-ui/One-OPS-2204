@@ -7,6 +7,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+import { expandFlightRef, normalizeFlightKey } from "@/lib/flightRefMatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { generateAllCharges } from "@/data/airportChargesData";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
@@ -425,12 +426,7 @@ function HandlingServiceReportContent() {
       if (!raw) continue;
       const status = String(inv.status || "").toLowerCase();
       const isPaid = status === "paid";
-      // flight_ref may be a comma/slash-separated list of flights — index each one
-      const refs = raw
-        .split(/[,;\n]+/)
-        .map(s => s.trim().toUpperCase())
-        .filter(Boolean);
-      for (const key of refs) {
+      for (const key of expandFlightRef(raw)) {
         const prev = m.get(key);
         if (isPaid) m.set(key, "paid");
         else if (!prev) m.set(key, "issued");
@@ -1297,7 +1293,7 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5 font-semibold text-success">{r.isLinked ? r.totalCost.toLocaleString() : "—"}</td>
                   <td className="px-3 py-2.5">
                     {(() => {
-                      const invStatus = invoiceStatusByFlight.get(String(r.flightNo || "").trim().toUpperCase()) || "none";
+                      const invStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flightNo || ""))) || "none";
                       return (
                         <PipelineStepper
                           currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel, invoiceStatus: invStatus })}
