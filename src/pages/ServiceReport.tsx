@@ -1293,7 +1293,7 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5 font-semibold text-success">{r.isLinked ? r.totalCost.toLocaleString() : "—"}</td>
                   <td className="px-3 py-2.5">
                     {(() => {
-                      const invStatus = invoiceStatusByFlight.get(String(r.flightNo || "").trim().toUpperCase()) || "none";
+                      const invStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flightNo || ""))) || "none";
                       return (
                         <PipelineStepper
                           currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel, invoiceStatus: invStatus })}
