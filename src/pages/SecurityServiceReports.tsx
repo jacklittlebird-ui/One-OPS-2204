@@ -204,11 +204,18 @@ export default function SecurityServiceReportsPage() {
   const invoiceStatusByFlight = useMemo(() => {
     const m = new Map<string, "issued" | "paid">();
     for (const inv of (dbInvoicesForPipeline as any[])) {
-      const key = String(inv.flight_ref || "").trim().toUpperCase();
-      if (!key) continue;
+      const raw = String(inv.flight_ref || "");
+      if (!raw) continue;
       const isPaid = String(inv.status || "").toLowerCase() === "paid";
-      if (isPaid) m.set(key, "paid");
-      else if (!m.get(key)) m.set(key, "issued");
+      // flight_ref may be a comma/slash-separated list of flights — index each one
+      const refs = raw
+        .split(/[,;\n]+/)
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
+      for (const key of refs) {
+        if (isPaid) m.set(key, "paid");
+        else if (!m.get(key)) m.set(key, "issued");
+      }
     }
     return m;
   }, [dbInvoicesForPipeline]);
