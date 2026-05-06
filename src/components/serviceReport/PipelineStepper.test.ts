@@ -184,7 +184,7 @@ describe("derivePipelineStage — channel form views (create vs edit)", () => {
   });
 
   describe("receivables channel (list view)", () => {
-    it("stage is receivables and shows complete only when invoice is paid", () => {
+    it("active stage stays at operations until invoice is paid; flips to receivables only when paid", () => {
       const opts = {
         isLinked: true,
         reviewStatus: "approved",
@@ -192,10 +192,12 @@ describe("derivePipelineStage — channel form views (create vs edit)", () => {
         dispatchStatus: "completed",
         channel: "receivables",
       } as const;
-      expect(derivePipelineStage({ ...opts, invoiceStatus: "issued" })).toBe("receivables");
+      expect(derivePipelineStage({ ...opts, invoiceStatus: "none" })).toBe("operations");
+      expect(derivePipelineStage({ ...opts, invoiceStatus: "issued" })).toBe("operations");
+      expect(derivePipelineStage({ ...opts, invoiceStatus: "paid" })).toBe("receivables");
+
       const doneIssued = derivePipelineCompletedStages({ ...opts, invoiceStatus: "issued" });
       expect(doneIssued).not.toContain("receivables");
-
       const donePaid = derivePipelineCompletedStages({ ...opts, invoiceStatus: "paid" });
       expect(donePaid).toContain("receivables");
     });
