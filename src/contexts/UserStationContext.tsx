@@ -38,7 +38,9 @@ export function UserStationProvider({ children }: { children: ReactNode }) {
   // general_accounts, contracts) see flights across all stations. Only station/clearance
   // operational channels are scoped to the user's profile station.
   const { activeChannel } = useChannel();
-  const centralChannels = new Set(["operations", "receivables", "payables", "general_accounts", "contracts", "admin"]);
+  // Clearance team enters flights for all stations, so they must see every record
+  // (not just the user's home station). Same for central review/finance channels.
+  const centralChannels = new Set(["clearance", "operations", "receivables", "payables", "general_accounts", "contracts", "admin"]);
   const isStationScoped = !isAdmin && !!station && !centralChannels.has(activeChannel);
 
   return (
