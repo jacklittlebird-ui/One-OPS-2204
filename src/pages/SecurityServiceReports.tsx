@@ -1235,7 +1235,7 @@ export default function SecurityServiceReportsPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           {(() => {
-                            const invStatus = invoiceStatusByFlight.get(String(r.flight_no || "").trim().toUpperCase()) || "none";
+                            const invStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none";
                             return (
                               <PipelineStepper
                                 currentStage={derivePipelineStage({
