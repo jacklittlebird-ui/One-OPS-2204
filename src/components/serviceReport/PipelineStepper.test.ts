@@ -111,8 +111,8 @@ describe("derivePipelineStage — channel form views (create vs edit)", () => {
         channel: "station",
         formView: false,
       });
-      // Station portal must not "see" Receivables as the active stage
-      expect(stage).toBe("operations");
+      // Station portal must not "see" Operations or Receivables as the active stage
+      expect(stage).toBe("station");
     });
   });
 
