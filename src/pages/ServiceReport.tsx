@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
   DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Receipt,
-  CheckCircle2, XCircle, Clock, MessageSquare, AlertCircle, CalendarDays, TableIcon
+  CheckCircle2, XCircle, Clock, MessageSquare, AlertCircle, CalendarDays, TableIcon, RefreshCw
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -795,15 +795,23 @@ function HandlingServiceReportContent() {
         x.route.toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date (oldest first for station & operations views; newest first elsewhere); rows without an arrival date sink to the bottom
+    // Sort by Arrival Date then by ATA (oldest first for station/operations/receivables; newest first elsewhere).
+    // Using ATA as a stable tiebreaker prevents a just-edited row from jumping to the top after refetch.
     const ascending = isStationView || isOperationsView || isReceivablesView;
     return [...r].sort((a, b) => {
       const ad = a.arrivalDate || "";
       const bd = b.arrivalDate || "";
-      if (!ad && !bd) return 0;
-      if (!ad) return 1;
-      if (!bd) return -1;
-      return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
+      if (ad !== bd) {
+        if (!ad) return 1;
+        if (!bd) return -1;
+        return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
+      }
+      const at = a.ata || a.sta || "";
+      const bt = b.ata || b.sta || "";
+      if (!at && !bt) return (a.flightNo || "").localeCompare(b.flightNo || "");
+      if (!at) return 1;
+      if (!bt) return -1;
+      return at.localeCompare(bt);
     });
   }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab, isStationScoped, userStation, reviewIdsFilter]);
 
@@ -997,9 +1005,24 @@ function HandlingServiceReportContent() {
             Flight service reports linked to schedules, charges and the chart of services.
           </p>
         </div>
-        {canCreateNew && (
-          <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+              queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
+              queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+              queryClient.invalidateQueries({ queryKey: ["invoices_for_receivables_panel"] });
+              toast({ title: "Refreshing", description: "Reloading service reports…" });
+            }}
+            className="toolbar-btn"
+            title="Refresh"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+          {canCreateNew && (
+            <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
+          )}
+        </div>
       </div>
 
       {/* Station-only sub-tabs (All vs Rejected) */}

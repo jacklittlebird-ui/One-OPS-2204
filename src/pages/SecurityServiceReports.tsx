@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
-  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X
+  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X, RefreshCw
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -475,7 +475,7 @@ export default function SecurityServiceReportsPage() {
         (r.station || "").toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date — station, operations & receivables views ascending (chronological), others descending (newest first)
+    // Sort by Arrival Date with flight_no/id tiebreaker so an edited row keeps its position
     const ascending = isStationView || isOperationsView || isReceivablesView;
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
@@ -484,10 +484,19 @@ export default function SecurityServiceReportsPage() {
       const bFd = b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined;
       const ad = aFd?.arrival_date || aMeta?.arrival_date || a.flight_date || "";
       const bd = bFd?.arrival_date || bMeta?.arrival_date || b.flight_date || "";
-      if (!ad && !bd) return 0;
-      if (!ad) return 1;
-      if (!bd) return -1;
-      return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
+      if (ad !== bd) {
+        if (!ad) return 1;
+        if (!bd) return -1;
+        return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
+      }
+      const at = aFd?.sta || aMeta?.sta || "";
+      const bt = bFd?.sta || bMeta?.sta || "";
+      if (at !== bt) {
+        if (!at) return 1;
+        if (!bt) return -1;
+        return at.localeCompare(bt);
+      }
+      return (a.flight_no || "").localeCompare(b.flight_no || "") || (a.id || "").localeCompare(b.id || "");
     });
   }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
 
@@ -862,10 +871,25 @@ export default function SecurityServiceReportsPage() {
             Security service documentation across stations and operations.
           </p>
         </div>
-        {canCreateNew && (
-          <button onClick={openNewForm} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+              queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+              queryClient.invalidateQueries({ queryKey: ["security_irregularities"] });
+              toast({ title: "Refreshing", description: "Reloading security service reports…" });
+            }}
+            className="toolbar-btn"
+            title="Refresh"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+          {canCreateNew && (
+            <button onClick={openNewForm} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
+          )}
+        </div>
       </div>
+
 
       {reviewIdsFilter && reviewIdsFilter.length > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
