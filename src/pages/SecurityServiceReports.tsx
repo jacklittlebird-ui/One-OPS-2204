@@ -888,6 +888,8 @@ export default function SecurityServiceReportsPage() {
             <button onClick={openNewForm} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
           )}
         </div>
+      </div>
+
 
       {reviewIdsFilter && reviewIdsFilter.length > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
