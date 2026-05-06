@@ -475,7 +475,7 @@ export default function SecurityServiceReportsPage() {
         (r.station || "").toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date — station, operations & receivables views ascending (chronological), others descending (newest first)
+    // Sort by Arrival Date with flight_no/id tiebreaker so an edited row keeps its position
     const ascending = isStationView || isOperationsView || isReceivablesView;
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
@@ -484,10 +484,19 @@ export default function SecurityServiceReportsPage() {
       const bFd = b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined;
       const ad = aFd?.arrival_date || aMeta?.arrival_date || a.flight_date || "";
       const bd = bFd?.arrival_date || bMeta?.arrival_date || b.flight_date || "";
-      if (!ad && !bd) return 0;
-      if (!ad) return 1;
-      if (!bd) return -1;
-      return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
+      if (ad !== bd) {
+        if (!ad) return 1;
+        if (!bd) return -1;
+        return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
+      }
+      const at = aFd?.sta || aMeta?.sta || "";
+      const bt = bFd?.sta || bMeta?.sta || "";
+      if (at !== bt) {
+        if (!at) return 1;
+        if (!bt) return -1;
+        return at.localeCompare(bt);
+      }
+      return (a.flight_no || "").localeCompare(b.flight_no || "") || (a.id || "").localeCompare(b.id || "");
     });
   }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
 
