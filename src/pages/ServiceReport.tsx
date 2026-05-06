@@ -770,10 +770,8 @@ function HandlingServiceReportContent() {
         flightTouchesStation(x, userStation)
       );
     }
-    // Operations view: only show linked/completed reports awaiting or under review
-    if (isOperationsView) r = r.filter(x => x.isLinked);
-    // Operations sub-tab: filter to Modified reports
-    if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.reviewStatus === "modified");
+    // Operations sub-tab: filter to Modified reports (when explicitly selected)
+    if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.isLinked && x.reviewStatus === "modified");
     if (reviewIdsFilter && reviewIdsFilter.length > 0) {
       const set = new Set(reviewIdsFilter);
       r = r.filter(x => set.has(x.id));

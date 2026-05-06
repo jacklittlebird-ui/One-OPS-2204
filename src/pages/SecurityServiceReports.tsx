@@ -450,10 +450,9 @@ export default function SecurityServiceReportsPage() {
 
   const filtered = useMemo(() => {
     let rows: MergedSecurityRow[] = mergedRows;
-    // Operations: only linked/completed reports (skip un-dispatched pending flights)
-    if (isOperationsView) {
-      rows = rows.filter(r => !r.isPending && (r.status === "Completed" || r.review_status === "Pending Review" || r.review_status === "Rejected" || r.review_status === "Modified"));
-      if (opsTab === "modified") rows = rows.filter(r => r.review_status === "Modified");
+    // Operations sub-tab: filter to Modified reports (when explicitly selected)
+    if (isOperationsView && opsTab === "modified") {
+      rows = rows.filter(r => !r.isPending && r.review_status === "Modified");
     }
     // Station "Rejected" tab
     if (isStationView && stationTab === "rejected") rows = rows.filter(r => r.review_status === "Rejected");
