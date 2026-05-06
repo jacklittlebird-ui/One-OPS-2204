@@ -97,6 +97,11 @@ export function derivePipelineStage(opts: {
     if (maxStage && order.indexOf(stage) > order.indexOf(maxStage)) {
       stage = maxStage;
     }
+    // Station view: uncompleted (dispatch not completed) → step 1 active;
+    // completed → step 2 active (and station appears in completedStages).
+    if (ch === "station") {
+      stage = ds === "completed" ? "station" : "clearance";
+    }
     // Receivables view: stage 4 only lights up once the invoice is PAID.
     // Until then, show stage 3 (operations) as the active step.
     if (ch === "receivables" && inv !== "paid" && order.indexOf(stage) >= order.indexOf("receivables")) {
