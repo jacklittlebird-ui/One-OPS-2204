@@ -1005,9 +1005,24 @@ function HandlingServiceReportContent() {
             Flight service reports linked to schedules, charges and the chart of services.
           </p>
         </div>
-        {canCreateNew && (
-          <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+              queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
+              queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+              queryClient.invalidateQueries({ queryKey: ["invoices_for_receivables_panel"] });
+              toast({ title: "Refreshing", description: "Reloading service reports…" });
+            }}
+            className="toolbar-btn"
+            title="Refresh"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+          {canCreateNew && (
+            <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
+          )}
+        </div>
       </div>
 
       {/* Station-only sub-tabs (All vs Rejected) */}
