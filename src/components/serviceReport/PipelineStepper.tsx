@@ -90,7 +90,7 @@ export function derivePipelineStage(opts: {
   if (!opts.formView) {
     const order: PipelineStage[] = ["clearance", "station", "operations", "receivables"];
     const cap: Record<string, PipelineStage> = {
-      station: "operations",
+      station: "station",
       operations: "operations",
     };
     const maxStage = cap[ch];
