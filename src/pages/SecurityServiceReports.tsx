@@ -871,10 +871,23 @@ export default function SecurityServiceReportsPage() {
             Security service documentation across stations and operations.
           </p>
         </div>
-        {canCreateNew && (
-          <button onClick={openNewForm} className="toolbar-btn-primary shrink-0"><Plus size={14} /> New Service Report</button>
-        )}
-      </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+              queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+              queryClient.invalidateQueries({ queryKey: ["security_irregularities"] });
+              toast({ title: "Refreshing", description: "Reloading security service reports…" });
+            }}
+            className="toolbar-btn"
+            title="Refresh"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+          {canCreateNew && (
+            <button onClick={openNewForm} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
+          )}
+        </div>
 
       {reviewIdsFilter && reviewIdsFilter.length > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
