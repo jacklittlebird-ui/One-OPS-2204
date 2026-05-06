@@ -165,13 +165,13 @@ export default function ClearancesPage() {
     const mdt = !dateTo || flightDate <= dateTo;
     return categoryMatch && ms && mst && mt && mstation && mreg && mairline && mac && mpurp && mor && mdest && mpx && mdf && mdt;
   }).sort((a, b) => {
-    // Sort by Arrival Date (most recent first), then by ATA/STA time.
+    // Sort by Arrival Date (ascending), then by ATA/STA time.
     const da = a.arrival_date || a.departure_date || "";
     const db = b.arrival_date || b.departure_date || "";
     if (da !== db) {
       if (!da) return 1;
       if (!db) return -1;
-      return db.localeCompare(da);
+      return da.localeCompare(db);
     }
     const ta = a.sta || a.std || "";
     const tb = b.sta || b.std || "";

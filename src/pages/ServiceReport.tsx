@@ -797,7 +797,7 @@ function HandlingServiceReportContent() {
     }
     // Sort by Arrival Date then by ATA (oldest first for station/operations/receivables; newest first elsewhere).
     // Using ATA as a stable tiebreaker prevents a just-edited row from jumping to the top after refetch.
-    const ascending = isStationView || isOperationsView || isReceivablesView;
+    const ascending = true;
     return [...r].sort((a, b) => {
       const ad = a.arrivalDate || "";
       const bd = b.arrivalDate || "";

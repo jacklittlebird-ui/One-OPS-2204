@@ -303,7 +303,7 @@ export default function StationDispatchPage() {
       if (da !== db) {
         if (!da) return 1;
         if (!db) return -1;
-        return db.localeCompare(da);
+        return da.localeCompare(db);
       }
       const ta = a.actual_start || a.scheduled_start || "";
       const tb = b.actual_start || b.scheduled_start || "";
@@ -341,7 +341,7 @@ export default function StationDispatchPage() {
       if (da !== db) {
         if (!da) return 1;
         if (!db) return -1;
-        return db.localeCompare(da);
+        return da.localeCompare(db);
       }
       const ta = (a as any).sta || (a as any).std || "";
       const tb = (b as any).sta || (b as any).std || "";
