@@ -767,10 +767,8 @@ function HandlingServiceReportContent() {
   const filtered = useMemo(() => {
     let r = mergedRows;
     if (isStationScoped && userStation) {
-      r = r.filter(x =>
-        x.station?.toUpperCase() === userStation.toUpperCase() ||
-        flightTouchesStation(x, userStation)
-      );
+      const us = userStation.toUpperCase();
+      r = r.filter(x => (x.station || "").toUpperCase() === us);
     }
     // Operations sub-tab: filter to Modified reports (when explicitly selected)
     if (isOperationsView && operationsTab === "modified") r = r.filter(x => x.isLinked && x.reviewStatus === "modified");
