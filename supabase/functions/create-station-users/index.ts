@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function ensure(admin: any, list: any, email: string, password: string, fullName: string, station: string) {
+async function ensure(admin: any, list: any, email: string, password: string, fullName: string, role: string, station: string | null) {
   const log: any[] = [];
   let user = list?.users?.find((u: any) => u.email === email);
   if (user) {
@@ -20,9 +20,11 @@ async function ensure(admin: any, list: any, email: string, password: string, fu
     user = data.user!;
     log.push({ email, action: "created" });
   }
-  await admin.from("user_roles").upsert({ user_id: user.id, role: "station_ops" }, { onConflict: "user_id,role" });
-  await admin.from("profiles").upsert({ user_id: user.id, full_name: fullName, station }, { onConflict: "user_id" });
-  log.push({ email, action: `assigned station ${station}` });
+  await admin.from("user_roles").upsert({ user_id: user.id, role }, { onConflict: "user_id,role" });
+  const profile: any = { user_id: user.id, full_name: fullName };
+  if (station) profile.station = station;
+  await admin.from("profiles").upsert(profile, { onConflict: "user_id" });
+  log.push({ email, action: `assigned role ${role}${station ? ` station ${station}` : ""}` });
   return log;
 }
 
@@ -37,8 +39,9 @@ Deno.serve(async (req) => {
   const { data: list } = await admin.auth.admin.listUsers();
   const results: any[] = [];
 
-  results.push(...await ensure(admin, list, "atzstn@linkagency.com", "Atzsec12345", "ATZ Station - Asyut", "ATZ"));
-  results.push(...await ensure(admin, list, "hmbstn@linkagency.com", "hmbsec12345", "HMB Station - Sohag", "HMB"));
+  results.push(...await ensure(admin, list, "atzstn@linkagency.com", "Atzsec12345", "ATZ Station - Asyut", "station_ops", "ATZ"));
+  results.push(...await ensure(admin, list, "hmbstn@linkagency.com", "hmbsec12345", "HMB Station - Sohag", "station_ops", "HMB"));
+  results.push(...await ensure(admin, list, "acceng@linkagency.com", "Accgen#12345", "General Accounts Portal", "general_accounts", null));
 
   return new Response(JSON.stringify({ ok: true, results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
