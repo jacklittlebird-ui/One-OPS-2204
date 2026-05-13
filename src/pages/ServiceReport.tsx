@@ -1292,10 +1292,10 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{r.skdType || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{r.serviceType || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.station || "—"}</td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.route}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.route || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.arrivalDate || "—"}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.aircraftType}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.isLinked ? r.mtow : "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.aircraftType || "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.mtow || "—"}</td>
                   <td className="px-3 py-2.5 text-center">
                     {r.isLinked ? (() => { const dn = autoDayNight(r.td, r.arrivalDate); return (
                       <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${dn === "N" ? "bg-info/15 text-info" : "bg-warning/15 text-warning"}`}>
