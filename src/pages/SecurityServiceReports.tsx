@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
-  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X, RefreshCw, Braces
+  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X, RefreshCw
 } from "lucide-react";
 import { resolveSecurityRowDisplay } from "@/lib/securityRowDisplay";
 import { useNavigate, useLocation } from "react-router-dom";
