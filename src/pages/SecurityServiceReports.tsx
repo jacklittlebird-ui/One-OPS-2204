@@ -1442,6 +1442,49 @@ export default function SecurityServiceReportsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Raw Task Sheet Inspector */}
+      <Dialog open={!!rawSheetRow} onOpenChange={(open) => !open && setRawSheetRow(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Braces size={18} /> Raw Task Sheet — {rawSheetRow?.flight_no}
+            </DialogTitle>
+          </DialogHeader>
+          {rawSheetRow && (() => {
+            const fd = rawSheetRow.flight_schedule_id ? flightDetailsById.get(rawSheetRow.flight_schedule_id) : undefined;
+            const meta = (rawSheetRow as any).flightMeta;
+            const resolved = resolveSecurityRowDisplay(rawSheetRow as any, fd, meta);
+            const ts = (rawSheetRow as any).task_sheet_data || {};
+            const tsKeys = Object.keys(ts);
+            return (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Resolved Display Fields</div>
+                  <div className="bg-muted/50 rounded-lg p-3 text-xs grid grid-cols-2 gap-x-4 gap-y-1.5">
+                    {Object.entries(resolved).map(([k, v]) => (
+                      <div key={k} className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{k}:</span>
+                        <span className="font-mono text-foreground truncate">{String(v) || <span className="italic text-muted-foreground/60">empty</span>}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    task_sheet_data ({tsKeys.length} field{tsKeys.length === 1 ? "" : "s"})
+                    {tsKeys.length === 0 && <span className="ml-2 text-warning normal-case font-normal">— empty; data may live in flight_schedule</span>}
+                  </div>
+                  <pre className="bg-muted/50 rounded-lg p-3 text-xs font-mono text-foreground overflow-auto max-h-80 whitespace-pre-wrap">{JSON.stringify(ts, null, 2)}</pre>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Source: {rawSheetRow.flight_schedule_id ? <span className="font-semibold text-foreground">linked to flight_schedule</span> : <span className="font-semibold text-warning">unlinked — fields fall back to task_sheet_data</span>}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
       </>
       )}
 
