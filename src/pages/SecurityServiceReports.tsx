@@ -159,7 +159,7 @@ export default function SecurityServiceReportsPage() {
   const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
-  const [rawSheetRow, setRawSheetRow] = useState<DispatchRow | null>(null);
+  
 
   // Fetch dispatch assignments (completed ones = service reports)
   const { data: dispatches = [], isLoading } = useQuery({
