@@ -1270,14 +1270,8 @@ export default function SecurityServiceReportsPage() {
                                     <Pencil size={12} /> Complete
                                   </button>
                                 )}
-                                <button
-                                  onClick={() => setRawSheetRow(r)}
-                                  className="p-1 rounded hover:bg-muted"
-                                  title="View raw task sheet (debug missing fields)"
-                                >
-                                  <Braces size={14} className="text-muted-foreground" />
-                                </button>
                               </>
+
                             ) : (
                               <>
                                 <button onClick={() => tryOpenEdit(r)} className="p-1 rounded hover:bg-muted" title="Edit Report">
