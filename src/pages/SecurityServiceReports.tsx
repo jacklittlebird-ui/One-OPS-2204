@@ -1260,15 +1260,24 @@ export default function SecurityServiceReportsPage() {
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-1">
                             {isPending ? (
-                              canCreateNew && (
+                              <>
+                                {canCreateNew && (
+                                  <button
+                                    onClick={() => { setIsNewReport(true); setEditRow({ ...r, id: "new" } as DispatchRow); }}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                                    title="Complete Service Report"
+                                  >
+                                    <Pencil size={12} /> Complete
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => { setIsNewReport(true); setEditRow({ ...r, id: "new" } as DispatchRow); }}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                                  title="Complete Service Report"
+                                  onClick={() => setRawSheetRow(r)}
+                                  className="p-1 rounded hover:bg-muted"
+                                  title="View raw task sheet (debug missing fields)"
                                 >
-                                  <Pencil size={12} /> Complete
+                                  <Braces size={14} className="text-muted-foreground" />
                                 </button>
-                              )
+                              </>
                             ) : (
                               <>
                                 <button onClick={() => tryOpenEdit(r)} className="p-1 rounded hover:bg-muted" title="Edit Report">
