@@ -518,12 +518,15 @@ function HandlingServiceReportContent() {
       })
       .map((c: any) => {
         const airline = c.airline_id ? airlineById.get(c.airline_id) : undefined;
+        const regKey = String(c.registration || "").toUpperCase().trim();
+        const ac = regKey ? aircraftByReg.get(regKey) : undefined;
         return {
           id: c.id,
           sourceType: "flight_schedules" as const,
           flightNo: getScheduleFlightNo(c),
           operator: airline?.name || airline?.code || c.handling_agent || "",
-          aircraftType: c.aircraft_type || "",
+          aircraftType: c.aircraft_type || ac?.ac_type || ac?.type || "",
+          mtow: ac?.mtow ? String(ac.mtow) : "",
           registration: c.registration || "",
           route: c.route || "",
           sta: c.sta || "",
@@ -537,7 +540,7 @@ function HandlingServiceReportContent() {
           purpose: c.purpose || "",
         };
       });
-  }, [dbFlights, airlineById, userStation, isStationScoped]);
+  }, [dbFlights, airlineById, aircraftByReg, userStation, isStationScoped]);
 
   const mergedRows: MergedRow[] = useMemo(() => {
     const reportsByFlight = new Map<string, ReportFormData[]>();
