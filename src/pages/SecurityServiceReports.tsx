@@ -2,8 +2,9 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
-  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X, RefreshCw
+  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X, RefreshCw, Braces
 } from "lucide-react";
+import { resolveSecurityRowDisplay } from "@/lib/securityRowDisplay";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
@@ -158,6 +159,7 @@ export default function SecurityServiceReportsPage() {
   const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
+  const [rawSheetRow, setRawSheetRow] = useState<DispatchRow | null>(null);
 
   // Fetch dispatch assignments (completed ones = service reports)
   const { data: dispatches = [], isLoading } = useQuery({
@@ -1179,13 +1181,8 @@ export default function SecurityServiceReportsPage() {
                     const isPending = (r as any).isPending === true;
                     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
                     const meta = (r as any).flightMeta;
-                    const ts = (r as any).task_sheet_data || {};
-                    const arrDate = fd?.arrival_date || meta?.arrival_date || ts.arrival_date || ts.shift_start_date || (r as any).flight_date || "";
-                    const depDate = fd?.departure_date || meta?.departure_date || ts.departure_date || ts.shift_end_date || (r as any).flight_date || "";
-                    const route = fd?.route || meta?.route || ts.route || "";
-                    const acType = fd?.aircraft_type || meta?.aircraft_type || ts.aircraft_type || "";
-                    const reg = fd?.registration || (meta as any)?.registration || ts.registration || "";
-                    const skdType = fd?.skd_type || meta?.skd_type || ts.flight_type || "";
+                    const d = resolveSecurityRowDisplay(r as any, fd, meta);
+                    const { registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate } = d;
                     return (
                       <React.Fragment key={r.id}>
                       <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
@@ -1263,19 +1260,35 @@ export default function SecurityServiceReportsPage() {
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-1">
                             {isPending ? (
-                              canCreateNew && (
+                              <>
+                                {canCreateNew && (
+                                  <button
+                                    onClick={() => { setIsNewReport(true); setEditRow({ ...r, id: "new" } as DispatchRow); }}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                                    title="Complete Service Report"
+                                  >
+                                    <Pencil size={12} /> Complete
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => { setIsNewReport(true); setEditRow({ ...r, id: "new" } as DispatchRow); }}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                                  title="Complete Service Report"
+                                  onClick={() => setRawSheetRow(r)}
+                                  className="p-1 rounded hover:bg-muted"
+                                  title="View raw task sheet (debug missing fields)"
                                 >
-                                  <Pencil size={12} /> Complete
+                                  <Braces size={14} className="text-muted-foreground" />
                                 </button>
-                              )
+                              </>
                             ) : (
                               <>
                                 <button onClick={() => tryOpenEdit(r)} className="p-1 rounded hover:bg-muted" title="Edit Report">
                                   <Pencil size={14} className="text-muted-foreground" />
+                                </button>
+                                <button
+                                  onClick={() => setRawSheetRow(r)}
+                                  className="p-1 rounded hover:bg-muted"
+                                  title="View raw task sheet (debug missing fields)"
+                                >
+                                  <Braces size={14} className="text-muted-foreground" />
                                 </button>
                                 {r.review_status === "Draft" && r.status === "Completed" && (
                                   <button onClick={() => submitForReview(r)} className="p-1 rounded hover:bg-muted" title="Submit for Review">
@@ -1427,6 +1440,49 @@ export default function SecurityServiceReportsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Raw Task Sheet Inspector */}
+      <Dialog open={!!rawSheetRow} onOpenChange={(open) => !open && setRawSheetRow(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Braces size={18} /> Raw Task Sheet — {rawSheetRow?.flight_no}
+            </DialogTitle>
+          </DialogHeader>
+          {rawSheetRow && (() => {
+            const fd = rawSheetRow.flight_schedule_id ? flightDetailsById.get(rawSheetRow.flight_schedule_id) : undefined;
+            const meta = (rawSheetRow as any).flightMeta;
+            const resolved = resolveSecurityRowDisplay(rawSheetRow as any, fd, meta);
+            const ts = (rawSheetRow as any).task_sheet_data || {};
+            const tsKeys = Object.keys(ts);
+            return (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Resolved Display Fields</div>
+                  <div className="bg-muted/50 rounded-lg p-3 text-xs grid grid-cols-2 gap-x-4 gap-y-1.5">
+                    {Object.entries(resolved).map(([k, v]) => (
+                      <div key={k} className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{k}:</span>
+                        <span className="font-mono text-foreground truncate">{String(v) || <span className="italic text-muted-foreground/60">empty</span>}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    task_sheet_data ({tsKeys.length} field{tsKeys.length === 1 ? "" : "s"})
+                    {tsKeys.length === 0 && <span className="ml-2 text-warning normal-case font-normal">— empty; data may live in flight_schedule</span>}
+                  </div>
+                  <pre className="bg-muted/50 rounded-lg p-3 text-xs font-mono text-foreground overflow-auto max-h-80 whitespace-pre-wrap">{JSON.stringify(ts, null, 2)}</pre>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Source: {rawSheetRow.flight_schedule_id ? <span className="font-semibold text-foreground">linked to flight_schedule</span> : <span className="font-semibold text-warning">unlinked — fields fall back to task_sheet_data</span>}
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
       </>
