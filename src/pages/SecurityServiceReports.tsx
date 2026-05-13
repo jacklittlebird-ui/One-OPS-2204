@@ -1198,7 +1198,7 @@ export default function SecurityServiceReportsPage() {
                           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{r.service_type}</span>
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs">
-                          {fd?.skd_type || meta?.skd_type || "—"}
+                          {skdType || "—"}
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{arrDate || "—"}</td>
                         <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{depDate || "—"}</td>
