@@ -229,6 +229,7 @@ interface ScheduleSourceRow {
   flightNo: string;
   operator: string;
   aircraftType: string;
+  mtow: string;
   registration: string;
   route: string;
   sta: string;
