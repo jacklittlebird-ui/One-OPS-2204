@@ -1274,6 +1274,13 @@ export default function SecurityServiceReportsPage() {
                                 <button onClick={() => tryOpenEdit(r)} className="p-1 rounded hover:bg-muted" title="Edit Report">
                                   <Pencil size={14} className="text-muted-foreground" />
                                 </button>
+                                <button
+                                  onClick={() => setRawSheetRow(r)}
+                                  className="p-1 rounded hover:bg-muted"
+                                  title="View raw task sheet (debug missing fields)"
+                                >
+                                  <Braces size={14} className="text-muted-foreground" />
+                                </button>
                                 {r.review_status === "Draft" && r.status === "Completed" && (
                                   <button onClick={() => submitForReview(r)} className="p-1 rounded hover:bg-muted" title="Submit for Review">
                                     <ExternalLink size={14} className="text-primary" />
