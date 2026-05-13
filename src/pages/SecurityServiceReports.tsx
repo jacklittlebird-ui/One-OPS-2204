@@ -1179,11 +1179,13 @@ export default function SecurityServiceReportsPage() {
                     const isPending = (r as any).isPending === true;
                     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
                     const meta = (r as any).flightMeta;
-                    const arrDate = fd?.arrival_date || meta?.arrival_date || "";
-                    const depDate = fd?.departure_date || meta?.departure_date || "";
-                    const route = fd?.route || meta?.route || "";
-                    const acType = fd?.aircraft_type || meta?.aircraft_type || "";
-                    const reg = fd?.registration || (meta as any)?.registration || "";
+                    const ts = (r as any).task_sheet_data || {};
+                    const arrDate = fd?.arrival_date || meta?.arrival_date || ts.arrival_date || ts.shift_start_date || (r as any).flight_date || "";
+                    const depDate = fd?.departure_date || meta?.departure_date || ts.departure_date || ts.shift_end_date || (r as any).flight_date || "";
+                    const route = fd?.route || meta?.route || ts.route || "";
+                    const acType = fd?.aircraft_type || meta?.aircraft_type || ts.aircraft_type || "";
+                    const reg = fd?.registration || (meta as any)?.registration || ts.registration || "";
+                    const skdType = fd?.skd_type || meta?.skd_type || ts.flight_type || "";
                     return (
                       <React.Fragment key={r.id}>
                       <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
