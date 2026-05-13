@@ -459,11 +459,25 @@ function HandlingServiceReportContent() {
     },
   });
 
+  const { data: dbAircrafts = [] } = useQuery({
+    queryKey: ["aircrafts", "service-report-source"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("aircrafts").select("registration, ac_type, type, mtow");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const isLoading = isLoadingReports || isLoadingDelays || isLoadingFlights || isLoadingAirlines;
 
   const airlineById = useMemo(
     () => new Map(dbAirlines.map((airline: { id: string; name: string; code: string }) => [airline.id, airline])),
     [dbAirlines]
+  );
+
+  const aircraftByReg = useMemo(
+    () => new Map((dbAircrafts as any[]).map(a => [String(a.registration || "").toUpperCase().trim(), a])),
+    [dbAircrafts]
   );
 
   const reports: ReportFormData[] = useMemo(
