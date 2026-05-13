@@ -229,6 +229,7 @@ interface ScheduleSourceRow {
   flightNo: string;
   operator: string;
   aircraftType: string;
+  mtow: string;
   registration: string;
   route: string;
   sta: string;
@@ -458,11 +459,25 @@ function HandlingServiceReportContent() {
     },
   });
 
+  const { data: dbAircrafts = [] } = useQuery({
+    queryKey: ["aircrafts", "service-report-source"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("aircrafts").select("registration, ac_type, type, mtow");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const isLoading = isLoadingReports || isLoadingDelays || isLoadingFlights || isLoadingAirlines;
 
   const airlineById = useMemo(
     () => new Map(dbAirlines.map((airline: { id: string; name: string; code: string }) => [airline.id, airline])),
     [dbAirlines]
+  );
+
+  const aircraftByReg = useMemo(
+    () => new Map((dbAircrafts as any[]).map(a => [String(a.registration || "").toUpperCase().trim(), a])),
+    [dbAircrafts]
   );
 
   const reports: ReportFormData[] = useMemo(
@@ -503,12 +518,15 @@ function HandlingServiceReportContent() {
       })
       .map((c: any) => {
         const airline = c.airline_id ? airlineById.get(c.airline_id) : undefined;
+        const regKey = String(c.registration || "").toUpperCase().trim();
+        const ac = regKey ? aircraftByReg.get(regKey) : undefined;
         return {
           id: c.id,
           sourceType: "flight_schedules" as const,
           flightNo: getScheduleFlightNo(c),
           operator: airline?.name || airline?.code || c.handling_agent || "",
-          aircraftType: c.aircraft_type || "",
+          aircraftType: c.aircraft_type || ac?.ac_type || ac?.type || "",
+          mtow: ac?.mtow ? String(ac.mtow) : "",
           registration: c.registration || "",
           route: c.route || "",
           sta: c.sta || "",
@@ -522,7 +540,7 @@ function HandlingServiceReportContent() {
           purpose: c.purpose || "",
         };
       });
-  }, [dbFlights, airlineById, userStation, isStationScoped]);
+  }, [dbFlights, airlineById, aircraftByReg, userStation, isStationScoped]);
 
   const mergedRows: MergedRow[] = useMemo(() => {
     const reportsByFlight = new Map<string, ReportFormData[]>();
@@ -563,6 +581,7 @@ function HandlingServiceReportContent() {
         operator: source.operator,
         aircraftType: source.aircraftType,
         registration: source.registration,
+        mtow: source.mtow,
         route: source.route,
         sta: source.sta,
         std: source.std,
@@ -1273,10 +1292,10 @@ function HandlingServiceReportContent() {
                   <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{r.skdType || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{r.serviceType || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground">{r.station || "—"}</td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.route}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{r.route || "—"}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{r.arrivalDate || "—"}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.aircraftType}</td>
-                  <td className="px-3 py-2.5 text-foreground">{r.isLinked ? r.mtow : "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.aircraftType || "—"}</td>
+                  <td className="px-3 py-2.5 text-foreground">{r.mtow || "—"}</td>
                   <td className="px-3 py-2.5 text-center">
                     {r.isLinked ? (() => { const dn = autoDayNight(r.td, r.arrivalDate); return (
                       <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${dn === "N" ? "bg-info/15 text-info" : "bg-warning/15 text-warning"}`}>
