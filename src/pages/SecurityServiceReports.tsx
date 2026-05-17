@@ -219,16 +219,21 @@ export default function SecurityServiceReportsPage() {
     return m;
   }, [dbInvoicesForPipeline]);
 
-  // Fetch flight schedules with security clearance types
+  // Fetch flight schedules with security clearance types.
+  // For station-scoped users, ALL flights at their station are treated as security
+  // (Handling tab is empty for stations), so skip the clearance_type filter.
   const { data: securityFlights = [] } = useQuery({
     queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null],
     queryFn: async () => {
       let q = supabase
         .from("flight_schedules")
         .select("*, airlines:airline_id(name, iata_code)")
-        .in("clearance_type", SECURITY_CLEARANCE_TYPES)
         .order("arrival_date", { ascending: false });
-      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
+      if (isStationScoped && userStation) {
+        q = (q as any).eq("authority", userStation);
+      } else {
+        q = (q as any).in("clearance_type", SECURITY_CLEARANCE_TYPES);
+      }
       const { data, error } = await q;
       if (error) throw error;
       return data as any[];
