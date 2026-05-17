@@ -499,6 +499,18 @@ function HandlingServiceReportContent() {
     [dbReports, dbDelays]
   );
 
+  // Flight numbers belonging to Security (any flight_schedule with a dispatch_assignment).
+  // Used to exclude standalone service_reports for those flights from the Handling tab.
+  const securityFlightNos = useMemo(() => {
+    const s = new Set<string>();
+    (dbFlights as any[]).forEach((c: any) => {
+      if (!securityFlightIds.has(c.id)) return;
+      const fn = getScheduleFlightNo(c).trim().toLowerCase();
+      if (fn) s.add(fn);
+    });
+    return s;
+  }, [dbFlights, securityFlightIds]);
+
   const scheduleSources: ScheduleSourceRow[] = useMemo(() => {
     // Station-originated records (added from Station Dispatch / Service Report)
     // require Operations approval before they show up in All Reports. While
@@ -560,6 +572,8 @@ function HandlingServiceReportContent() {
   }, [dbFlights, airlineById, aircraftByReg, userStation, isStationScoped, securityFlightIds]);
 
   const mergedRows: MergedRow[] = useMemo(() => {
+    // Station portal: Handling tab must be empty — every flight at the station is Security.
+    if (isStationScoped) return [];
     const reportsByFlight = new Map<string, ReportFormData[]>();
     reports.forEach(r => {
       const key = r.flightNo.trim().toLowerCase();
@@ -625,11 +639,13 @@ function HandlingServiceReportContent() {
       // Skip security-typed reports — they belong to the Security tab only
       const ht = (r.handlingType || "").toString().toLowerCase();
       if (ht.includes("security")) return;
+      // Skip reports whose flight has a dispatch_assignment (Security flight)
+      if (securityFlightNos.has(r.flightNo.trim().toLowerCase())) return;
       rows.push({ ...r, isLinked: true });
     });
 
     return rows;
-  }, [reports, scheduleSources]);
+  }, [reports, scheduleSources, isStationScoped, securityFlightNos]);
 
   // Save line items helper
   const saveLineItems = async (reportId: string, data: Partial<ReportFormData>) => {
