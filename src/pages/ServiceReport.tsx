@@ -441,12 +441,26 @@ function HandlingServiceReportContent() {
     queryFn: async () => {
       let q = supabase
         .from("flight_schedules")
-        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type")
+        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks")
         .order("arrival_date", { ascending: false, nullsFirst: false });
       if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Any flight_schedule that has a dispatch_assignment is a Security flight —
+  // it must be excluded from the Handling tab regardless of purpose/remarks markers.
+  const { data: securityFlightIds = new Set<string>() } = useQuery({
+    queryKey: ["dispatch_assignments", "flight_schedule_ids"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dispatch_assignments")
+        .select("flight_schedule_id")
+        .not("flight_schedule_id", "is", null);
+      if (error) throw error;
+      return new Set<string>((data as any[]).map(r => r.flight_schedule_id));
     },
   });
 
