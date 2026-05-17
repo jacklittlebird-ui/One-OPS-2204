@@ -1155,7 +1155,14 @@ export default function SecurityServiceReportsPage() {
                         <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flight_no}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{reg || "—"}</td>
                         <td className="px-3 py-2.5">
-                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{r.service_type}</span>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{r.service_type}</span>
+                            {r.flight_schedule_id && !isPending && (
+                              <Badge variant="secondary" className="gap-1 text-[10px] py-0 px-1.5 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" title="This flight is billed as Security — excluded from the Handling tab">
+                                <Shield className="h-2.5 w-2.5" /> Security
+                              </Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs">
                           {skdType || "—"}
