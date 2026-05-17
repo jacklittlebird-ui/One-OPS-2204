@@ -227,7 +227,7 @@ export default function SecurityServiceReportsPage() {
         .select("*, airlines:airline_id(name, iata_code)")
         .in("clearance_type", SECURITY_CLEARANCE_TYPES)
         .order("arrival_date", { ascending: false });
-      if (isStationScoped && userStation) q = (q as any).or(`route.ilike.%${userStation}%,authority.eq.${userStation}`);
+      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
       if (error) throw error;
       return data as any[];
@@ -244,7 +244,7 @@ export default function SecurityServiceReportsPage() {
         .select("*, airlines:airline_id(name, iata_code)")
         .eq("status", "Pending")
         .order("arrival_date", { ascending: true });
-      if (isStationScoped && userStation) q = (q as any).or(`route.ilike.%${userStation}%,authority.eq.${userStation}`);
+      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
       if (error) throw error;
       return (data || []).filter((f: any) => {

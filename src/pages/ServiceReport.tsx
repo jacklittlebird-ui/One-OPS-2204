@@ -443,7 +443,7 @@ function HandlingServiceReportContent() {
         .from("flight_schedules")
         .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type")
         .order("arrival_date", { ascending: false, nullsFirst: false });
-      if (isStationScoped && userStation) q = (q as any).or(`route.ilike.%${userStation}%,authority.eq.${userStation}`);
+      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
       if (error) throw error;
       return data;
