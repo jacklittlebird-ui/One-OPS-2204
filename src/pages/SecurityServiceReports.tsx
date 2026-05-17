@@ -472,7 +472,7 @@ export default function SecurityServiceReportsPage() {
         } as MergedSecurityRow;
       });
     return [...deduped, ...pendingFromFlights];
-  }, [dispatches, securityFlights, isStationScoped, userStation]);
+  }, [dispatches, securityFlights, isStationScoped, userStation, isOperationsView]);
 
   const filtered = useMemo(() => {
     let rows: MergedSecurityRow[] = mergedRows;
