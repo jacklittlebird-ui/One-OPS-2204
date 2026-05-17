@@ -63,7 +63,7 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
         .from("flight_schedules")
         .select("*")
         .order("arrival_date", { ascending: false, nullsFirst: false });
-      if (isStationScoped && userStation) q = (q as any).or(`route.ilike.%${userStation}%,authority.eq.${userStation}`);
+      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
       if (error) throw error;
       return (data || []) as unknown as FlightRow[];
