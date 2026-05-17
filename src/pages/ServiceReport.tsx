@@ -797,7 +797,20 @@ function HandlingServiceReportContent() {
     }
   }, [location.search]);
 
-  const allStations = useMemo(() => [...new Set(mergedRows.filter(r => r.station).map(r => r.station))], [mergedRows]);
+  const { data: dbAirportsList = [] } = useQuery({
+    queryKey: ["airports", "iata-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("airports").select("iata_code").eq("status", "Active");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const allStations = useMemo(() => {
+    const set = new Set<string>();
+    mergedRows.forEach(r => { if (r.station) set.add(r.station); });
+    (dbAirportsList as any[]).forEach(a => { if (a.iata_code) set.add(a.iata_code); });
+    return [...set].sort();
+  }, [mergedRows, dbAirportsList]);
   const allHandlingTypes = useMemo(() => [...new Set(mergedRows.filter(r => r.handlingType).map(r => r.handlingType))], [mergedRows]);
   const allOperators = useMemo(() => [...new Set(mergedRows.filter(r => r.operator).map(r => r.operator))].sort(), [mergedRows]);
 
