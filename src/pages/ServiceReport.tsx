@@ -519,7 +519,11 @@ function HandlingServiceReportContent() {
     // (prevents double-billing and category overlap).
     const isSecurityFlight = (c: any) => {
       const remarks = (c.remarks || "") as string;
-      return c.purpose === "Security Service" || remarks.includes("Added from Security Service");
+      if (c.purpose === "Security Service") return true;
+      if (remarks.includes("Added from Security Service")) return true;
+      // Flights with a dispatch_assignments row are Security flights
+      if (securityFlightIds.has(c.id)) return true;
+      return false;
     };
 
     return (dbFlights as any[])
@@ -554,7 +558,7 @@ function HandlingServiceReportContent() {
           purpose: c.purpose || "",
         };
       });
-  }, [dbFlights, airlineById, aircraftByReg, userStation, isStationScoped]);
+  }, [dbFlights, airlineById, aircraftByReg, userStation, isStationScoped, securityFlightIds]);
 
   const mergedRows: MergedRow[] = useMemo(() => {
     const reportsByFlight = new Map<string, ReportFormData[]>();
