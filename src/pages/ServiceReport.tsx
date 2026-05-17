@@ -560,6 +560,8 @@ function HandlingServiceReportContent() {
   }, [dbFlights, airlineById, aircraftByReg, userStation, isStationScoped, securityFlightIds]);
 
   const mergedRows: MergedRow[] = useMemo(() => {
+    // Station portal: Handling tab must be empty — every flight at the station is Security.
+    if (isStationScoped) return [];
     const reportsByFlight = new Map<string, ReportFormData[]>();
     reports.forEach(r => {
       const key = r.flightNo.trim().toLowerCase();
