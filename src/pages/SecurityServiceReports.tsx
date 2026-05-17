@@ -220,10 +220,12 @@ export default function SecurityServiceReportsPage() {
   }, [dbInvoicesForPipeline]);
 
   // Fetch flight schedules with security clearance types.
-  // For station-scoped users, ALL flights at their station are treated as security
-  // (Handling tab is empty for stations), so skip the clearance_type filter.
+  // For station-scoped users and Operations view, ALL flights are treated as
+  // security (Handling tab is empty for stations and ops needs visibility into
+  // every station's flights), so skip the clearance_type filter.
+  const includeAllFlights = (isStationScoped && !!userStation) || isOperationsView;
   const { data: securityFlights = [] } = useQuery({
-    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null],
+    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView],
     queryFn: async () => {
       let q = supabase
         .from("flight_schedules")
@@ -231,7 +233,7 @@ export default function SecurityServiceReportsPage() {
         .order("arrival_date", { ascending: false });
       if (isStationScoped && userStation) {
         q = (q as any).eq("authority", userStation);
-      } else {
+      } else if (!includeAllFlights) {
         q = (q as any).in("clearance_type", SECURITY_CLEARANCE_TYPES);
       }
       const { data, error } = await q;
@@ -419,9 +421,11 @@ export default function SecurityServiceReportsPage() {
 
   const mergedRows: MergedSecurityRow[] = useMemo(() => {
     const deduped = dedupeDispatchRows(dispatches);
-    // For station-scoped users, also surface flights at their station that
-    // don't yet have a dispatch_assignment as Pending security rows.
-    if (!isStationScoped || !userStation) return deduped;
+    // For station-scoped users AND Operations view, also surface flights that
+    // don't yet have a dispatch_assignment as Pending security rows so ops can
+    // see every station's flights (ASW, RMF, HBE, etc.).
+    const shouldSurfacePending = (isStationScoped && !!userStation) || isOperationsView;
+    if (!shouldSurfacePending) return deduped;
     const dispatchedFlightIds = new Set(
       deduped.map(r => r.flight_schedule_id).filter(Boolean) as string[]
     );
@@ -434,7 +438,7 @@ export default function SecurityServiceReportsPage() {
           id: `pending-${f.id}`,
           flight_schedule_id: f.id,
           contract_id: null,
-          station: f.authority || userStation,
+          station: f.authority || userStation || "CAI",
           airline: airline?.name || airline?.iata_code || "",
           flight_no: flightNo,
           flight_date: f.arrival_date || f.departure_date || "",
@@ -468,7 +472,7 @@ export default function SecurityServiceReportsPage() {
         } as MergedSecurityRow;
       });
     return [...deduped, ...pendingFromFlights];
-  }, [dispatches, securityFlights, isStationScoped, userStation]);
+  }, [dispatches, securityFlights, isStationScoped, userStation, isOperationsView]);
 
   const filtered = useMemo(() => {
     let rows: MergedSecurityRow[] = mergedRows;
