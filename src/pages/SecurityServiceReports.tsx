@@ -410,7 +410,20 @@ export default function SecurityServiceReportsPage() {
   }, [securityFlights]);
 
   // Filters
-  const allStations = useMemo(() => [...new Set(dispatches.map(d => d.station))].sort(), [dispatches]);
+  const { data: dbAirports = [] } = useQuery({
+    queryKey: ["airports", "iata-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("airports").select("iata_code").eq("status", "Active");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const allStations = useMemo(() => {
+    const set = new Set<string>();
+    dispatches.forEach(d => { if (d.station) set.add(d.station); });
+    (dbAirports as any[]).forEach(a => { if (a.iata_code) set.add(a.iata_code); });
+    return [...set].sort();
+  }, [dispatches, dbAirports]);
   const allServiceTypes = useMemo(() => [...new Set(dispatches.map(d => d.service_type))].sort(), [dispatches]);
 
   // Security tab shows ONLY flights with dispatch_assignments.
