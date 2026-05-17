@@ -79,7 +79,21 @@ export function calculateSecurityCharges(input: SecurityChargeInput): SecurityCh
     });
   }
 
-  if (baseRate && !input.returnToRampWithLoadChange) {
+  // Maintenance Security: billed strictly per hour at the overtime rate.
+  // Any partial hour counts as a full hour. No base/included-hours logic.
+  if (baseRate && effectiveType === "Maintenance Security" && !input.returnToRampWithLoadChange) {
+    const billedHours = Math.ceil(groundTimeHours || 0);
+    const otRate = baseRate.overtime_rate || baseRate.rate || 0;
+    const amount = Math.round(billedHours * otRate * 100) / 100;
+    lines.push({
+      label: `${effectiveType} – ${airport} (${billedHours}h)`,
+      qty: billedHours,
+      unit: "Per Hour",
+      rate: otRate,
+      amount,
+      notes: baseRate.notes,
+    });
+  } else if (baseRate && !input.returnToRampWithLoadChange) {
     lines.push({
       label: `${effectiveType} – ${airport}`,
       qty: 1,
