@@ -526,14 +526,13 @@ function HandlingServiceReportContent() {
       return false;
     };
 
+    // Station portal: Handling tab must be empty — all station flights belong to Security.
+    if (isStationScoped) return [];
+
     return (dbFlights as any[])
       .filter((c: any) => getScheduleFlightNo(c))
       .filter((c: any) => !isSecurityFlight(c))
       .filter((c: any) => !isStationOriginatedPending(c))
-      .filter((c: any) => {
-        if (!isStationScoped) return true;
-        return flightTouchesStation(c, userStation);
-      })
       .map((c: any) => {
         const airline = c.airline_id ? airlineById.get(c.airline_id) : undefined;
         const regKey = String(c.registration || "").toUpperCase().trim();
