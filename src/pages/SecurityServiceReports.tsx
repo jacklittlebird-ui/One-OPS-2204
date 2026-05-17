@@ -418,8 +418,57 @@ export default function SecurityServiceReportsPage() {
   type MergedSecurityRow = DispatchRow & { isPending?: boolean; flightMeta?: any };
 
   const mergedRows: MergedSecurityRow[] = useMemo(() => {
-    return dedupeDispatchRows(dispatches);
-  }, [dispatches]);
+    const deduped = dedupeDispatchRows(dispatches);
+    // For station-scoped users, also surface flights at their station that
+    // don't yet have a dispatch_assignment as Pending security rows.
+    if (!isStationScoped || !userStation) return deduped;
+    const dispatchedFlightIds = new Set(
+      deduped.map(r => r.flight_schedule_id).filter(Boolean) as string[]
+    );
+    const pendingFromFlights: MergedSecurityRow[] = (securityFlights as any[])
+      .filter(f => !dispatchedFlightIds.has(f.id))
+      .map(f => {
+        const airline = (f as any).airlines;
+        const flightNo = f.arrival_flight || f.departure_flight || f.flight_no || "";
+        return {
+          id: `pending-${f.id}`,
+          flight_schedule_id: f.id,
+          contract_id: null,
+          station: f.authority || userStation,
+          airline: airline?.name || airline?.iata_code || "",
+          flight_no: flightNo,
+          flight_date: f.arrival_date || f.departure_date || "",
+          service_type: f.clearance_type || "Security",
+          staff_names: "",
+          staff_count: 0,
+          scheduled_start: f.sta || "",
+          scheduled_end: f.std || "",
+          actual_start: "",
+          actual_end: "",
+          contract_duration_hours: 0,
+          actual_duration_hours: 0,
+          overtime_hours: 0,
+          overtime_rate: 0,
+          base_fee: 0,
+          service_rate: 0,
+          overtime_charge: 0,
+          total_charge: 0,
+          status: "Pending",
+          notes: "",
+          dispatched_by: "",
+          review_status: "Draft",
+          review_comment: "",
+          reviewed_by: "",
+          reviewed_at: null,
+          irregularity_id: null,
+          created_at: f.created_at || "",
+          updated_at: f.updated_at || "",
+          isPending: true,
+          flightMeta: f,
+        } as MergedSecurityRow;
+      });
+    return [...deduped, ...pendingFromFlights];
+  }, [dispatches, securityFlights, isStationScoped, userStation]);
 
   const filtered = useMemo(() => {
     let rows: MergedSecurityRow[] = mergedRows;
