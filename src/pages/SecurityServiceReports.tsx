@@ -405,53 +405,15 @@ export default function SecurityServiceReportsPage() {
   const allStations = useMemo(() => [...new Set(dispatches.map(d => d.station))].sort(), [dispatches]);
   const allServiceTypes = useMemo(() => [...new Set(dispatches.map(d => d.service_type))].sort(), [dispatches]);
 
-  // Build merged list: completed/in-progress dispatches + clearance flights without a dispatch (pending completion)
+  // Security tab shows ONLY flights with dispatch_assignments.
+  // Clearance-only security flights (no dispatch yet) are NOT shown here.
+  // Also deduplicate: when multiple dispatch_assignments exist for the same
+  // flight_schedule_id, keep the most-recently-updated one.
   type MergedSecurityRow = DispatchRow & { isPending?: boolean; flightMeta?: any };
 
   const mergedRows: MergedSecurityRow[] = useMemo(() => {
-    const dispatchedFlightIds = new Set(
-      dispatches.map(d => d.flight_schedule_id).filter(Boolean) as string[]
-    );
-    const pendingRows: MergedSecurityRow[] = (securityFlights as any[])
-      .filter((f: any) => !dispatchedFlightIds.has(f.id))
-      .map((f: any) => ({
-        id: `pending-${f.id}`,
-        flight_schedule_id: f.id,
-        contract_id: null,
-        station: f.authority || "CAI",
-        airline: f.airlines?.name || f.airlines?.iata_code || f.handling_agent || "",
-        flight_no: f.flight_no || "",
-        flight_date: f.arrival_date || f.departure_date || "",
-        service_type: f.clearance_type || "Arrival Security",
-        staff_names: "",
-        staff_count: 0,
-        scheduled_start: f.sta || "",
-        scheduled_end: f.std || "",
-        actual_start: "",
-        actual_end: "",
-        contract_duration_hours: 0,
-        actual_duration_hours: 0,
-        overtime_hours: 0,
-        overtime_rate: 0,
-        base_fee: 0,
-        service_rate: 0,
-        overtime_charge: 0,
-        total_charge: 0,
-        status: "Pending",
-        notes: "",
-        dispatched_by: "",
-        review_status: "Draft",
-        review_comment: "",
-        reviewed_by: "",
-        reviewed_at: null,
-        irregularity_id: null,
-        created_at: "",
-        updated_at: "",
-        isPending: true,
-        flightMeta: f,
-      }));
-    return [...dispatches, ...pendingRows];
-  }, [dispatches, securityFlights]);
+    return dedupeDispatchRows(dispatches);
+  }, [dispatches]);
 
   const filtered = useMemo(() => {
     let rows: MergedSecurityRow[] = mergedRows;
