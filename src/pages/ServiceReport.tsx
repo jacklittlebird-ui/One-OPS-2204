@@ -499,6 +499,18 @@ function HandlingServiceReportContent() {
     [dbReports, dbDelays]
   );
 
+  // Flight numbers belonging to Security (any flight_schedule with a dispatch_assignment).
+  // Used to exclude standalone service_reports for those flights from the Handling tab.
+  const securityFlightNos = useMemo(() => {
+    const s = new Set<string>();
+    (dbFlights as any[]).forEach((c: any) => {
+      if (!securityFlightIds.has(c.id)) return;
+      const fn = getScheduleFlightNo(c).trim().toLowerCase();
+      if (fn) s.add(fn);
+    });
+    return s;
+  }, [dbFlights, securityFlightIds]);
+
   const scheduleSources: ScheduleSourceRow[] = useMemo(() => {
     // Station-originated records (added from Station Dispatch / Service Report)
     // require Operations approval before they show up in All Reports. While
