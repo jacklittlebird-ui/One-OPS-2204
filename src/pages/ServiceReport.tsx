@@ -639,11 +639,13 @@ function HandlingServiceReportContent() {
       // Skip security-typed reports — they belong to the Security tab only
       const ht = (r.handlingType || "").toString().toLowerCase();
       if (ht.includes("security")) return;
+      // Skip reports whose flight has a dispatch_assignment (Security flight)
+      if (securityFlightNos.has(r.flightNo.trim().toLowerCase())) return;
       rows.push({ ...r, isLinked: true });
     });
 
     return rows;
-  }, [reports, scheduleSources]);
+  }, [reports, scheduleSources, isStationScoped, securityFlightNos]);
 
   // Save line items helper
   const saveLineItems = async (reportId: string, data: Partial<ReportFormData>) => {
