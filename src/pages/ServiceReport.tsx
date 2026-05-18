@@ -541,6 +541,8 @@ function HandlingServiceReportContent() {
       if (remarks.includes("Added from Security Service")) return true;
       // Flights with a dispatch_assignments row are Security flights
       if (securityFlightIds.has(c.id)) return true;
+      // Classify by the clearance_type chosen at Clearance entry
+      if (SECURITY_CLEARANCE_TYPES.includes(c.clearance_type || "")) return true;
       return false;
     };
 
