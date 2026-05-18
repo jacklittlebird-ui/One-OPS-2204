@@ -180,7 +180,7 @@ export default function InvoicesPage() {
     });
     return m;
   }, [flightSchedules]);
-  const lookupFlightInfo = useCallback((d: any): { reg: string; route: string; aircraftType: string; skdType: string } => {
+  const lookupFlightInfo = useCallback((d: any): { reg: string; route: string; aircraftType: string; skdType: string; arrDate: string; depDate: string } => {
     const fromId = d?.flight_schedule_id ? fsById[d.flight_schedule_id] : null;
     const key = `${(d?.flight_no || "").trim().toUpperCase()}__${(d?.flight_date || "").toString().slice(0, 10)}`;
     const fromKey = fsByFlightDate[key];
@@ -190,6 +190,8 @@ export default function InvoicesPage() {
       route: f?.route || "",
       aircraftType: f?.aircraft_type || "",
       skdType: f?.skd_type || "",
+      arrDate: f?.arrival_date || "",
+      depDate: f?.departure_date || "",
     };
   }, [fsById, fsByFlightDate]);
 
@@ -583,6 +585,8 @@ export default function InvoicesPage() {
         const fi = lookupFlightInfo(it);
         detailRows.push({
           date: it.flight_date || "", flight: it.flight_no || "",
+          arrDate: fi.arrDate || it.flight_date || "",
+          depDate: fi.depDate || it.flight_date || "",
           reg: it.registration || fi.reg || "",
           route: it.route || fi.route || "",
           station: it.station || group.station,
@@ -934,6 +938,8 @@ export default function InvoicesPage() {
       const fi = lookupFlightInfo(d);
       return {
         date: d.flight_date || "", flight: d.flight_no || "",
+        arrDate: fi.arrDate || d.flight_date || "",
+        depDate: fi.depDate || d.flight_date || "",
         reg: d.registration || fi.reg || "",
         route: d.route || fi.route || "",
         station: d.station || "",

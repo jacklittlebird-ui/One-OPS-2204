@@ -6,6 +6,8 @@
 
 export type SecurityDetailRow = {
   date?: string;
+  arrDate?: string;
+  depDate?: string;
   flight?: string;
   route?: string;
   reg?: string;
@@ -34,13 +36,14 @@ export type SecurityDetailRow = {
  */
 export const SECURITY_INVOICE_COLUMNS = [
   "S",
-  "Date",
+  "ARR DATE",
+  "DEP DATE",
   "Flight",
   "Reg.",
   "A/C Type",
   "Route",
-  "SKD",
   "Service Type",
+  "SKD",
   "Start",
   "End",
   "Duration (h)",
@@ -94,6 +97,8 @@ export function parseSecurityDetail(notes: string | null | undefined): {
     return {
       detail: parsed.map((r: any) => ({
         date: r.date || "",
+        arrDate: r.arrDate || "",
+        depDate: r.depDate || "",
         flight: r.flight || "",
         reg: r.reg || "",
         route: r.route || "",
@@ -182,6 +187,8 @@ export function backfillSecurityDetail(
       fill("skdType", f.skd_type);
       fill("reg", f.registration);
       fill("route", f.route);
+      fill("arrDate", f.arrival_date);
+      fill("depDate", f.departure_date);
     }
     return next;
   });
