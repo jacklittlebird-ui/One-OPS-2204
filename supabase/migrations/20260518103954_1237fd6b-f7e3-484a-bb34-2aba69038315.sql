@@ -1,0 +1,1 @@
+CREATE POLICY "Finance can delete invoices" ON public.invoices FOR DELETE TO authenticated USING (has_finance_access(auth.uid()));
