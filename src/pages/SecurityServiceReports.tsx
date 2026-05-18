@@ -593,6 +593,18 @@ export default function SecurityServiceReportsPage() {
   const saveEdit = () => {};
 
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Local override: dispatch IDs that were just saved via "Save All Security Charges".
+  // Used to mark Receivables (step 4) of the pipeline complete immediately for
+  // those rows — without waiting for an invoice to be paid.
+  const [chargesSavedIds, setChargesSavedIds] = useState<Set<string>>(new Set());
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
   // Receivables bulk action: compute & persist Security Charges for ALL eligible
   // rows (Station + Operations done) in one click — instead of opening Edit
   // dialog per flight to press "Save Security Charges".
