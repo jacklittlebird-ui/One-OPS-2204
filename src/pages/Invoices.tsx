@@ -331,16 +331,52 @@ export default function InvoicesPage() {
   const auditedRemove = async (id: string) => {
     const inv = invoices?.find((i: InvoiceRow) => i.id === id);
     await remove(id);
-    logAudit({ action: "delete", entity_type: "invoice", entity_id: id, details: { invoice_no: inv?.invoice_no, total: inv?.total } });
+    logAudit({
+      action: "delete",
+      entity_type: "invoice",
+      entity_id: id,
+      details: {
+        invoice_no: inv?.invoice_no,
+        operator: inv?.operator,
+        total: inv?.total,
+        currency: inv?.currency,
+        status: inv?.status,
+        deleted_at: new Date().toISOString(),
+      },
+    });
+  };
+
+  const requestDeleteSingle = (id: string) => {
+    const inv = invoices?.find((i: InvoiceRow) => i.id === id);
+    setDeleteTarget({ ids: [id], label: inv?.invoice_no || id });
+  };
+
+  const requestDeleteBulk = () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    const nos = ids
+      .map((id) => invoices?.find((i: InvoiceRow) => i.id === id)?.invoice_no)
+      .filter(Boolean) as string[];
+    const label = nos.length <= 5 ? nos.join(", ") : `${nos.slice(0, 5).join(", ")} +${nos.length - 5} more`;
+    setDeleteTarget({ ids, label });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      for (const id of deleteTarget.ids) {
+        await auditedRemove(id);
+      }
+      if (deleteTarget.ids.length > 1) setSelectedIds(new Set());
+      setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Bulk actions
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} selected invoice(s)?`)) return;
-    for (const id of selectedIds) { await auditedRemove(id); }
-    setSelectedIds(new Set());
-  };
+  const handleBulkDelete = () => requestDeleteBulk();
 
   const handleBulkStatusChange = async (newStatus: InvoiceStatus) => {
     if (selectedIds.size === 0) return;
