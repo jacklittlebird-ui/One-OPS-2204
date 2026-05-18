@@ -199,22 +199,23 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
             #invoice-details-page {
               page-break-before: always !important;
               break-before: page !important;
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-              transform: scale(${detailsScale});
-              transform-origin: top left;
-              width: ${100 / detailsScale}%;
             }
             #invoice-details-page .annex-block {
-              page-break-before: avoid !important;
-              break-before: avoid !important;
+              page-break-before: always !important;
+              break-before: page !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
-              margin-top: 8px !important;
+              margin-top: 0 !important;
+              transform-origin: top left;
             }
-            #invoice-details-page .annex-block:first-child { margin-top: 0 !important; }
-            #invoice-details-page table { font-size: 8px !important; }
-            #invoice-details-page .annex-block .border-2 { padding: 10px !important; }
+            ${Object.entries(annexScales).map(([id, s]) => `
+              #invoice-details-page .annex-block[data-annex-id="${id}"] {
+                transform: scale(${s});
+                width: ${100 / s}%;
+              }
+            `).join("\n")}
+            #invoice-details-page table { font-size: 9px !important; }
+            #invoice-details-page .annex-block .border-2 { padding: 12px !important; }
             #invoice-print-area { padding: 0 !important; }
           }
         `}</style>
