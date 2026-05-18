@@ -227,8 +227,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                     <div className="px-3 py-1.5">
                       <span className="font-semibold">To :</span> {periodTo || "—"}
                     </div>
-          </div>
-        </div>
+                  </div>
 
                   {/* Flights table — full service-report context per flight.
                       Headers are driven by SECURITY_INVOICE_COLUMNS so the
