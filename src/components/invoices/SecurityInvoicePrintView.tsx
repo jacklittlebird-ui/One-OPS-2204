@@ -326,7 +326,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                 total: number,
                 key: string,
               ) => (
-                <div key={key} className="annex-block mt-10">
+                <div key={key} data-annex-id={key} className="annex-block mt-10 print:mt-0">
                   <div className="border-2 border-gray-800 p-6">
                     <div className="flex items-start justify-between mb-4 pb-3 border-b border-gray-400">
                       <div className="border border-gray-400 p-1.5">
