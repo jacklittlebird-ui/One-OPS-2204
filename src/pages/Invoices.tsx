@@ -585,6 +585,8 @@ export default function InvoicesPage() {
         const fi = lookupFlightInfo(it);
         detailRows.push({
           date: it.flight_date || "", flight: it.flight_no || "",
+          arrDate: fi.arrDate || it.flight_date || "",
+          depDate: fi.depDate || it.flight_date || "",
           reg: it.registration || fi.reg || "",
           route: it.route || fi.route || "",
           station: it.station || group.station,
