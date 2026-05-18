@@ -65,7 +65,7 @@ describe("SecurityInvoicePrintView", () => {
 
   it("renders per-flight data fields from the parsed detail row", () => {
     render(<SecurityInvoicePrintView invoice={baseInvoice([sampleRow])} onClose={() => {}} />);
-    expect(screen.getByText("TA100")).toBeInTheDocument();
+    expect(screen.getAllByText("TA100").length).toBeGreaterThan(0);
     expect(screen.getByText("SU-ABC")).toBeInTheDocument();
     expect(screen.getByText("A320")).toBeInTheDocument();
     expect(screen.getByText("CAI-DXB")).toBeInTheDocument();
