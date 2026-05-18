@@ -1356,6 +1356,9 @@ export default function InvoicesPage() {
                         <button onClick={() => handleFinalize(inv)} className="text-success hover:text-success/80" title="Finalize"><ShieldCheck size={13} /></button>
                       )}
                       <button onClick={() => setPrintInvoice(toPrintFormat(inv))} className="text-muted-foreground hover:text-foreground" title="Print"><Printer size={13} /></button>
+                      {!readOnly && toPrintFormat(inv)._isSecurity && (
+                        <button onClick={() => regenerateSecurityDetail(inv)} className="text-warning hover:text-warning/80" title="Regenerate Annex A from source records"><RefreshCw size={13} /></button>
+                      )}
                       {!readOnly && (
                         <>
                           <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
