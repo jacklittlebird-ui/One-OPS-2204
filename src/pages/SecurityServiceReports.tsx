@@ -593,21 +593,44 @@ export default function SecurityServiceReportsPage() {
   const saveEdit = () => {};
 
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Local override: dispatch IDs that were just saved via "Save All Security Charges".
+  // Used to mark Receivables (step 4) of the pipeline complete immediately for
+  // those rows — without waiting for an invoice to be paid.
+  const [chargesSavedIds, setChargesSavedIds] = useState<Set<string>>(new Set());
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
   // Receivables bulk action: compute & persist Security Charges for ALL eligible
   // rows (Station + Operations done) in one click — instead of opening Edit
   // dialog per flight to press "Save Security Charges".
   const saveAllSecurityCharges = async () => {
-    const eligible = filtered.filter(r => {
+    let eligible = filtered.filter(r => {
       if ((r as any).isPending) return false;
       const reviewDone = (r.review_status || "").toLowerCase() === "approved" || (r.review_status || "").toLowerCase().includes("billing");
       return r.status === "Completed" && reviewDone && r.contract_id;
     });
+    // If the user has selected specific rows, restrict the action to those.
+    if (selectedIds.size > 0) {
+      eligible = eligible.filter(r => selectedIds.has(r.id));
+    }
     if (eligible.length === 0) {
-      toast({ title: "No eligible flights", description: "Only completed & operations-approved flights with a linked contract can be auto-billed.", variant: "destructive" });
+      toast({
+        title: "No eligible flights",
+        description: selectedIds.size > 0
+          ? "None of the selected flights are eligible. Only completed & operations-approved flights with a linked contract can be auto-billed."
+          : "Only completed & operations-approved flights with a linked contract can be auto-billed.",
+        variant: "destructive",
+      });
       return;
     }
     setBulkSaving(true);
     let ok = 0, skipped = 0, failed = 0;
+    const savedIds: string[] = [];
     for (const r of eligible) {
       const c = computeRowCharges(r);
       if (!c.amount) { skipped++; continue; }
@@ -617,13 +640,23 @@ export default function SecurityServiceReportsPage() {
         charges_currency: c.currency,
         review_status: "Ready for Billing",
       } as any).eq("id", r.id);
-      if (error) failed++; else ok++;
+      if (error) failed++; else { ok++; savedIds.push(r.id); }
     }
     setBulkSaving(false);
+    // Mark these rows as receivables-complete locally so the pipeline shows
+    // step 4 done immediately (without waiting for the invoice to be paid).
+    if (savedIds.length) {
+      setChargesSavedIds(prev => {
+        const next = new Set(prev);
+        savedIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
+    setSelectedIds(new Set());
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     toast({
       title: failed ? "Completed with errors" : "✅ All charges saved",
-      description: `${ok} saved, ${skipped} skipped (no rate), ${failed} failed. Marked Ready for Billing.`,
+      description: `${ok} saved, ${skipped} skipped (no rate), ${failed} failed. Marked Ready for Billing — pipeline step 4 complete.`,
       variant: failed ? "destructive" : undefined,
     });
   };
@@ -1180,9 +1213,16 @@ export default function SecurityServiceReportsPage() {
               onClick={saveAllSecurityCharges}
               disabled={bulkSaving}
               className="toolbar-btn-primary"
-              title="Compute & save Security Charges for every eligible flight, then mark Ready for Billing"
+              title={selectedIds.size > 0
+                ? `Compute & save Security Charges for the ${selectedIds.size} selected flight(s), then mark Receivables (step 4) complete`
+                : "Compute & save Security Charges for every eligible flight, then mark Receivables (step 4) complete"}
             >
-              <DollarSign size={14} /> {bulkSaving ? "Saving…" : "Save All Security Charges"}
+              <DollarSign size={14} />
+              {bulkSaving
+                ? "Saving…"
+                : selectedIds.size > 0
+                  ? `Save Security Charges (${selectedIds.size} selected)`
+                  : "Save All Security Charges"}
             </button>
           )}
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
@@ -1193,6 +1233,23 @@ export default function SecurityServiceReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr>
+                    {isReceivablesView && (
+                      <th className="data-table-header px-2 py-3 w-8">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all on page"
+                          checked={pageData.length > 0 && pageData.every(r => selectedIds.has(r.id))}
+                          onChange={(e) => {
+                            setSelectedIds(prev => {
+                              const next = new Set(prev);
+                              if (e.target.checked) pageData.forEach(r => next.add(r.id));
+                              else pageData.forEach(r => next.delete(r.id));
+                              return next;
+                            });
+                          }}
+                        />
+                      </th>
+                    )}
                      {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "TYPE", "SKD TYPE", "ARR DATE", "DEP DATE", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
@@ -1200,10 +1257,10 @@ export default function SecurityServiceReportsPage() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={isReceivablesView ? 18 : 17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={isReceivablesView ? 19 : 17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
                   ) : pageData.length === 0 ? (
                      <tr>
-                      <td colSpan={isReceivablesView ? 18 : 17} className="text-center py-16">
+                      <td colSpan={isReceivablesView ? 19 : 17} className="text-center py-16">
                         <Shield size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                         <p className="font-semibold text-foreground">No Security Service Reports</p>
                         <p className="text-muted-foreground text-sm mt-1">Security service reports will appear here once created</p>
@@ -1220,6 +1277,17 @@ export default function SecurityServiceReportsPage() {
                     return (
                       <React.Fragment key={r.id}>
                       <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
+                        {isReceivablesView && (
+                          <td className="px-2 py-2.5">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${r.flight_no}`}
+                              checked={selectedIds.has(r.id)}
+                              onChange={() => toggleSelect(r.id)}
+                              disabled={isPending}
+                            />
+                          </td>
+                        )}
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
                         <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
@@ -1275,7 +1343,17 @@ export default function SecurityServiceReportsPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           {(() => {
-                            const invStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none";
+                            // Receivables (step 4) is marked complete as soon as
+                            // Security Charges have been saved & the report is
+                            // Ready for Billing — even before the invoice is paid.
+                            const chargesPersisted =
+                              ((r as any).total_security_charges || 0) > 0 &&
+                              ((r.review_status || "").toLowerCase().includes("billing"));
+                            const baseInvStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none";
+                            const invStatus: "none" | "issued" | "paid" =
+                              baseInvStatus === "paid" || chargesSavedIds.has(r.id) || chargesPersisted
+                                ? "paid"
+                                : baseInvStatus;
                             return (
                               <PipelineStepper
                                 currentStage={derivePipelineStage({
@@ -1355,7 +1433,7 @@ export default function SecurityServiceReportsPage() {
                       </tr>
                       {isStationView && r.review_status === "Rejected" && (
                         <tr className="bg-destructive/5 border-l-2 border-l-destructive">
-                          <td colSpan={isReceivablesView ? 17 : 16} className="px-4 py-2">
+                          <td colSpan={isReceivablesView ? 18 : 16} className="px-4 py-2">
                             <div className="flex items-start gap-2 text-xs">
                               <XCircle size={14} className="text-destructive shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0">
