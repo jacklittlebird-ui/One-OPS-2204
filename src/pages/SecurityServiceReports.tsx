@@ -1233,6 +1233,23 @@ export default function SecurityServiceReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr>
+                    {isReceivablesView && (
+                      <th className="data-table-header px-2 py-3 w-8">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all on page"
+                          checked={pageData.length > 0 && pageData.every(r => selectedIds.has(r.id))}
+                          onChange={(e) => {
+                            setSelectedIds(prev => {
+                              const next = new Set(prev);
+                              if (e.target.checked) pageData.forEach(r => next.add(r.id));
+                              else pageData.forEach(r => next.delete(r.id));
+                              return next;
+                            });
+                          }}
+                        />
+                      </th>
+                    )}
                      {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "TYPE", "SKD TYPE", "ARR DATE", "DEP DATE", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
@@ -1240,10 +1257,10 @@ export default function SecurityServiceReportsPage() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={isReceivablesView ? 18 : 17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={isReceivablesView ? 19 : 17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
                   ) : pageData.length === 0 ? (
                      <tr>
-                      <td colSpan={isReceivablesView ? 18 : 17} className="text-center py-16">
+                      <td colSpan={isReceivablesView ? 19 : 17} className="text-center py-16">
                         <Shield size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                         <p className="font-semibold text-foreground">No Security Service Reports</p>
                         <p className="text-muted-foreground text-sm mt-1">Security service reports will appear here once created</p>
@@ -1260,6 +1277,17 @@ export default function SecurityServiceReportsPage() {
                     return (
                       <React.Fragment key={r.id}>
                       <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
+                        {isReceivablesView && (
+                          <td className="px-2 py-2.5">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${r.flight_no}`}
+                              checked={selectedIds.has(r.id)}
+                              onChange={() => toggleSelect(r.id)}
+                              disabled={isPending}
+                            />
+                          </td>
+                        )}
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
                         <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
