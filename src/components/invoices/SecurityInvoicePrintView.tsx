@@ -229,16 +229,21 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((r, i) => (
+                      {[...rows].sort((a, b) => {
+                        const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
+                        const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
+                        return ka.localeCompare(kb);
+                      }).map((r, i) => (
                         <tr key={i}>
                           <td className="border border-gray-800 px-1.5 py-1 text-center">{i + 1}</td>
-                          <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.arrDate ? formatDateDMY(r.arrDate) : (r.date ? formatDateDMY(r.date) : "—")}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.depDate ? formatDateDMY(r.depDate) : (r.date ? formatDateDMY(r.date) : "—")}</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-center">{r.flight || "—"}</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-center">{r.reg || "—"}</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-center">{r.aircraftType || "—"}</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-center">{r.route || "—"}</td>
-                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-left">{r.serviceType || r.type || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-center">{r.durationHours ? Number(r.durationHours).toFixed(2) : "—"}</td>
