@@ -172,12 +172,15 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
             </div>
           </div>
 
-          {/* Print: 2 pages total — cover (portrait) + all details on one landscape page */}
+          {/* Print: force landscape A4 for the whole document so the
+              browser's Print dialog reliably shows Landscape pre-selected
+              (named @page orientations are unreliable in Chrome/Safari). */}
           <style>{`
             @media print {
-              @page { size: A4 portrait; margin: 10mm; }
-              @page details { size: A4 landscape; margin: 8mm; }
-              #invoice-details-page { page: details; }
+              @page { size: A4 landscape; margin: 8mm; }
+              html, body { width: 297mm; }
+              #invoice-print-area { width: 100%; }
+              #invoice-details-page { page-break-before: always; break-before: page; }
               #invoice-details-page .annex-block { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; margin-top: 12px !important; }
               #invoice-details-page .annex-block:first-child { margin-top: 0 !important; }
               #invoice-details-page table { font-size: 8px !important; }
