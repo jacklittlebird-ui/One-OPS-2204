@@ -17,6 +17,10 @@ import InvoicePrintView from "@/components/InvoicePrintView";
 import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
 type InvoiceCurrency = "USD" | "EUR" | "EGP";
@@ -219,6 +223,8 @@ export default function InvoicesPage() {
   const [printInvoice, setPrintInvoice] = useState<any>(null);
   const [detailInvoice, setDetailInvoice] = useState<InvoiceRow | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; label: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showBillingPreview, setShowBillingPreview] = useState(false);
   const [billingMonth, setBillingMonth] = useState(new Date().toISOString().slice(0, 7));
   const [billingStation, setBillingStation] = useState("All");
@@ -325,16 +331,52 @@ export default function InvoicesPage() {
   const auditedRemove = async (id: string) => {
     const inv = invoices?.find((i: InvoiceRow) => i.id === id);
     await remove(id);
-    logAudit({ action: "delete", entity_type: "invoice", entity_id: id, details: { invoice_no: inv?.invoice_no, total: inv?.total } });
+    logAudit({
+      action: "delete",
+      entity_type: "invoice",
+      entity_id: id,
+      details: {
+        invoice_no: inv?.invoice_no,
+        operator: inv?.operator,
+        total: inv?.total,
+        currency: inv?.currency,
+        status: inv?.status,
+        deleted_at: new Date().toISOString(),
+      },
+    });
+  };
+
+  const requestDeleteSingle = (id: string) => {
+    const inv = invoices?.find((i: InvoiceRow) => i.id === id);
+    setDeleteTarget({ ids: [id], label: inv?.invoice_no || id });
+  };
+
+  const requestDeleteBulk = () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    const nos = ids
+      .map((id) => invoices?.find((i: InvoiceRow) => i.id === id)?.invoice_no)
+      .filter(Boolean) as string[];
+    const label = nos.length <= 5 ? nos.join(", ") : `${nos.slice(0, 5).join(", ")} +${nos.length - 5} more`;
+    setDeleteTarget({ ids, label });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      for (const id of deleteTarget.ids) {
+        await auditedRemove(id);
+      }
+      if (deleteTarget.ids.length > 1) setSelectedIds(new Set());
+      setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Bulk actions
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} selected invoice(s)?`)) return;
-    for (const id of selectedIds) { await auditedRemove(id); }
-    setSelectedIds(new Set());
-  };
+  const handleBulkDelete = () => requestDeleteBulk();
 
   const handleBulkStatusChange = async (newStatus: InvoiceStatus) => {
     if (selectedIds.size === 0) return;
@@ -1272,7 +1314,7 @@ export default function InvoicesPage() {
                       {!readOnly && (
                         <>
                           <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
-                          <button onClick={() => auditedRemove(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
+                          <button onClick={() => requestDeleteSingle(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
                         </>
                       )}
                     </div>
@@ -1981,6 +2023,35 @@ export default function InvoicesPage() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o && !isDeleting) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteTarget && deleteTarget.ids.length > 1
+                ? `Delete ${deleteTarget.ids.length} invoices?`
+                : "Delete invoice?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete{" "}
+              <span className="font-semibold text-foreground">
+                {deleteTarget?.label}
+              </span>
+              . This action cannot be undone, and a record of the deletion will be written to the audit log.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
