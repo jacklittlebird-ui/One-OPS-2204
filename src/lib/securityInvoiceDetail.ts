@@ -36,13 +36,14 @@ export type SecurityDetailRow = {
  */
 export const SECURITY_INVOICE_COLUMNS = [
   "S",
-  "Date",
+  "ARR DATE",
+  "DEP DATE",
   "Flight",
   "Reg.",
   "A/C Type",
   "Route",
-  "SKD",
   "Service Type",
+  "SKD",
   "Start",
   "End",
   "Duration (h)",
