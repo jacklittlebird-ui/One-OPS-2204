@@ -179,12 +179,17 @@ export default function InvoicesPage() {
     });
     return m;
   }, [flightSchedules]);
-  const lookupFlightInfo = useCallback((d: any): { reg: string; route: string } => {
+  const lookupFlightInfo = useCallback((d: any): { reg: string; route: string; aircraftType: string; skdType: string } => {
     const fromId = d?.flight_schedule_id ? fsById[d.flight_schedule_id] : null;
     const key = `${(d?.flight_no || "").trim().toUpperCase()}__${(d?.flight_date || "").toString().slice(0, 10)}`;
     const fromKey = fsByFlightDate[key];
     const f = fromId || fromKey;
-    return { reg: f?.registration || "", route: f?.route || "" };
+    return {
+      reg: f?.registration || "",
+      route: f?.route || "",
+      aircraftType: f?.aircraft_type || "",
+      skdType: f?.skd_type || "",
+    };
   }, [fsById, fsByFlightDate]);
 
   // Build a descriptive service-type label including overtime information.
@@ -559,6 +564,14 @@ export default function InvoicesPage() {
           route: it.route || fi.route || "",
           station: it.station || group.station,
           type: buildServiceTypeLabel(it),
+          serviceType: it.service_type || "",
+          aircraftType: fi.aircraftType || "",
+          skdType: fi.skdType || "",
+          actualStart: it.actual_start || "",
+          actualEnd: it.actual_end || "",
+          durationHours: Number(it.actual_duration_hours) || 0,
+          overtimeHours: Number(it.overtime_hours) || 0,
+          staffCount: Number(it.staff_count) || 0,
           category: "Security", civil: 0, handling: base, airport: 0, other: ot, total: base + ot,
         });
       }
@@ -902,6 +915,14 @@ export default function InvoicesPage() {
         route: d.route || fi.route || "",
         station: d.station || "",
         type: buildServiceTypeLabel(d),
+        serviceType: d.service_type || "",
+        aircraftType: fi.aircraftType || "",
+        skdType: fi.skdType || "",
+        actualStart: d.actual_start || "",
+        actualEnd: d.actual_end || "",
+        durationHours: Number(d.actual_duration_hours) || 0,
+        overtimeHours: Number(d.overtime_hours) || 0,
+        staffCount: Number(d.staff_count) || 0,
         civil: 0,
         handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
         airport: 0,

@@ -25,7 +25,16 @@ export interface SecurityPrintInvoice {
 
 type DetailRow = {
   date?: string; flight?: string; route?: string; reg?: string; station?: string;
-  type?: string; civil?: number; handling?: number; airport?: number; other?: number; total?: number;
+  type?: string;
+  serviceType?: string;
+  aircraftType?: string;
+  skdType?: string;
+  actualStart?: string;
+  actualEnd?: string;
+  durationHours?: number;
+  overtimeHours?: number;
+  staffCount?: number;
+  civil?: number; handling?: number; airport?: number; other?: number; total?: number;
 };
 
 function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; cleanNotes: string } {
@@ -53,6 +62,14 @@ function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; c
       detail: parsed.map((r: any) => ({
         date: r.date || "", flight: r.flight || "", reg: r.reg || "", route: r.route || "",
         station: r.station || "", type: r.type || "",
+        serviceType: r.serviceType || "",
+        aircraftType: r.aircraftType || "",
+        skdType: r.skdType || "",
+        actualStart: r.actualStart || "",
+        actualEnd: r.actualEnd || "",
+        durationHours: Number(r.durationHours) || 0,
+        overtimeHours: Number(r.overtimeHours) || 0,
+        staffCount: Number(r.staffCount) || 0,
         handling: Number(r.handling) || 0, other: Number(r.other) || 0, total: Number(r.total) || 0,
       })),
       cleanNotes,
@@ -96,7 +113,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto m-4 print:m-0 print:shadow-none print:rounded-none print:max-h-none print:overflow-visible">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-y-auto m-4 print:m-0 print:shadow-none print:rounded-none print:max-h-none print:overflow-visible">
         {/* Toolbar — no print */}
         <div className="flex items-center justify-between px-6 py-3 border-b print:hidden">
           <span className="text-sm font-semibold text-gray-700">Security Invoice Preview</span>
@@ -245,44 +262,58 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                     </div>
                   </div>
 
-                  {/* Flights table — matches reference page 2 */}
-                  <table className="w-full text-xs border border-gray-800 border-collapse">
+                  {/* Flights table — full service-report context per flight */}
+                  <table className="w-full text-[10px] border border-gray-800 border-collapse">
                     <thead>
-                      <tr>
-                        <th className="border border-gray-800 px-2 py-1.5 w-10 text-center font-bold">S</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Date</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Flight No.</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Reg.</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-28 text-center font-bold">Route</th>
-                        <th className="border border-gray-800 px-2 py-1.5 text-center font-bold">Service / Notes</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-32 text-center font-bold">Amount</th>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">S</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Date</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Flight</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Reg.</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">A/C Type</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Route</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">SKD</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Service Type</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Start</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">End</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Duration (h)</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">OT (h)</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Staff</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Amount</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r, i) => (
                         <tr key={i}>
-                          <td className="border border-gray-800 px-2 py-1 text-center">{i + 1}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-center whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-center">{r.flight || "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-center">{r.reg || "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-center">{r.route || "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-left">{r.type || "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-right">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{i + 1}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.flight || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.reg || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.aircraftType || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.route || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-left">{r.serviceType || r.type || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.durationHours ? Number(r.durationHours).toFixed(2) : "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.overtimeHours ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.staffCount || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-right whitespace-nowrap">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td colSpan={6} className="border border-gray-800 px-2 py-1.5 text-right font-semibold">Total</td>
-                        <td className="border border-gray-800 px-2 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
+                        <td colSpan={13} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
+                        <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(total, invoice.currency)}</td>
                       </tr>
                       <tr>
-                        <td colSpan={6} className="border border-gray-800 px-2 py-1.5 text-right">Admin</td>
-                        <td className="border border-gray-800 px-2 py-1.5 text-right">{fmtMoney(0, invoice.currency)}</td>
+                        <td colSpan={13} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
+                        <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(0, invoice.currency)}</td>
                       </tr>
                       <tr className="font-bold">
-                        <td colSpan={6} className="border border-gray-800 px-2 py-2 text-right">Grand total</td>
-                        <td className="border border-gray-800 px-2 py-2 text-right">{fmtMoney(total, invoice.currency)}</td>
+                        <td colSpan={13} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
+                        <td className="border border-gray-800 px-1.5 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
                       </tr>
                     </tfoot>
                   </table>
