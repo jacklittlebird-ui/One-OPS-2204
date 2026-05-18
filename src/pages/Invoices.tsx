@@ -17,6 +17,10 @@ import InvoicePrintView from "@/components/InvoicePrintView";
 import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
 type InvoiceCurrency = "USD" | "EUR" | "EGP";
