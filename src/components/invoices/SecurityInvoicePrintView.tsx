@@ -76,7 +76,10 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
   const periodFrom = fromDate ? formatDateDMY(fromDate) : "";
   const periodTo = toDate ? formatDateDMY(toDate) : "";
 
-  // Per-annex scale factors so each annex fits its own page.
+  // Available height per page (A4 landscape minus top+bottom margin).
+  const availableDetailsHeightPx = useMemo(() => (A4_H_MM - margin * 2) * MM_TO_PX, [margin]);
+
+
   const [annexScales, setAnnexScales] = useState<Record<string, number>>({});
   useEffect(() => {
     const measure = () => {
