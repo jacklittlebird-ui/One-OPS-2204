@@ -97,6 +97,8 @@ export function parseSecurityDetail(notes: string | null | undefined): {
     return {
       detail: parsed.map((r: any) => ({
         date: r.date || "",
+        arrDate: r.arrDate || "",
+        depDate: r.depDate || "",
         flight: r.flight || "",
         reg: r.reg || "",
         route: r.route || "",
