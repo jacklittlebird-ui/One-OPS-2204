@@ -25,7 +25,16 @@ export interface SecurityPrintInvoice {
 
 type DetailRow = {
   date?: string; flight?: string; route?: string; reg?: string; station?: string;
-  type?: string; civil?: number; handling?: number; airport?: number; other?: number; total?: number;
+  type?: string;
+  serviceType?: string;
+  aircraftType?: string;
+  skdType?: string;
+  actualStart?: string;
+  actualEnd?: string;
+  durationHours?: number;
+  overtimeHours?: number;
+  staffCount?: number;
+  civil?: number; handling?: number; airport?: number; other?: number; total?: number;
 };
 
 function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; cleanNotes: string } {
@@ -53,6 +62,14 @@ function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; c
       detail: parsed.map((r: any) => ({
         date: r.date || "", flight: r.flight || "", reg: r.reg || "", route: r.route || "",
         station: r.station || "", type: r.type || "",
+        serviceType: r.serviceType || "",
+        aircraftType: r.aircraftType || "",
+        skdType: r.skdType || "",
+        actualStart: r.actualStart || "",
+        actualEnd: r.actualEnd || "",
+        durationHours: Number(r.durationHours) || 0,
+        overtimeHours: Number(r.overtimeHours) || 0,
+        staffCount: Number(r.staffCount) || 0,
         handling: Number(r.handling) || 0, other: Number(r.other) || 0, total: Number(r.total) || 0,
       })),
       cleanNotes,
