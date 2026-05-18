@@ -1343,7 +1343,17 @@ export default function SecurityServiceReportsPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           {(() => {
-                            const invStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none";
+                            // Receivables (step 4) is marked complete as soon as
+                            // Security Charges have been saved & the report is
+                            // Ready for Billing — even before the invoice is paid.
+                            const chargesPersisted =
+                              ((r as any).total_security_charges || 0) > 0 &&
+                              ((r.review_status || "").toLowerCase().includes("billing"));
+                            const baseInvStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none";
+                            const invStatus: "none" | "issued" | "paid" =
+                              baseInvStatus === "paid" || chargesSavedIds.has(r.id) || chargesPersisted
+                                ? "paid"
+                                : baseInvStatus;
                             return (
                               <PipelineStepper
                                 currentStage={derivePipelineStage({
