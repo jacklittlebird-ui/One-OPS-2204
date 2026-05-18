@@ -938,6 +938,8 @@ export default function InvoicesPage() {
       const fi = lookupFlightInfo(d);
       return {
         date: d.flight_date || "", flight: d.flight_no || "",
+        arrDate: fi.arrDate || d.flight_date || "",
+        depDate: fi.depDate || d.flight_date || "",
         reg: d.registration || fi.reg || "",
         route: d.route || fi.route || "",
         station: d.station || "",
