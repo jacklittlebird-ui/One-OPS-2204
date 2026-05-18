@@ -17,6 +17,7 @@ import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
 import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
+import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
@@ -504,7 +505,12 @@ function HandlingServiceReportContent() {
   const securityFlightNos = useMemo(() => {
     const s = new Set<string>();
     (dbFlights as any[]).forEach((c: any) => {
-      if (!securityFlightIds.has(c.id)) return;
+      const isSec =
+        securityFlightIds.has(c.id) ||
+        SECURITY_CLEARANCE_TYPES.includes(c.clearance_type || "") ||
+        c.purpose === "Security Service" ||
+        ((c.remarks || "") as string).includes("Added from Security Service");
+      if (!isSec) return;
       const fn = getScheduleFlightNo(c).trim().toLowerCase();
       if (fn) s.add(fn);
     });
@@ -535,6 +541,8 @@ function HandlingServiceReportContent() {
       if (remarks.includes("Added from Security Service")) return true;
       // Flights with a dispatch_assignments row are Security flights
       if (securityFlightIds.has(c.id)) return true;
+      // Classify by the clearance_type chosen at Clearance entry
+      if (SECURITY_CLEARANCE_TYPES.includes(c.clearance_type || "")) return true;
       return false;
     };
 
