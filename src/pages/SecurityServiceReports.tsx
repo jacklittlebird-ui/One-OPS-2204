@@ -609,17 +609,28 @@ export default function SecurityServiceReportsPage() {
   // rows (Station + Operations done) in one click — instead of opening Edit
   // dialog per flight to press "Save Security Charges".
   const saveAllSecurityCharges = async () => {
-    const eligible = filtered.filter(r => {
+    let eligible = filtered.filter(r => {
       if ((r as any).isPending) return false;
       const reviewDone = (r.review_status || "").toLowerCase() === "approved" || (r.review_status || "").toLowerCase().includes("billing");
       return r.status === "Completed" && reviewDone && r.contract_id;
     });
+    // If the user has selected specific rows, restrict the action to those.
+    if (selectedIds.size > 0) {
+      eligible = eligible.filter(r => selectedIds.has(r.id));
+    }
     if (eligible.length === 0) {
-      toast({ title: "No eligible flights", description: "Only completed & operations-approved flights with a linked contract can be auto-billed.", variant: "destructive" });
+      toast({
+        title: "No eligible flights",
+        description: selectedIds.size > 0
+          ? "None of the selected flights are eligible. Only completed & operations-approved flights with a linked contract can be auto-billed."
+          : "Only completed & operations-approved flights with a linked contract can be auto-billed.",
+        variant: "destructive",
+      });
       return;
     }
     setBulkSaving(true);
     let ok = 0, skipped = 0, failed = 0;
+    const savedIds: string[] = [];
     for (const r of eligible) {
       const c = computeRowCharges(r);
       if (!c.amount) { skipped++; continue; }
@@ -629,13 +640,23 @@ export default function SecurityServiceReportsPage() {
         charges_currency: c.currency,
         review_status: "Ready for Billing",
       } as any).eq("id", r.id);
-      if (error) failed++; else ok++;
+      if (error) failed++; else { ok++; savedIds.push(r.id); }
     }
     setBulkSaving(false);
+    // Mark these rows as receivables-complete locally so the pipeline shows
+    // step 4 done immediately (without waiting for the invoice to be paid).
+    if (savedIds.length) {
+      setChargesSavedIds(prev => {
+        const next = new Set(prev);
+        savedIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
+    setSelectedIds(new Set());
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     toast({
       title: failed ? "Completed with errors" : "✅ All charges saved",
-      description: `${ok} saved, ${skipped} skipped (no rate), ${failed} failed. Marked Ready for Billing.`,
+      description: `${ok} saved, ${skipped} skipped (no rate), ${failed} failed. Marked Ready for Billing — pipeline step 4 complete.`,
       variant: failed ? "destructive" : undefined,
     });
   };
