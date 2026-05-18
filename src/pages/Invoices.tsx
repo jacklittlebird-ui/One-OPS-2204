@@ -451,6 +451,28 @@ export default function InvoicesPage() {
       `${inv.description || ""} ${inv.notes || ""}`.toLowerCase().includes("security"),
   });
 
+  // Regenerate security invoice Annex A detail by backfilling missing
+  // service-report fields from the latest dispatch + flight-schedule data.
+  const regenerateSecurityDetail = useCallback(async (inv: InvoiceRow) => {
+    const { detail, cleanNotes } = parseSecurityDetail(inv.notes);
+    if (detail.length === 0) {
+      toast({ title: "Nothing to regenerate", description: "This invoice has no per-flight detail to backfill.", variant: "destructive" });
+      return;
+    }
+    const { rows, filledCount } = backfillSecurityDetail(detail, {
+      dispatches: dispatches || [],
+      flightSchedules: flightSchedules || [],
+    });
+    if (filledCount === 0) {
+      toast({ title: "Already up to date", description: "No additional fields could be backfilled from source records." });
+      return;
+    }
+    const newNotes = serializeSecurityDetail(cleanNotes, rows);
+    await update({ id: inv.id, notes: newNotes } as any);
+    logAudit({ action: "regenerate", entity_type: "invoice", entity_id: inv.id, details: { filledCount, rows: rows.length } });
+    toast({ title: "✅ Invoice regenerated", description: `Backfilled ${filledCount} field(s) across ${rows.length} flight row(s).` });
+  }, [dispatches, flightSchedules, update]);
+
   const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
 
   // Billing preview: group completed dispatches by airline+station for the month
