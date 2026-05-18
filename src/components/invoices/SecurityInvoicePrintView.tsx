@@ -2,6 +2,11 @@ import { X, Printer } from "lucide-react";
 import linkAeroLogo from "@/assets/linkaero-logo.png";
 import ighcLogo from "@/assets/ighc-logo.jpg";
 import { formatDateDMY } from "@/lib/utils";
+import {
+  parseSecurityDetail,
+  SECURITY_INVOICE_COLUMNS,
+  type SecurityDetailRow,
+} from "@/lib/securityInvoiceDetail";
 
 export interface SecurityPrintInvoice {
   invoiceNo: string;
@@ -23,59 +28,8 @@ export interface SecurityPrintInvoice {
   notes: string;
 }
 
-type DetailRow = {
-  date?: string; flight?: string; route?: string; reg?: string; station?: string;
-  type?: string;
-  serviceType?: string;
-  aircraftType?: string;
-  skdType?: string;
-  actualStart?: string;
-  actualEnd?: string;
-  durationHours?: number;
-  overtimeHours?: number;
-  staffCount?: number;
-  civil?: number; handling?: number; airport?: number; other?: number; total?: number;
-};
-
-function parseDetail(notes: string | null | undefined): { detail: DetailRow[]; cleanNotes: string } {
-  const raw = (notes ?? "").toString();
-  const idx = raw.indexOf("__DETAIL__:");
-  if (idx === -1) return { detail: [], cleanNotes: raw.trim() };
-  const start = raw.indexOf("[", idx);
-  if (start === -1) return { detail: [], cleanNotes: raw.replace(/__DETAIL__:.*$/s, "").trim() };
-  let depth = 0, end = -1, inStr = false, esc = false;
-  for (let i = start; i < raw.length; i++) {
-    const c = raw[i];
-    if (esc) { esc = false; continue; }
-    if (c === "\\") { esc = true; continue; }
-    if (c === '"') { inStr = !inStr; continue; }
-    if (inStr) continue;
-    if (c === "[") depth++;
-    else if (c === "]") { depth--; if (depth === 0) { end = i; break; } }
-  }
-  if (end === -1) return { detail: [], cleanNotes: raw.slice(0, idx).trim() };
-  const cleanNotes = (raw.slice(0, idx) + raw.slice(end + 1)).trim();
-  try {
-    const parsed = JSON.parse(raw.slice(start, end + 1));
-    if (!Array.isArray(parsed)) return { detail: [], cleanNotes };
-    return {
-      detail: parsed.map((r: any) => ({
-        date: r.date || "", flight: r.flight || "", reg: r.reg || "", route: r.route || "",
-        station: r.station || "", type: r.type || "",
-        serviceType: r.serviceType || "",
-        aircraftType: r.aircraftType || "",
-        skdType: r.skdType || "",
-        actualStart: r.actualStart || "",
-        actualEnd: r.actualEnd || "",
-        durationHours: Number(r.durationHours) || 0,
-        overtimeHours: Number(r.overtimeHours) || 0,
-        staffCount: Number(r.staffCount) || 0,
-        handling: Number(r.handling) || 0, other: Number(r.other) || 0, total: Number(r.total) || 0,
-      })),
-      cleanNotes,
-    };
-  } catch { return { detail: [], cleanNotes }; }
-}
+type DetailRow = SecurityDetailRow;
+const parseDetail = parseSecurityDetail;
 
 const fmtMoney = (n: number, ccy: string) =>
   `${ccy} ${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -262,24 +216,16 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                     </div>
                   </div>
 
-                  {/* Flights table — full service-report context per flight */}
+                  {/* Flights table — full service-report context per flight.
+                      Headers are driven by SECURITY_INVOICE_COLUMNS so the
+                      preview and print/PDF output stay in lockstep and the
+                      legacy "Service / Notes" column can never reappear. */}
                   <table className="w-full text-[10px] border border-gray-800 border-collapse">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">S</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Date</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Flight</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Reg.</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">A/C Type</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Route</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">SKD</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Service Type</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Start</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">End</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Duration (h)</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">OT (h)</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Staff</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Amount</th>
+                        {SECURITY_INVOICE_COLUMNS.map(h => (
+                          <th key={h} className="border border-gray-800 px-1.5 py-1 text-center font-bold">{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>

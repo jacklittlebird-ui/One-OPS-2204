@@ -3,7 +3,7 @@ import {
   Search, Plus, Download, Upload, FileText, DollarSign,
   Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle,
   Clock, XCircle, AlertCircle, Printer, ShieldCheck, Eye,
-  TrendingUp, Filter, Calendar, BarChart3, Zap
+  TrendingUp, Filter, Calendar, BarChart3, Zap, RefreshCw
 } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import InvoicePrintView from "@/components/InvoicePrintView";
 import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
+import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail } from "@/lib/securityInvoiceDetail";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -449,6 +450,28 @@ export default function InvoicesPage() {
     _isSecurity: ((inv.invoice_no || "").toUpperCase().includes("-SEC")) ||
       `${inv.description || ""} ${inv.notes || ""}`.toLowerCase().includes("security"),
   });
+
+  // Regenerate security invoice Annex A detail by backfilling missing
+  // service-report fields from the latest dispatch + flight-schedule data.
+  const regenerateSecurityDetail = useCallback(async (inv: InvoiceRow) => {
+    const { detail, cleanNotes } = parseSecurityDetail(inv.notes);
+    if (detail.length === 0) {
+      toast({ title: "Nothing to regenerate", description: "This invoice has no per-flight detail to backfill.", variant: "destructive" });
+      return;
+    }
+    const { rows, filledCount } = backfillSecurityDetail(detail, {
+      dispatches: dispatches || [],
+      flightSchedules: flightSchedules || [],
+    });
+    if (filledCount === 0) {
+      toast({ title: "Already up to date", description: "No additional fields could be backfilled from source records." });
+      return;
+    }
+    const newNotes = serializeSecurityDetail(cleanNotes, rows);
+    await update({ id: inv.id, notes: newNotes } as any);
+    logAudit({ action: "regenerate", entity_type: "invoice", entity_id: inv.id, details: { filledCount, rows: rows.length } });
+    toast({ title: "✅ Invoice regenerated", description: `Backfilled ${filledCount} field(s) across ${rows.length} flight row(s).` });
+  }, [dispatches, flightSchedules, update]);
 
   const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
 
@@ -1333,6 +1356,9 @@ export default function InvoicesPage() {
                         <button onClick={() => handleFinalize(inv)} className="text-success hover:text-success/80" title="Finalize"><ShieldCheck size={13} /></button>
                       )}
                       <button onClick={() => setPrintInvoice(toPrintFormat(inv))} className="text-muted-foreground hover:text-foreground" title="Print"><Printer size={13} /></button>
+                      {!readOnly && toPrintFormat(inv)._isSecurity && (
+                        <button onClick={() => regenerateSecurityDetail(inv)} className="text-warning hover:text-warning/80" title="Regenerate Annex A from source records"><RefreshCw size={13} /></button>
+                      )}
                       {!readOnly && (
                         <>
                           <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
