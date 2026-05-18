@@ -197,7 +197,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
               total: number,
               key: string,
             ) => (
-              <div key={key} className="mt-10 break-before-page print:break-before-page">
+              <div key={key} className="annex-block mt-10">
                 <div className="border-2 border-gray-800 p-6">
                   {/* Header band */}
                   <div className="flex items-start justify-between mb-4 pb-3 border-b border-gray-400">
