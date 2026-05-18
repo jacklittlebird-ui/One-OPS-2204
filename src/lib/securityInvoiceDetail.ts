@@ -6,6 +6,8 @@
 
 export type SecurityDetailRow = {
   date?: string;
+  arrDate?: string;
+  depDate?: string;
   flight?: string;
   route?: string;
   reg?: string;
