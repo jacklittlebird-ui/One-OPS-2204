@@ -262,44 +262,58 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                     </div>
                   </div>
 
-                  {/* Flights table — matches reference page 2 */}
-                  <table className="w-full text-xs border border-gray-800 border-collapse">
+                  {/* Flights table — full service-report context per flight */}
+                  <table className="w-full text-[10px] border border-gray-800 border-collapse">
                     <thead>
-                      <tr>
-                        <th className="border border-gray-800 px-2 py-1.5 w-10 text-center font-bold">S</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Date</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Flight No.</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-24 text-center font-bold">Reg.</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-28 text-center font-bold">Route</th>
-                        <th className="border border-gray-800 px-2 py-1.5 text-center font-bold">Service / Notes</th>
-                        <th className="border border-gray-800 px-2 py-1.5 w-32 text-center font-bold">Amount</th>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">S</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Date</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Flight</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Reg.</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">A/C Type</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Route</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">SKD</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Service Type</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Start</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">End</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Duration (h)</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">OT (h)</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Staff</th>
+                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Amount</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r, i) => (
                         <tr key={i}>
-                          <td className="border border-gray-800 px-2 py-1 text-center">{i + 1}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-center whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-center">{r.flight || "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-center">{r.reg || "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-center">{r.route || "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-left">{r.type || "—"}</td>
-                          <td className="border border-gray-800 px-2 py-1 text-right">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{i + 1}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.flight || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.reg || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.aircraftType || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.route || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-left">{r.serviceType || r.type || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.durationHours ? Number(r.durationHours).toFixed(2) : "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.overtimeHours ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-center">{r.staffCount || "—"}</td>
+                          <td className="border border-gray-800 px-1.5 py-1 text-right whitespace-nowrap">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td colSpan={6} className="border border-gray-800 px-2 py-1.5 text-right font-semibold">Total</td>
-                        <td className="border border-gray-800 px-2 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
+                        <td colSpan={13} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
+                        <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(total, invoice.currency)}</td>
                       </tr>
                       <tr>
-                        <td colSpan={6} className="border border-gray-800 px-2 py-1.5 text-right">Admin</td>
-                        <td className="border border-gray-800 px-2 py-1.5 text-right">{fmtMoney(0, invoice.currency)}</td>
+                        <td colSpan={13} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
+                        <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(0, invoice.currency)}</td>
                       </tr>
                       <tr className="font-bold">
-                        <td colSpan={6} className="border border-gray-800 px-2 py-2 text-right">Grand total</td>
-                        <td className="border border-gray-800 px-2 py-2 text-right">{fmtMoney(total, invoice.currency)}</td>
+                        <td colSpan={13} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
+                        <td className="border border-gray-800 px-1.5 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
                       </tr>
                     </tfoot>
                   </table>
