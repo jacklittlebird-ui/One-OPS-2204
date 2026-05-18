@@ -113,7 +113,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto m-4 print:m-0 print:shadow-none print:rounded-none print:max-h-none print:overflow-visible">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-y-auto m-4 print:m-0 print:shadow-none print:rounded-none print:max-h-none print:overflow-visible">
         {/* Toolbar — no print */}
         <div className="flex items-center justify-between px-6 py-3 border-b print:hidden">
           <span className="text-sm font-semibold text-gray-700">Security Invoice Preview</span>
