@@ -300,6 +300,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     </div>
