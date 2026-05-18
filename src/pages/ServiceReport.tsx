@@ -505,7 +505,12 @@ function HandlingServiceReportContent() {
   const securityFlightNos = useMemo(() => {
     const s = new Set<string>();
     (dbFlights as any[]).forEach((c: any) => {
-      if (!securityFlightIds.has(c.id)) return;
+      const isSec =
+        securityFlightIds.has(c.id) ||
+        SECURITY_CLEARANCE_TYPES.includes(c.clearance_type || "") ||
+        c.purpose === "Security Service" ||
+        ((c.remarks || "") as string).includes("Added from Security Service");
+      if (!isSec) return;
       const fn = getScheduleFlightNo(c).trim().toLowerCase();
       if (fn) s.add(fn);
     });
