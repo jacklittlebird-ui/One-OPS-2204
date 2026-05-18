@@ -1213,9 +1213,16 @@ export default function SecurityServiceReportsPage() {
               onClick={saveAllSecurityCharges}
               disabled={bulkSaving}
               className="toolbar-btn-primary"
-              title="Compute & save Security Charges for every eligible flight, then mark Ready for Billing"
+              title={selectedIds.size > 0
+                ? `Compute & save Security Charges for the ${selectedIds.size} selected flight(s), then mark Receivables (step 4) complete`
+                : "Compute & save Security Charges for every eligible flight, then mark Receivables (step 4) complete"}
             >
-              <DollarSign size={14} /> {bulkSaving ? "Saving…" : "Save All Security Charges"}
+              <DollarSign size={14} />
+              {bulkSaving
+                ? "Saving…"
+                : selectedIds.size > 0
+                  ? `Save Security Charges (${selectedIds.size} selected)`
+                  : "Save All Security Charges"}
             </button>
           )}
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
