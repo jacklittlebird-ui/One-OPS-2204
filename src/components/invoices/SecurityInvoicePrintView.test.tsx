@@ -65,14 +65,9 @@ describe("SecurityInvoicePrintView", () => {
 
   it("renders per-flight data fields from the parsed detail row", () => {
     render(<SecurityInvoicePrintView invoice={baseInvoice([sampleRow])} onClose={() => {}} />);
-    expect(screen.getAllByText("TA100").length).toBeGreaterThan(0);
-    expect(screen.getByText("SU-ABC")).toBeInTheDocument();
-    expect(screen.getByText("A320")).toBeInTheDocument();
-    expect(screen.getByText("CAI-DXB")).toBeInTheDocument();
-    expect(screen.getByText("INT")).toBeInTheDocument();
-    expect(screen.getByText("Ramp Security")).toBeInTheDocument();
-    expect(screen.getByText("10:00")).toBeInTheDocument();
-    expect(screen.getByText("12:30")).toBeInTheDocument();
+    for (const v of ["TA100", "SU-ABC", "A320", "CAI-DXB", "INT", "Ramp Security", "10:00", "12:30"]) {
+      expect(screen.getAllByText(v).length).toBeGreaterThan(0);
+    }
   });
 });
 
