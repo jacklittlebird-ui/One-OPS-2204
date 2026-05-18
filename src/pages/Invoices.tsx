@@ -147,6 +147,7 @@ export default function InvoicesPage() {
   const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules", { stationFilter: true });
+  const { data: airports } = useSupabaseTable<any>("airports");
 
   // Map: first flight_no in flight_ref -> registration
   const regByFlightNo = useMemo(() => {
@@ -1381,10 +1382,21 @@ export default function InvoicesPage() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">Station</label>
-                  <select className={selectCls + " w-32"} value={billingStation} onChange={e => setBillingStation(e.target.value)}>
-                    <option>All</option>
-                    <option>CAI</option><option>HRG</option><option>SSH</option>
-                  </select>
+                  {(() => {
+                    const set = new Set<string>();
+                    (airports || []).forEach((a: any) => { if (a?.iata_code) set.add(String(a.iata_code).toUpperCase()); });
+                    (dispatches || []).forEach((d: any) => { if (d?.station) set.add(String(d.station).toUpperCase()); });
+                    (serviceReports || []).forEach((r: any) => { if (r?.station) set.add(String(r.station).toUpperCase()); });
+                    (invoices || []).forEach((i: any) => { if (i?.station) set.add(String(i.station).toUpperCase()); });
+                    (flightSchedules || []).forEach((f: any) => { if (f?.authority) set.add(String(f.authority).toUpperCase()); });
+                    const stations = Array.from(set).filter(Boolean).sort();
+                    return (
+                      <select className={selectCls + " w-32"} value={billingStation} onChange={e => setBillingStation(e.target.value)}>
+                        <option value="All">All</option>
+                        {stations.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    );
+                  })()}
                 </div>
               </div>
 
