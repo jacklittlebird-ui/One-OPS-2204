@@ -564,6 +564,14 @@ export default function InvoicesPage() {
           route: it.route || fi.route || "",
           station: it.station || group.station,
           type: buildServiceTypeLabel(it),
+          serviceType: it.service_type || "",
+          aircraftType: fi.aircraftType || "",
+          skdType: fi.skdType || "",
+          actualStart: it.actual_start || "",
+          actualEnd: it.actual_end || "",
+          durationHours: Number(it.actual_duration_hours) || 0,
+          overtimeHours: Number(it.overtime_hours) || 0,
+          staffCount: Number(it.staff_count) || 0,
           category: "Security", civil: 0, handling: base, airport: 0, other: ot, total: base + ot,
         });
       }
