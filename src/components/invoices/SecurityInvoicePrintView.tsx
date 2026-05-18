@@ -216,24 +216,16 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                     </div>
                   </div>
 
-                  {/* Flights table — full service-report context per flight */}
+                  {/* Flights table — full service-report context per flight.
+                      Headers are driven by SECURITY_INVOICE_COLUMNS so the
+                      preview and print/PDF output stay in lockstep and the
+                      legacy "Service / Notes" column can never reappear. */}
                   <table className="w-full text-[10px] border border-gray-800 border-collapse">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">S</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Date</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Flight</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Reg.</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">A/C Type</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Route</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">SKD</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Service Type</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Start</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">End</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Duration (h)</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">OT (h)</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Staff</th>
-                        <th className="border border-gray-800 px-1.5 py-1 text-center font-bold">Amount</th>
+                        {SECURITY_INVOICE_COLUMNS.map(h => (
+                          <th key={h} className="border border-gray-800 px-1.5 py-1 text-center font-bold">{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
