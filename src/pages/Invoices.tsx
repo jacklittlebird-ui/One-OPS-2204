@@ -223,6 +223,8 @@ export default function InvoicesPage() {
   const [printInvoice, setPrintInvoice] = useState<any>(null);
   const [detailInvoice, setDetailInvoice] = useState<InvoiceRow | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; label: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showBillingPreview, setShowBillingPreview] = useState(false);
   const [billingMonth, setBillingMonth] = useState(new Date().toISOString().slice(0, 7));
   const [billingStation, setBillingStation] = useState("All");
