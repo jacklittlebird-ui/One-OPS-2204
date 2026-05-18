@@ -187,6 +187,8 @@ export function backfillSecurityDetail(
       fill("skdType", f.skd_type);
       fill("reg", f.registration);
       fill("route", f.route);
+      fill("arrDate", f.arrival_date);
+      fill("depDate", f.departure_date);
     }
     return next;
   });
