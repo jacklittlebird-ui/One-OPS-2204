@@ -172,7 +172,20 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
             </div>
           </div>
 
-          {/* Per-station Annex pages — mirrors page 2 layout of source PDF */}
+          {/* Print: 2 pages total — cover (portrait) + all details on one landscape page */}
+          <style>{`
+            @media print {
+              @page { size: A4 portrait; margin: 10mm; }
+              @page details { size: A4 landscape; margin: 8mm; }
+              #invoice-details-page { page: details; }
+              #invoice-details-page .annex-block { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; margin-top: 12px !important; }
+              #invoice-details-page .annex-block:first-child { margin-top: 0 !important; }
+              #invoice-details-page table { font-size: 8px !important; }
+              #invoice-details-page .annex-block .border-2 { padding: 12px !important; }
+            }
+          `}</style>
+          <div id="invoice-details-page" className="break-before-page print:break-before-page">
+          {/* Per-station Annex sections — all flow on the single details page */}
           {stations.map(([st, g]) => {
             const secRows = g.rows.filter(r => (r.handling || 0) > 0);
             const extRows = g.rows.filter(r => (r.other || 0) > 0);
