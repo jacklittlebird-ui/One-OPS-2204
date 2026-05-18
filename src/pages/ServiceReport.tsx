@@ -17,6 +17,7 @@ import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
 import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
+import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
