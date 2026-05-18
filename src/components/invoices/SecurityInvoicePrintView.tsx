@@ -76,27 +76,24 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
   const periodFrom = fromDate ? formatDateDMY(fromDate) : "";
   const periodTo = toDate ? formatDateDMY(toDate) : "";
 
-  // Estimate scale needed to fit details on a single landscape A4 page.
-  // Available height = page height - (top+bottom margin).
-  const availableDetailsHeightPx = useMemo(() => (A4_H_MM - margin * 2) * MM_TO_PX, [margin]);
-
-  // Measure details, compute scale + page count.
-  const [detailsScale, setDetailsScale] = useState(1);
+  // Per-annex scale factors so each annex fits its own page.
+  const [annexScales, setAnnexScales] = useState<Record<string, number>>({});
   useEffect(() => {
     const measure = () => {
-      const el = detailsRef.current;
-      if (!el) return;
-      // Reset transform for accurate measurement
-      el.style.transform = "none";
-      const naturalH = el.scrollHeight;
-      const scale = naturalH > availableDetailsHeightPx
-        ? Math.max(0.5, availableDetailsHeightPx / naturalH)
-        : 1;
-      setDetailsScale(scale);
-      // Page count = 1 (cover) + ceil(details / available) — but we always scale to fit, so 2.
+      const blocks = detailsRef.current?.querySelectorAll<HTMLElement>(".annex-block") ?? [];
+      const next: Record<string, number> = {};
+      blocks.forEach((el) => {
+        el.style.transform = "none";
+        const id = el.dataset.annexId || "";
+        const naturalH = el.scrollHeight;
+        next[id] = naturalH > availableDetailsHeightPx
+          ? Math.max(0.5, availableDetailsHeightPx / naturalH)
+          : 1;
+      });
+      setAnnexScales(next);
       const coverH = coverRef.current?.scrollHeight || 0;
       const coverPages = Math.max(1, Math.ceil(coverH / availableDetailsHeightPx));
-      setPageCount(coverPages + 1);
+      setPageCount(coverPages + blocks.length);
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -117,11 +114,14 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
       const renderToPdf = async (el: HTMLElement, addPage: boolean) => {
+        // Temporarily clear any preview-only scale transform.
+        const prev = el.style.transform;
+        el.style.transform = "none";
         const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        el.style.transform = prev;
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
         const availW = A4_W_MM - margin * 2;
         const availH = A4_H_MM - margin * 2;
-        // Fit while preserving aspect ratio
         const ratio = canvas.width / canvas.height;
         let w = availW;
         let h = w / ratio;
@@ -133,7 +133,10 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
       };
 
       if (coverRef.current) await renderToPdf(coverRef.current, false);
-      if (detailsRef.current) await renderToPdf(detailsRef.current, true);
+      const blocks = detailsRef.current?.querySelectorAll<HTMLElement>(".annex-block") ?? [];
+      for (const el of Array.from(blocks)) {
+        await renderToPdf(el, true);
+      }
       pdf.save(`${invoice.invoiceNo || "security-invoice"}.pdf`);
     } finally {
       setIsDownloading(false);
