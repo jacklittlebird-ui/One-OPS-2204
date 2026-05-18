@@ -179,12 +179,17 @@ export default function InvoicesPage() {
     });
     return m;
   }, [flightSchedules]);
-  const lookupFlightInfo = useCallback((d: any): { reg: string; route: string } => {
+  const lookupFlightInfo = useCallback((d: any): { reg: string; route: string; aircraftType: string; skdType: string } => {
     const fromId = d?.flight_schedule_id ? fsById[d.flight_schedule_id] : null;
     const key = `${(d?.flight_no || "").trim().toUpperCase()}__${(d?.flight_date || "").toString().slice(0, 10)}`;
     const fromKey = fsByFlightDate[key];
     const f = fromId || fromKey;
-    return { reg: f?.registration || "", route: f?.route || "" };
+    return {
+      reg: f?.registration || "",
+      route: f?.route || "",
+      aircraftType: f?.aircraft_type || "",
+      skdType: f?.skd_type || "",
+    };
   }, [fsById, fsByFlightDate]);
 
   // Build a descriptive service-type label including overtime information.
