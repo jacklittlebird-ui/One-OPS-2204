@@ -112,8 +112,11 @@ export function useSupabaseTable<T extends Record<string, any>>(
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from(table).delete().eq("id", id);
+      const { data, error } = await supabase.from(table).delete().eq("id", id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Delete blocked: you don't have permission to delete this record.");
+      }
     },
     onSuccess: () => {
       invalidate();
