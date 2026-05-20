@@ -391,7 +391,38 @@ export default function ClearancesPage() {
         </TabsList>
 
         <TabsContent value={serviceCategory}>
-          <AdvancedFilters
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="inline-flex border rounded-lg overflow-hidden">
+              <Button variant={statusTab === "active" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => setStatusTab("active")}>
+                Active
+              </Button>
+              <Button variant={statusTab === "rejected" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3 gap-1" onClick={() => setStatusTab("rejected")}>
+                <XCircle size={14} /> Rejected
+                {categoryData.filter(c => c.status === "Rejected").length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive text-[10px] font-bold">
+                    {categoryData.filter(c => c.status === "Rejected").length}
+                  </span>
+                )}
+              </Button>
+            </div>
+            {statusTab === "rejected" && filtered.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  if (!confirm(`Delete ALL ${filtered.length} rejected flight(s) in this view? This cannot be undone.`)) return;
+                  const ids = filtered.map(c => c.id);
+                  const { error } = await supabase.from("flight_schedules").delete().in("id", ids);
+                  if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+                  await refetch();
+                  toast({ title: "🗑️ Deleted", description: `${ids.length} rejected flight(s) removed.` });
+                }}
+              >
+                <Trash2 size={14} className="mr-1" /> Delete All Rejected
+              </Button>
+            )}
+          </div>
+
             className="mb-4"
             searchKey="search"
             searchPlaceholder="Search flight, permit, route…"
