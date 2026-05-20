@@ -446,7 +446,9 @@ export default function SecurityServiceReportsPage() {
       .filter(f => !dispatchedFlightIds.has(f.id))
       .map(f => {
         const airline = (f as any).airlines;
-        const flightNo = f.arrival_flight || f.departure_flight || f.flight_no || "";
+        // Prefer the merged flight_no (e.g. "SM 2917/2982" for turnarounds) over
+        // arrival_flight/departure_flight which only carry one leg.
+        const flightNo = f.flight_no || f.arrival_flight || f.departure_flight || "";
         return {
           id: `pending-${f.id}`,
           flight_schedule_id: f.id,
