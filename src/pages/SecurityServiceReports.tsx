@@ -146,7 +146,9 @@ export default function SecurityServiceReportsPage() {
         return;
       }
     }
-    setEditRow({ ...r });
+    const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+    const display = resolveSecurityRowDisplay(r as any, fd, (r as any).flightMeta);
+    setEditRow({ ...r, flight_no: display.flightNo || r.flight_no });
   };
 
   const [search, setSearch] = useState("");
