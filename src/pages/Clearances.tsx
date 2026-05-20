@@ -124,6 +124,8 @@ export default function ClearancesPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("security");
+  const [statusTab, setStatusTab] = useState<"active" | "rejected">("active");
+
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [uploadOpen, setUploadOpen] = useState(false);
