@@ -1408,6 +1408,31 @@ export default function SecurityServiceReportsPage() {
                                 )}
                               </>
                             )}
+                            {isStationView && r.flight_schedule_id && (
+                              <button
+                                onClick={async () => {
+                                  const comment = prompt(`Return flight ${r.flight_no} to Clearance — reason:`);
+                                  if (!comment) return;
+                                  const stamp = `[Station Return ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${comment}`;
+                                  try {
+                                    const { data: cur } = await supabase.from("flight_schedules").select("remarks").eq("id", r.flight_schedule_id!).maybeSingle();
+                                    const existing = (cur as any)?.remarks || "";
+                                    const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
+                                    const { error } = await supabase.from("flight_schedules").update({ status: "Rejected", remarks: newRemarks } as any).eq("id", r.flight_schedule_id!);
+                                    if (error) throw error;
+                                    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+                                    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+                                    toast({ title: "↩️ Returned to Clearance", description: comment });
+                                  } catch (e: any) {
+                                    toast({ title: "Error", description: e.message, variant: "destructive" });
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
+                                title="Return flight to Clearance with a comment"
+                              >
+                                <RefreshCw size={12} /> Return to Clearance
+                              </button>
+                            )}
                             {isAdmin && r.flight_schedule_id && (
                               <button
                                 onClick={async () => {
