@@ -753,7 +753,10 @@ export default function SecurityServiceReportsPage() {
       // record linked to it. Step 2 (Station) is now complete.
       (async () => {
         try {
-          const dispatchInsert = { ...payload, flight_schedule_id: (row as any).flight_schedule_id };
+          const linkedFlightNo = (row as any).flight_schedule_id
+            ? flightDetailsById.get((row as any).flight_schedule_id)?.flight_no
+            : undefined;
+          const dispatchInsert = { ...payload, flight_no: linkedFlightNo || payload.flight_no, flight_schedule_id: (row as any).flight_schedule_id };
           const { error: dispatchErr } = await supabase
             .from("dispatch_assignments")
             .insert(dispatchInsert as any);
