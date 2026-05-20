@@ -423,6 +423,9 @@ export default function ClearancesPage() {
             )}
           </div>
 
+          <AdvancedFilters
+
+
             className="mb-4"
             searchKey="search"
             searchPlaceholder="Search flight, permit, route…"
