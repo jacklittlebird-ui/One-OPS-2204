@@ -262,10 +262,20 @@ export default function StationDispatchPage() {
     });
     return m;
   }, [flights]);
+  // Merged flight_no (e.g. "SM 2917/2982") from the linked flight_schedule
+  const flightNoByScheduleId = useMemo(() => {
+    const m: Record<string, string> = {};
+    flights.forEach(f => { if (f.id && f.flight_no) m[f.id] = f.flight_no; });
+    return m;
+  }, [flights]);
   const getDispatchReg = useCallback((d: DispatchRow) => {
     if (d.flight_schedule_id && regByScheduleId[d.flight_schedule_id]) return regByScheduleId[d.flight_schedule_id];
     return regByFlightNo[(d.flight_no || "").trim().toUpperCase()] || "";
   }, [regByScheduleId, regByFlightNo]);
+  const getDispatchFlightNo = useCallback((d: DispatchRow) => {
+    if (d.flight_schedule_id && flightNoByScheduleId[d.flight_schedule_id]) return flightNoByScheduleId[d.flight_schedule_id];
+    return d.flight_no || "";
+  }, [flightNoByScheduleId]);
 
   // Find contract & rates for a given airline + station + service type
   const findContractRate = useCallback((airline: string, station: string, serviceType: string) => {
@@ -294,7 +304,7 @@ export default function StationDispatchPage() {
     if (airlineFilter) r = r.filter(d => d.airline.toLowerCase() === airlineFilter.toLowerCase());
     if (search) {
       const s = search.toLowerCase();
-      r = r.filter(d => d.flight_no.toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
+      r = r.filter(d => d.flight_no.toLowerCase().includes(s) || getDispatchFlightNo(d).toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
     }
     // Sort by flight date (newest first), then by ATA (actual_start) / scheduled_start.
     r.sort((a, b) => {
@@ -578,7 +588,7 @@ export default function StationDispatchPage() {
         {/* Dispatch Log */}
         <TabsContent value="dispatches">
           {viewMode === "calendar" ? (
-            <DispatchCalendarView dispatches={filtered} month={calMonth} onMonthChange={setCalMonth} onEdit={openEdit} />
+            <DispatchCalendarView dispatches={filtered.map(d => ({ ...d, flight_no: getDispatchFlightNo(d) }))} month={calMonth} onMonthChange={setCalMonth} onEdit={openEdit} />
           ) : (
           <div className="bg-card rounded-lg border overflow-hidden">
             <div className="overflow-x-auto">
@@ -592,7 +602,7 @@ export default function StationDispatchPage() {
                   ) : pageData.map((d, i) => (
                     <tr key={d.id} className="data-table-row">
                       <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                      <td className="px-3 py-2.5 font-semibold text-foreground">{d.flight_no}</td>
+                      <td className="px-3 py-2.5 font-semibold text-foreground">{getDispatchFlightNo(d)}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getDispatchReg(d) || "—"}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{d.airline}</td>
                       <td className="px-3 py-2.5 text-xs">{d.service_type}</td>
