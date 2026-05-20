@@ -390,10 +390,11 @@ export default function SecurityServiceReportsPage() {
     return map;
   }, [securityFlights]);
 
-  // Build lookup for flight schedule details (registration, route, sta, std, dates, aircraft type)
+  // Build lookup for flight schedule details (flight no, registration, route, sta, std, dates, aircraft type)
   const flightDetailsById = useMemo(() => {
-    const map = new Map<string, { registration: string; route: string; sta: string; std: string; ata: string; atd: string; skd_type: string; clearance_type: string; arrival_date: string; departure_date: string; aircraft_type: string }>();
+    const map = new Map<string, { flight_no: string; registration: string; route: string; sta: string; std: string; ata: string; atd: string; skd_type: string; clearance_type: string; arrival_date: string; departure_date: string; aircraft_type: string }>();
     securityFlights.forEach((f: any) => map.set(f.id, {
+      flight_no: f.flight_no || "",
       registration: f.registration || "",
       route: f.route || "",
       sta: f.sta || "",
@@ -1275,7 +1276,7 @@ export default function SecurityServiceReportsPage() {
                     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
                     const meta = (r as any).flightMeta;
                     const d = resolveSecurityRowDisplay(r as any, fd, meta);
-                    const { registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate } = d;
+                    const { flightNo, registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate } = d;
                     return (
                       <React.Fragment key={r.id}>
                       <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
@@ -1283,7 +1284,7 @@ export default function SecurityServiceReportsPage() {
                           <td className="px-2 py-2.5">
                             <input
                               type="checkbox"
-                              aria-label={`Select ${r.flight_no}`}
+                              aria-label={`Select ${flightNo || r.flight_no}`}
                               checked={selectedIds.has(r.id)}
                               onChange={() => toggleSelect(r.id)}
                               disabled={isPending}
@@ -1293,7 +1294,7 @@ export default function SecurityServiceReportsPage() {
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
                         <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flight_no}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-foreground">{flightNo || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{reg || "—"}</td>
                         <td className="px-3 py-2.5">
                           <div className="flex flex-wrap items-center gap-1">
@@ -1351,7 +1352,7 @@ export default function SecurityServiceReportsPage() {
                             const chargesPersisted =
                               ((r as any).total_security_charges || 0) > 0 &&
                               ((r.review_status || "").toLowerCase().includes("billing"));
-                            const baseInvStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none";
+                            const baseInvStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(flightNo || r.flight_no || ""))) || "none";
                             const invStatus: "none" | "issued" | "paid" =
                               baseInvStatus === "paid" || chargesSavedIds.has(r.id) || chargesPersisted
                                 ? "paid"
