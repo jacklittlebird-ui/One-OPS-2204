@@ -124,6 +124,8 @@ export default function ClearancesPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("security");
+  const [statusTab, setStatusTab] = useState<"active" | "rejected">("active");
+
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -148,7 +150,7 @@ export default function ClearancesPage() {
   const filtered = clearanceOwnedData.filter(c => {
     const categoryMatch = getServiceCategory(c.clearance_type) === serviceCategory;
     const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
-    const mst = statusFilter === "all" || c.status === statusFilter;
+    const mst = statusTab === "rejected" ? c.status === "Rejected" : (statusFilter === "all" || c.status === statusFilter);
     const mt = typeFilter === "all" || c.clearance_type === typeFilter;
     const mstation = stationFilter === "all" || c.authority === stationFilter;
     const mreg = registrationFilter === "all" || c.registration === registrationFilter;
@@ -389,7 +391,41 @@ export default function ClearancesPage() {
         </TabsList>
 
         <TabsContent value={serviceCategory}>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="inline-flex border rounded-lg overflow-hidden">
+              <Button variant={statusTab === "active" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => setStatusTab("active")}>
+                Active
+              </Button>
+              <Button variant={statusTab === "rejected" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3 gap-1" onClick={() => setStatusTab("rejected")}>
+                <XCircle size={14} /> Rejected
+                {categoryData.filter(c => c.status === "Rejected").length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive text-[10px] font-bold">
+                    {categoryData.filter(c => c.status === "Rejected").length}
+                  </span>
+                )}
+              </Button>
+            </div>
+            {statusTab === "rejected" && filtered.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  if (!confirm(`Delete ALL ${filtered.length} rejected flight(s) in this view? This cannot be undone.`)) return;
+                  const ids = filtered.map(c => c.id);
+                  const { error } = await supabase.from("flight_schedules").delete().in("id", ids);
+                  if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+                  await refetch();
+                  toast({ title: "🗑️ Deleted", description: `${ids.length} rejected flight(s) removed.` });
+                }}
+              >
+                <Trash2 size={14} className="mr-1" /> Delete All Rejected
+              </Button>
+            )}
+          </div>
+
           <AdvancedFilters
+
+
             className="mb-4"
             searchKey="search"
             searchPlaceholder="Search flight, permit, route…"
