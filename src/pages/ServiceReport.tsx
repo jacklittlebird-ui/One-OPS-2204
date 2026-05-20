@@ -1376,6 +1376,31 @@ function HandlingServiceReportContent() {
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex gap-1.5">
+                      {isStationView && r.flightScheduleId && (
+                        <button
+                          onClick={async () => {
+                            const comment = prompt(`Return flight ${r.flightNo} to Clearance — reason:`);
+                            if (!comment) return;
+                            const stamp = `[Station Return ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${comment}`;
+                            try {
+                              const { data: cur } = await supabase.from("flight_schedules").select("remarks").eq("id", r.flightScheduleId!).maybeSingle();
+                              const existing = (cur as any)?.remarks || "";
+                              const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
+                              const { error } = await supabase.from("flight_schedules").update({ status: "Rejected", remarks: newRemarks } as any).eq("id", r.flightScheduleId!);
+                              if (error) throw error;
+                              queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+                              toast({ title: "↩️ Returned to Clearance", description: comment });
+                            } catch (e: any) {
+                              toast({ title: "Error", description: e.message, variant: "destructive" });
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
+                          title="Return flight to Clearance with a comment"
+                        >
+                          <RefreshCw size={12} /> Return to Clearance
+                        </button>
+                      )}
+
                       {!r.isLinked ? (
                         <>
                           <button
