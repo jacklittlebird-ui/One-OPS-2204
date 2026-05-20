@@ -304,7 +304,7 @@ export default function StationDispatchPage() {
     if (airlineFilter) r = r.filter(d => d.airline.toLowerCase() === airlineFilter.toLowerCase());
     if (search) {
       const s = search.toLowerCase();
-      r = r.filter(d => d.flight_no.toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
+      r = r.filter(d => d.flight_no.toLowerCase().includes(s) || getDispatchFlightNo(d).toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
     }
     // Sort by flight date (newest first), then by ATA (actual_start) / scheduled_start.
     r.sort((a, b) => {
@@ -602,7 +602,7 @@ export default function StationDispatchPage() {
                   ) : pageData.map((d, i) => (
                     <tr key={d.id} className="data-table-row">
                       <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                      <td className="px-3 py-2.5 font-semibold text-foreground">{d.flight_no}</td>
+                      <td className="px-3 py-2.5 font-semibold text-foreground">{getDispatchFlightNo(d)}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getDispatchReg(d) || "—"}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{d.airline}</td>
                       <td className="px-3 py-2.5 text-xs">{d.service_type}</td>
