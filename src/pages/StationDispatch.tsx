@@ -588,7 +588,7 @@ export default function StationDispatchPage() {
         {/* Dispatch Log */}
         <TabsContent value="dispatches">
           {viewMode === "calendar" ? (
-            <DispatchCalendarView dispatches={filtered} month={calMonth} onMonthChange={setCalMonth} onEdit={openEdit} />
+            <DispatchCalendarView dispatches={filtered.map(d => ({ ...d, flight_no: getDispatchFlightNo(d) }))} month={calMonth} onMonthChange={setCalMonth} onEdit={openEdit} />
           ) : (
           <div className="bg-card rounded-lg border overflow-hidden">
             <div className="overflow-x-auto">
