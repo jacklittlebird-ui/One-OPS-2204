@@ -10,6 +10,7 @@
  */
 
 export interface SecurityFlightDetails {
+  flight_no?: string;
   registration?: string;
   route?: string;
   sta?: string;
@@ -81,7 +82,7 @@ export function resolveSecurityRowDisplay(
   const ts = (r.task_sheet_data || {}) as Record<string, any>;
 
   return {
-    flightNo: pick(r.flight_no, ts.flight_no, meta.flight_no),
+    flightNo: pick(fd.flight_no, meta.flight_no, r.flight_no, ts.flight_no),
     station: pick(r.station, meta.authority, ts.station),
     airline: pick(r.airline, meta.airline, ts.airline),
     serviceType: pick(r.service_type, ts.service_type),
