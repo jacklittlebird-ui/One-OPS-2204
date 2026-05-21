@@ -794,6 +794,7 @@ function HandlingServiceReportContent() {
     const params = new URLSearchParams(location.search);
     const flightNo = params.get("flightNo");
     if (flightNo) {
+      const scopedStation = isStationScoped && userStation ? (iataToStationName[userStation] || userStation) : null;
       setNewReport(prev => ({
         ...prev,
         flightNo: flightNo || "",
@@ -802,6 +803,7 @@ function HandlingServiceReportContent() {
         route: params.get("route") || "",
         sta: params.get("sta") || "",
         std: params.get("std") || "",
+        station: scopedStation || prev.station || emptyReport().station,
       }));
       setShowAdd(true);
     }
