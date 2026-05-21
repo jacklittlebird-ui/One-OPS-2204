@@ -1634,6 +1634,52 @@ export default function SecurityServiceReportsPage() {
       </>
       )}
 
+
+      {/* Edit Pending Flight Dialog */}
+      <Dialog open={!!editPendingFlight} onOpenChange={(o) => !o && setEditPendingFlight(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Pencil size={16} /> Edit Pending Flight</DialogTitle>
+          </DialogHeader>
+          {editPendingFlight && (
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { k: "flight_no", label: "Flight No" },
+                { k: "registration", label: "Registration" },
+                { k: "route", label: "Route" },
+                { k: "clearance_type", label: "Service Type" },
+                { k: "arrival_date", label: "Arrival Date", type: "date" },
+                { k: "departure_date", label: "Departure Date", type: "date" },
+                { k: "sta", label: "STA (HH:MM)" },
+                { k: "std", label: "STD (HH:MM)" },
+              ].map(f => (
+                <div key={f.k} className={f.k === "remarks" ? "col-span-2" : ""}>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">{f.label}</label>
+                  <input
+                    type={f.type || "text"}
+                    value={editPendingForm[f.k] || ""}
+                    onChange={e => setEditPendingForm({ ...editPendingForm, [f.k]: e.target.value })}
+                    className="w-full text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              ))}
+              <div className="col-span-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">Remarks</label>
+                <textarea
+                  value={editPendingForm.remarks || ""}
+                  onChange={e => setEditPendingForm({ ...editPendingForm, remarks: e.target.value })}
+                  className="w-full text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none min-h-[60px]"
+                />
+              </div>
+              <div className="col-span-2 flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setEditPendingFlight(null)}>Cancel</Button>
+                <Button size="sm" onClick={saveEditPending}>Save Changes</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
