@@ -297,9 +297,17 @@ export default function SecurityServiceReportsPage() {
     // Operations rejection should only surface in the Station "Rejected Service Reports" tab.
     // We intentionally do NOT flip flight_schedules.status to "Rejected" — that would also
     // make it appear in the Clearance "Rejected" tab, which we don't want here.
+    const reason = window.prompt("Rejection reason (shown to Station on the Rejected Service Reports tab):", "");
+    if (reason === null) return; // user cancelled
+    const trimmed = reason.trim();
     const { error } = await supabase
       .from("dispatch_assignments")
-      .update({ review_status: "Rejected", reviewed_by: session?.user?.email || "Operations", reviewed_at: new Date().toISOString() } as any)
+      .update({
+        review_status: "Rejected",
+        review_comment: trimmed,
+        reviewed_by: session?.user?.email || "Operations",
+        reviewed_at: new Date().toISOString(),
+      } as any)
       .eq("flight_schedule_id", flightId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -309,6 +317,7 @@ export default function SecurityServiceReportsPage() {
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     toast({ title: "Rejected", description: "Sent back to Station — visible in Rejected Service Reports." });
   };
+
 
   const openEditPending = (f: any) => {
     setEditPendingFlight(f);
