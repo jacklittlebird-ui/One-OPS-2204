@@ -164,6 +164,12 @@ export default function SecurityServiceReportsPage() {
   const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
+
+  /* Pending Approval tab filters */
+  const [pendingSearch, setPendingSearch] = useState("");
+  const [pendingStationFilter, setPendingStationFilter] = useState("All Stations");
+  const [pendingDateFrom, setPendingDateFrom] = useState("");
+  const [pendingDateTo, setPendingDateTo] = useState("");
   
 
   // Fetch dispatch assignments (completed ones = service reports)
