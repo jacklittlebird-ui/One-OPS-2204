@@ -294,21 +294,20 @@ export default function SecurityServiceReportsPage() {
   };
 
   const rejectPendingFlight = async (flightId: string) => {
+    // Operations rejection should only surface in the Station "Rejected Service Reports" tab.
+    // We intentionally do NOT flip flight_schedules.status to "Rejected" — that would also
+    // make it appear in the Clearance "Rejected" tab, which we don't want here.
     const { error } = await supabase
-      .from("flight_schedules")
-      .update({ status: "Rejected" } as any)
-      .eq("id", flightId);
+      .from("dispatch_assignments")
+      .update({ review_status: "Rejected", reviewed_by: session?.user?.email || "Operations", reviewed_at: new Date().toISOString() } as any)
+      .eq("flight_schedule_id", flightId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
-    await supabase
-      .from("dispatch_assignments")
-      .update({ review_status: "Rejected", reviewed_by: session?.user?.email || "Operations", reviewed_at: new Date().toISOString() } as any)
-      .eq("flight_schedule_id", flightId);
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-    toast({ title: "Rejected", description: "Flight rejected." });
+    toast({ title: "Rejected", description: "Sent back to Station — visible in Rejected Service Reports." });
   };
 
   const openEditPending = (f: any) => {
