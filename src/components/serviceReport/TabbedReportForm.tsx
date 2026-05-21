@@ -620,9 +620,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Account / Operator"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
                   <FormField label="Station">
-                    <select className={selectCls} value={data.station || "Cairo"} onChange={e => set("station", e.target.value)}>
-                      {stationOptions.map(s => <option key={s.name}>{s.name}</option>)}
-                    </select>
+                    {lockedStationName ? (
+                      <input className={readOnlyCls} value={lockedStationName} readOnly />
+                    ) : (
+                      <select className={selectCls} value={data.station || "Cairo"} onChange={e => set("station", e.target.value)}>
+                        {stationOptions.map(s => <option key={s.name}>{s.name}</option>)}
+                      </select>
+                    )}
                   </FormField>
                   <FormField label="Route"><input className={inputCls} value={data.route || ""} onChange={e => set("route", e.target.value)} placeholder="ORY/CAI/ORY" /></FormField>
                   <FormField label="Reg No"><input className={inputCls} value={data.registration || ""} onChange={e => set("registration", e.target.value)} onBlur={e => lookupMtowByReg(e.target.value)} /></FormField>
