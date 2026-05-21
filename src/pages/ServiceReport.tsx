@@ -48,6 +48,18 @@ const stationOptions = [
   { name: "Aswan", vendor: "Egyptian Airports" },
 ];
 
+const iataToStationName: Record<string, string> = {
+  "CAI": "Cairo",
+  "HBE": "Alexandria",
+  "HRG": "Hurghada",
+  "SSH": "Sharm El Sheikh",
+  "LXR": "Luxor",
+  "ASW": "Aswan",
+  "ATZ": "Asyut",
+  "RMF": "Marsa Alam",
+  "HMB": "Sohag",
+};
+
 const allCharges = generateAllCharges();
 
 function isNightTime(timeStr: string, dateStr: string): boolean {
@@ -782,6 +794,7 @@ function HandlingServiceReportContent() {
     const params = new URLSearchParams(location.search);
     const flightNo = params.get("flightNo");
     if (flightNo) {
+      const scopedStation = isStationScoped && userStation ? (iataToStationName[userStation] || userStation) : null;
       setNewReport(prev => ({
         ...prev,
         flightNo: flightNo || "",
@@ -790,6 +803,7 @@ function HandlingServiceReportContent() {
         route: params.get("route") || "",
         sta: params.get("sta") || "",
         std: params.get("std") || "",
+        station: scopedStation || prev.station || emptyReport().station,
       }));
       setShowAdd(true);
     }
@@ -1091,7 +1105,11 @@ function HandlingServiceReportContent() {
             <RefreshCw size={14} /> Refresh
           </button>
           {canCreateNew && (
-            <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
+            <button onClick={() => {
+              const scopedStation = isStationScoped && userStation ? (iataToStationName[userStation] || userStation) : null;
+              setNewReport({ ...emptyReport(), station: scopedStation || emptyReport().station });
+              setShowAdd(true);
+            }} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
           )}
         </div>
       </div>
@@ -1405,8 +1423,10 @@ function HandlingServiceReportContent() {
                         <>
                           <button
                             onClick={() => {
+                              const scopedStation = isStationScoped && userStation ? (iataToStationName[userStation] || userStation) : null;
                               setNewReport({
                                 ...emptyReport(),
+                                station: scopedStation || emptyReport().station,
                                 flightNo: r.flightNo,
                                 operator: r.operator,
                                 aircraftType: r.aircraftType,

@@ -14,6 +14,7 @@ import {
 import PipelineStepper, { derivePipelineStage } from "./PipelineStepper";
 import { supabase } from "@/integrations/supabase/client";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useUserStation } from "@/contexts/UserStationContext";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,6 +31,18 @@ const stationOptions = [
   { name: "Luxor", vendor: "Egyptian Airports" },
   { name: "Aswan", vendor: "Egyptian Airports" },
 ];
+
+const iataToStationName: Record<string, string> = {
+  "CAI": "Cairo",
+  "HBE": "Alexandria",
+  "HRG": "Hurghada",
+  "SSH": "Sharm El Sheikh",
+  "LXR": "Luxor",
+  "ASW": "Aswan",
+  "ATZ": "Asyut",
+  "RMF": "Marsa Alam",
+  "HMB": "Sohag",
+};
 
 interface AirportChargeRow {
   id: string; vendor_name: string; mtow: string;
@@ -261,6 +274,17 @@ const tabIcons: Record<ReportTab, React.ReactNode> = {
 
 export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus, reviewMode = false, onApprove, onReject }: Props) {
   const { activeChannel } = useChannel();
+  const { station: userStation, isStationScoped } = useUserStation();
+  const lockedStationName = useMemo(() => {
+    if (!isStationScoped || !userStation) return null;
+    return iataToStationName[userStation] || userStation;
+  }, [isStationScoped, userStation]);
+  useEffect(() => {
+    if (lockedStationName && data.station !== lockedStationName) {
+      onChange({ ...data, station: lockedStationName });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedStationName]);
   const [activeTab, setActiveTab] = useState<ReportTab>("flight");
   const [reviewComment, setReviewComment] = useState<string>(data.reviewComment || "");
 
@@ -596,9 +620,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <FormField label="Account / Operator"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
                   <FormField label="Station">
-                    <select className={selectCls} value={data.station || "Cairo"} onChange={e => set("station", e.target.value)}>
-                      {stationOptions.map(s => <option key={s.name}>{s.name}</option>)}
-                    </select>
+                    {lockedStationName ? (
+                      <input className={readOnlyCls} value={lockedStationName} readOnly />
+                    ) : (
+                      <select className={selectCls} value={data.station || "Cairo"} onChange={e => set("station", e.target.value)}>
+                        {stationOptions.map(s => <option key={s.name}>{s.name}</option>)}
+                      </select>
+                    )}
                   </FormField>
                   <FormField label="Route"><input className={inputCls} value={data.route || ""} onChange={e => set("route", e.target.value)} placeholder="ORY/CAI/ORY" /></FormField>
                   <FormField label="Reg No"><input className={inputCls} value={data.registration || ""} onChange={e => set("registration", e.target.value)} onBlur={e => lookupMtowByReg(e.target.value)} /></FormField>
