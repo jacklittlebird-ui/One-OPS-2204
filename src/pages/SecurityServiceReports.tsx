@@ -1206,7 +1206,7 @@ export default function SecurityServiceReportsPage() {
                   <X size={12} /> Clear
                 </button>
               )}
-            </<div>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
