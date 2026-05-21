@@ -1397,6 +1397,72 @@ export default function SecurityServiceReportsPage() {
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
         </div>
 
+        {recordsView === "calendar" ? (
+          <div className="p-4 space-y-4">
+            {filtered.length === 0 ? (
+              <div className="text-center py-16">
+                <CalendarDays size={40} className="mx-auto text-muted-foreground/30 mb-3" />
+                <p className="font-semibold text-foreground">No records to display</p>
+              </div>
+            ) : (() => {
+              const groups = new Map<string, typeof filtered>();
+              for (const r of filtered) {
+                const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+                const d = resolveSecurityRowDisplay(r as any, fd, (r as any).flightMeta);
+                const key = d.arrivalDate || d.departureDate || r.flight_date || "Unscheduled";
+                if (!groups.has(key)) groups.set(key, [] as any);
+                (groups.get(key) as any).push(r);
+              }
+              const sortedKeys = [...groups.keys()].sort((a, b) => {
+                if (a === "Unscheduled") return 1;
+                if (b === "Unscheduled") return -1;
+                return a.localeCompare(b);
+              });
+              return sortedKeys.map(dateKey => {
+                const items = groups.get(dateKey)!;
+                const sorted = [...items].sort((a, b) => {
+                  const ad = resolveSecurityRowDisplay(a as any, a.flight_schedule_id ? flightDetailsById.get(a.flight_schedule_id) : undefined, (a as any).flightMeta);
+                  const bd = resolveSecurityRowDisplay(b as any, b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined, (b as any).flightMeta);
+                  return (ad.sta || "").localeCompare(bd.sta || "");
+                });
+                return (
+                  <div key={dateKey} className="border rounded-lg overflow-hidden">
+                    <div className="bg-muted/40 px-3 py-2 flex items-center gap-2 border-b">
+                      <CalendarDays size={14} className="text-primary" />
+                      <span className="text-sm font-semibold text-foreground">{dateKey}</span>
+                      <span className="text-xs text-muted-foreground">({sorted.length} flight{sorted.length === 1 ? "" : "s"})</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 p-2">
+                      {sorted.map(r => {
+                        const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+                        const d = resolveSecurityRowDisplay(r as any, fd, (r as any).flightMeta);
+                        const sc = dispatchStatusConfig[r.status] || dispatchStatusConfig["Pending"];
+                        return (
+                          <button
+                            key={r.id}
+                            onClick={() => setEditRow(r)}
+                            className="text-left bg-card border rounded p-2.5 hover:border-primary hover:shadow-sm transition-all"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="font-mono text-xs font-bold text-foreground">{d.flightNo || r.flight_no || "—"}</span>
+                              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${sc}`}>{r.status}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mb-1">{r.airline || "—"} · {r.station}</div>
+                            <div className="flex items-center gap-3 text-[11px] font-mono text-foreground">
+                              <span>STA <span className="text-primary">{d.sta || "—"}</span></span>
+                              <span>STD <span className="text-primary">{d.std || "—"}</span></span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground mt-1 truncate">{d.route || "—"}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        ) : (
         <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
