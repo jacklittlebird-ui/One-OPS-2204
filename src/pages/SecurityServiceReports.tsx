@@ -1460,7 +1460,9 @@ export default function SecurityServiceReportsPage() {
                           {skdType || "—"}
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{arrDate || "—"}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{sta || "—"}</td>
                         <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{depDate || "—"}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{std || "—"}</td>
                         <td className="px-3 py-2.5 text-foreground text-xs">{route || "—"}</td>
                         <td className="px-3 py-2.5 text-foreground text-xs">{acType || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
