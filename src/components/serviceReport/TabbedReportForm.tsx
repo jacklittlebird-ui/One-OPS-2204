@@ -274,6 +274,17 @@ const tabIcons: Record<ReportTab, React.ReactNode> = {
 
 export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus, reviewMode = false, onApprove, onReject }: Props) {
   const { activeChannel } = useChannel();
+  const { station: userStation, isStationScoped } = useUserStation();
+  const lockedStationName = useMemo(() => {
+    if (!isStationScoped || !userStation) return null;
+    return iataToStationName[userStation] || userStation;
+  }, [isStationScoped, userStation]);
+  useEffect(() => {
+    if (lockedStationName && data.station !== lockedStationName) {
+      onChange({ ...data, station: lockedStationName });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedStationName]);
   const [activeTab, setActiveTab] = useState<ReportTab>("flight");
   const [reviewComment, setReviewComment] = useState<string>(data.reviewComment || "");
 
