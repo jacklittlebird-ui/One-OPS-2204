@@ -1213,7 +1213,7 @@ export default function SecurityServiceReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/30">
-                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "ACTIONS"].map(h => (
+                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
