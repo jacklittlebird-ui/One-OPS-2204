@@ -17,6 +17,7 @@ import ClearanceFormDialog from "@/components/clearances/ClearanceFormDialog";
 import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog";
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
+import { extractOpsDeleteReason } from "@/lib/statusRouting";
 
 // ─── Calendar View Component ───
 function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdit }: {
