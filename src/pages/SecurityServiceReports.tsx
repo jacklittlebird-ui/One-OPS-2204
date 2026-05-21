@@ -161,6 +161,7 @@ export default function SecurityServiceReportsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
+  const [recordsView, setRecordsView] = useState<"table" | "calendar">("table");
   const [editRow, setEditRow] = useState<DispatchRow | null>(null);
   const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
@@ -1289,7 +1290,7 @@ export default function SecurityServiceReportsPage() {
       ) : (
       <>
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-2 ${isOperationsView ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-4`}>
         <div className="stat-card">
           <div className="stat-card-icon bg-primary"><FileBarChart2 size={20} /></div>
           <div><div className="text-xl font-bold text-foreground">{totalReports}</div><div className="text-xs text-muted-foreground">Total Reports</div></div>
@@ -1302,10 +1303,12 @@ export default function SecurityServiceReportsPage() {
           <div className="stat-card-icon bg-warning"><Clock size={20} /></div>
           <div><div className="text-xl font-bold text-foreground">{pendingReview}</div><div className="text-xs text-muted-foreground">Pending Review</div></div>
         </div>
-        <div className="stat-card">
-          <div className="stat-card-icon bg-info"><DollarSign size={20} /></div>
-          <div><div className="text-xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Charges</div></div>
-        </div>
+        {!isOperationsView && (
+          <div className="stat-card">
+            <div className="stat-card-icon bg-info"><DollarSign size={20} /></div>
+            <div><div className="text-xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Charges</div></div>
+          </div>
+        )}
       </div>
 
       {/* Secondary Stats */}
@@ -1375,9 +1378,91 @@ export default function SecurityServiceReportsPage() {
                   : "Save All Security Charges"}
             </button>
           )}
+          <div className="inline-flex rounded border overflow-hidden">
+            <button
+              onClick={() => setRecordsView("table")}
+              className={`px-2.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1 ${recordsView === "table" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}
+              title="Table view"
+            >
+              <FileBarChart2 size={12} /> Table
+            </button>
+            <button
+              onClick={() => setRecordsView("calendar")}
+              className={`px-2.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1 border-l ${recordsView === "calendar" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}
+              title="Calendar view"
+            >
+              <CalendarDays size={12} /> Calendar
+            </button>
+          </div>
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
         </div>
 
+        {recordsView === "calendar" ? (
+          <div className="p-4 space-y-4">
+            {filtered.length === 0 ? (
+              <div className="text-center py-16">
+                <CalendarDays size={40} className="mx-auto text-muted-foreground/30 mb-3" />
+                <p className="font-semibold text-foreground">No records to display</p>
+              </div>
+            ) : (() => {
+              const groups = new Map<string, typeof filtered>();
+              for (const r of filtered) {
+                const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+                const d = resolveSecurityRowDisplay(r as any, fd, (r as any).flightMeta);
+                const key = d.arrivalDate || d.departureDate || r.flight_date || "Unscheduled";
+                if (!groups.has(key)) groups.set(key, [] as any);
+                (groups.get(key) as any).push(r);
+              }
+              const sortedKeys = [...groups.keys()].sort((a, b) => {
+                if (a === "Unscheduled") return 1;
+                if (b === "Unscheduled") return -1;
+                return a.localeCompare(b);
+              });
+              return sortedKeys.map(dateKey => {
+                const items = groups.get(dateKey)!;
+                const sorted = [...items].sort((a, b) => {
+                  const ad = resolveSecurityRowDisplay(a as any, a.flight_schedule_id ? flightDetailsById.get(a.flight_schedule_id) : undefined, (a as any).flightMeta);
+                  const bd = resolveSecurityRowDisplay(b as any, b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined, (b as any).flightMeta);
+                  return (ad.sta || "").localeCompare(bd.sta || "");
+                });
+                return (
+                  <div key={dateKey} className="border rounded-lg overflow-hidden">
+                    <div className="bg-muted/40 px-3 py-2 flex items-center gap-2 border-b">
+                      <CalendarDays size={14} className="text-primary" />
+                      <span className="text-sm font-semibold text-foreground">{dateKey}</span>
+                      <span className="text-xs text-muted-foreground">({sorted.length} flight{sorted.length === 1 ? "" : "s"})</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 p-2">
+                      {sorted.map(r => {
+                        const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+                        const d = resolveSecurityRowDisplay(r as any, fd, (r as any).flightMeta);
+                        const sc = dispatchStatusConfig[r.status] || dispatchStatusConfig["Pending"];
+                        return (
+                          <button
+                            key={r.id}
+                            onClick={() => setEditRow(r)}
+                            className="text-left bg-card border rounded p-2.5 hover:border-primary hover:shadow-sm transition-all"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="font-mono text-xs font-bold text-foreground">{d.flightNo || r.flight_no || "—"}</span>
+                              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${sc}`}>{r.status}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mb-1">{r.airline || "—"} · {r.station}</div>
+                            <div className="flex items-center gap-3 text-[11px] font-mono text-foreground">
+                              <span>STA <span className="text-primary">{d.sta || "—"}</span></span>
+                              <span>STD <span className="text-primary">{d.std || "—"}</span></span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground mt-1 truncate">{d.route || "—"}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        ) : (
         <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -1400,17 +1485,17 @@ export default function SecurityServiceReportsPage() {
                         />
                       </th>
                     )}
-                     {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "TYPE", "SKD TYPE", "ARR DATE", "DEP DATE", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
+                     {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "TYPE", "SKD TYPE", "ARR DATE", "STA", "DEP DATE", "STD", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={isReceivablesView ? 19 : 17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={isReceivablesView ? 21 : 19} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
                   ) : pageData.length === 0 ? (
                      <tr>
-                      <td colSpan={isReceivablesView ? 19 : 17} className="text-center py-16">
+                      <td colSpan={isReceivablesView ? 21 : 19} className="text-center py-16">
                         <Shield size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                         <p className="font-semibold text-foreground">No Security Service Reports</p>
                         <p className="text-muted-foreground text-sm mt-1">Security service reports will appear here once created</p>
@@ -1423,7 +1508,7 @@ export default function SecurityServiceReportsPage() {
                     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
                     const meta = (r as any).flightMeta;
                     const d = resolveSecurityRowDisplay(r as any, fd, meta);
-                    const { flightNo, registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate } = d;
+                    const { flightNo, registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate, sta, std } = d;
                     return (
                       <React.Fragment key={r.id}>
                       <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
@@ -1457,7 +1542,9 @@ export default function SecurityServiceReportsPage() {
                           {skdType || "—"}
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{arrDate || "—"}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{sta || "—"}</td>
                         <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{depDate || "—"}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{std || "—"}</td>
                         <td className="px-3 py-2.5 text-foreground text-xs">{route || "—"}</td>
                         <td className="px-3 py-2.5 text-foreground text-xs">{acType || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
@@ -1722,6 +1809,7 @@ export default function SecurityServiceReportsPage() {
               </div>
             )}
           </>
+        )}
       </div>
 
       {/* Security Task Sheet Dialog */}
