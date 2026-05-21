@@ -1221,7 +1221,7 @@ export default function SecurityServiceReportsPage() {
                 <tbody>
                   {filteredPendingFlights.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="text-center py-16">
+                      <td colSpan={13} className="text-center py-16">
                         <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
                         <p className="font-semibold text-foreground">No flights pending approval</p>
                         <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
