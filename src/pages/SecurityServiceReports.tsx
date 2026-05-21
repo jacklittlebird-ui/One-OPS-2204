@@ -2,7 +2,8 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, Pencil, CheckCircle2, XCircle, AlertTriangle,
-  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X, RefreshCw
+  FileBarChart2, DollarSign, MessageSquare, ExternalLink, CalendarDays, X, RefreshCw,
+  Eye
 } from "lucide-react";
 import { resolveSecurityRowDisplay } from "@/lib/securityRowDisplay";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -1247,7 +1248,7 @@ export default function SecurityServiceReportsPage() {
                             onClick={() => openEditPending(f)}
                             className="px-2 py-1 text-xs font-semibold rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors inline-flex items-center gap-1"
                           >
-                            <Pencil size={11} /> Edit
+                            <Eye size={11} /> View
                           </button>
                           <button
                             onClick={() => approvePendingFlight(f.id)}
@@ -1716,7 +1717,7 @@ export default function SecurityServiceReportsPage() {
       <Dialog open={!!editPendingFlight} onOpenChange={(o) => !o && setEditPendingFlight(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Pencil size={16} /> Edit Pending Flight</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Eye size={16} /> View Pending Flight</DialogTitle>
           </DialogHeader>
           {editPendingFlight && (
             <div className="grid grid-cols-2 gap-3">
@@ -1735,8 +1736,8 @@ export default function SecurityServiceReportsPage() {
                   <input
                     type={f.type || "text"}
                     value={editPendingForm[f.k] || ""}
-                    onChange={e => setEditPendingForm({ ...editPendingForm, [f.k]: e.target.value })}
-                    className="w-full text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    readOnly
+                    className="w-full text-sm border rounded px-2 py-1.5 bg-muted text-foreground focus:outline-none cursor-default"
                   />
                 </div>
               ))}
@@ -1744,13 +1745,12 @@ export default function SecurityServiceReportsPage() {
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">Remarks</label>
                 <textarea
                   value={editPendingForm.remarks || ""}
-                  onChange={e => setEditPendingForm({ ...editPendingForm, remarks: e.target.value })}
-                  className="w-full text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none min-h-[60px]"
+                  readOnly
+                  className="w-full text-sm border rounded px-2 py-1.5 bg-muted text-foreground focus:outline-none resize-none min-h-[60px] cursor-default"
                 />
               </div>
               <div className="col-span-2 flex justify-end gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => setEditPendingFlight(null)}>Cancel</Button>
-                <Button size="sm" onClick={saveEditPending}>Save Changes</Button>
+                <Button size="sm" onClick={() => setEditPendingFlight(null)}>Close</Button>
               </div>
             </div>
           )}
