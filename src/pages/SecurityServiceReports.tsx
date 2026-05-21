@@ -1426,7 +1426,7 @@ export default function SecurityServiceReportsPage() {
                     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
                     const meta = (r as any).flightMeta;
                     const d = resolveSecurityRowDisplay(r as any, fd, meta);
-                    const { flightNo, registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate } = d;
+                    const { flightNo, registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate, sta, std } = d;
                     return (
                       <React.Fragment key={r.id}>
                       <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""}`}>
