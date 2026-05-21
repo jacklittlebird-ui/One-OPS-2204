@@ -1403,7 +1403,7 @@ export default function SecurityServiceReportsPage() {
                         />
                       </th>
                     )}
-                     {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "TYPE", "SKD TYPE", "ARR DATE", "DEP DATE", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
+                     {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "TYPE", "SKD TYPE", "ARR DATE", "STA", "DEP DATE", "STD", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
