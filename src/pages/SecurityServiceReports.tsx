@@ -1213,7 +1213,7 @@ export default function SecurityServiceReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/30">
-                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "ACTIONS"].map(h => (
+                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -1221,7 +1221,7 @@ export default function SecurityServiceReportsPage() {
                 <tbody>
                   {filteredPendingFlights.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="text-center py-16">
+                      <td colSpan={13} className="text-center py-16">
                         <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
                         <p className="font-semibold text-foreground">No flights pending approval</p>
                         <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
@@ -1242,6 +1242,13 @@ export default function SecurityServiceReportsPage() {
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.std || "—"}</td>
                       <td className="px-3 py-2.5 text-foreground text-xs">{f.route || "—"}</td>
                       <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={f.remarks || ""}>{f.remarks || "—"}</td>
+                      <td className="px-3 py-2.5">
+                        <PipelineStepper
+                          currentStage="operations"
+                          completedStages={["station"]}
+                          compact
+                        />
+                      </td>
                       <td className="px-3 py-2.5">
                         <div className="flex gap-1.5">
                           <button
