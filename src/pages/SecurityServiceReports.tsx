@@ -164,6 +164,12 @@ export default function SecurityServiceReportsPage() {
   const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
+
+  /* Pending Approval tab filters */
+  const [pendingSearch, setPendingSearch] = useState("");
+  const [pendingStationFilter, setPendingStationFilter] = useState("All Stations");
+  const [pendingDateFrom, setPendingDateFrom] = useState("");
+  const [pendingDateTo, setPendingDateTo] = useState("");
   
 
   // Fetch dispatch assignments (completed ones = service reports)
@@ -598,6 +604,31 @@ export default function SecurityServiceReportsPage() {
   const totalStaffDeployed = filtered.reduce((s, r) => s + (r.staff_count || 0), 0);
   const pendingReview = filtered.filter(r => r.review_status === "Pending Review").length;
   const readyForBilling = filtered.filter(r => r.review_status === "Ready for Billing").length;
+
+  // Pending Approval tab: filtered list + stats
+  const filteredPendingFlights = useMemo(() => {
+    let rows = [...pendingApprovalFlights];
+    if (pendingStationFilter !== "All Stations") rows = rows.filter((f: any) => f.authority === pendingStationFilter);
+    if (pendingDateFrom) rows = rows.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") >= pendingDateFrom);
+    if (pendingDateTo) rows = rows.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") <= pendingDateTo);
+    if (pendingSearch) {
+      const s = pendingSearch.toLowerCase();
+      rows = rows.filter((f: any) =>
+        (f.flight_no || "").toLowerCase().includes(s) ||
+        (f.airlines?.name || f.handling_agent || "").toLowerCase().includes(s) ||
+        (f.registration || "").toLowerCase().includes(s) ||
+        (f.route || "").toLowerCase().includes(s) ||
+        (f.authority || "").toLowerCase().includes(s)
+      );
+    }
+    return rows;
+  }, [pendingApprovalFlights, pendingStationFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const pendingTotal = filteredPendingFlights.length;
+  const pendingToday = filteredPendingFlights.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") === todayStr).length;
+  const pendingStationsCount = new Set(filteredPendingFlights.map((f: any) => f.authority).filter(Boolean)).size;
+  const pendingAirlinesCount = new Set(filteredPendingFlights.map((f: any) => f.airlines?.name || f.handling_agent).filter(Boolean)).size;
 
   const linkedIrregularities = useMemo(() => {
     const map = new Map<string, typeof irregularities[0]>();
@@ -1122,75 +1153,121 @@ export default function SecurityServiceReportsPage() {
       {isOperationsView && opsTab === "clearance-flights" ? (
         <AllClearanceFlightsPage securityOnly />
       ) : isOperationsView && opsTab === "pending-approval" ? (
-        <div className="bg-card border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b bg-muted/30">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Clock size={14} className="text-destructive" />
-              Pending Operations Approval
-              <span className="text-xs font-normal text-muted-foreground">
-                — flights submitted by Stations awaiting Operations review
-              </span>
-            </h3>
+        <div className="space-y-4">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="stat-card">
+              <div className="stat-card-icon bg-destructive"><Clock size={20} /></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingTotal}</div><div className="text-xs text-muted-foreground">Pending Total</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-card-icon bg-warning"><CalendarDays size={20} /></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingToday}</div><div className="text-xs text-muted-foreground">Today</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-card-icon bg-info"><Building2 size={20} /></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingStationsCount}</div><div className="text-xs text-muted-foreground">Stations</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-card-icon bg-primary"><Plane size={20} /></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingAirlinesCount}</div><div className="text-xs text-muted-foreground">Airlines</div></div>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/30">
-                  {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "ACTIONS"].map(h => (
-                    <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
+
+          {/* Filters */}
+          <div className="bg-card rounded-lg border overflow-hidden">
+            <div className="p-4 border-b flex flex-wrap items-center gap-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mr-auto">
+                <Clock size={14} className="text-destructive" />
+                Pending Operations Approval
+                <span className="text-xs font-normal text-muted-foreground">
+                  — {pendingTotal} flight{pendingTotal === 1 ? "" : "s"} awaiting review
+                </span>
+              </h3>
+              <div className="relative">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text" placeholder="Search flight, airline, reg…"
+                  value={pendingSearch} onChange={e => setPendingSearch(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <select value={pendingStationFilter} onChange={e => setPendingStationFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+                <option>All Stations</option>
+                {Array.from(new Set(pendingApprovalFlights.map((f: any) => f.authority).filter(Boolean))).sort().map((s: any) => <option key={s}>{s}</option>)}
+              </select>
+              <input type="date" value={pendingDateFrom} onChange={e => setPendingDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
+              <input type="date" value={pendingDateTo} onChange={e => setPendingDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
+              {(pendingSearch || pendingStationFilter !== "All Stations" || pendingDateFrom || pendingDateTo) && (
+                <button
+                  onClick={() => { setPendingSearch(""); setPendingStationFilter("All Stations"); setPendingDateFrom(""); setPendingDateTo(""); }}
+                  className="toolbar-btn-outline text-xs"
+                >
+                  <X size={12} /> Clear
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/30">
+                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "ACTIONS"].map(h => (
+                      <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPendingFlights.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="text-center py-16">
+                        <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
+                        <p className="font-semibold text-foreground">No flights pending approval</p>
+                        <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
+                      </td>
+                    </tr>
+                  ) : filteredPendingFlights.map((f: any, i: number) => (
+                    <tr key={f.id} className="data-table-row">
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
+                      <td className="px-3 py-2.5 font-semibold text-foreground">{f.authority || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground">{f.airlines?.name || f.handling_agent || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.registration || "—"}</td>
+                      <td className="px-3 py-2.5">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{f.clearance_type || "—"}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{f.arrival_date || f.departure_date || f.flight_date || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.sta || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.std || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground text-xs">{f.route || "—"}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={f.remarks || ""}>{f.remarks || "—"}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => openEditPending(f)}
+                            className="px-2 py-1 text-xs font-semibold rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors inline-flex items-center gap-1"
+                          >
+                            <Pencil size={11} /> Edit
+                          </button>
+                          <button
+                            onClick={() => approvePendingFlight(f.id)}
+                            className="px-2 py-1 text-xs font-semibold rounded bg-success/15 text-success hover:bg-success/25 transition-colors"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => rejectPendingFlight(f.id)}
+                            className="px-2 py-1 text-xs font-semibold rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pendingApprovalFlights.length === 0 ? (
-                  <tr>
-                    <td colSpan={12} className="text-center py-16">
-                      <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
-                      <p className="font-semibold text-foreground">No flights pending approval</p>
-                      <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
-                    </td>
-                  </tr>
-                ) : pendingApprovalFlights.map((f: any, i: number) => (
-                  <tr key={f.id} className="data-table-row">
-                    <td className="px-3 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
-                    <td className="px-3 py-2.5 font-semibold text-foreground">{f.authority || "—"}</td>
-                    <td className="px-3 py-2.5 text-foreground">{f.airlines?.name || f.handling_agent || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.registration || "—"}</td>
-                    <td className="px-3 py-2.5">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{f.clearance_type || "—"}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{f.arrival_date || f.departure_date || f.flight_date || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.sta || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.std || "—"}</td>
-                    <td className="px-3 py-2.5 text-foreground text-xs">{f.route || "—"}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={f.remarks || ""}>{f.remarks || "—"}</td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => openEditPending(f)}
-                          className="px-2 py-1 text-xs font-semibold rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors inline-flex items-center gap-1"
-                        >
-                          <Pencil size={11} /> Edit
-                        </button>
-                        <button
-                          onClick={() => approvePendingFlight(f.id)}
-                          className="px-2 py-1 text-xs font-semibold rounded bg-success/15 text-success hover:bg-success/25 transition-colors"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => rejectPendingFlight(f.id)}
-                          className="px-2 py-1 text-xs font-semibold rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       ) : (
