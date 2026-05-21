@@ -405,10 +405,11 @@ export default function ClearancesPage() {
                 )}
               </Button>
             </div>
-            {statusTab === "rejected" && filtered.length > 0 && (
+            {statusTab === "rejected" && (
               <Button
                 variant="destructive"
                 size="sm"
+                disabled={filtered.length === 0}
                 onClick={async () => {
                   if (!confirm(`Delete ALL ${filtered.length} rejected flight(s) in this view? This cannot be undone.`)) return;
                   const ids = filtered.map(c => c.id);
@@ -418,7 +419,7 @@ export default function ClearancesPage() {
                   toast({ title: "🗑️ Deleted", description: `${ids.length} rejected flight(s) removed.` });
                 }}
               >
-                <Trash2 size={14} className="mr-1" /> Delete All Rejected
+                <Trash2 size={14} className="mr-1" /> Delete All Rejected ({filtered.length})
               </Button>
             )}
           </div>
