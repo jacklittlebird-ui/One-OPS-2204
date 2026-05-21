@@ -1269,27 +1269,6 @@ export default function SecurityServiceReportsPage() {
                           >
                             Reject
                           </button>
-                          <button
-                            onClick={async () => {
-                              const comment = prompt(`Request station to DELETE flight ${f.flight_no || ""} — reason:`);
-                              if (!comment || !comment.trim()) return;
-                              const stamp = `[OPS DELETE REQUEST ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${comment.trim()}`;
-                              try {
-                                const existing = (f.remarks || "") as string;
-                                const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
-                                const { error } = await supabase.from("flight_schedules").update({ remarks: newRemarks } as any).eq("id", f.id);
-                                if (error) throw error;
-                                queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-                                toast({ title: "🗑️ Delete request sent", description: `Station notified for ${f.flight_no || "flight"}.` });
-                              } catch (e: any) {
-                                toast({ title: "Error", description: e.message, variant: "destructive" });
-                              }
-                            }}
-                            className="px-2 py-1 text-xs font-semibold rounded bg-warning/15 text-warning hover:bg-warning/25 transition-colors inline-flex items-center gap-1"
-                            title="Send a deletion request with a comment to the station"
-                          >
-                            <Trash2 size={11} /> Request Deletion
-                          </button>
                         </div>
                       </td>
                     </tr>
