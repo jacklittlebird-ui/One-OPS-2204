@@ -48,6 +48,18 @@ const stationOptions = [
   { name: "Aswan", vendor: "Egyptian Airports" },
 ];
 
+const iataToStationName: Record<string, string> = {
+  "CAI": "Cairo",
+  "HBE": "Alexandria",
+  "HRG": "Hurghada",
+  "SSH": "Sharm El Sheikh",
+  "LXR": "Luxor",
+  "ASW": "Aswan",
+  "ATZ": "Asyut",
+  "RMF": "Marsa Alam",
+  "HMB": "Sohag",
+};
+
 const allCharges = generateAllCharges();
 
 function isNightTime(timeStr: string, dateStr: string): boolean {
