@@ -1153,75 +1153,121 @@ export default function SecurityServiceReportsPage() {
       {isOperationsView && opsTab === "clearance-flights" ? (
         <AllClearanceFlightsPage securityOnly />
       ) : isOperationsView && opsTab === "pending-approval" ? (
-        <div className="bg-card border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b bg-muted/30">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Clock size={14} className="text-destructive" />
-              Pending Operations Approval
-              <span className="text-xs font-normal text-muted-foreground">
-                — flights submitted by Stations awaiting Operations review
-              </span>
-            </h3>
+        <div className="space-y-4">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="stat-card">
+              <div className="stat-card-icon bg-destructive"><Clock size={20} /></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingTotal}</div><div className="text-xs text-muted-foreground">Pending Total</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-card-icon bg-warning"><CalendarDays size={20} /></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingToday}</div><div className="text-xs text-muted-foreground">Today</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-card-icon bg-info"><Building2 size={20} /></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingStationsCount}</div><div className="text-xs text-muted-foreground">Stations</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-card-icon bg-primary"><Plane size={20} /></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingAirlinesCount}</div><div className="text-xs text-muted-foreground">Airlines</div></div>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/30">
-                  {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "ACTIONS"].map(h => (
-                    <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
+
+          {/* Filters */}
+          <div className="bg-card rounded-lg border overflow-hidden">
+            <div className="p-4 border-b flex flex-wrap items-center gap-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mr-auto">
+                <Clock size={14} className="text-destructive" />
+                Pending Operations Approval
+                <span className="text-xs font-normal text-muted-foreground">
+                  — {pendingTotal} flight{pendingTotal === 1 ? "" : "s"} awaiting review
+                </span>
+              </h3>
+              <div className="relative">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text" placeholder="Search flight, airline, reg…"
+                  value={pendingSearch} onChange={e => setPendingSearch(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <select value={pendingStationFilter} onChange={e => setPendingStationFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+                <option>All Stations</option>
+                {Array.from(new Set(pendingApprovalFlights.map((f: any) => f.authority).filter(Boolean))).sort().map((s: any) => <option key={s}>{s}</option>)}
+              </select>
+              <input type="date" value={pendingDateFrom} onChange={e => setPendingDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
+              <input type="date" value={pendingDateTo} onChange={e => setPendingDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
+              {(pendingSearch || pendingStationFilter !== "All Stations" || pendingDateFrom || pendingDateTo) && (
+                <button
+                  onClick={() => { setPendingSearch(""); setPendingStationFilter("All Stations"); setPendingDateFrom(""); setPendingDateTo(""); }}
+                  className="toolbar-btn-outline text-xs"
+                >
+                  <X size={12} /> Clear
+                </button>
+              )}
+            </<div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/30">
+                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "ACTIONS"].map(h => (
+                      <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPendingFlights.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="text-center py-16">
+                        <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
+                        <p className="font-semibold text-foreground">No flights pending approval</p>
+                        <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
+                      </td>
+                    </tr>
+                  ) : filteredPendingFlights.map((f: any, i: number) => (
+                    <tr key={f.id} className="data-table-row">
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
+                      <td className="px-3 py-2.5 font-semibold text-foreground">{f.authority || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground">{f.airlines?.name || f.handling_agent || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.registration || "—"}</td>
+                      <td className="px-3 py-2.5">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{f.clearance_type || "—"}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{f.arrival_date || f.departure_date || f.flight_date || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.sta || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.std || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground text-xs">{f.route || "—"}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={f.remarks || ""}>{f.remarks || "—"}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => openEditPending(f)}
+                            className="px-2 py-1 text-xs font-semibold rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors inline-flex items-center gap-1"
+                          >
+                            <Pencil size={11} /> Edit
+                          </button>
+                          <button
+                            onClick={() => approvePendingFlight(f.id)}
+                            className="px-2 py-1 text-xs font-semibold rounded bg-success/15 text-success hover:bg-success/25 transition-colors"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => rejectPendingFlight(f.id)}
+                            className="px-2 py-1 text-xs font-semibold rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pendingApprovalFlights.length === 0 ? (
-                  <tr>
-                    <td colSpan={12} className="text-center py-16">
-                      <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
-                      <p className="font-semibold text-foreground">No flights pending approval</p>
-                      <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
-                    </td>
-                  </tr>
-                ) : pendingApprovalFlights.map((f: any, i: number) => (
-                  <tr key={f.id} className="data-table-row">
-                    <td className="px-3 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
-                    <td className="px-3 py-2.5 font-semibold text-foreground">{f.authority || "—"}</td>
-                    <td className="px-3 py-2.5 text-foreground">{f.airlines?.name || f.handling_agent || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.registration || "—"}</td>
-                    <td className="px-3 py-2.5">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{f.clearance_type || "—"}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{f.arrival_date || f.departure_date || f.flight_date || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.sta || "—"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.std || "—"}</td>
-                    <td className="px-3 py-2.5 text-foreground text-xs">{f.route || "—"}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={f.remarks || ""}>{f.remarks || "—"}</td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => openEditPending(f)}
-                          className="px-2 py-1 text-xs font-semibold rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors inline-flex items-center gap-1"
-                        >
-                          <Pencil size={11} /> Edit
-                        </button>
-                        <button
-                          onClick={() => approvePendingFlight(f.id)}
-                          className="px-2 py-1 text-xs font-semibold rounded bg-success/15 text-success hover:bg-success/25 transition-colors"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => rejectPendingFlight(f.id)}
-                          className="px-2 py-1 text-xs font-semibold rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       ) : (
