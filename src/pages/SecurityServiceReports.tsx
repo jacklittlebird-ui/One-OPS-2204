@@ -125,6 +125,8 @@ export default function SecurityServiceReportsPage() {
   const canCreateNew = !isReceivablesView && !isOperationsView;
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
   const [opsTab, setOpsTab] = useState<"all" | "modified" | "clearance-flights" | "pending-approval">("all");
+  const [editPendingFlight, setEditPendingFlight] = useState<any | null>(null);
+  const [editPendingForm, setEditPendingForm] = useState<any>({});
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
@@ -301,6 +303,47 @@ export default function SecurityServiceReportsPage() {
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     toast({ title: "Rejected", description: "Flight rejected." });
   };
+
+  const openEditPending = (f: any) => {
+    setEditPendingFlight(f);
+    setEditPendingForm({
+      flight_no: f.flight_no || "",
+      registration: f.registration || "",
+      route: f.route || "",
+      sta: f.sta || "",
+      std: f.std || "",
+      arrival_date: f.arrival_date || "",
+      departure_date: f.departure_date || "",
+      clearance_type: f.clearance_type || "",
+      remarks: f.remarks || "",
+    });
+  };
+
+  const saveEditPending = async () => {
+    if (!editPendingFlight) return;
+    const { error } = await supabase
+      .from("flight_schedules")
+      .update({
+        flight_no: editPendingForm.flight_no || null,
+        registration: editPendingForm.registration || null,
+        route: editPendingForm.route || null,
+        sta: editPendingForm.sta || null,
+        std: editPendingForm.std || null,
+        arrival_date: editPendingForm.arrival_date || null,
+        departure_date: editPendingForm.departure_date || null,
+        clearance_type: editPendingForm.clearance_type || null,
+        remarks: editPendingForm.remarks || null,
+      } as any)
+      .eq("id", editPendingFlight.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+    toast({ title: "Updated", description: "Flight details updated." });
+    setEditPendingFlight(null);
+  };
+
 
   // Fetch ALL security contract rates (used for receivables on-the-fly amount computation)
   const { data: allRates = [] } = useQuery({
@@ -1125,6 +1168,12 @@ export default function SecurityServiceReportsPage() {
                     <td className="px-3 py-2.5">
                       <div className="flex gap-1.5">
                         <button
+                          onClick={() => openEditPending(f)}
+                          className="px-2 py-1 text-xs font-semibold rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors inline-flex items-center gap-1"
+                        >
+                          <Pencil size={11} /> Edit
+                        </button>
+                        <button
                           onClick={() => approvePendingFlight(f.id)}
                           className="px-2 py-1 text-xs font-semibold rounded bg-success/15 text-success hover:bg-success/25 transition-colors"
                         >
@@ -1584,6 +1633,52 @@ export default function SecurityServiceReportsPage() {
 
       </>
       )}
+
+
+      {/* Edit Pending Flight Dialog */}
+      <Dialog open={!!editPendingFlight} onOpenChange={(o) => !o && setEditPendingFlight(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Pencil size={16} /> Edit Pending Flight</DialogTitle>
+          </DialogHeader>
+          {editPendingFlight && (
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { k: "flight_no", label: "Flight No" },
+                { k: "registration", label: "Registration" },
+                { k: "route", label: "Route" },
+                { k: "clearance_type", label: "Service Type" },
+                { k: "arrival_date", label: "Arrival Date", type: "date" },
+                { k: "departure_date", label: "Departure Date", type: "date" },
+                { k: "sta", label: "STA (HH:MM)" },
+                { k: "std", label: "STD (HH:MM)" },
+              ].map(f => (
+                <div key={f.k} className={f.k === "remarks" ? "col-span-2" : ""}>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">{f.label}</label>
+                  <input
+                    type={f.type || "text"}
+                    value={editPendingForm[f.k] || ""}
+                    onChange={e => setEditPendingForm({ ...editPendingForm, [f.k]: e.target.value })}
+                    className="w-full text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              ))}
+              <div className="col-span-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">Remarks</label>
+                <textarea
+                  value={editPendingForm.remarks || ""}
+                  onChange={e => setEditPendingForm({ ...editPendingForm, remarks: e.target.value })}
+                  className="w-full text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none min-h-[60px]"
+                />
+              </div>
+              <div className="col-span-2 flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setEditPendingFlight(null)}>Cancel</Button>
+                <Button size="sm" onClick={saveEditPending}>Save Changes</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
