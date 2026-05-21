@@ -1243,6 +1243,13 @@ export default function SecurityServiceReportsPage() {
                       <td className="px-3 py-2.5 text-foreground text-xs">{f.route || "—"}</td>
                       <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={f.remarks || ""}>{f.remarks || "—"}</td>
                       <td className="px-3 py-2.5">
+                        <PipelineStepper
+                          currentStage="operations"
+                          completedStages={["station"]}
+                          compact
+                        />
+                      </td>
+                      <td className="px-3 py-2.5">
                         <div className="flex gap-1.5">
                           <button
                             onClick={() => openEditPending(f)}
