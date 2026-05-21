@@ -32,6 +32,18 @@ const stationOptions = [
   { name: "Aswan", vendor: "Egyptian Airports" },
 ];
 
+const iataToStationName: Record<string, string> = {
+  "CAI": "Cairo",
+  "HBE": "Alexandria",
+  "HRG": "Hurghada",
+  "SSH": "Sharm El Sheikh",
+  "LXR": "Luxor",
+  "ASW": "Aswan",
+  "ATZ": "Asyut",
+  "RMF": "Marsa Alam",
+  "HMB": "Sohag",
+};
+
 interface AirportChargeRow {
   id: string; vendor_name: string; mtow: string;
   landing_day: number; landing_night: number;
