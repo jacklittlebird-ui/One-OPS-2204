@@ -1302,10 +1302,12 @@ export default function SecurityServiceReportsPage() {
           <div className="stat-card-icon bg-warning"><Clock size={20} /></div>
           <div><div className="text-xl font-bold text-foreground">{pendingReview}</div><div className="text-xs text-muted-foreground">Pending Review</div></div>
         </div>
-        <div className="stat-card">
-          <div className="stat-card-icon bg-info"><DollarSign size={20} /></div>
-          <div><div className="text-xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Charges</div></div>
-        </div>
+        {!isOperationsView && (
+          <div className="stat-card">
+            <div className="stat-card-icon bg-info"><DollarSign size={20} /></div>
+            <div><div className="text-xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Charges</div></div>
+          </div>
+        )}
       </div>
 
       {/* Secondary Stats */}
