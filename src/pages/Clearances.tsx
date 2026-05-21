@@ -405,23 +405,6 @@ export default function ClearancesPage() {
                 )}
               </Button>
             </div>
-            {statusTab === "rejected" && (
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={filtered.length === 0}
-                onClick={async () => {
-                  if (!confirm(`Delete ALL ${filtered.length} rejected flight(s) in this view? This cannot be undone.`)) return;
-                  const ids = filtered.map(c => c.id);
-                  const { error } = await supabase.from("flight_schedules").delete().in("id", ids);
-                  if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-                  await refetch();
-                  toast({ title: "🗑️ Deleted", description: `${ids.length} rejected flight(s) removed.` });
-                }}
-              >
-                <Trash2 size={14} className="mr-1" /> Delete All Rejected ({filtered.length})
-              </Button>
-            )}
           </div>
 
           <AdvancedFilters
