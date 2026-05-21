@@ -1552,6 +1552,30 @@ export default function SecurityServiceReportsPage() {
                                     <Pencil size={12} /> Complete
                                   </button>
                                 )}
+                                {isOperationsView && r.flight_schedule_id && (
+                                  <button
+                                    onClick={async () => {
+                                      const comment = prompt(`Request station to DELETE flight ${r.flight_no || ""} — reason:`);
+                                      if (!comment || !comment.trim()) return;
+                                      const stamp = `[OPS DELETE REQUEST ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${comment.trim()}`;
+                                      try {
+                                        const { data: cur } = await supabase.from("flight_schedules").select("remarks").eq("id", r.flight_schedule_id!).maybeSingle();
+                                        const existing = (cur as any)?.remarks || "";
+                                        const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
+                                        const { error } = await supabase.from("flight_schedules").update({ remarks: newRemarks } as any).eq("id", r.flight_schedule_id!);
+                                        if (error) throw error;
+                                        queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+                                        toast({ title: "🗑️ Delete request sent", description: `Station notified for ${r.flight_no || "flight"}.` });
+                                      } catch (e: any) {
+                                        toast({ title: "Error", description: e.message, variant: "destructive" });
+                                      }
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
+                                    title="Send a deletion request with a comment to the station"
+                                  >
+                                    <Trash2 size={12} /> Request Deletion
+                                  </button>
+                                )}
                               </>
 
                             ) : (
