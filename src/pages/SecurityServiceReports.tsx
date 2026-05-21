@@ -304,6 +304,47 @@ export default function SecurityServiceReportsPage() {
     toast({ title: "Rejected", description: "Flight rejected." });
   };
 
+  const openEditPending = (f: any) => {
+    setEditPendingFlight(f);
+    setEditPendingForm({
+      flight_no: f.flight_no || "",
+      registration: f.registration || "",
+      route: f.route || "",
+      sta: f.sta || "",
+      std: f.std || "",
+      arrival_date: f.arrival_date || "",
+      departure_date: f.departure_date || "",
+      clearance_type: f.clearance_type || "",
+      remarks: f.remarks || "",
+    });
+  };
+
+  const saveEditPending = async () => {
+    if (!editPendingFlight) return;
+    const { error } = await supabase
+      .from("flight_schedules")
+      .update({
+        flight_no: editPendingForm.flight_no || null,
+        registration: editPendingForm.registration || null,
+        route: editPendingForm.route || null,
+        sta: editPendingForm.sta || null,
+        std: editPendingForm.std || null,
+        arrival_date: editPendingForm.arrival_date || null,
+        departure_date: editPendingForm.departure_date || null,
+        clearance_type: editPendingForm.clearance_type || null,
+        remarks: editPendingForm.remarks || null,
+      } as any)
+      .eq("id", editPendingFlight.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+    toast({ title: "Updated", description: "Flight details updated." });
+    setEditPendingFlight(null);
+  };
+
+
   // Fetch ALL security contract rates (used for receivables on-the-fly amount computation)
   const { data: allRates = [] } = useQuery({
     queryKey: ["contract_service_rates", "security-all"],
