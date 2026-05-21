@@ -14,6 +14,7 @@ import {
 import PipelineStepper, { derivePipelineStage } from "./PipelineStepper";
 import { supabase } from "@/integrations/supabase/client";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useUserStation } from "@/contexts/UserStationContext";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
