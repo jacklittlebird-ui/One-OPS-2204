@@ -1410,10 +1410,10 @@ export default function SecurityServiceReportsPage() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr><td colSpan={isReceivablesView ? 19 : 17} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={isReceivablesView ? 21 : 19} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
                   ) : pageData.length === 0 ? (
                      <tr>
-                      <td colSpan={isReceivablesView ? 19 : 17} className="text-center py-16">
+                      <td colSpan={isReceivablesView ? 21 : 19} className="text-center py-16">
                         <Shield size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                         <p className="font-semibold text-foreground">No Security Service Reports</p>
                         <p className="text-muted-foreground text-sm mt-1">Security service reports will appear here once created</p>
