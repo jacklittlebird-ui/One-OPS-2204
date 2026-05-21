@@ -1421,8 +1421,10 @@ function HandlingServiceReportContent() {
                         <>
                           <button
                             onClick={() => {
+                              const scopedStation = isStationScoped && userStation ? (iataToStationName[userStation] || userStation) : null;
                               setNewReport({
                                 ...emptyReport(),
+                                station: scopedStation || emptyReport().station,
                                 flightNo: r.flightNo,
                                 operator: r.operator,
                                 aircraftType: r.aircraftType,
