@@ -1378,6 +1378,22 @@ export default function SecurityServiceReportsPage() {
                   : "Save All Security Charges"}
             </button>
           )}
+          <div className="inline-flex rounded border overflow-hidden">
+            <button
+              onClick={() => setRecordsView("table")}
+              className={`px-2.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1 ${recordsView === "table" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}
+              title="Table view"
+            >
+              <FileBarChart2 size={12} /> Table
+            </button>
+            <button
+              onClick={() => setRecordsView("calendar")}
+              className={`px-2.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1 border-l ${recordsView === "calendar" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}
+              title="Calendar view"
+            >
+              <CalendarDays size={12} /> Calendar
+            </button>
+          </div>
           <button onClick={handleExport} className="toolbar-btn-outline"><Download size={14} /> Export</button>
         </div>
 
