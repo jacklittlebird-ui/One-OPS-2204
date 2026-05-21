@@ -361,6 +361,7 @@ export default function ClearancesPage() {
           <p className="text-muted-foreground text-sm">التصاريح · Flight schedules, clearances and landing permits</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()}><RefreshCw size={14} className="mr-1" /> Refresh</Button>
           <Button variant="outline" size="sm" onClick={handleExport}><Download size={14} className="mr-1" /> Export</Button>
           <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}><Upload size={14} className="mr-1" /> Import Schedule</Button>
           <Button size="sm" onClick={openAdd}><Plus size={14} className="mr-1" /> Add Flights</Button>
