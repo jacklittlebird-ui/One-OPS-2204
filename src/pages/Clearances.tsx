@@ -489,11 +489,10 @@ export default function ClearancesPage() {
                           <TableCell>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>{statusIcon}{c.status}</span>
                             {statusTab === "rejected" && (() => {
-                              const matches = (c.remarks || "").match(/\[OPS DELETE REQUEST[^\]]*\][^\n]*/g);
-                              const last = matches ? matches[matches.length - 1].replace(/^\[OPS DELETE REQUEST[^\]]*\]\s*/, "") : "";
-                              return last ? (
-                                <div className="mt-1 text-[10px] text-destructive/80 italic max-w-[220px] truncate" title={last}>
-                                  Ops reason: {last}
+                              const reason = extractOpsDeleteReason(c.remarks);
+                              return reason ? (
+                                <div className="mt-1 text-[10px] text-destructive/80 italic max-w-[220px] truncate" title={`Ops requested deletion: ${reason}`}>
+                                  🗑️ Ops reason: {reason}
                                 </div>
                               ) : null;
                             })()}
