@@ -1248,7 +1248,7 @@ export default function SecurityServiceReportsPage() {
                             onClick={() => openEditPending(f)}
                             className="px-2 py-1 text-xs font-semibold rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors inline-flex items-center gap-1"
                           >
-                            <Pencil size={11} /> Edit
+                            <Eye size={11} /> View
                           </button>
                           <button
                             onClick={() => approvePendingFlight(f.id)}
