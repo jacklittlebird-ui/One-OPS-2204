@@ -47,3 +47,47 @@ describe("Operations rejection scope", () => {
     expect(stationRejectedTab([dispatch])).toHaveLength(0);
   });
 });
+
+/**
+ * Operations "Request Deletion" flow: must flip flight_schedules.status to "Rejected"
+ * (Clearance Rejected tab) and stamp the reason into remarks, while leaving
+ * dispatch_assignments.review_status untouched (no Station leak).
+ */
+function applyRequestDeletion(
+  flight: { id: string; status: string; remarks: string },
+  dispatch: { flight_schedule_id: string; review_status: string },
+  reason: string,
+) {
+  const stamp = `[OPS DELETE REQUEST 2026-05-21 13:00] ${reason}`;
+  flight.remarks = flight.remarks ? `${flight.remarks}\n${stamp}` : stamp;
+  flight.status = "Rejected";
+  // Station dispatch review status must NOT be touched.
+}
+
+function extractOpsReason(remarks: string): string {
+  const matches = remarks.match(/\[OPS DELETE REQUEST[^\]]*\][^\n]*/g);
+  return matches ? matches[matches.length - 1].replace(/^\[OPS DELETE REQUEST[^\]]*\]\s*/, "") : "";
+}
+
+describe("Operations Request Deletion scope", () => {
+  it("routes the flight to the Clearance Rejected tab only, not the Station Rejected tab", () => {
+    const flight = { id: "f3", status: "Approved", remarks: "" };
+    const dispatch = { flight_schedule_id: "f3", review_status: "Pending Review" };
+
+    applyRequestDeletion(flight, dispatch, "duplicate entry, please delete");
+
+    expect(clearanceRejectedTab([flight])).toHaveLength(1);
+    expect(stationRejectedTab([dispatch as any])).toHaveLength(0);
+    expect(dispatch.review_status).toBe("Pending Review");
+  });
+
+  it("persists the deletion reason in remarks and exposes it for Clearance display", () => {
+    const flight = { id: "f4", status: "Approved", remarks: "prior note" };
+    const dispatch = { flight_schedule_id: "f4", review_status: "Draft" };
+
+    applyRequestDeletion(flight, dispatch, "wrong registration");
+
+    expect(flight.remarks).toContain("[OPS DELETE REQUEST");
+    expect(extractOpsReason(flight.remarks)).toBe("wrong registration");
+  });
+});
