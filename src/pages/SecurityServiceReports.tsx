@@ -605,6 +605,31 @@ export default function SecurityServiceReportsPage() {
   const pendingReview = filtered.filter(r => r.review_status === "Pending Review").length;
   const readyForBilling = filtered.filter(r => r.review_status === "Ready for Billing").length;
 
+  // Pending Approval tab: filtered list + stats
+  const filteredPendingFlights = useMemo(() => {
+    let rows = [...pendingApprovalFlights];
+    if (pendingStationFilter !== "All Stations") rows = rows.filter((f: any) => f.authority === pendingStationFilter);
+    if (pendingDateFrom) rows = rows.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") >= pendingDateFrom);
+    if (pendingDateTo) rows = rows.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") <= pendingDateTo);
+    if (pendingSearch) {
+      const s = pendingSearch.toLowerCase();
+      rows = rows.filter((f: any) =>
+        (f.flight_no || "").toLowerCase().includes(s) ||
+        (f.airlines?.name || f.handling_agent || "").toLowerCase().includes(s) ||
+        (f.registration || "").toLowerCase().includes(s) ||
+        (f.route || "").toLowerCase().includes(s) ||
+        (f.authority || "").toLowerCase().includes(s)
+      );
+    }
+    return rows;
+  }, [pendingApprovalFlights, pendingStationFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const pendingTotal = filteredPendingFlights.length;
+  const pendingToday = filteredPendingFlights.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") === todayStr).length;
+  const pendingStationsCount = new Set(filteredPendingFlights.map((f: any) => f.authority).filter(Boolean)).size;
+  const pendingAirlinesCount = new Set(filteredPendingFlights.map((f: any) => f.airlines?.name || f.handling_agent).filter(Boolean)).size;
+
   const linkedIrregularities = useMemo(() => {
     const map = new Map<string, typeof irregularities[0]>();
     irregularities.forEach(ir => map.set(ir.id, ir));
