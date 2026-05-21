@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload, CalendarDays, TableIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload, CalendarDays, TableIcon, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
 import { formatDateDMY } from "@/lib/utils";
@@ -361,6 +361,7 @@ export default function ClearancesPage() {
           <p className="text-muted-foreground text-sm">التصاريح · Flight schedules, clearances and landing permits</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()}><RefreshCw size={14} className="mr-1" /> Refresh</Button>
           <Button variant="outline" size="sm" onClick={handleExport}><Download size={14} className="mr-1" /> Export</Button>
           <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}><Upload size={14} className="mr-1" /> Import Schedule</Button>
           <Button size="sm" onClick={openAdd}><Plus size={14} className="mr-1" /> Add Flights</Button>
