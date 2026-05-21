@@ -1103,7 +1103,11 @@ function HandlingServiceReportContent() {
             <RefreshCw size={14} /> Refresh
           </button>
           {canCreateNew && (
-            <button onClick={() => setShowAdd(true)} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
+            <button onClick={() => {
+              const scopedStation = isStationScoped && userStation ? (iataToStationName[userStation] || userStation) : null;
+              setNewReport({ ...emptyReport(), station: scopedStation || emptyReport().station });
+              setShowAdd(true);
+            }} className="toolbar-btn-primary"><Plus size={14} /> New Service Report</button>
           )}
         </div>
       </div>
