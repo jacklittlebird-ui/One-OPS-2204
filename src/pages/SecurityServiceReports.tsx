@@ -1168,6 +1168,12 @@ export default function SecurityServiceReportsPage() {
                     <td className="px-3 py-2.5">
                       <div className="flex gap-1.5">
                         <button
+                          onClick={() => openEditPending(f)}
+                          className="px-2 py-1 text-xs font-semibold rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors inline-flex items-center gap-1"
+                        >
+                          <Pencil size={11} /> Edit
+                        </button>
+                        <button
                           onClick={() => approvePendingFlight(f.id)}
                           className="px-2 py-1 text-xs font-semibold rounded bg-success/15 text-success hover:bg-success/25 transition-colors"
                         >
