@@ -1195,7 +1195,7 @@ export default function SecurityServiceReportsPage() {
               </div>
               <select value={pendingStationFilter} onChange={e => setPendingStationFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
                 <option>All Stations</option>
-                {Array.from(new Set(pendingApprovalFlights.map((f: any) => f.authority).filter(Boolean))).sort().map((s: any) => <option key={s}>{s}</option>)}
+                {allStations.map(s => <option key={s}>{s}</option>)}
               </select>
               <input type="date" value={pendingDateFrom} onChange={e => setPendingDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
               <input type="date" value={pendingDateTo} onChange={e => setPendingDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
