@@ -178,6 +178,13 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
     }
   }, [form.period_from, form.period_to, form.week_days]);
 
+  useEffect(() => {
+    const depDate = calculateDepartureDate(form.arrival_date || "", form.sta || "", form.std || "");
+    if (depDate && depDate !== form.departure_date) {
+      setForm((prev: any) => ({ ...prev, departure_date: depDate }));
+    }
+  }, [form.arrival_date, form.sta, form.std, form.departure_date, setForm]);
+
   const toggleDay = (day: string) => {
     const days = form.week_days ? form.week_days.split(",").filter(Boolean) : [];
     const updated = days.includes(day) ? days.filter((d: string) => d !== day) : [...days, day];
@@ -205,15 +212,13 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
       return;
     }
     // Auto-correct departure date for overnight flights (STD earlier than STA)
-    let depDate = form.departure_date;
-    if (form.arrival_date && /^\d{2}:\d{2}$/.test(form.sta || "") && /^\d{2}:\d{2}$/.test(form.std || "")) {
-      depDate = (form.std < form.sta) ? addDays(form.arrival_date, 1) : form.arrival_date;
-    }
+    const depDate = calculateDepartureDate(form.arrival_date, form.sta, form.std) || form.departure_date;
+    const normalizedForm = { ...form, departure_date: depDate, ...(clearSta ? { sta: "" } : {}), ...(clearStd ? { std: "" } : {}) };
     // Apply rules on the record: clear the irrelevant time before saving
     if (clearSta || clearStd || depDate !== form.departure_date) {
-      setForm({ ...form, departure_date: depDate, ...(clearSta ? { sta: "" } : {}), ...(clearStd ? { std: "" } : {}) });
+      setForm(normalizedForm);
     }
-    onSave();
+    onSave(normalizedForm);
   };
 
   return (
