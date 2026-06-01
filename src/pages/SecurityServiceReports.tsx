@@ -1589,24 +1589,8 @@ export default function SecurityServiceReportsPage() {
                                   </div>
                                 )}
                               </div>
-                              {isStationView && r.flight_schedule_id && (
-                                <button
-                                  onClick={async () => {
-                                    if (!confirm(`Delete flight ${r.flight_no} as requested by Operations?`)) return;
-                                    try {
-                                      await supabase.from("flight_schedules").delete().eq("id", r.flight_schedule_id!);
-                                      queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-                                      queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-                                      toast({ title: "Deleted", description: "Flight removed per Operations request." });
-                                    } catch (e: any) {
-                                      toast({ title: "Error", description: e.message, variant: "destructive" });
-                                    }
-                                  }}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-                                >
-                                  <Trash2 size={12} /> Delete Flight
-                                </button>
-                              )}
+                              {/* Delete action intentionally lives only in the Clearance portal. */}
+
                             </div>
                           </td>
                         </tr>
