@@ -47,6 +47,24 @@ export interface DispatchLike {
 }
 
 const OPS_DELETE_TAG = /\[OPS DELETE REQUEST[^\]]*\][^\n]*/g;
+const OPS_DELETE_ENTRY = /\[OPS DELETE REQUEST([^\]]*)\]\s*([^\n]*)/g;
+
+export interface OpsDeleteEntry {
+  /** Header text inside the brackets (typically a timestamp). */
+  header: string;
+  /** Reason/notes after the bracket on the same line. */
+  reason: string;
+}
+
+/** All OPS delete requests embedded in a remarks string, in chronological order. */
+export function parseOpsDeleteRequests(remarks?: string | null): OpsDeleteEntry[] {
+  if (!remarks) return [];
+  const out: OpsDeleteEntry[] = [];
+  for (const m of remarks.matchAll(OPS_DELETE_ENTRY)) {
+    out.push({ header: (m[1] || "").trim(), reason: (m[2] || "").trim() });
+  }
+  return out;
+}
 
 /** Latest "Ops delete reason" extracted from a flight's remarks, or "". */
 export function extractOpsDeleteReason(remarks?: string | null): string {
@@ -57,6 +75,31 @@ export function extractOpsDeleteReason(remarks?: string | null): string {
     .replace(/^\[OPS DELETE REQUEST[^\]]*\]\s*/, "")
     .trim();
 }
+
+/**
+ * Interleave "ops-delete" marker rows before any flight whose remarks contain
+ * an OPS delete request. Used by the Station view to guarantee the reason
+ * panel always renders immediately above its flight.
+ */
+export interface StationOrderRow {
+  id: string;
+  remarks?: string | null;
+}
+export type StationOrderFragment =
+  | { kind: "ops_delete"; flightId: string }
+  | { kind: "flight"; flightId: string };
+
+export function assembleStationRowOrder(rows: StationOrderRow[]): StationOrderFragment[] {
+  const out: StationOrderFragment[] = [];
+  for (const r of rows) {
+    if (parseOpsDeleteRequests(r.remarks).length > 0) {
+      out.push({ kind: "ops_delete", flightId: r.id });
+    }
+    out.push({ kind: "flight", flightId: r.id });
+  }
+  return out;
+}
+
 
 /** True if the flight should render in the Clearance "Rejected" tab. */
 export function belongsToClearanceRejected(flight: FlightLike): boolean {
