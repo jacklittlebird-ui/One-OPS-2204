@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload, CalendarDays, TableIcon, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload, CalendarDays, TableIcon, ChevronLeft, ChevronRight, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
 import { formatDateDMY } from "@/lib/utils";
@@ -17,7 +17,7 @@ import ClearanceFormDialog from "@/components/clearances/ClearanceFormDialog";
 import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog";
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
-import { extractOpsDeleteReason } from "@/lib/statusRouting";
+import { parseDeletionRequests } from "@/lib/statusRouting";
 
 // ─── Calendar View Component ───
 function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdit }: {
@@ -134,6 +134,7 @@ export default function ClearancesPage() {
   const [detailItem, setDetailItem] = useState<ClearanceRow | null>(null);
   const [editItem, setEditItem] = useState<ClearanceRow | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
+  const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
 
   const airlineMap = Object.fromEntries((airlines || []).map((a: any) => [a.id, a]));
 
@@ -473,7 +474,68 @@ export default function ClearancesPage() {
                     {filtered.map(c => {
                       const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.Pending;
                       const statusIcon = c.status === "Pending" ? <Clock size={12} /> : c.status === "Approved" ? <CheckCircle2 size={12} /> : c.status === "Rejected" ? <XCircle size={12} /> : <AlertTriangle size={12} />;
+                      const deletionEntries = parseDeletionRequests(c.remarks);
+                      const latestDeletionEntry = deletionEntries[deletionEntries.length - 1];
+                      const deletionLabel = latestDeletionEntry?.kind === "ops_delete" ? "Operations Delete Request:" : "Station Return to Clearance:";
+                      const isDeleteExpanded = expandedDeleteIds.has(c.id);
                       return (
+                        <Fragment key={c.id}>
+                        {statusTab === "rejected" && latestDeletionEntry && (
+                          <TableRow className="bg-warning/5 border-l-2 border-l-warning" data-testid={`clearance-delete-row-${c.id}`}>
+                            <TableCell colSpan={14} className="px-4 py-2">
+                              <div className="flex items-start gap-2 text-xs">
+                                <Trash2 size={14} className="text-warning shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedDeleteIds(prev => {
+                                      const next = new Set(prev);
+                                      if (next.has(c.id)) next.delete(c.id); else next.add(c.id);
+                                      return next;
+                                    })}
+                                    className="inline-flex items-center gap-1 text-left hover:underline"
+                                    aria-expanded={isDeleteExpanded}
+                                    aria-controls={`clearance-delete-panel-${c.id}`}
+                                    title={isDeleteExpanded ? "Hide full reason and notes" : "Show full reason and notes"}
+                                  >
+                                    {isDeleteExpanded ? <ChevronUp size={12} className="text-warning" /> : <ChevronDown size={12} className="text-warning" />}
+                                    <span className="font-bold uppercase tracking-wider text-warning">{deletionLabel}</span>
+                                  </button>{" "}
+                                  {latestDeletionEntry.reason
+                                    ? <span className="text-foreground">{latestDeletionEntry.reason}</span>
+                                    : <span className="italic text-muted-foreground">Reason not provided</span>}
+                                  {latestDeletionEntry.header && <span className="ml-2 text-muted-foreground">— {latestDeletionEntry.header}</span>}
+                                  {isDeleteExpanded && (
+                                    <div id={`clearance-delete-panel-${c.id}`} className="mt-2 rounded border border-warning/30 bg-background p-3 space-y-2">
+                                      <div>
+                                        <div className="font-semibold text-warning mb-1">All deletion / clearance requests</div>
+                                        <ul className="space-y-1">
+                                          {deletionEntries.map((entry, idx) => (
+                                            <li key={idx} className="flex gap-2">
+                                              <span className="text-muted-foreground shrink-0">{entry.header || "—"}</span>
+                                              <span className="shrink-0 text-[10px] uppercase tracking-wider font-semibold text-warning/80">
+                                                {entry.kind === "ops_delete" ? "Ops delete" : "Station return"}
+                                              </span>
+                                              <span className="flex-1">
+                                                {entry.reason || <span className="italic text-muted-foreground">Reason not provided</span>}
+                                              </span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                      {c.remarks && (
+                                        <div>
+                                          <div className="font-semibold text-warning mb-1">Full notes</div>
+                                          <pre className="whitespace-pre-wrap break-words text-foreground font-sans">{c.remarks}</pre>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
                         <TableRow key={c.id}>
                           <TableCell className="text-xs">{formatDateDMY(c.arrival_date)}</TableCell>
                           <TableCell className="text-xs">{formatDateDMY(c.departure_date)}</TableCell>
@@ -489,14 +551,6 @@ export default function ClearancesPage() {
                           <TableCell className="text-xs">{c.skd_type || "—"}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>{statusIcon}{c.status}</span>
-                            {statusTab === "rejected" && (() => {
-                              const reason = extractOpsDeleteReason(c.remarks);
-                              return reason ? (
-                                <div className="mt-1 text-[10px] text-destructive/80 italic max-w-[220px] truncate" title={`Ops requested deletion: ${reason}`}>
-                                  🗑️ Ops reason: {reason}
-                                </div>
-                              ) : null;
-                            })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
@@ -506,6 +560,7 @@ export default function ClearancesPage() {
                             </div>
                           </TableCell>
                         </TableRow>
+                        </Fragment>
                       );
                     })}
                     {filtered.length === 0 && <TableRow><TableCell colSpan={14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
