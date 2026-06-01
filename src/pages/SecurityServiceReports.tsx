@@ -591,8 +591,8 @@ export default function SecurityServiceReportsPage() {
         if (!bd) return -1;
         return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
       }
-      const at = aFd?.sta || aMeta?.sta || "";
-      const bt = bFd?.sta || bMeta?.sta || "";
+      const at = aFd?.sta || aMeta?.sta || aFd?.std || aMeta?.std || "";
+      const bt = bFd?.sta || bMeta?.sta || bFd?.std || bMeta?.std || "";
       if (at !== bt) {
         if (!at) return 1;
         if (!bt) return -1;
