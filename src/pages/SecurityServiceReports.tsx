@@ -1554,7 +1554,7 @@ export default function SecurityServiceReportsPage() {
                                   title={isExpanded ? "Hide full reason and notes" : "Show full reason and notes"}
                                 >
                                   {isExpanded ? <ChevronUp size={12} className="text-warning" /> : <ChevronDown size={12} className="text-warning" />}
-                                  <span className="font-bold uppercase tracking-wider text-warning">Operations Delete Request:</span>
+                                  <span className="font-bold uppercase tracking-wider text-warning">{latestLabel}</span>
                                 </button>{" "}
                                 {reasonNode}
                                 {latest.header && <span className="ml-2 text-muted-foreground">— {latest.header}</span>}
