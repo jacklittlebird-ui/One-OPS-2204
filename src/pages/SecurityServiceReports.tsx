@@ -500,7 +500,14 @@ export default function SecurityServiceReportsPage() {
   type MergedSecurityRow = DispatchRow & { isPending?: boolean; flightMeta?: any };
 
   const mergedRows: MergedSecurityRow[] = useMemo(() => {
-    const deduped = dedupeDispatchRows(dispatches);
+    const flightById = new Map<string, any>();
+    (securityFlights as any[]).forEach(f => flightById.set(f.id, f));
+    // Attach flightMeta (with remarks) to dispatched rows too so the
+    // deletion/return-to-clearance reason panel can read flight_schedules.remarks.
+    const deduped = dedupeDispatchRows(dispatches).map(r => ({
+      ...r,
+      flightMeta: r.flight_schedule_id ? flightById.get(r.flight_schedule_id) : undefined,
+    })) as MergedSecurityRow[];
     // For station-scoped users AND Operations view, also surface flights that
     // don't yet have a dispatch_assignment as Pending security rows so ops can
     // see every station's flights (ASW, RMF, HBE, etc.).
