@@ -1770,17 +1770,34 @@ export default function SecurityServiceReportsPage() {
                                 )}
                               </>
                             )}
-                            {isStationView && r.flight_schedule_id && (
+                            {isStationView && (
                               <button
                                 onClick={async () => {
                                   const comment = prompt(`Return flight ${r.flight_no} to Clearance — reason:`);
                                   if (!comment) return;
                                   const stamp = `[Station Return ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${comment}`;
                                   try {
-                                    const { data: cur } = await supabase.from("flight_schedules").select("remarks").eq("id", r.flight_schedule_id!).maybeSingle();
+                                    // Resolve flight_schedule_id: prefer the direct link, otherwise look up
+                                    // by flight_no + flight_date (some Security-Service-created dispatches
+                                    // are not linked to a flight_schedules row).
+                                    let fsId = r.flight_schedule_id as string | null | undefined;
+                                    if (!fsId && r.flight_no) {
+                                      const { data: match } = await supabase
+                                        .from("flight_schedules")
+                                        .select("id")
+                                        .eq("flight_no", r.flight_no)
+                                        .limit(1)
+                                        .maybeSingle();
+                                      fsId = (match as any)?.id || null;
+                                    }
+                                    if (!fsId) {
+                                      toast({ title: "Cannot return", description: "No linked flight schedule was found for this report. Ask Clearance to create one first.", variant: "destructive" });
+                                      return;
+                                    }
+                                    const { data: cur } = await supabase.from("flight_schedules").select("remarks").eq("id", fsId).maybeSingle();
                                     const existing = (cur as any)?.remarks || "";
                                     const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
-                                    const { error } = await supabase.from("flight_schedules").update({ status: "Rejected", remarks: newRemarks } as any).eq("id", r.flight_schedule_id!);
+                                    const { error } = await supabase.from("flight_schedules").update({ status: "Rejected", remarks: newRemarks } as any).eq("id", fsId);
                                     if (error) throw error;
                                     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
                                     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
