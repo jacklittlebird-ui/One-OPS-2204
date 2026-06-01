@@ -1782,10 +1782,12 @@ export default function SecurityServiceReportsPage() {
                                     // are not linked to a flight_schedules row).
                                     let fsId = r.flight_schedule_id as string | null | undefined;
                                     if (!fsId && r.flight_no) {
-                                      const q = supabase.from("flight_schedules").select("id").eq("flight_no", r.flight_no).limit(1);
-                                      const { data: match } = (r as any).flight_date
-                                        ? await q.eq("flight_date", (r as any).flight_date).maybeSingle()
-                                        : await q.maybeSingle();
+                                      const { data: match } = await supabase
+                                        .from("flight_schedules")
+                                        .select("id")
+                                        .eq("flight_no", r.flight_no)
+                                        .limit(1)
+                                        .maybeSingle();
                                       fsId = (match as any)?.id || null;
                                     }
                                     if (!fsId) {
