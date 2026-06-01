@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { Fragment, useState, useCallback, useMemo } from "react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -479,7 +479,7 @@ export default function ClearancesPage() {
                       const deletionLabel = latestDeletionEntry?.kind === "ops_delete" ? "Operations Delete Request:" : "Station Return to Clearance:";
                       const isDeleteExpanded = expandedDeleteIds.has(c.id);
                       return (
-                        <>
+                        <Fragment key={c.id}>
                         {statusTab === "rejected" && latestDeletionEntry && (
                           <TableRow className="bg-warning/5 border-l-2 border-l-warning" data-testid={`clearance-delete-row-${c.id}`}>
                             <TableCell colSpan={14} className="px-4 py-2">
@@ -560,7 +560,7 @@ export default function ClearancesPage() {
                             </div>
                           </TableCell>
                         </TableRow>
-                        </>
+                        </Fragment>
                       );
                     })}
                     {filtered.length === 0 && <TableRow><TableCell colSpan={14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
