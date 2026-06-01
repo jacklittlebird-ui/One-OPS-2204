@@ -69,6 +69,25 @@ describe("resolveSecurityRowDisplay (SM 0486 unlinked)", () => {
     expect(d.skdType).toBe("Charter");
     expect(d.arrivalDate).toBe("2026-05-10");
   });
+  it("never fabricates STD from dispatch shift end or actual end (SM 0452 HBE)", () => {
+    // Arrival-only flight: schedule has no STD, task sheet std is blank, but
+    // dispatch guard shift ends at 07:15 and actual movement ends 07:11. The
+    // STD column MUST stay empty — those are not flight scheduled times.
+    const row = {
+      flight_no: "SM 0452",
+      station: "HBE",
+      scheduled_start: "06:15",
+      scheduled_end: "07:15",
+      actual_start: "06:11",
+      actual_end: "07:11",
+      task_sheet_data: { sta: "06:15", std: "", ata: "06:11", atd: "" },
+    };
+    const fd = { sta: "06:15", std: "" } as any;
+    const d = resolveSecurityRowDisplay(row, fd, null);
+    expect(d.sta).toBe("06:15");
+    expect(d.std).toBe("");
+  });
+
 
   it("falls back from flight_schedules → flightMeta → task_sheet_data", () => {
     const d = resolveSecurityRowDisplay(
