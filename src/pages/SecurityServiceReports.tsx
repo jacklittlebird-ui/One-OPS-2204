@@ -591,8 +591,8 @@ export default function SecurityServiceReportsPage() {
         if (!bd) return -1;
         return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
       }
-      const at = aFd?.sta || aMeta?.sta || "";
-      const bt = bFd?.sta || bMeta?.sta || "";
+      const at = aFd?.sta || aMeta?.sta || aFd?.std || aMeta?.std || "";
+      const bt = bFd?.sta || bMeta?.sta || bFd?.std || bMeta?.std || "";
       if (at !== bt) {
         if (!at) return 1;
         if (!bt) return -1;
@@ -1423,7 +1423,12 @@ export default function SecurityServiceReportsPage() {
                 const sorted = [...items].sort((a, b) => {
                   const ad = resolveSecurityRowDisplay(a as any, a.flight_schedule_id ? flightDetailsById.get(a.flight_schedule_id) : undefined, (a as any).flightMeta);
                   const bd = resolveSecurityRowDisplay(b as any, b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined, (b as any).flightMeta);
-                  return (ad.sta || "").localeCompare(bd.sta || "");
+                  // Sort by STA; fall back to STD when a flight has no STA (departure-only).
+                  const aKey = ad.sta || ad.std || "";
+                  const bKey = bd.sta || bd.std || "";
+                  if (!aKey && bKey) return 1;
+                  if (aKey && !bKey) return -1;
+                  return aKey.localeCompare(bKey);
                 });
                 return (
                   <div key={dateKey} className="border rounded-lg overflow-hidden">
