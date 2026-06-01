@@ -312,7 +312,7 @@ export default function ClearancesPage() {
         }
 
         const newRecords = flightDates && flightDates.length > 0
-          ? flightDates.map(fDate => buildPayload({ arrival_date: fDate, departure_date: fDate, no_of_flights: 1 }))
+          ? flightDates.map(fDate => buildPayload({ arrival_date: fDate, departure_date: depDateFor(fDate), no_of_flights: 1 }))
           : [buildPayload()];
 
         const { error: insertError } = await supabase
@@ -332,7 +332,7 @@ export default function ClearancesPage() {
     } else {
       const flightDates = expandFlightDates();
       if (flightDates && flightDates.length > 0) {
-        const records = flightDates.map(fDate => buildPayload({ arrival_date: fDate, departure_date: fDate, no_of_flights: 1 }));
+        const records = flightDates.map(fDate => buildPayload({ arrival_date: fDate, departure_date: depDateFor(fDate), no_of_flights: 1 }));
         const { error: insertError } = await supabase.from("flight_schedules").insert(records);
         if (insertError) {
           const isDuplicate = insertError.message?.includes("idx_flight_schedules_no_duplicates") || insertError.code === "23505";
