@@ -26,7 +26,7 @@ import SecurityTaskSheetDialog from "@/components/security/SecurityTaskSheetDial
 import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
-import { parseOpsDeleteRequests } from "@/lib/statusRouting";
+import { parseDeletionRequests } from "@/lib/statusRouting";
 
 
 const PAGE_SIZE = 15;
@@ -1519,10 +1519,14 @@ export default function SecurityServiceReportsPage() {
                     const meta = (r as any).flightMeta;
                     const d = resolveSecurityRowDisplay(r as any, fd, meta);
                     const { flightNo, registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate, sta, std } = d;
-                    const opsDeleteEntries = parseOpsDeleteRequests(meta?.remarks);
+                    const opsDeleteEntries = parseDeletionRequests(meta?.remarks);
                     const opsDeleteRow = (() => {
                       if (opsDeleteEntries.length === 0) return null;
                       const latest = opsDeleteEntries[opsDeleteEntries.length - 1];
+                      const latestLabel = latest.kind === "ops_delete"
+                        ? "Operations Delete Request:"
+                        : "Station Return to Clearance:";
+
                       const isExpanded = expandedDeleteIds.has(r.id);
                       const reasonNode = latest.reason
                         ? <span className="text-foreground">{latest.reason}</span>
@@ -1550,7 +1554,7 @@ export default function SecurityServiceReportsPage() {
                                   title={isExpanded ? "Hide full reason and notes" : "Show full reason and notes"}
                                 >
                                   {isExpanded ? <ChevronUp size={12} className="text-warning" /> : <ChevronDown size={12} className="text-warning" />}
-                                  <span className="font-bold uppercase tracking-wider text-warning">Operations Delete Request:</span>
+                                  <span className="font-bold uppercase tracking-wider text-warning">{latestLabel}</span>
                                 </button>{" "}
                                 {reasonNode}
                                 {latest.header && <span className="ml-2 text-muted-foreground">— {latest.header}</span>}
@@ -1565,11 +1569,15 @@ export default function SecurityServiceReportsPage() {
                                         {opsDeleteEntries.map((e, i) => (
                                           <li key={i} className="flex gap-2">
                                             <span className="text-muted-foreground shrink-0">{e.header || "—"}</span>
+                                            <span className="shrink-0 text-[10px] uppercase tracking-wider font-semibold text-warning/80">
+                                              {e.kind === "ops_delete" ? "Ops delete" : "Station return"}
+                                            </span>
                                             <span className="flex-1">
                                               {e.reason || <span className="italic text-muted-foreground">Reason not provided</span>}
                                             </span>
                                           </li>
                                         ))}
+
                                       </ul>
                                     </div>
                                     {meta?.remarks && (
