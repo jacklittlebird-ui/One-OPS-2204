@@ -151,7 +151,8 @@ export default function ClearancesPage() {
 
   const filtered = clearanceOwnedData.filter(c => {
     const categoryMatch = getServiceCategory(c.clearance_type) === serviceCategory;
-    const ms = c.flight_no.toLowerCase().includes(search.toLowerCase()) || c.permit_no.toLowerCase().includes(search.toLowerCase()) || c.route.toLowerCase().includes(search.toLowerCase());
+    const sq = search.trim().toLowerCase();
+    const ms = !sq || [c.flight_no, c.permit_no, c.route, c.registration, c.aircraft_type, c.authority, c.arrival_flight, c.departure_flight].some(v => (v || "").toLowerCase().includes(sq));
     const mst = statusTab === "rejected" ? c.status === "Rejected" : (statusFilter === "all" || c.status === statusFilter);
     const mt = typeFilter === "all" || c.clearance_type === typeFilter;
     const mstation = stationFilter === "all" || c.authority === stationFilter;
