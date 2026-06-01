@@ -99,3 +99,66 @@ describe("Operations Request Deletion scope", () => {
     expect(extractOpsDeleteReason("[Station Return 2026-05-20 10:00] re-check time")).toBe("");
   });
 });
+
+describe("Station view: deletion-request row placement", () => {
+  it("places the ops-delete marker row immediately above its flight", () => {
+    const rows = [
+      { id: "f1", remarks: "" },
+      { id: "f2", remarks: "[OPS DELETE REQUEST 2026-05-21 13:00] duplicate entry" },
+      { id: "f3", remarks: "" },
+    ];
+    const fragments = assembleStationRowOrder(rows);
+
+    expect(fragments).toEqual([
+      { kind: "flight", flightId: "f1" },
+      { kind: "ops_delete", flightId: "f2" },
+      { kind: "flight", flightId: "f2" },
+      { kind: "flight", flightId: "f3" },
+    ]);
+
+    // Regression guard: ops-delete index must be exactly one before its flight.
+    const deleteIdx = fragments.findIndex(f => f.kind === "ops_delete" && f.flightId === "f2");
+    const flightIdx = fragments.findIndex(f => f.kind === "flight" && f.flightId === "f2");
+    expect(deleteIdx).toBeGreaterThanOrEqual(0);
+    expect(flightIdx - deleteIdx).toBe(1);
+  });
+
+  it("never inserts an ops-delete row in front of an unrelated flight", () => {
+    const rows = [
+      { id: "a", remarks: "[OPS DELETE REQUEST t1] reason A" },
+      { id: "b", remarks: "[OPS DELETE REQUEST t2] reason B" },
+    ];
+    const fragments = assembleStationRowOrder(rows);
+
+    // Each ops_delete fragment must reference the SAME flightId as the
+    // flight row that immediately follows it.
+    for (let i = 0; i < fragments.length - 1; i++) {
+      if (fragments[i].kind === "ops_delete") {
+        expect(fragments[i + 1].kind).toBe("flight");
+        expect(fragments[i + 1].flightId).toBe(fragments[i].flightId);
+      }
+    }
+  });
+
+  it("does not emit an ops-delete row when remarks lack the marker", () => {
+    const fragments = assembleStationRowOrder([
+      { id: "x", remarks: "just a regular note" },
+      { id: "y", remarks: null },
+    ]);
+    expect(fragments.every(f => f.kind === "flight")).toBe(true);
+  });
+
+  it("parses all entries in chronological order and preserves empty reasons", () => {
+    const remarks = [
+      "[OPS DELETE REQUEST 2026-05-21 13:00] first reason",
+      "[OPS DELETE REQUEST 2026-05-22 09:30] ",
+      "[OPS DELETE REQUEST 2026-05-23 11:15] third reason",
+    ].join("\n");
+    const entries = parseOpsDeleteRequests(remarks);
+    expect(entries).toHaveLength(3);
+    expect(entries[0].reason).toBe("first reason");
+    expect(entries[1].reason).toBe(""); // empty → UI renders "Reason not provided"
+    expect(entries[2].reason).toBe("third reason");
+  });
+});
+
