@@ -1569,11 +1569,15 @@ export default function SecurityServiceReportsPage() {
                                         {opsDeleteEntries.map((e, i) => (
                                           <li key={i} className="flex gap-2">
                                             <span className="text-muted-foreground shrink-0">{e.header || "—"}</span>
+                                            <span className="shrink-0 text-[10px] uppercase tracking-wider font-semibold text-warning/80">
+                                              {e.kind === "ops_delete" ? "Ops delete" : "Station return"}
+                                            </span>
                                             <span className="flex-1">
                                               {e.reason || <span className="italic text-muted-foreground">Reason not provided</span>}
                                             </span>
                                           </li>
                                         ))}
+
                                       </ul>
                                     </div>
                                     {meta?.remarks && (
