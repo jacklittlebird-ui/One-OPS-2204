@@ -1519,22 +1519,67 @@ export default function SecurityServiceReportsPage() {
                     const meta = (r as any).flightMeta;
                     const d = resolveSecurityRowDisplay(r as any, fd, meta);
                     const { flightNo, registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate, sta, std } = d;
+                    const opsDeleteEntries = parseOpsDeleteRequests(meta?.remarks);
                     const opsDeleteRow = (() => {
-                      const rem = (meta?.remarks || "") as string;
-                      const matches = [...rem.matchAll(/\[OPS DELETE REQUEST[^\]]*\]\s*([^\n]*)/g)];
-                      if (matches.length === 0) return null;
-                      const latest = matches[matches.length - 1];
-                      const header = latest[0].match(/\[OPS DELETE REQUEST([^\]]*)\]/)?.[1]?.trim() || "";
-                      const comment = (latest[1] || "").trim();
+                      if (opsDeleteEntries.length === 0) return null;
+                      const latest = opsDeleteEntries[opsDeleteEntries.length - 1];
+                      const isExpanded = expandedDeleteIds.has(r.id);
+                      const reasonNode = latest.reason
+                        ? <span className="text-foreground">{latest.reason}</span>
+                        : <span className="italic text-muted-foreground">Reason not provided</span>;
                       return (
-                        <tr className="bg-warning/5 border-l-2 border-l-warning">
+                        <tr
+                          className="bg-warning/5 border-l-2 border-l-warning"
+                          data-testid={`ops-delete-row-${r.flight_schedule_id || r.id}`}
+                          data-flight-id={r.flight_schedule_id || r.id}
+                        >
                           <td colSpan={isReceivablesView ? 18 : 16} className="px-4 py-2">
                             <div className="flex items-start gap-2 text-xs">
                               <Trash2 size={14} className="text-warning shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0">
-                                <span className="font-bold uppercase tracking-wider text-warning">Operations Delete Request: </span>
-                                <span className="text-foreground">{comment || <span className="italic text-muted-foreground">No reason provided</span>}</span>
-                                {header && <span className="ml-2 text-muted-foreground">— {header}</span>}
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedDeleteIds(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(r.id)) next.delete(r.id); else next.add(r.id);
+                                    return next;
+                                  })}
+                                  className="inline-flex items-center gap-1 text-left hover:underline"
+                                  aria-expanded={isExpanded}
+                                  aria-controls={`ops-delete-panel-${r.id}`}
+                                  title={isExpanded ? "Hide full reason and notes" : "Show full reason and notes"}
+                                >
+                                  {isExpanded ? <ChevronUp size={12} className="text-warning" /> : <ChevronDown size={12} className="text-warning" />}
+                                  <span className="font-bold uppercase tracking-wider text-warning">Operations Delete Request:</span>
+                                </button>{" "}
+                                {reasonNode}
+                                {latest.header && <span className="ml-2 text-muted-foreground">— {latest.header}</span>}
+                                {isExpanded && (
+                                  <div
+                                    id={`ops-delete-panel-${r.id}`}
+                                    className="mt-2 rounded border border-warning/30 bg-background p-3 space-y-2"
+                                  >
+                                    <div>
+                                      <div className="font-semibold text-warning mb-1">All deletion / clearance requests</div>
+                                      <ul className="space-y-1">
+                                        {opsDeleteEntries.map((e, i) => (
+                                          <li key={i} className="flex gap-2">
+                                            <span className="text-muted-foreground shrink-0">{e.header || "—"}</span>
+                                            <span className="flex-1">
+                                              {e.reason || <span className="italic text-muted-foreground">Reason not provided</span>}
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    {meta?.remarks && (
+                                      <div>
+                                        <div className="font-semibold text-warning mb-1">Full notes</div>
+                                        <pre className="whitespace-pre-wrap break-words text-foreground font-sans">{meta.remarks}</pre>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               {isStationView && r.flight_schedule_id && (
                                 <button
@@ -1562,7 +1607,12 @@ export default function SecurityServiceReportsPage() {
                     return (
                       <React.Fragment key={r.id}>
                       {opsDeleteRow}
-                      <tr className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""} ${opsDeleteRow ? "border-l-2 border-l-warning" : ""}`}>
+                      <tr
+                        data-testid={`flight-row-${r.flight_schedule_id || r.id}`}
+                        data-flight-id={r.flight_schedule_id || r.id}
+                        className={`data-table-row ${isPending ? "bg-muted/30" : ""} ${r.review_status === "Rejected" ? "border-l-2 border-l-destructive" : ""} ${opsDeleteRow ? "border-l-2 border-l-warning" : ""}`}
+                      >
+
 
                         {isReceivablesView && (
                           <td className="px-2 py-2.5">
