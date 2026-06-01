@@ -163,6 +163,8 @@ export default function SecurityServiceReportsPage() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [recordsView, setRecordsView] = useState<"table" | "calendar">("table");
+  const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
+
   const [editRow, setEditRow] = useState<DispatchRow | null>(null);
   const [isNewReport, setIsNewReport] = useState(false);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
