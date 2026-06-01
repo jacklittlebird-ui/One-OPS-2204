@@ -242,16 +242,17 @@ export default function ClearancesPage() {
       .map(r => r.id);
   };
 
-  const handleSave = async () => {
-    if (!form.flight_no) { toast({ title: "Error", description: "Flight number is required", variant: "destructive" }); return; }
+  const handleSave = async (submittedForm: any = form) => {
+    const activeForm = submittedForm || form;
+    if (!activeForm.flight_no) { toast({ title: "Error", description: "Flight number is required", variant: "destructive" }); return; }
     const buildPayload = (overrides: any = {}) => {
       const p: any = {
-        ...form,
+        ...activeForm,
         ...overrides,
-        passengers: Number(form.passengers) || 0,
-        cargo_kg: Number(form.cargo_kg) || 0,
-        config: Number(form.config) || 0,
-        no_of_flights: Number(form.no_of_flights) || 0,
+        passengers: Number(activeForm.passengers) || 0,
+        cargo_kg: Number(activeForm.cargo_kg) || 0,
+        config: Number(activeForm.config) || 0,
+        no_of_flights: Number(activeForm.no_of_flights) || 0,
       };
       if (!p.airline_id) delete p.airline_id;
       if (!p.valid_from) p.valid_from = null;
@@ -271,17 +272,17 @@ export default function ClearancesPage() {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     };
     const depDateFor = (arrISO: string): string => {
-      const sta = form.sta || ""; const std = form.std || "";
+      const sta = activeForm.sta || ""; const std = activeForm.std || "";
       if (/^\d{2}:\d{2}$/.test(sta) && /^\d{2}:\d{2}$/.test(std) && std < sta) return addDaysISO(arrISO, 1);
       return arrISO;
     };
 
     const expandFlightDates = (): string[] | null => {
-      if (!form.period_from || !form.period_to || !form.week_days) return null;
+      if (!activeForm.period_from || !activeForm.period_to || !activeForm.week_days) return null;
       const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-      const selectedDays = form.week_days.split(",").filter(Boolean).map((d: string) => dayMap[d]).filter((n: number) => n !== undefined);
-      const startMatch = String(form.period_from).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      const endMatch = String(form.period_to).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const selectedDays = activeForm.week_days.split(",").filter(Boolean).map((d: string) => dayMap[d]).filter((n: number) => n !== undefined);
+      const startMatch = String(activeForm.period_from).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const endMatch = String(activeForm.period_to).match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (!startMatch || !endMatch || selectedDays.length === 0) return null;
       const start = new Date(Number(startMatch[1]), Number(startMatch[2]) - 1, Number(startMatch[3]));
       const end = new Date(Number(endMatch[1]), Number(endMatch[2]) - 1, Number(endMatch[3]));
