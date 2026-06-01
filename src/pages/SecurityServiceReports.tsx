@@ -1519,10 +1519,14 @@ export default function SecurityServiceReportsPage() {
                     const meta = (r as any).flightMeta;
                     const d = resolveSecurityRowDisplay(r as any, fd, meta);
                     const { flightNo, registration: reg, route, aircraftType: acType, skdType, arrivalDate: arrDate, departureDate: depDate, sta, std } = d;
-                    const opsDeleteEntries = parseOpsDeleteRequests(meta?.remarks);
+                    const opsDeleteEntries = parseDeletionRequests(meta?.remarks);
                     const opsDeleteRow = (() => {
                       if (opsDeleteEntries.length === 0) return null;
                       const latest = opsDeleteEntries[opsDeleteEntries.length - 1];
+                      const latestLabel = latest.kind === "ops_delete"
+                        ? "Operations Delete Request:"
+                        : "Station Return to Clearance:";
+
                       const isExpanded = expandedDeleteIds.has(r.id);
                       const reasonNode = latest.reason
                         ? <span className="text-foreground">{latest.reason}</span>
