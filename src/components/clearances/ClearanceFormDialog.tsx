@@ -25,7 +25,7 @@ interface Props {
   setForm: (f: any) => void;
   airlines: any[];
   isEdit: boolean;
-  onSave: () => void;
+  onSave: (submittedForm?: any) => void;
 }
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -36,6 +36,11 @@ function addDays(iso: string, n: number): string {
   const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   d.setDate(d.getDate() + n);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function calculateDepartureDate(arrivalDate: string, sta: string, std: string): string | null {
+  if (!arrivalDate || !/^\d{2}:\d{2}$/.test(sta || "") || !/^\d{2}:\d{2}$/.test(std || "")) return null;
+  return std < sta ? addDays(arrivalDate, 1) : arrivalDate;
 }
 
 function calcNoOfFlights(periodFrom: string, periodTo: string, weekDays: string): number {
