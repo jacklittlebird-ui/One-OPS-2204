@@ -1782,13 +1782,31 @@ export default function SecurityServiceReportsPage() {
                                     // are not linked to a flight_schedules row).
                                     let fsId = r.flight_schedule_id as string | null | undefined;
                                     if (!fsId && r.flight_no) {
-                                      const { data: match } = await supabase
+                                      const normalizeReg = (v: string) => v.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^SU/, "");
+                                      const normalizeRoute = (v: string) => v.toUpperCase().replace(/[-\s]+/g, "/").replace(/\/+/g, "/");
+                                      const flightKeys = new Set(expandFlightRef(r.flight_no));
+                                      const rowDate = arrDate || depDate || r.flight_date || "";
+                                      let q = supabase
                                         .from("flight_schedules")
-                                        .select("id")
-                                        .eq("flight_no", r.flight_no)
-                                        .limit(1)
-                                        .maybeSingle();
-                                      fsId = (match as any)?.id || null;
+                                        .select("id, flight_no, registration, route, arrival_date, departure_date, sta, std, clearance_type")
+                                        .eq("authority", r.station)
+                                        .eq("clearance_type", r.service_type)
+                                        .limit(25);
+                                      if (rowDate) q = q.or(`arrival_date.eq.${rowDate},departure_date.eq.${rowDate}`);
+                                      const { data: matches } = await q;
+                                      const rowReg = normalizeReg(reg || "");
+                                      const rowRoute = normalizeRoute(route || "");
+                                      const ranked = ((matches || []) as any[])
+                                        .map(f => {
+                                          const candidateKeys = new Set(expandFlightRef(f.flight_no || ""));
+                                          const flightMatch = [...flightKeys].some(k => candidateKeys.has(k));
+                                          const regMatch = rowReg && normalizeReg(f.registration || "") === rowReg;
+                                          const routeMatch = rowRoute && normalizeRoute(f.route || "") === rowRoute;
+                                          const timeMatch = (sta && f.sta === sta) || (std && f.std === std);
+                                          return { f, score: (flightMatch ? 4 : 0) + (regMatch ? 3 : 0) + (routeMatch ? 2 : 0) + (timeMatch ? 1 : 0) };
+                                        })
+                                        .sort((a, b) => b.score - a.score);
+                                      fsId = ranked[0]?.score >= 5 ? ranked[0].f.id : null;
                                     }
                                     if (!fsId) {
                                       toast({ title: "Cannot return", description: "No linked flight schedule was found for this report. Ask Clearance to create one first.", variant: "destructive" });
