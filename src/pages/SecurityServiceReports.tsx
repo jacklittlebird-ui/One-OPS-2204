@@ -1785,46 +1785,6 @@ export default function SecurityServiceReportsPage() {
                           </td>
                         </tr>
                       )}
-                      {isPending && (() => {
-                        const rem = (meta?.remarks || "") as string;
-                        const matches = [...rem.matchAll(/\[OPS DELETE REQUEST[^\]]*\]\s*([^\n]*)/g)];
-                        if (matches.length === 0) return null;
-                        const latest = matches[matches.length - 1];
-                        const header = latest[0].match(/\[OPS DELETE REQUEST([^\]]*)\]/)?.[1]?.trim() || "";
-                        const comment = (latest[1] || "").trim();
-                        return (
-                          <tr className="bg-warning/5 border-l-2 border-l-warning">
-                            <td colSpan={isReceivablesView ? 18 : 16} className="px-4 py-2">
-                              <div className="flex items-start gap-2 text-xs">
-                                <Trash2 size={14} className="text-warning shrink-0 mt-0.5" />
-                                <div className="flex-1 min-w-0">
-                                  <span className="font-bold uppercase tracking-wider text-warning">Operations Delete Request: </span>
-                                  <span className="text-foreground">{comment || <span className="italic text-muted-foreground">No reason provided</span>}</span>
-                                  {header && <span className="ml-2 text-muted-foreground">— {header}</span>}
-                                </div>
-                                {isStationView && r.flight_schedule_id && (
-                                  <button
-                                    onClick={async () => {
-                                      if (!confirm(`Delete flight ${r.flight_no} as requested by Operations?`)) return;
-                                      try {
-                                        await supabase.from("flight_schedules").delete().eq("id", r.flight_schedule_id!);
-                                        queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-                                        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-                                        toast({ title: "Deleted", description: "Flight removed per Operations request." });
-                                      } catch (e: any) {
-                                        toast({ title: "Error", description: e.message, variant: "destructive" });
-                                      }
-                                    }}
-                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-                                  >
-                                    <Trash2 size={12} /> Delete Flight
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })()}
                       </React.Fragment>
                     );
                   })}
