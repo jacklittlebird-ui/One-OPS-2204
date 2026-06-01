@@ -353,7 +353,14 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                   <SelectContent><SelectItem value="none">—</SelectItem>{SKD_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <DatePickerField label="Arrival Date *" value={form.arrival_date} onChange={v => setForm({ ...form, arrival_date: v })} />
+              <DatePickerField label="Arrival Date *" value={form.arrival_date} onChange={v => {
+                const next: any = { ...form, arrival_date: v };
+                const sta = form.sta || ""; const std = form.std || "";
+                if (v && /^\d{2}:\d{2}$/.test(sta) && /^\d{2}:\d{2}$/.test(std)) {
+                  next.departure_date = std < sta ? addDays(v, 1) : v;
+                }
+                setForm(next);
+              }} />
               <DatePickerField label="Departure Date *" value={form.departure_date} onChange={v => setForm({ ...form, departure_date: v })} />
               <div className="flex items-center gap-2 pt-5 px-2 rounded-md bg-muted/40 border border-dashed">
                 <Checkbox checked={form.royalty} onCheckedChange={v => setForm({ ...form, royalty: !!v })} />
@@ -363,7 +370,14 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <label className="text-xs text-muted-foreground">STA (24h) <span className="text-destructive">*</span></label>
                 <MaskedTimeInput
                   value={form.sta || ""}
-                  onChange={v => setForm({ ...form, sta: v })}
+                  onChange={v => {
+                    const next: any = { ...form, sta: v };
+                    const std = form.std || ""; const ad = form.arrival_date || "";
+                    if (ad && /^\d{2}:\d{2}$/.test(v) && /^\d{2}:\d{2}$/.test(std)) {
+                      next.departure_date = std < v ? addDays(ad, 1) : ad;
+                    }
+                    setForm(next);
+                  }}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                 />
               </div>
@@ -371,7 +385,14 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
                 <label className="text-xs text-muted-foreground">STD (24h) <span className="text-destructive">*</span></label>
                 <MaskedTimeInput
                   value={form.std || ""}
-                  onChange={v => setForm({ ...form, std: v })}
+                  onChange={v => {
+                    const next: any = { ...form, std: v };
+                    const sta = form.sta || ""; const ad = form.arrival_date || "";
+                    if (ad && /^\d{2}:\d{2}$/.test(sta) && /^\d{2}:\d{2}$/.test(v)) {
+                      next.departure_date = v < sta ? addDays(ad, 1) : ad;
+                    }
+                    setForm(next);
+                  }}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                 />
               </div>
