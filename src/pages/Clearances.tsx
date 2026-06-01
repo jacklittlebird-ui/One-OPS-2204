@@ -1,4 +1,4 @@
-import { Fragment, useState, useCallback, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
