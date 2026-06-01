@@ -47,7 +47,7 @@ export interface DispatchLike {
 }
 
 const OPS_DELETE_TAG = /\[OPS DELETE REQUEST[^\]]*\][^\n]*/g;
-const OPS_DELETE_ENTRY = /\[OPS DELETE REQUEST([^\]]*)\]\s*([^\n]*)/g;
+const OPS_DELETE_ENTRY = /\[OPS DELETE REQUEST([^\]]*)\][ \t]*([^\n]*)/g;
 
 export interface OpsDeleteEntry {
   /** Header text inside the brackets (typically a timestamp). */
