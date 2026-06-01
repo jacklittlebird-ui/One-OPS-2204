@@ -263,6 +263,19 @@ export default function ClearancesPage() {
       return p;
     };
 
+    const addDaysISO = (iso: string, n: number): string => {
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return iso;
+      const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      d.setDate(d.getDate() + n);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    const depDateFor = (arrISO: string): string => {
+      const sta = form.sta || ""; const std = form.std || "";
+      if (/^\d{2}:\d{2}$/.test(sta) && /^\d{2}:\d{2}$/.test(std) && std < sta) return addDaysISO(arrISO, 1);
+      return arrISO;
+    };
+
     const expandFlightDates = (): string[] | null => {
       if (!form.period_from || !form.period_to || !form.week_days) return null;
       const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
