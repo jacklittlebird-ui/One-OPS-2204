@@ -880,7 +880,15 @@ export default function SecurityServiceReportsPage() {
             .from("dispatch_assignments")
             .insert(dispatchInsert as any);
           if (dispatchErr) throw dispatchErr;
+          await supabase
+            .from("flight_schedules")
+            .update({
+              arrival_date: normalizedDates.arrivalDate || null,
+              departure_date: normalizedDates.departureDate || null,
+            } as any)
+            .eq("id", (row as any).flight_schedule_id);
           queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
           toast({ title: "Task Sheet Saved", description: "Step 2 (Station) complete — sent for Operations review." });
         } catch (e: any) {
           toast({ title: "Error", description: e.message, variant: "destructive" });
