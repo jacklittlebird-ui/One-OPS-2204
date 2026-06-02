@@ -575,35 +575,51 @@ export default function OperationsReportsPage() {
       const addBreakdown = (title: string, rows: StatRow[], extraCols: { key: string; label: string }[] = []) => {
         const sorted = [...rows].sort((a, b) => b.count - a.count);
         const total = sorted.reduce((s, r) => s + r.count, 0);
-        const head = [["Item", "Count", "Share %", ...extraCols.map(c => c.label)]];
+        const head = [["", "Item", "Count", "Share %", ...extraCols.map(c => c.label)]];
         const body = sorted.map(r => [
+          "", // color swatch column (filled by didParseCell)
           r.key,
           r.count,
           total ? `${((r.count / total) * 100).toFixed(1)}%` : "—",
           ...extraCols.map(c => r.extra?.[c.key] ?? "—"),
         ]);
-        if (body.length === 0) body.push(["No data", "", "", ...extraCols.map(() => "")]);
+        if (body.length === 0) body.push(["", "No data", "", "", ...extraCols.map(() => "")]);
         autoTable(doc, {
           head, body,
           startY: cursorY,
-          margin: { left: 40, right: 40, top: 50 },
-          styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" },
+          margin: { left: 40, right: 40, top: 50, bottom: 36 },
+          styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak", valign: "middle" },
           headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: "bold" },
           alternateRowStyles: { fillColor: [245, 247, 250] },
+          columnStyles: { 0: { cellWidth: 14, minCellHeight: 12 } },
           showHead: "everyPage",
           rowPageBreak: "avoid",
+          // Color the swatch cell per row using the shared colorForKey palette
+          didParseCell: (data: any) => {
+            if (data.section === "body" && data.column.index === 0) {
+              const row = sorted[data.row.index];
+              if (row) {
+                data.cell.styles.fillColor = hexToRgb(colorForKey(row.key));
+                data.cell.text = [""];
+              }
+            }
+          },
           didDrawPage: () => {
             doc.setFontSize(10);
             doc.setTextColor(80);
             doc.text(title, 40, 30);
             doc.setTextColor(0);
             const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
+            const pageCount = (doc as any).internal.getNumberOfPages();
             doc.setFontSize(8);
-            doc.text(`Page ${page}`, pageW - 60, pageH - 20);
+            doc.setTextColor(120);
+            doc.text(`Page ${page} of ${pageCount}`, pageW - 90, pageH - 20);
+            doc.text("Operations Report — Link Aero", 40, pageH - 20);
+            doc.setTextColor(0);
           },
         });
         cursorY = (doc as any).lastAutoTable.finalY + 24;
-        if (cursorY > pageH - 80) {
+        if (cursorY > pageH - 100) {
           doc.addPage();
           cursorY = 60;
         }
