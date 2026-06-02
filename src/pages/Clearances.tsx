@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
 import { formatDateDMY } from "@/lib/utils";
 import { ClearanceRow, CLEARANCE_TYPES, STATUS_CONFIG, emptyForm, SECURITY_CLEARANCE_TYPES, getServiceCategory, getClearanceTypesByCategory, type ServiceCategory } from "@/components/clearances/ClearanceTypes";
+import { getTypeBadgeClass } from "@/lib/typeColors";
 import ClearanceFormDialog from "@/components/clearances/ClearanceFormDialog";
 import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog";
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
