@@ -9,6 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
+import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useUserStation } from "@/contexts/UserStationContext";
 
 interface AllClearanceFlightsPageProps {
@@ -207,7 +208,7 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
                     <td className="px-3 py-2 text-foreground text-xs whitespace-nowrap">{f.aircraft_type || "—"}</td>
                     <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground whitespace-nowrap">{f.registration || "—"}</td>
                     <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground whitespace-nowrap">{f.route || "—"}</td>
-                    <td className="px-3 py-2 text-foreground text-xs whitespace-nowrap">{f.clearance_type || "—"}</td>
+                    <td className="px-3 py-2 text-foreground text-xs whitespace-nowrap"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${getTypeBadgeClass(f.clearance_type)}`}>{f.clearance_type || "—"}</span></td>
                     <td className="px-3 py-2 text-foreground text-xs whitespace-nowrap">{f.arrival_date || "—"}</td>
                     <td className="px-3 py-2 font-mono text-[11px] text-foreground whitespace-nowrap">{f.sta || "—"}</td>
                     <td className="px-3 py-2 text-foreground text-xs whitespace-nowrap">{f.departure_date || "—"}</td>

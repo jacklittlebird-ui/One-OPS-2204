@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { getTypeBadgeClass } from "@/lib/typeColors";
 import {
   Plane, Building2, CheckCircle2, XCircle, Timer, Clock,
   ArrowRight, AlertTriangle, Users, Globe, FileBarChart2,
@@ -291,7 +292,7 @@ export default function OperationsDashboard() {
                     <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{f.route || "—"}</td>
                     <td className="px-3 py-2 text-foreground text-xs">{f.sta || "—"}</td>
                     <td className="px-3 py-2 text-foreground text-xs">{f.std || "—"}</td>
-                    <td className="px-3 py-2 text-[10px] text-muted-foreground">{f.clearance_type || "Landing"}</td>
+                    <td className="px-3 py-2 text-[10px]"><span className={`inline-flex px-2 py-0.5 rounded-full font-semibold ${getTypeBadgeClass(f.clearance_type || "Landing")}`}>{f.clearance_type || "Landing"}</span></td>
                     <td className="px-3 py-2">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColor[f.status] || "bg-muted text-muted-foreground"}`}>{f.status}</span>
                     </td>

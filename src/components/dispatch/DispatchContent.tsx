@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SECURITY_CLEARANCE_TYPES, getServiceCategory, type ServiceCategory } from "@/components/clearances/ClearanceTypes";
+import { getTypeBadgeClass } from "@/lib/typeColors";
 import { MaskedTimeInput } from "@/components/ui/masked-time-input";
 
 type FlightRow = {
@@ -503,7 +504,7 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
                       <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="px-3 py-2.5 font-semibold text-foreground">{getDispatchFlightNo(d)}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{d.airline}</td>
-                      <td className="px-3 py-2.5 text-xs">{d.service_type}</td>
+                      <td className="px-3 py-2.5 text-xs"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${getTypeBadgeClass(d.service_type)}`}>{d.service_type}</span></td>
                       <td className="px-3 py-2.5">
                         <span className="text-xs font-mono">{d.staff_count} staff</span>
                         {d.staff_names && <div className="text-xs text-muted-foreground truncate max-w-[120px]">{d.staff_names}</div>}
@@ -554,7 +555,7 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
                     return (
                       <tr key={f.id} className={`data-table-row ${assigned ? "opacity-60" : ""}`}>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{f.flight_no}</td>
-                        <td className="px-3 py-2.5 text-xs">{f.clearance_type}</td>
+                        <td className="px-3 py-2.5 text-xs"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${getTypeBadgeClass(f.clearance_type)}`}>{f.clearance_type}</span></td>
                         <td className="px-3 py-2.5 text-muted-foreground">{f.route}</td>
                         <td className="px-3 py-2.5 font-mono text-xs">{f.sta || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs">{f.std || "—"}</td>
