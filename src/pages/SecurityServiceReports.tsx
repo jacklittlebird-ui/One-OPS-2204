@@ -589,22 +589,25 @@ export default function SecurityServiceReportsPage() {
         (r.station || "").toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date with flight_no/id tiebreaker so an edited row keeps its position
+    // Sort by the same display date shown in the table so corrected
+    // departure-only Security rows never get ordered by a stale schedule date.
     const ascending = true;
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
       const bMeta = (b as any).flightMeta;
       const aFd = a.flight_schedule_id ? flightDetailsById.get(a.flight_schedule_id) : undefined;
       const bFd = b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined;
-      const ad = aFd?.arrival_date || aMeta?.arrival_date || a.flight_date || "";
-      const bd = bFd?.arrival_date || bMeta?.arrival_date || b.flight_date || "";
+      const aDisplay = resolveSecurityRowDisplay(a as any, aFd, aMeta);
+      const bDisplay = resolveSecurityRowDisplay(b as any, bFd, bMeta);
+      const ad = aDisplay.arrivalDate || "";
+      const bd = bDisplay.arrivalDate || "";
       if (ad !== bd) {
         if (!ad) return 1;
         if (!bd) return -1;
         return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
       }
-      const at = aFd?.sta || aMeta?.sta || aFd?.std || aMeta?.std || "";
-      const bt = bFd?.sta || bMeta?.sta || bFd?.std || bMeta?.std || "";
+      const at = aDisplay.sta || aDisplay.std || "";
+      const bt = bDisplay.sta || bDisplay.std || "";
       if (at !== bt) {
         if (!at) return 1;
         if (!bt) return -1;
