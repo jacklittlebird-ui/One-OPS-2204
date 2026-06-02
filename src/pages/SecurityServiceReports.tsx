@@ -819,7 +819,6 @@ export default function SecurityServiceReportsPage() {
       airline: row.airline,
       flight_no: row.flight_no,
       flight_date: row.flight_date,
-      departure_date: (row as any).departure_date || row.flight_date,
       service_type: row.service_type,
       staff_names: row.staff_names,
       staff_count: row.staff_count,
