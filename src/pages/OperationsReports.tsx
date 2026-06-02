@@ -202,8 +202,15 @@ function StatsTable({
                     className={`border-t border-border hover:bg-muted/30 ${activeKey === r.key ? "bg-accent/10" : ""}`}
                   >
                     <td className="px-3 py-2">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeClass(r.key)}`}>
-                        {r.key}
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className="inline-block w-2.5 h-2.5 rounded-sm border border-border/50 shrink-0"
+                          style={{ background: colorForKey(r.key) }}
+                          aria-hidden
+                        />
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeClass(r.key)}`}>
+                          {r.key}
+                        </span>
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right font-medium text-foreground">{r.count}</td>
