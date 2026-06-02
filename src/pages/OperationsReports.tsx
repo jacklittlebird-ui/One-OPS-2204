@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
-import { Shield, Plane, FileBarChart2, Download, ExternalLink, Loader2, Inbox } from "lucide-react";
+import { Shield, Plane, FileBarChart2, Download, ExternalLink, Loader2, Inbox, Printer, FileSpreadsheet } from "lucide-react";
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
