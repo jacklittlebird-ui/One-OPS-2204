@@ -487,11 +487,15 @@ export default function OperationsReportsPage() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [printError, setPrintError] = useState<string | null>(null);
 
+  // Filename helpers — always reflect the selected date range; fall back to
+  // an explicit "all_dates" label (plus today) when no range is set so files
+  // are unique and self-describing.
+  const todayIso = () => new Date().toISOString().slice(0, 10);
   const fileStamp = () => {
     if (dateFrom && dateTo) return `${dateFrom}_to_${dateTo}`;
-    if (dateFrom) return `from_${dateFrom}`;
-    if (dateTo) return `until_${dateTo}`;
-    return new Date().toISOString().slice(0, 10);
+    if (dateFrom)           return `from_${dateFrom}`;
+    if (dateTo)             return `until_${dateTo}`;
+    return `all_dates_${todayIso()}`;
   };
   const buildFileName = (ext: string) => `operations_report_${fileStamp()}.${ext}`;
 
