@@ -290,7 +290,7 @@ export default function InvoicesPage() {
     const maxT = maxTotal ? parseFloat(maxTotal) : null;
     if (minT !== null) r = r.filter(i => (i.total || 0) >= minT);
     if (maxT !== null) r = r.filter(i => (i.total || 0) <= maxT);
-    if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s) || (i.notes || "").toLowerCase().includes(s)); }
+    if (search) { const s = search.toLowerCase(); r = r.filter(i => i.invoice_no.toLowerCase().includes(s) || i.operator.toLowerCase().includes(s) || i.flight_ref?.toLowerCase().includes(s) || (i.notes || "").toLowerCase().includes(s) || getInvoiceReg(i).toLowerCase().includes(s)); }
     return r;
   }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search, categoryTab]);
 
