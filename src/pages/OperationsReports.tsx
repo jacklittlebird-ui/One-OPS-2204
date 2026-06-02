@@ -11,26 +11,48 @@ import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { toast } from "@/hooks/use-toast";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend,
 } from "recharts";
 
 type StatRow = { key: string; count: number; extra?: Record<string, number | string> };
 type FilterField = "type" | "station" | "airline" | null;
 
+// Color-blind safe palette (Okabe–Ito + Paul Tol extensions).
+// Works on both light & dark themes (mid-luminance, high saturation).
 const CHART_COLORS = [
-  "hsl(217 91% 60%)",
-  "hsl(160 84% 39%)",
-  "hsl(38 92% 50%)",
-  "hsl(280 75% 60%)",
-  "hsl(346 77% 58%)",
-  "hsl(199 89% 48%)",
-  "hsl(24 95% 53%)",
-  "hsl(173 80% 40%)",
-  "hsl(262 83% 65%)",
-  "hsl(142 71% 45%)",
-  "hsl(330 81% 60%)",
-  "hsl(48 96% 53%)",
+  "#0072B2", // blue
+  "#E69F00", // orange
+  "#009E73", // bluish green
+  "#CC79A7", // reddish purple
+  "#56B4E9", // sky blue
+  "#D55E00", // vermillion
+  "#F0E442", // yellow
+  "#332288", // indigo
+  "#117733", // dark green
+  "#AA4499", // magenta
+  "#44AA99", // teal
+  "#882255", // wine
 ];
+const ACTIVE_COLOR = "#111827"; // near-black ring for selected bar (visible on both themes)
+
+// Stable per-key color so the same item gets the same color across charts/PDF/Excel.
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; }
+  return Math.abs(h);
+}
+function colorForKey(key: string): string {
+  return CHART_COLORS[hashStr(key) % CHART_COLORS.length];
+}
+// Convert "#RRGGBB" → "FFRRGGBB" for xlsx fill color (ARGB).
+function hexToArgb(hex: string): string {
+  return "FF" + hex.replace("#", "").toUpperCase();
+}
+// Convert "#RRGGBB" → [r,g,b] for jsPDF.
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
 
 function groupBy<T>(rows: T[], pick: (r: T) => string): Record<string, T[]> {
   const m: Record<string, T[]> = {};
@@ -119,17 +141,46 @@ function StatsTable({
                   cursor={onChartClick ? "pointer" : undefined}
                   onClick={(d: any) => onChartClick?.(d.name)}
                 >
-                  {chartData.map((d, i) => (
-                    <Cell
-                      key={d.name}
-                      fill={activeKey && activeKey === d.name ? "hsl(var(--accent))" : CHART_COLORS[i % CHART_COLORS.length]}
-                      stroke={activeKey === d.name ? "hsl(var(--foreground))" : "transparent"}
-                      strokeWidth={activeKey === d.name ? 1.5 : 0}
-                    />
-                  ))}
+                  {chartData.map((d) => {
+                    const base = colorForKey(d.name);
+                    const isActive = activeKey === d.name;
+                    return (
+                      <Cell
+                        key={d.name}
+                        fill={base}
+                        fillOpacity={!activeKey || isActive ? 1 : 0.45}
+                        stroke={isActive ? ACTIVE_COLOR : "transparent"}
+                        strokeWidth={isActive ? 2 : 0}
+                      />
+                    );
+                  })}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          {/* Legend — consistent color mapping with PDF/Excel */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs">
+            {chartData.map(d => {
+              const isActive = activeKey === d.name;
+              return (
+                <span
+                  key={d.name}
+                  className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded ${isActive ? "ring-1 ring-foreground/60 bg-muted/40" : ""}`}
+                >
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-sm border border-border/50"
+                    style={{ background: colorForKey(d.name) }}
+                  />
+                  <span className="text-foreground/80">{d.name}</span>
+                </span>
+              );
+            })}
+            {activeKey && (
+              <span className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-muted-foreground">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm border-2" style={{ borderColor: ACTIVE_COLOR }} />
+                Selected
+              </span>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -151,8 +202,15 @@ function StatsTable({
                     className={`border-t border-border hover:bg-muted/30 ${activeKey === r.key ? "bg-accent/10" : ""}`}
                   >
                     <td className="px-3 py-2">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeClass(r.key)}`}>
-                        {r.key}
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className="inline-block w-2.5 h-2.5 rounded-sm border border-border/50 shrink-0"
+                          style={{ background: colorForKey(r.key) }}
+                          aria-hidden
+                        />
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeClass(r.key)}`}>
+                          {r.key}
+                        </span>
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right font-medium text-foreground">{r.count}</td>
@@ -342,32 +400,38 @@ export default function OperationsReportsPage() {
     const sorted = [...rows].sort((a, b) => b.count - a.count);
     const total = sorted.reduce((s, r) => s + r.count, 0);
     const aoa: any[][] = [
-      ["Item", "Count", "Share %", ...extraCols.map(c => c.label)],
+      ["Color", "Item", "Count", "Share %", ...extraCols.map(c => c.label)],
       ...sorted.map(r => [
+        "",                       // color swatch cell (filled via cell style below)
         r.key,
         r.count,
         total ? Number(((r.count / total) * 100).toFixed(1)) : 0,
         ...extraCols.map(c => r.extra?.[c.key] ?? ""),
       ]),
-      ["Total", total, total ? 100 : 0, ...extraCols.map(() => "")],
+      ["", "Total", total, total ? 100 : 0, ...extraCols.map(() => "")],
     ];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    // Auto-size columns based on max content width
     const headers = aoa[0] as string[];
+    // Auto-size columns based on max content width
     ws["!cols"] = headers.map((_, i) => {
-      const max = Math.max(
-        ...aoa.map(row => String(row[i] ?? "").length),
-        8,
-      );
+      if (i === 0) return { wch: 6 }; // color swatch column
+      const max = Math.max(...aoa.map(row => String(row[i] ?? "").length), 8);
       return { wch: Math.min(max + 2, 40) };
     });
-    // Freeze header row (correct xlsx syntax)
+    // Freeze header row + autofilter on full header range
     ws["!views"] = [{ state: "frozen", ySplit: 1 }] as any;
     (ws as any)["!freeze"] = { xSplit: 0, ySplit: 1 };
+    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: headers.length - 1, r: 0 } }) };
     // Bold header row
     headers.forEach((_, i) => {
       const addr = XLSX.utils.encode_cell({ r: 0, c: i });
-      if (ws[addr]) ws[addr].s = { font: { bold: true } };
+      if (ws[addr]) ws[addr].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFE5E7EB" } } };
+    });
+    // Color-swatch fill per row (matches in-app legend / charts)
+    sorted.forEach((r, idx) => {
+      const addr = XLSX.utils.encode_cell({ r: idx + 1, c: 0 });
+      if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+      ws[addr].s = { fill: { patternType: "solid", fgColor: { rgb: hexToArgb(colorForKey(r.key)) } } };
     });
     return ws;
   };
@@ -423,11 +487,15 @@ export default function OperationsReportsPage() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [printError, setPrintError] = useState<string | null>(null);
 
+  // Filename helpers — always reflect the selected date range; fall back to
+  // an explicit "all_dates" label (plus today) when no range is set so files
+  // are unique and self-describing.
+  const todayIso = () => new Date().toISOString().slice(0, 10);
   const fileStamp = () => {
     if (dateFrom && dateTo) return `${dateFrom}_to_${dateTo}`;
-    if (dateFrom) return `from_${dateFrom}`;
-    if (dateTo) return `until_${dateTo}`;
-    return new Date().toISOString().slice(0, 10);
+    if (dateFrom)           return `from_${dateFrom}`;
+    if (dateTo)             return `until_${dateTo}`;
+    return `all_dates_${todayIso()}`;
   };
   const buildFileName = (ext: string) => `operations_report_${fileStamp()}.${ext}`;
 
@@ -507,35 +575,51 @@ export default function OperationsReportsPage() {
       const addBreakdown = (title: string, rows: StatRow[], extraCols: { key: string; label: string }[] = []) => {
         const sorted = [...rows].sort((a, b) => b.count - a.count);
         const total = sorted.reduce((s, r) => s + r.count, 0);
-        const head = [["Item", "Count", "Share %", ...extraCols.map(c => c.label)]];
+        const head = [["", "Item", "Count", "Share %", ...extraCols.map(c => c.label)]];
         const body = sorted.map(r => [
+          "", // color swatch column (filled by didParseCell)
           r.key,
           r.count,
           total ? `${((r.count / total) * 100).toFixed(1)}%` : "—",
           ...extraCols.map(c => r.extra?.[c.key] ?? "—"),
         ]);
-        if (body.length === 0) body.push(["No data", "", "", ...extraCols.map(() => "")]);
+        if (body.length === 0) body.push(["", "No data", "", "", ...extraCols.map(() => "")]);
         autoTable(doc, {
           head, body,
           startY: cursorY,
-          margin: { left: 40, right: 40, top: 50 },
-          styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" },
+          margin: { left: 40, right: 40, top: 50, bottom: 36 },
+          styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak", valign: "middle" },
           headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: "bold" },
           alternateRowStyles: { fillColor: [245, 247, 250] },
+          columnStyles: { 0: { cellWidth: 14, minCellHeight: 12 } },
           showHead: "everyPage",
           rowPageBreak: "avoid",
+          // Color the swatch cell per row using the shared colorForKey palette
+          didParseCell: (data: any) => {
+            if (data.section === "body" && data.column.index === 0) {
+              const row = sorted[data.row.index];
+              if (row) {
+                data.cell.styles.fillColor = hexToRgb(colorForKey(row.key));
+                data.cell.text = [""];
+              }
+            }
+          },
           didDrawPage: () => {
             doc.setFontSize(10);
             doc.setTextColor(80);
             doc.text(title, 40, 30);
             doc.setTextColor(0);
             const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
+            const pageCount = (doc as any).internal.getNumberOfPages();
             doc.setFontSize(8);
-            doc.text(`Page ${page}`, pageW - 60, pageH - 20);
+            doc.setTextColor(120);
+            doc.text(`Page ${page} of ${pageCount}`, pageW - 90, pageH - 20);
+            doc.text("Operations Report — Link Aero", 40, pageH - 20);
+            doc.setTextColor(0);
           },
         });
         cursorY = (doc as any).lastAutoTable.finalY + 24;
-        if (cursorY > pageH - 80) {
+        if (cursorY > pageH - 100) {
           doc.addPage();
           cursorY = 60;
         }
