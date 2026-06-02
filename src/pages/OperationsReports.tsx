@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
-import { Shield, Plane, FileBarChart2, Download, ExternalLink, Loader2, Inbox, Printer, FileSpreadsheet } from "lucide-react";
+import { Shield, Plane, FileBarChart2, Download, ExternalLink, Loader2, Inbox, Printer, FileSpreadsheet, FileText } from "lucide-react";
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
+import { toast } from "@/hooks/use-toast";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
@@ -334,47 +335,224 @@ export default function OperationsReportsPage() {
       ["Total", total, total ? 100 : 0, ...extraCols.map(() => "")],
     ];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{ wch: 32 }, { wch: 10 }, { wch: 10 }, ...extraCols.map(() => ({ wch: 14 }))];
-    ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+    // Auto-size columns based on max content width
+    const headers = aoa[0] as string[];
+    ws["!cols"] = headers.map((_, i) => {
+      const max = Math.max(
+        ...aoa.map(row => String(row[i] ?? "").length),
+        8,
+      );
+      return { wch: Math.min(max + 2, 40) };
+    });
+    // Freeze header row (correct xlsx syntax)
+    ws["!views"] = [{ state: "frozen", ySplit: 1 }] as any;
+    (ws as any)["!freeze"] = { xSplit: 0, ySplit: 1 };
+    // Bold header row
+    headers.forEach((_, i) => {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: i });
+      if (ws[addr]) ws[addr].s = { font: { bold: true } };
+    });
     return ws;
   };
 
-  const exportExcel = () => {
-    const wb = XLSX.utils.book_new();
-
-    const metaWs = XLSX.utils.aoa_to_sheet([
-      ["Operations Report"],
-      ["Generated", new Date().toLocaleString()],
-      [],
-      ["Filters"],
-      ["Type", typeFilter === "all" ? "All" : typeFilter],
-      ["Station", stationFilter === "all" ? "All" : stationFilter],
-      ["Airline", airlineFilter === "all" ? "All" : airlineFilter],
-      ["From", dateFrom || "—"],
-      ["To", dateTo || "—"],
-      [],
-      ["Totals"],
-      ["Security records", filteredSecurity.length],
-      ["Handling records", filteredHandling.length],
-    ]);
-    metaWs["!cols"] = [{ wch: 24 }, { wch: 32 }];
-    XLSX.utils.book_append_sheet(wb, metaWs, "Summary");
-
-    XLSX.utils.book_append_sheet(wb, buildSheet(secByType, [{ key: "completed", label: "Completed" }]), "Sec - By Type");
-    XLSX.utils.book_append_sheet(wb, buildSheet(secByAirline), "Sec - By Airline");
-    XLSX.utils.book_append_sheet(wb, buildSheet(secByStation), "Sec - By Station");
-    XLSX.utils.book_append_sheet(wb, buildSheet(secByStatus), "Sec - By Status");
-
-    XLSX.utils.book_append_sheet(wb, buildSheet(handlingByType, [{ key: "pax", label: "PAX" }]), "Hdl - By Type");
-    XLSX.utils.book_append_sheet(wb, buildSheet(handlingByAirline), "Hdl - By Airline");
-    XLSX.utils.book_append_sheet(wb, buildSheet(handlingByStation), "Hdl - By Station");
-    XLSX.utils.book_append_sheet(wb, buildSheet(handlingByDayNight), "Hdl - Day vs Night");
-
-    const stamp = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `operations_report_${stamp}.xlsx`);
+  const buildDetailSheet = (rows: any[], columns: { key: string; label: string; fmt?: (v: any) => any }[]) => {
+    const header = columns.map(c => c.label);
+    const aoa: any[][] = [
+      header,
+      ...rows.map(r => columns.map(c => (c.fmt ? c.fmt(r[c.key]) : (r[c.key] ?? "")))),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = columns.map((_, i) => {
+      const max = Math.max(...aoa.map(row => String(row[i] ?? "").length), 8);
+      return { wch: Math.min(max + 2, 40) };
+    });
+    ws["!views"] = [{ state: "frozen", ySplit: 1 }] as any;
+    (ws as any)["!freeze"] = { xSplit: 0, ySplit: 1 };
+    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: columns.length - 1, r: 0 } }) };
+    return ws;
   };
 
-  const handlePrint = () => window.print();
+  const securityDetailCols = [
+    { key: "flight_date", label: "Date" },
+    { key: "station", label: "Station" },
+    { key: "airline", label: "Airline" },
+    { key: "flight_number", label: "Flight" },
+    { key: "registration", label: "REG" },
+    { key: "aircraft_type", label: "A/C Type" },
+    { key: "clearance_type", label: "Clearance Type" },
+    { key: "service_type", label: "Service Type" },
+    { key: "status", label: "Status" },
+    { key: "staff_count", label: "Staff" },
+    { key: "duration_hours", label: "Duration (h)" },
+  ];
+  const handlingDetailCols = [
+    { key: "arrival_date", label: "Arrival" },
+    { key: "departure_date", label: "Departure" },
+    { key: "station", label: "Station" },
+    { key: "operator", label: "Operator" },
+    { key: "flight_number_in", label: "Flight In" },
+    { key: "flight_number_out", label: "Flight Out" },
+    { key: "registration", label: "REG" },
+    { key: "aircraft_type", label: "A/C Type" },
+    { key: "handling_type", label: "Handling Type" },
+    { key: "day_night", label: "Day/Night" },
+    { key: "mtow", label: "MTOW" },
+  ];
+
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  const exportExcel = async () => {
+    if (exportingExcel) return;
+    setExportingExcel(true);
+    try {
+      // Yield so the spinner can paint
+      await new Promise(r => setTimeout(r, 30));
+      const wb = XLSX.utils.book_new();
+
+      const metaWs = XLSX.utils.aoa_to_sheet([
+        ["Operations Report"],
+        ["Generated", new Date().toLocaleString()],
+        [],
+        ["Filters"],
+        ["Type", typeFilter === "all" ? "All" : typeFilter],
+        ["Station", stationFilter === "all" ? "All" : stationFilter],
+        ["Airline", airlineFilter === "all" ? "All" : airlineFilter],
+        ["From", dateFrom || "—"],
+        ["To", dateTo || "—"],
+        [],
+        ["Totals"],
+        ["Security records", filteredSecurity.length],
+        ["Handling records", filteredHandling.length],
+      ]);
+      metaWs["!cols"] = [{ wch: 24 }, { wch: 32 }];
+      XLSX.utils.book_append_sheet(wb, metaWs, "Summary");
+
+      XLSX.utils.book_append_sheet(wb, buildSheet(secByType, [{ key: "completed", label: "Completed" }]), "Sec - By Type");
+      XLSX.utils.book_append_sheet(wb, buildSheet(secByAirline), "Sec - By Airline");
+      XLSX.utils.book_append_sheet(wb, buildSheet(secByStation), "Sec - By Station");
+      XLSX.utils.book_append_sheet(wb, buildSheet(secByStatus), "Sec - By Status");
+      XLSX.utils.book_append_sheet(wb, buildDetailSheet(filteredSecurity, securityDetailCols), "Sec - Detail");
+
+      XLSX.utils.book_append_sheet(wb, buildSheet(handlingByType, [{ key: "pax", label: "PAX" }]), "Hdl - By Type");
+      XLSX.utils.book_append_sheet(wb, buildSheet(handlingByAirline), "Hdl - By Airline");
+      XLSX.utils.book_append_sheet(wb, buildSheet(handlingByStation), "Hdl - By Station");
+      XLSX.utils.book_append_sheet(wb, buildSheet(handlingByDayNight), "Hdl - Day vs Night");
+      XLSX.utils.book_append_sheet(wb, buildDetailSheet(filteredHandling, handlingDetailCols), "Hdl - Detail");
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `operations_report_${stamp}.xlsx`);
+      toast({ title: "Excel export ready", description: "Your report has been downloaded." });
+    } catch (err: any) {
+      toast({ title: "Excel export failed", description: err?.message || "Unable to generate the workbook.", variant: "destructive" });
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
+  const exportPdf = async () => {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      doc.setFontSize(16);
+      doc.text("Operations Report", 40, 40);
+      doc.setFontSize(9);
+      doc.setTextColor(110);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 58);
+      doc.text(`Filters: ${filterSummary()}`, 40, 72);
+      doc.text(`Security records: ${filteredSecurity.length}    Handling records: ${filteredHandling.length}`, 40, 86);
+      doc.setTextColor(0);
+
+      let cursorY = 100;
+
+      const addBreakdown = (title: string, rows: StatRow[], extraCols: { key: string; label: string }[] = []) => {
+        const sorted = [...rows].sort((a, b) => b.count - a.count);
+        const total = sorted.reduce((s, r) => s + r.count, 0);
+        const head = [["Item", "Count", "Share %", ...extraCols.map(c => c.label)]];
+        const body = sorted.map(r => [
+          r.key,
+          r.count,
+          total ? `${((r.count / total) * 100).toFixed(1)}%` : "—",
+          ...extraCols.map(c => r.extra?.[c.key] ?? "—"),
+        ]);
+        if (body.length === 0) body.push(["No data", "", "", ...extraCols.map(() => "")]);
+        autoTable(doc, {
+          head, body,
+          startY: cursorY,
+          margin: { left: 40, right: 40 },
+          styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" },
+          headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [245, 247, 250] },
+          didDrawPage: () => {
+            doc.setFontSize(10);
+            doc.setTextColor(80);
+            doc.text(title, 40, 30);
+            doc.setTextColor(0);
+            const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
+            doc.setFontSize(8);
+            doc.text(`Page ${page}`, pageW - 60, pageH - 20);
+          },
+        });
+        cursorY = (doc as any).lastAutoTable.finalY + 24;
+        if (cursorY > pageH - 80) {
+          doc.addPage();
+          cursorY = 60;
+        }
+      };
+
+      const section = (label: string) => {
+        if (cursorY > pageH - 120) { doc.addPage(); cursorY = 60; }
+        doc.setFontSize(13);
+        doc.setTextColor(30, 64, 175);
+        doc.text(label, 40, cursorY);
+        doc.setTextColor(0);
+        cursorY += 14;
+      };
+
+      section("Security");
+      addBreakdown("Security — By Service Type", secByType, [{ key: "completed", label: "Completed" }]);
+      addBreakdown("Security — By Airline", secByAirline);
+      addBreakdown("Security — By Station", secByStation);
+      addBreakdown("Security — By Status", secByStatus);
+
+      doc.addPage();
+      cursorY = 60;
+      section("Handling");
+      addBreakdown("Handling — By Handling Type", handlingByType, [{ key: "pax", label: "PAX" }]);
+      addBreakdown("Handling — By Airline", handlingByAirline);
+      addBreakdown("Handling — By Station", handlingByStation);
+      addBreakdown("Handling — Day vs Night", handlingByDayNight);
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      doc.save(`operations_report_${stamp}.pdf`);
+      toast({ title: "PDF export ready", description: "Your report has been downloaded." });
+    } catch (err: any) {
+      toast({ title: "PDF export failed", description: err?.message || "Unable to generate the PDF.", variant: "destructive" });
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      await new Promise(r => setTimeout(r, 50));
+      window.print();
+    } finally {
+      // Reset shortly after the print dialog opens
+      setTimeout(() => setPrinting(false), 500);
+    }
+  };
 
 
   if (isLoading) {
@@ -400,9 +578,12 @@ export default function OperationsReportsPage() {
           [role="tabpanel"] { display: block !important; margin-top: 12px; page-break-before: auto; }
           .recharts-responsive-container { page-break-inside: avoid; }
           .card, [class*="rounded-lg"][class*="border"] { box-shadow: none !important; break-inside: avoid; }
-          table { font-size: 11px; }
+          table { font-size: 11px; border-collapse: collapse; width: 100%; }
+          thead { display: table-header-group; }
+          tfoot { display: table-footer-group; }
+          tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }
           h1 { font-size: 18px; }
-          h3 { font-size: 13px; }
+          h3 { font-size: 13px; page-break-after: avoid; }
         }
         .print-only { display: none; }
       `}</style>
@@ -416,11 +597,17 @@ export default function OperationsReportsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 no-print">
-          <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5">
-            <Printer size={14} /> Print
+          <Button variant="outline" size="sm" onClick={handlePrint} disabled={printing} className="gap-1.5">
+            {printing ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
+            {printing ? "Preparing…" : "Print"}
           </Button>
-          <Button variant="default" size="sm" onClick={exportExcel} className="gap-1.5">
-            <FileSpreadsheet size={14} /> Export Excel
+          <Button variant="outline" size="sm" onClick={exportPdf} disabled={exportingPdf} className="gap-1.5">
+            {exportingPdf ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+            {exportingPdf ? "Generating…" : "Export PDF"}
+          </Button>
+          <Button variant="default" size="sm" onClick={exportExcel} disabled={exportingExcel} className="gap-1.5">
+            {exportingExcel ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
+            {exportingExcel ? "Generating…" : "Export Excel"}
           </Button>
         </div>
       </div>
