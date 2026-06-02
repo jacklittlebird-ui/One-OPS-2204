@@ -815,6 +815,7 @@ export default function SecurityServiceReportsPage() {
       !!originalClearanceType &&
       (row.service_type || "").trim().toLowerCase() !==
         (originalClearanceType || "").trim().toLowerCase();
+    const normalizedDates = normalizeSecurityDates(row as any, taskSheet || {});
 
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
@@ -838,7 +839,7 @@ export default function SecurityServiceReportsPage() {
       station: row.station,
       airline: row.airline,
       flight_no: row.flight_no,
-      flight_date: row.flight_date,
+      flight_date: normalizedDates.flightDate,
       service_type: row.service_type,
       staff_names: row.staff_names,
       staff_count: row.staff_count,
