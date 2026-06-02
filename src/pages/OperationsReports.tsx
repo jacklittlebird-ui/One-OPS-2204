@@ -310,6 +310,73 @@ export default function OperationsReportsPage() {
     (typeFilter !== "all" ? 1 : 0) + (stationFilter !== "all" ? 1 : 0) +
     (airlineFilter !== "all" ? 1 : 0) + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0);
 
+  const filterSummary = () => {
+    const parts: string[] = [];
+    if (typeFilter !== "all") parts.push(`Type: ${typeFilter}`);
+    if (stationFilter !== "all") parts.push(`Station: ${stationFilter}`);
+    if (airlineFilter !== "all") parts.push(`Airline: ${airlineFilter}`);
+    if (dateFrom) parts.push(`From: ${dateFrom}`);
+    if (dateTo) parts.push(`To: ${dateTo}`);
+    return parts.length ? parts.join("  •  ") : "All data (no filters applied)";
+  };
+
+  const buildSheet = (rows: StatRow[], extraCols: { key: string; label: string }[] = []) => {
+    const sorted = [...rows].sort((a, b) => b.count - a.count);
+    const total = sorted.reduce((s, r) => s + r.count, 0);
+    const aoa: any[][] = [
+      ["Item", "Count", "Share %", ...extraCols.map(c => c.label)],
+      ...sorted.map(r => [
+        r.key,
+        r.count,
+        total ? Number(((r.count / total) * 100).toFixed(1)) : 0,
+        ...extraCols.map(c => r.extra?.[c.key] ?? ""),
+      ]),
+      ["Total", total, total ? 100 : 0, ...extraCols.map(() => "")],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 32 }, { wch: 10 }, { wch: 10 }, ...extraCols.map(() => ({ wch: 14 }))];
+    ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+    return ws;
+  };
+
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    const metaWs = XLSX.utils.aoa_to_sheet([
+      ["Operations Report"],
+      ["Generated", new Date().toLocaleString()],
+      [],
+      ["Filters"],
+      ["Type", typeFilter === "all" ? "All" : typeFilter],
+      ["Station", stationFilter === "all" ? "All" : stationFilter],
+      ["Airline", airlineFilter === "all" ? "All" : airlineFilter],
+      ["From", dateFrom || "—"],
+      ["To", dateTo || "—"],
+      [],
+      ["Totals"],
+      ["Security records", filteredSecurity.length],
+      ["Handling records", filteredHandling.length],
+    ]);
+    metaWs["!cols"] = [{ wch: 24 }, { wch: 32 }];
+    XLSX.utils.book_append_sheet(wb, metaWs, "Summary");
+
+    XLSX.utils.book_append_sheet(wb, buildSheet(secByType, [{ key: "completed", label: "Completed" }]), "Sec - By Type");
+    XLSX.utils.book_append_sheet(wb, buildSheet(secByAirline), "Sec - By Airline");
+    XLSX.utils.book_append_sheet(wb, buildSheet(secByStation), "Sec - By Station");
+    XLSX.utils.book_append_sheet(wb, buildSheet(secByStatus), "Sec - By Status");
+
+    XLSX.utils.book_append_sheet(wb, buildSheet(handlingByType, [{ key: "pax", label: "PAX" }]), "Hdl - By Type");
+    XLSX.utils.book_append_sheet(wb, buildSheet(handlingByAirline), "Hdl - By Airline");
+    XLSX.utils.book_append_sheet(wb, buildSheet(handlingByStation), "Hdl - By Station");
+    XLSX.utils.book_append_sheet(wb, buildSheet(handlingByDayNight), "Hdl - Day vs Night");
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `operations_report_${stamp}.xlsx`);
+  };
+
+  const handlePrint = () => window.print();
+
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-3 text-muted-foreground">
