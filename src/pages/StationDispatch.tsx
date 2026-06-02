@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SECURITY_CLEARANCE_TYPES, getServiceCategory, type ServiceCategory } from "@/components/clearances/ClearanceTypes";
+import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { MaskedTimeInput } from "@/components/ui/masked-time-input";
 
