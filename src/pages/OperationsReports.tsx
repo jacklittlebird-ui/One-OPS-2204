@@ -100,9 +100,17 @@ export default function OperationsReportsPage() {
     return Object.entries(g).map(([key, rows]) => ({ key, count: rows.length }));
   }, [serviceReports]);
 
+  const handlingByAirline = useMemo<StatRow[]>(() => {
+    const g = groupBy(serviceReports, (r: any) => r.operator);
+    return Object.entries(g).map(([key, rows]) => ({
+      key, count: rows.length,
+      extra: { revenue: rows.reduce((s, r: any) => s + Number(r.total_cost || 0), 0) },
+    }));
+  }, [serviceReports]);
+
   // Security stats: by clearance_type, status, station
   const secByType = useMemo<StatRow[]>(() => {
-    const g = groupBy(dispatches, (r: any) => r.clearance_type);
+    const g = groupBy(dispatches, (r: any) => r.clearance_type || r.service_type);
     return Object.entries(g).map(([key, rows]) => ({
       key, count: rows.length,
       extra: { completed: rows.filter((r: any) => (r.status || "").toLowerCase() === "completed").length },
@@ -117,6 +125,14 @@ export default function OperationsReportsPage() {
   const secByStation = useMemo<StatRow[]>(() => {
     const g = groupBy(dispatches, (r: any) => r.station);
     return Object.entries(g).map(([key, rows]) => ({ key, count: rows.length }));
+  }, [dispatches]);
+
+  const secByAirline = useMemo<StatRow[]>(() => {
+    const g = groupBy(dispatches, (r: any) => r.airline);
+    return Object.entries(g).map(([key, rows]) => ({
+      key, count: rows.length,
+      extra: { revenue: rows.reduce((s, r: any) => s + Number(r.total_charge || r.total_security_charges || 0), 0) },
+    }));
   }, [dispatches]);
 
   const fmtMoney = (v: any) => v ? `$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—";
