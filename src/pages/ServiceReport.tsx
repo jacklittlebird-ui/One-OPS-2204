@@ -877,7 +877,8 @@ function HandlingServiceReportContent() {
       r = r.filter(x =>
         x.operator.toLowerCase().includes(s) ||
         x.flightNo.toLowerCase().includes(s) ||
-        x.route.toLowerCase().includes(s)
+        x.route.toLowerCase().includes(s) ||
+        (x.registration || "").toLowerCase().includes(s)
       );
     }
     // Sort by Arrival Date then by ATA (oldest first for station/operations/receivables; newest first elsewhere).

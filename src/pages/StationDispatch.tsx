@@ -305,7 +305,7 @@ export default function StationDispatchPage() {
     if (airlineFilter) r = r.filter(d => d.airline.toLowerCase() === airlineFilter.toLowerCase());
     if (search) {
       const s = search.toLowerCase();
-      r = r.filter(d => d.flight_no.toLowerCase().includes(s) || getDispatchFlightNo(d).toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
+      r = r.filter(d => d.flight_no.toLowerCase().includes(s) || getDispatchFlightNo(d).toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s) || getDispatchReg(d).toLowerCase().includes(s));
     }
     // Sort by flight date (newest first), then by ATA (actual_start) / scheduled_start.
     r.sort((a, b) => {
