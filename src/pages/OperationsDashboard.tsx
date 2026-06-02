@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { getTypeBadgeClass } from "@/lib/typeColors";
 import {
   Plane, Building2, CheckCircle2, XCircle, Timer, Clock,
   ArrowRight, AlertTriangle, Users, Globe, FileBarChart2,
