@@ -60,6 +60,7 @@ import BankTransfersPage from "./pages/treasury/BankTransfers";
 import BankReconciliationPage from "./pages/treasury/BankReconciliation";
 import ReportsAdminPage from "./pages/ReportsAdmin";
 import SecurityStatusPage from "./pages/SecurityStatus";
+import OperationsReportsPage from "./pages/OperationsReports";
 
 
 const queryClient = new QueryClient();
