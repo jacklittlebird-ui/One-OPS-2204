@@ -160,6 +160,11 @@ export default function OperationsReportsPage() {
             rows={secByType}
             valueCols={[{ key: "completed", label: "Completed", format: fmtNum }]}
           />
+          <StatsTable
+            title="Security — By Airline"
+            rows={secByAirline}
+            valueCols={[{ key: "revenue", label: "Revenue", format: fmtMoney }]}
+          />
           <div className="grid md:grid-cols-2 gap-4">
             <StatsTable title="Security — By Status" rows={secByStatus} valueCols={[]} />
             <StatsTable title="Security — By Station" rows={secByStation} valueCols={[]} />
@@ -174,6 +179,11 @@ export default function OperationsReportsPage() {
               { key: "revenue", label: "Revenue", format: fmtMoney },
               { key: "pax", label: "PAX", format: fmtNum },
             ]}
+          />
+          <StatsTable
+            title="Handling — By Airline"
+            rows={handlingByAirline}
+            valueCols={[{ key: "revenue", label: "Revenue", format: fmtMoney }]}
           />
           <div className="grid md:grid-cols-2 gap-4">
             <StatsTable
