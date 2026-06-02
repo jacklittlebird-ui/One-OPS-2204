@@ -9,6 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
+import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useUserStation } from "@/contexts/UserStationContext";
 
 interface AllClearanceFlightsPageProps {
