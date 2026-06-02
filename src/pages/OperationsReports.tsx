@@ -387,14 +387,50 @@ export default function OperationsReportsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
-        <FileBarChart2 className="text-primary" size={22} />
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Operations Reports</h1>
-          <p className="text-sm text-muted-foreground">Statistics for Security and Handling activity, broken down by item.</p>
+    <div className="space-y-4" id="ops-report-print-root">
+      <style>{`
+        @media print {
+          @page { size: A4 landscape; margin: 14mm; }
+          body * { visibility: hidden !important; }
+          #ops-report-print-root, #ops-report-print-root * { visibility: visible !important; }
+          #ops-report-print-root { position: absolute; inset: 0; padding: 0; }
+          .no-print { display: none !important; }
+          .print-only { display: block !important; }
+          [role="tablist"] { display: none !important; }
+          [role="tabpanel"] { display: block !important; margin-top: 12px; page-break-before: auto; }
+          .recharts-responsive-container { page-break-inside: avoid; }
+          .card, [class*="rounded-lg"][class*="border"] { box-shadow: none !important; break-inside: avoid; }
+          table { font-size: 11px; }
+          h1 { font-size: 18px; }
+          h3 { font-size: 13px; }
+        }
+        .print-only { display: none; }
+      `}</style>
+
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="flex items-center gap-2">
+          <FileBarChart2 className="text-primary" size={22} />
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Operations Reports</h1>
+            <p className="text-sm text-muted-foreground">Statistics for Security and Handling activity, broken down by item.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 no-print">
+          <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5">
+            <Printer size={14} /> Print
+          </Button>
+          <Button variant="default" size="sm" onClick={exportExcel} className="gap-1.5">
+            <FileSpreadsheet size={14} /> Export Excel
+          </Button>
         </div>
       </div>
+
+      <div className="print-only mb-3 text-xs text-muted-foreground border-b border-border pb-2">
+        <div><b>Generated:</b> {new Date().toLocaleString()}</div>
+        <div><b>Filters:</b> {filterSummary()}</div>
+        <div><b>Security records:</b> {filteredSecurity.length} &nbsp; <b>Handling records:</b> {filteredHandling.length}</div>
+      </div>
+
 
       <Card className="p-3">
         <div className="flex flex-wrap items-end gap-3">
