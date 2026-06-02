@@ -17,6 +17,21 @@ import {
 type StatRow = { key: string; count: number; extra?: Record<string, number | string> };
 type FilterField = "type" | "station" | "airline" | null;
 
+const CHART_COLORS = [
+  "hsl(217 91% 60%)",
+  "hsl(160 84% 39%)",
+  "hsl(38 92% 50%)",
+  "hsl(280 75% 60%)",
+  "hsl(346 77% 58%)",
+  "hsl(199 89% 48%)",
+  "hsl(24 95% 53%)",
+  "hsl(173 80% 40%)",
+  "hsl(262 83% 65%)",
+  "hsl(142 71% 45%)",
+  "hsl(330 81% 60%)",
+  "hsl(48 96% 53%)",
+];
+
 function groupBy<T>(rows: T[], pick: (r: T) => string): Record<string, T[]> {
   const m: Record<string, T[]> = {};
   rows.forEach(r => {
