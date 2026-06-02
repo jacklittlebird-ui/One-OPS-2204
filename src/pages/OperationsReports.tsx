@@ -419,6 +419,17 @@ export default function OperationsReportsPage() {
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [excelError, setExcelError] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [printError, setPrintError] = useState<string | null>(null);
+
+  const fileStamp = () => {
+    if (dateFrom && dateTo) return `${dateFrom}_to_${dateTo}`;
+    if (dateFrom) return `from_${dateFrom}`;
+    if (dateTo) return `until_${dateTo}`;
+    return new Date().toISOString().slice(0, 10);
+  };
+  const buildFileName = (ext: string) => `operations_report_${fileStamp()}.${ext}`;
 
   const exportExcel = async () => {
     if (exportingExcel) return;
