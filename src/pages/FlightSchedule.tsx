@@ -23,6 +23,7 @@ type FlightRow = {
   status: string; terminal: string;
   season: string; flight_type: string; effective_from: string | null;
   effective_to: string | null; frequency: string; codeshare: string; handling_agent: string;
+  registration: string;
 };
 
 const FLIGHT_TYPES = ["Ambulance", "Cargo", "Charter", "Ferry", "Passenger", "Technical", "VIP"] as const;
