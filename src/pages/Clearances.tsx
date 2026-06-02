@@ -592,6 +592,21 @@ export default function ClearancesPage() {
                           </TableRow>
                         )}
                         <TableRow key={c.id}>
+                          {statusTab === "rejected" && (
+                            <TableCell className="w-10">
+                              <Checkbox
+                                checked={selectedRejectedIds.has(c.id)}
+                                onCheckedChange={(checked) => {
+                                  setSelectedRejectedIds(prev => {
+                                    const next = new Set(prev);
+                                    if (checked) next.add(c.id); else next.delete(c.id);
+                                    return next;
+                                  });
+                                }}
+                                aria-label={`Select ${c.flight_no}`}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="text-xs">{formatDateDMY(c.arrival_date)}</TableCell>
                           <TableCell className="text-xs">{formatDateDMY(c.departure_date)}</TableCell>
                           <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
