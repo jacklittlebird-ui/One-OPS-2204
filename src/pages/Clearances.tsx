@@ -413,7 +413,7 @@ export default function ClearancesPage() {
         <TabsContent value={serviceCategory}>
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="inline-flex border rounded-lg overflow-hidden">
-              <Button variant={statusTab === "active" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => setStatusTab("active")}>
+              <Button variant={statusTab === "active" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => { setStatusTab("active"); setSelectedRejectedIds(new Set()); }}>
                 Active
               </Button>
               <Button variant={statusTab === "rejected" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3 gap-1" onClick={() => setStatusTab("rejected")}>
@@ -425,6 +425,29 @@ export default function ClearancesPage() {
                 )}
               </Button>
             </div>
+            {statusTab === "rejected" && selectedRejectedIds.size > 0 && (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1"
+                onClick={async () => {
+                  if (!window.confirm(`Delete ${selectedRejectedIds.size} selected rejected record(s)? This cannot be undone.`)) return;
+                  const ids = Array.from(selectedRejectedIds);
+                  let failed = 0;
+                  for (const id of ids) {
+                    try { await remove(id); } catch { failed++; }
+                  }
+                  setSelectedRejectedIds(new Set());
+                  if (failed > 0) {
+                    toast({ title: "Partial failure", description: `${failed} of ${ids.length} records could not be deleted.`, variant: "destructive" });
+                  } else {
+                    toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
+                  }
+                }}
+              >
+                <Trash2 size={14} /> Delete All ({selectedRejectedIds.size})
+              </Button>
+            )}
           </div>
 
           <AdvancedFilters
