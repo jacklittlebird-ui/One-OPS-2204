@@ -483,6 +483,7 @@ export default function OperationsReportsPage() {
   const exportPdf = async () => {
     if (exportingPdf) return;
     setExportingPdf(true);
+    setPdfError(null);
     try {
       const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
         import("jspdf"),
@@ -517,10 +518,12 @@ export default function OperationsReportsPage() {
         autoTable(doc, {
           head, body,
           startY: cursorY,
-          margin: { left: 40, right: 40 },
+          margin: { left: 40, right: 40, top: 50 },
           styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" },
           headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: "bold" },
           alternateRowStyles: { fillColor: [245, 247, 250] },
+          showHead: "everyPage",
+          rowPageBreak: "avoid",
           didDrawPage: () => {
             doc.setFontSize(10);
             doc.setTextColor(80);
@@ -561,11 +564,12 @@ export default function OperationsReportsPage() {
       addBreakdown("Handling — By Station", handlingByStation);
       addBreakdown("Handling — Day vs Night", handlingByDayNight);
 
-      const stamp = new Date().toISOString().slice(0, 10);
-      doc.save(`operations_report_${stamp}.pdf`);
+      doc.save(buildFileName("pdf"));
       toast({ title: "PDF export ready", description: "Your report has been downloaded." });
     } catch (err: any) {
-      toast({ title: "PDF export failed", description: err?.message || "Unable to generate the PDF.", variant: "destructive" });
+      const msg = err?.message || "Unable to generate the PDF.";
+      setPdfError(msg);
+      toast({ title: "PDF export failed", description: msg, variant: "destructive" });
     } finally {
       setExportingPdf(false);
     }
@@ -574,11 +578,13 @@ export default function OperationsReportsPage() {
   const handlePrint = async () => {
     if (printing) return;
     setPrinting(true);
+    setPrintError(null);
     try {
       await new Promise(r => setTimeout(r, 50));
       window.print();
+    } catch (err: any) {
+      setPrintError(err?.message || "Unable to open the print dialog.");
     } finally {
-      // Reset shortly after the print dialog opens
       setTimeout(() => setPrinting(false), 500);
     }
   };
