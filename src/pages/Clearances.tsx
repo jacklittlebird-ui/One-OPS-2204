@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload, CalendarDays, TableIcon, ChevronLeft, ChevronRight, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
@@ -135,6 +136,7 @@ export default function ClearancesPage() {
   const [editItem, setEditItem] = useState<ClearanceRow | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
+  const [selectedRejectedIds, setSelectedRejectedIds] = useState<Set<string>>(new Set());
 
   const airlineMap = Object.fromEntries((airlines || []).map((a: any) => [a.id, a]));
 
@@ -411,7 +413,7 @@ export default function ClearancesPage() {
         <TabsContent value={serviceCategory}>
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="inline-flex border rounded-lg overflow-hidden">
-              <Button variant={statusTab === "active" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => setStatusTab("active")}>
+              <Button variant={statusTab === "active" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => { setStatusTab("active"); setSelectedRejectedIds(new Set()); }}>
                 Active
               </Button>
               <Button variant={statusTab === "rejected" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3 gap-1" onClick={() => setStatusTab("rejected")}>
@@ -423,6 +425,29 @@ export default function ClearancesPage() {
                 )}
               </Button>
             </div>
+            {statusTab === "rejected" && selectedRejectedIds.size > 0 && (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1"
+                onClick={async () => {
+                  if (!window.confirm(`Delete ${selectedRejectedIds.size} selected rejected record(s)? This cannot be undone.`)) return;
+                  const ids = Array.from(selectedRejectedIds);
+                  let failed = 0;
+                  for (const id of ids) {
+                    try { await remove(id); } catch { failed++; }
+                  }
+                  setSelectedRejectedIds(new Set());
+                  if (failed > 0) {
+                    toast({ title: "Partial failure", description: `${failed} of ${ids.length} records could not be deleted.`, variant: "destructive" });
+                  } else {
+                    toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
+                  }
+                }}
+              >
+                <Trash2 size={14} /> Delete All ({selectedRejectedIds.size})
+              </Button>
+            )}
           </div>
 
           <AdvancedFilters
@@ -469,6 +494,21 @@ export default function ClearancesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {statusTab === "rejected" && (
+                        <TableHead className="w-10">
+                          <Checkbox
+                            checked={filtered.length > 0 && filtered.every(c => selectedRejectedIds.has(c.id))}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedRejectedIds(new Set(filtered.map(c => c.id)));
+                              } else {
+                                setSelectedRejectedIds(new Set());
+                              }
+                            }}
+                            aria-label="Select all rejected"
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>Arrival Date</TableHead>
                       <TableHead>Departure Date</TableHead>
                       <TableHead>Flight</TableHead>
@@ -497,7 +537,7 @@ export default function ClearancesPage() {
                         <Fragment key={c.id}>
                         {statusTab === "rejected" && latestDeletionEntry && (
                           <TableRow className="bg-warning/5 border-l-2 border-l-warning" data-testid={`clearance-delete-row-${c.id}`}>
-                            <TableCell colSpan={14} className="px-4 py-2">
+                            <TableCell colSpan={statusTab === "rejected" ? 15 : 14} className="px-4 py-2">
                               <div className="flex items-start gap-2 text-xs">
                                 <Trash2 size={14} className="text-warning shrink-0 mt-0.5" />
                                 <div className="flex-1 min-w-0">
@@ -552,6 +592,21 @@ export default function ClearancesPage() {
                           </TableRow>
                         )}
                         <TableRow key={c.id}>
+                          {statusTab === "rejected" && (
+                            <TableCell className="w-10">
+                              <Checkbox
+                                checked={selectedRejectedIds.has(c.id)}
+                                onCheckedChange={(checked) => {
+                                  setSelectedRejectedIds(prev => {
+                                    const next = new Set(prev);
+                                    if (checked) next.add(c.id); else next.delete(c.id);
+                                    return next;
+                                  });
+                                }}
+                                aria-label={`Select ${c.flight_no}`}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="text-xs">{formatDateDMY(c.arrival_date)}</TableCell>
                           <TableCell className="text-xs">{formatDateDMY(c.departure_date)}</TableCell>
                           <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
@@ -578,7 +633,7 @@ export default function ClearancesPage() {
                         </Fragment>
                       );
                     })}
-                    {filtered.length === 0 && <TableRow><TableCell colSpan={14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
+                    {filtered.length === 0 && <TableRow><TableCell colSpan={statusTab === "rejected" ? 15 : 14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
