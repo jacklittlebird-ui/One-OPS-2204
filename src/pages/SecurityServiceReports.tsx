@@ -1287,7 +1287,7 @@ export default function SecurityServiceReportsPage() {
                       <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no || "—"}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.registration || "—"}</td>
                       <td className="px-3 py-2.5">
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">{f.clearance_type || "—"}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeBadgeClass(f.clearance_type)}`}>{f.clearance_type || "—"}</span>
                       </td>
                       <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{f.arrival_date || f.departure_date || f.flight_date || "—"}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.sta || "—"}</td>
