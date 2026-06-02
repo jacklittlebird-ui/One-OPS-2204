@@ -69,6 +69,22 @@ describe("resolveSecurityRowDisplay (SM 0486 unlinked)", () => {
     expect(d.skdType).toBe("Charter");
     expect(d.arrivalDate).toBe("2026-05-10");
   });
+
+  it("uses the saved dispatch service date for departure-only Security even when the linked schedule arrival date is stale", () => {
+    const d = resolveSecurityRowDisplay(
+      {
+        flight_no: "SM 0451",
+        flight_date: "2026-05-25",
+        service_type: "Departure Security",
+        task_sheet_data: { shift_start_date: "2026-05-24", shift_end_date: "2026-05-25" },
+      },
+      { arrival_date: "2026-05-24", departure_date: "2026-05-25", std: "01:40" } as any,
+      null
+    );
+    expect(d.arrivalDate).toBe("2026-05-25");
+    expect(d.departureDate).toBe("2026-05-25");
+  });
+
   it("never fabricates STD from dispatch shift end or actual end (SM 0452 HBE)", () => {
     // Arrival-only flight: schedule has no STD, task sheet std is blank, but
     // dispatch guard shift ends at 07:15 and actual movement ends 07:11. The
