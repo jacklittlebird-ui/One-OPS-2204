@@ -11,26 +11,48 @@ import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { toast } from "@/hooks/use-toast";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend,
 } from "recharts";
 
 type StatRow = { key: string; count: number; extra?: Record<string, number | string> };
 type FilterField = "type" | "station" | "airline" | null;
 
+// Color-blind safe palette (Okabe–Ito + Paul Tol extensions).
+// Works on both light & dark themes (mid-luminance, high saturation).
 const CHART_COLORS = [
-  "hsl(217 91% 60%)",
-  "hsl(160 84% 39%)",
-  "hsl(38 92% 50%)",
-  "hsl(280 75% 60%)",
-  "hsl(346 77% 58%)",
-  "hsl(199 89% 48%)",
-  "hsl(24 95% 53%)",
-  "hsl(173 80% 40%)",
-  "hsl(262 83% 65%)",
-  "hsl(142 71% 45%)",
-  "hsl(330 81% 60%)",
-  "hsl(48 96% 53%)",
+  "#0072B2", // blue
+  "#E69F00", // orange
+  "#009E73", // bluish green
+  "#CC79A7", // reddish purple
+  "#56B4E9", // sky blue
+  "#D55E00", // vermillion
+  "#F0E442", // yellow
+  "#332288", // indigo
+  "#117733", // dark green
+  "#AA4499", // magenta
+  "#44AA99", // teal
+  "#882255", // wine
 ];
+const ACTIVE_COLOR = "#111827"; // near-black ring for selected bar (visible on both themes)
+
+// Stable per-key color so the same item gets the same color across charts/PDF/Excel.
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; }
+  return Math.abs(h);
+}
+function colorForKey(key: string): string {
+  return CHART_COLORS[hashStr(key) % CHART_COLORS.length];
+}
+// Convert "#RRGGBB" → "FFRRGGBB" for xlsx fill color (ARGB).
+function hexToArgb(hex: string): string {
+  return "FF" + hex.replace("#", "").toUpperCase();
+}
+// Convert "#RRGGBB" → [r,g,b] for jsPDF.
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
 
 function groupBy<T>(rows: T[], pick: (r: T) => string): Record<string, T[]> {
   const m: Record<string, T[]> = {};
