@@ -600,12 +600,16 @@ export default function SecurityServiceReportsPage() {
     if (dateTo) rows = rows.filter(r => (r.flight_date || "") <= dateTo);
     if (search) {
       const s = search.toLowerCase();
-      rows = rows.filter(r =>
-        (r.airline || "").toLowerCase().includes(s) ||
-        (r.flight_no || "").toLowerCase().includes(s) ||
-        (r.staff_names || "").toLowerCase().includes(s) ||
-        (r.station || "").toLowerCase().includes(s)
-      );
+      rows = rows.filter(r => {
+        const reg = r.flight_schedule_id ? (flightDetailsById.get(r.flight_schedule_id)?.registration || "") : "";
+        return (
+          (r.airline || "").toLowerCase().includes(s) ||
+          (r.flight_no || "").toLowerCase().includes(s) ||
+          (r.staff_names || "").toLowerCase().includes(s) ||
+          (r.station || "").toLowerCase().includes(s) ||
+          reg.toLowerCase().includes(s)
+        );
+      });
     }
     // Sort by the same display date shown in the table so corrected
     // departure-only Security rows never get ordered by a stale schedule date.

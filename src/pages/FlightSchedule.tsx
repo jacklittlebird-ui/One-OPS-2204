@@ -23,6 +23,7 @@ type FlightRow = {
   status: string; terminal: string;
   season: string; flight_type: string; effective_from: string | null;
   effective_to: string | null; frequency: string; codeshare: string; handling_agent: string;
+  registration: string;
 };
 
 const FLIGHT_TYPES = ["Ambulance", "Cargo", "Charter", "Ferry", "Passenger", "Technical", "VIP"] as const;
@@ -156,7 +157,7 @@ export default function FlightSchedulePage() {
     if (typeFilter !== "All Types") result = result.filter(r => r.flight_type === typeFilter);
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(r => r.flight_no.toLowerCase().includes(s) || r.airline.toLowerCase().includes(s) || r.origin.toLowerCase().includes(s) || r.destination.toLowerCase().includes(s) || (r.codeshare || "").toLowerCase().includes(s));
+      result = result.filter(r => r.flight_no.toLowerCase().includes(s) || r.airline.toLowerCase().includes(s) || r.origin.toLowerCase().includes(s) || r.destination.toLowerCase().includes(s) || (r.codeshare || "").toLowerCase().includes(s) || (r.registration || "").toLowerCase().includes(s));
     }
     return result;
   }, [data, airlineFilter, statusFilter, typeFilter, search]);
