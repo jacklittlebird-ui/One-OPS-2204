@@ -494,6 +494,21 @@ export default function ClearancesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {statusTab === "rejected" && (
+                        <TableHead className="w-10">
+                          <Checkbox
+                            checked={filtered.length > 0 && filtered.every(c => selectedRejectedIds.has(c.id))}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedRejectedIds(new Set(filtered.map(c => c.id)));
+                              } else {
+                                setSelectedRejectedIds(new Set());
+                              }
+                            }}
+                            aria-label="Select all rejected"
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>Arrival Date</TableHead>
                       <TableHead>Departure Date</TableHead>
                       <TableHead>Flight</TableHead>
