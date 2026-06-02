@@ -175,12 +175,13 @@ export default function SecurityServiceReportsPage() {
     setEditRow({ ...r, flight_no: display.flightNo || r.flight_no });
   };
 
-  const [search, setSearch] = useState("");
-  const [stationFilter, setStationFilter] = useState("All Stations");
+  const _initParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const [search, setSearch] = useState(_initParams.get("search") || "");
+  const [stationFilter, setStationFilter] = useState(_initParams.get("station") || "All Stations");
   const [reviewFilter, setReviewFilter] = useState("All");
-  const [serviceFilter, setServiceFilter] = useState("All Types");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [serviceFilter, setServiceFilter] = useState(_initParams.get("type") || "All Types");
+  const [dateFrom, setDateFrom] = useState(_initParams.get("date_from") || "");
+  const [dateTo, setDateTo] = useState(_initParams.get("date_to") || "");
   const [page, setPage] = useState(1);
   const [recordsView, setRecordsView] = useState<"table" | "calendar">("table");
   const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());

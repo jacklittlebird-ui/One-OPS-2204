@@ -373,15 +373,16 @@ function HandlingServiceReportContent() {
   const isStationView = activeChannel === "station";
   const canCreateNew = !isReceivablesView && !isOperationsView;
 
-  const [search, setSearch] = useState("");
+  const _initParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const [search, setSearch] = useState(_initParams.get("search") || "");
   const [bulkApproving, setBulkApproving] = useState(false);
-  const [handlingFilter, setHandlingFilter] = useState("All Types");
-  const [stationFilter, setStationFilter] = useState("All Stations");
+  const [handlingFilter, setHandlingFilter] = useState(_initParams.get("type") || "All Types");
+  const [stationFilter, setStationFilter] = useState(_initParams.get("station") || "All Stations");
   const [reviewFilter, setReviewFilter] = useState("All Review");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [airlineFilter, setAirlineFilter] = useState("All Airlines");
+  const [dateFrom, setDateFrom] = useState(_initParams.get("date_from") || "");
+  const [dateTo, setDateTo] = useState(_initParams.get("date_to") || "");
+  const [airlineFilter, setAirlineFilter] = useState(_initParams.get("airline") || "All Airlines");
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
   const [operationsTab, setOperationsTab] = useState<"all" | "modified">("all");

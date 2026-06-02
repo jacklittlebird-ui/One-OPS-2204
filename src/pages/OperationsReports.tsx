@@ -2,16 +2,18 @@ import { useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
-import { Shield, Plane, FileBarChart2, Download, ExternalLink } from "lucide-react";
+import { Shield, Plane, FileBarChart2, Download, ExternalLink, Loader2, Inbox } from "lucide-react";
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useNavigate } from "react-router-dom";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
 
 type StatRow = { key: string; count: number; extra?: Record<string, number | string> };
+type FilterField = "type" | "station" | "airline" | null;
 
 function groupBy<T>(rows: T[], pick: (r: T) => string): Record<string, T[]> {
   const m: Record<string, T[]> = {};
@@ -42,44 +44,71 @@ function downloadCSV(filename: string, headers: string[], rows: (string | number
   URL.revokeObjectURL(a.href);
 }
 
-function StatsTable({ title, rows, valueCols, onDrill, onExport }: {
+function StatsTable({
+  title, rows, valueCols, onDrill, onExport, onExportChart, onChartClick, activeKey,
+}: {
   title: string;
   rows: StatRow[];
   valueCols: { key: string; label: string; format?: (v: any) => string }[];
   onDrill?: (key: string) => void;
   onExport?: () => void;
+  onExportChart?: () => void;
+  onChartClick?: (key: string) => void;
+  activeKey?: string | null;
 }) {
   const sorted = [...rows].sort((a, b) => b.count - a.count);
   const total = sorted.reduce((s, r) => s + r.count, 0);
   const chartData = sorted.slice(0, 12).map(r => ({ name: r.key, count: r.count }));
+
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <h3 className="font-semibold text-foreground">{title}</h3>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Total: <b className="text-foreground">{total}</b></span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground mr-2">Total: <b className="text-foreground">{total}</b></span>
+          {onExportChart && (
+            <Button variant="outline" size="sm" onClick={onExportChart} className="h-7 gap-1" title="Export chart data (top 12)">
+              <Download size={13} /> Chart
+            </Button>
+          )}
           {onExport && (
-            <Button variant="outline" size="sm" onClick={onExport} className="h-7 gap-1">
+            <Button variant="outline" size="sm" onClick={onExport} className="h-7 gap-1" title="Export full table data">
               <Download size={13} /> CSV
             </Button>
           )}
         </div>
       </div>
       {sorted.length === 0 ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">No data available</div>
+        <div className="py-10 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+          <Inbox size={28} className="opacity-50" />
+          <p className="text-sm">No data matches the current filters</p>
+          <p className="text-xs">Try widening your date range or clearing filters above.</p>
+        </div>
       ) : (
         <div className="space-y-4">
-          <div className="w-full h-48">
+          <div className="w-full h-52">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={50} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 6, fontSize: 12 }}
                   cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
                 />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="count"
+                  radius={[4, 4, 0, 0]}
+                  cursor={onChartClick ? "pointer" : undefined}
+                  onClick={(d: any) => onChartClick?.(d.name)}
+                >
+                  {chartData.map((d) => (
+                    <Cell
+                      key={d.name}
+                      fill={activeKey && activeKey === d.name ? "hsl(var(--accent))" : "hsl(var(--primary))"}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -98,7 +127,10 @@ function StatsTable({ title, rows, valueCols, onDrill, onExport }: {
               </thead>
               <tbody>
                 {sorted.map(r => (
-                  <tr key={r.key} className="border-t border-border hover:bg-muted/30">
+                  <tr
+                    key={r.key}
+                    className={`border-t border-border hover:bg-muted/30 ${activeKey === r.key ? "bg-accent/10" : ""}`}
+                  >
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeClass(r.key)}`}>
                         {r.key}
@@ -137,123 +169,154 @@ function StatsTable({ title, rows, valueCols, onDrill, onExport }: {
 
 export default function OperationsReportsPage() {
   const navigate = useNavigate();
-  const { data: serviceReports = [] } = useSupabaseTable<any>("service_reports", { stationFilter: true });
-  const { data: dispatches = [] } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
+  const { data: serviceReports = [], isLoading: loadingHandling } =
+    useSupabaseTable<any>("service_reports", { stationFilter: true });
+  const { data: dispatches = [], isLoading: loadingSecurity } =
+    useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
+  const isLoading = loadingHandling || loadingSecurity;
 
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [stationFilter, setStationFilter] = useState<string>("all");
   const [airlineFilter, setAirlineFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
 
   const typeOptions = useMemo(() => {
     const a = uniqSorted(serviceReports, (r: any) => r.handling_type);
     const b = uniqSorted(dispatches, (r: any) => r.clearance_type || r.service_type);
     return Array.from(new Set([...a, ...b])).sort();
   }, [serviceReports, dispatches]);
-
   const stationOptions = useMemo(() => {
     const a = uniqSorted(serviceReports, (r: any) => r.station);
     const b = uniqSorted(dispatches, (r: any) => r.station);
     return Array.from(new Set([...a, ...b])).sort();
   }, [serviceReports, dispatches]);
-
   const airlineOptions = useMemo(() => {
     const a = uniqSorted(serviceReports, (r: any) => r.operator);
     const b = uniqSorted(dispatches, (r: any) => r.airline);
     return Array.from(new Set([...a, ...b])).sort();
   }, [serviceReports, dispatches]);
 
-  // Apply filters
+  const inDateRange = (d: string | null | undefined) => {
+    if (!dateFrom && !dateTo) return true;
+    const v = (d || "").slice(0, 10);
+    if (dateFrom && v < dateFrom) return false;
+    if (dateTo && v > dateTo) return false;
+    return true;
+  };
+
   const filteredHandling = useMemo(() => serviceReports.filter((r: any) => {
     if (typeFilter !== "all" && r.handling_type !== typeFilter) return false;
     if (stationFilter !== "all" && r.station !== stationFilter) return false;
     if (airlineFilter !== "all" && r.operator !== airlineFilter) return false;
+    if (!inDateRange(r.arrival_date || r.departure_date)) return false;
     return true;
-  }), [serviceReports, typeFilter, stationFilter, airlineFilter]);
+  }), [serviceReports, typeFilter, stationFilter, airlineFilter, dateFrom, dateTo]);
 
   const filteredSecurity = useMemo(() => dispatches.filter((r: any) => {
     const t = r.clearance_type || r.service_type;
     if (typeFilter !== "all" && t !== typeFilter) return false;
     if (stationFilter !== "all" && r.station !== stationFilter) return false;
     if (airlineFilter !== "all" && r.airline !== airlineFilter) return false;
+    if (!inDateRange(r.flight_date)) return false;
     return true;
-  }), [dispatches, typeFilter, stationFilter, airlineFilter]);
+  }), [dispatches, typeFilter, stationFilter, airlineFilter, dateFrom, dateTo]);
 
   // Handling stats
-  const handlingByType = useMemo<StatRow[]>(() => {
-    const g = groupBy(filteredHandling, (r: any) => r.handling_type);
-    return Object.entries(g).map(([key, rows]) => {
-      const pax = rows.reduce((s, r: any) =>
-        s + Number(r.pax_in_adult_i || 0) + Number(r.pax_in_adult_d || 0) +
-        Number(r.pax_in_inf_i || 0) + Number(r.pax_in_inf_d || 0) +
-        Number(r.pax_transit || 0), 0);
-      return { key, count: rows.length, extra: { pax } };
-    });
-  }, [filteredHandling]);
+  const handlingByType = useMemo<StatRow[]>(() => Object.entries(groupBy(filteredHandling, (r: any) => r.handling_type)).map(([key, rows]) => {
+    const pax = rows.reduce((s, r: any) =>
+      s + Number(r.pax_in_adult_i || 0) + Number(r.pax_in_adult_d || 0) +
+      Number(r.pax_in_inf_i || 0) + Number(r.pax_in_inf_d || 0) +
+      Number(r.pax_transit || 0), 0);
+    return { key, count: rows.length, extra: { pax } };
+  }), [filteredHandling]);
 
-  const handlingByStation = useMemo<StatRow[]>(() => {
-    const g = groupBy(filteredHandling, (r: any) => r.station);
-    return Object.entries(g).map(([key, rows]) => ({ key, count: rows.length }));
-  }, [filteredHandling]);
+  const handlingByStation = useMemo<StatRow[]>(() =>
+    Object.entries(groupBy(filteredHandling, (r: any) => r.station)).map(([key, rows]) => ({ key, count: rows.length })),
+  [filteredHandling]);
 
-  const handlingByDayNight = useMemo<StatRow[]>(() => {
-    const g = groupBy(filteredHandling, (r: any) => r.day_night === "N" ? "Night" : "Day");
-    return Object.entries(g).map(([key, rows]) => ({ key, count: rows.length }));
-  }, [filteredHandling]);
+  const handlingByDayNight = useMemo<StatRow[]>(() =>
+    Object.entries(groupBy(filteredHandling, (r: any) => r.day_night === "N" ? "Night" : "Day")).map(([key, rows]) => ({ key, count: rows.length })),
+  [filteredHandling]);
 
-  const handlingByAirline = useMemo<StatRow[]>(() => {
-    const g = groupBy(filteredHandling, (r: any) => r.operator);
-    return Object.entries(g).map(([key, rows]) => ({ key, count: rows.length }));
-  }, [filteredHandling]);
+  const handlingByAirline = useMemo<StatRow[]>(() =>
+    Object.entries(groupBy(filteredHandling, (r: any) => r.operator)).map(([key, rows]) => ({ key, count: rows.length })),
+  [filteredHandling]);
 
   // Security stats
-  const secByType = useMemo<StatRow[]>(() => {
-    const g = groupBy(filteredSecurity, (r: any) => r.clearance_type || r.service_type);
-    return Object.entries(g).map(([key, rows]) => ({
+  const secByType = useMemo<StatRow[]>(() =>
+    Object.entries(groupBy(filteredSecurity, (r: any) => r.clearance_type || r.service_type)).map(([key, rows]) => ({
       key, count: rows.length,
       extra: { completed: rows.filter((r: any) => (r.status || "").toLowerCase() === "completed").length },
-    }));
-  }, [filteredSecurity]);
-
-  const secByStatus = useMemo<StatRow[]>(() => {
-    const g = groupBy(filteredSecurity, (r: any) => r.status || "Pending");
-    return Object.entries(g).map(([key, rows]) => ({ key, count: rows.length }));
-  }, [filteredSecurity]);
-
-  const secByStation = useMemo<StatRow[]>(() => {
-    const g = groupBy(filteredSecurity, (r: any) => r.station);
-    return Object.entries(g).map(([key, rows]) => ({ key, count: rows.length }));
-  }, [filteredSecurity]);
-
-  const secByAirline = useMemo<StatRow[]>(() => {
-    const g = groupBy(filteredSecurity, (r: any) => r.airline);
-    return Object.entries(g).map(([key, rows]) => ({ key, count: rows.length }));
-  }, [filteredSecurity]);
+    })),
+  [filteredSecurity]);
+  const secByStatus = useMemo<StatRow[]>(() =>
+    Object.entries(groupBy(filteredSecurity, (r: any) => r.status || "Pending")).map(([key, rows]) => ({ key, count: rows.length })),
+  [filteredSecurity]);
+  const secByStation = useMemo<StatRow[]>(() =>
+    Object.entries(groupBy(filteredSecurity, (r: any) => r.station)).map(([key, rows]) => ({ key, count: rows.length })),
+  [filteredSecurity]);
+  const secByAirline = useMemo<StatRow[]>(() =>
+    Object.entries(groupBy(filteredSecurity, (r: any) => r.airline)).map(([key, rows]) => ({ key, count: rows.length })),
+  [filteredSecurity]);
 
   const fmtNum = (v: any) => v ? Number(v).toLocaleString() : "—";
 
-  // Drill-down navigation: opens Service Report page with the relevant tab + a search term
-  const drill = (tab: "security" | "handling", search: string) => {
-    const params = new URLSearchParams({ tab, search });
+  // Drill-down: forwards currently active filters + the clicked dimension
+  const drill = (tab: "security" | "handling", field: FilterField, value: string) => {
+    const params = new URLSearchParams({ tab });
+    const eff = { type: typeFilter, station: stationFilter, airline: airlineFilter };
+    if (field === "type") eff.type = value;
+    if (field === "station") eff.station = value;
+    if (field === "airline") eff.airline = value;
+    if (eff.type !== "all") params.set("type", eff.type);
+    if (eff.station !== "all") params.set("station", eff.station);
+    if (eff.airline !== "all") params.set("airline", eff.airline);
+    if (dateFrom) params.set("date_from", dateFrom);
+    if (dateTo) params.set("date_to", dateTo);
+    // Search fallback so list pages without an explicit airline filter
+    // (e.g. Security) still narrow to the clicked dimension.
+    if (field === "airline") params.set("search", value);
     navigate(`/service-report?${params.toString()}`);
+  };
+
+  // Chart click toggles the corresponding global filter
+  const onChartClick = (field: "type" | "station" | "airline", key: string) => {
+    if (field === "type") setTypeFilter(t => (t === key ? "all" : key));
+    if (field === "station") setStationFilter(t => (t === key ? "all" : key));
+    if (field === "airline") setAirlineFilter(t => (t === key ? "all" : key));
   };
 
   const exportCSV = (
     name: string,
     rows: StatRow[],
     extraCols: { key: string; label: string }[] = [],
+    chartOnly = false,
   ) => {
     const headers = ["Item", "Count", "Share %", ...extraCols.map(c => c.label)];
-    const total = rows.reduce((s, r) => s + r.count, 0);
-    const body = [...rows].sort((a, b) => b.count - a.count).map(r => [
-      r.key,
-      r.count,
+    const sorted = [...rows].sort((a, b) => b.count - a.count);
+    const slice = chartOnly ? sorted.slice(0, 12) : sorted;
+    const total = sorted.reduce((s, r) => s + r.count, 0);
+    const body = slice.map(r => [
+      r.key, r.count,
       total ? ((r.count / total) * 100).toFixed(1) : "0",
       ...extraCols.map(c => r.extra?.[c.key] ?? ""),
     ]);
-    downloadCSV(`${name}.csv`, headers, body);
+    downloadCSV(`${name}${chartOnly ? "_chart" : ""}.csv`, headers, body);
   };
 
-  const activeFilters = (typeFilter !== "all" ? 1 : 0) + (stationFilter !== "all" ? 1 : 0) + (airlineFilter !== "all" ? 1 : 0);
+  const activeFilters =
+    (typeFilter !== "all" ? 1 : 0) + (stationFilter !== "all" ? 1 : 0) +
+    (airlineFilter !== "all" ? 1 : 0) + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-3 text-muted-foreground">
+        <Loader2 className="animate-spin" size={32} />
+        <p className="text-sm">Loading Operations Reports…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -297,10 +360,21 @@ export default function OperationsReportsPage() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">From</label>
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">To</label>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[150px]" />
+          </div>
           {activeFilters > 0 && (
             <Button
               variant="ghost" size="sm" className="h-9"
-              onClick={() => { setTypeFilter("all"); setStationFilter("all"); setAirlineFilter("all"); }}
+              onClick={() => {
+                setTypeFilter("all"); setStationFilter("all"); setAirlineFilter("all");
+                setDateFrom(""); setDateTo("");
+              }}
             >
               Clear ({activeFilters})
             </Button>
@@ -319,15 +393,21 @@ export default function OperationsReportsPage() {
             title="Security — By Service Type"
             rows={secByType}
             valueCols={[{ key: "completed", label: "Completed", format: fmtNum }]}
-            onDrill={(k) => drill("security", k)}
+            activeKey={typeFilter !== "all" ? typeFilter : null}
+            onChartClick={(k) => onChartClick("type", k)}
+            onDrill={(k) => drill("security", "type", k)}
             onExport={() => exportCSV("security_by_type", secByType, [{ key: "completed", label: "Completed" }])}
+            onExportChart={() => exportCSV("security_by_type", secByType, [{ key: "completed", label: "Completed" }], true)}
           />
           <StatsTable
             title="Security — By Airline"
             rows={secByAirline}
             valueCols={[]}
-            onDrill={(k) => drill("security", k)}
+            activeKey={airlineFilter !== "all" ? airlineFilter : null}
+            onChartClick={(k) => onChartClick("airline", k)}
+            onDrill={(k) => drill("security", "airline", k)}
             onExport={() => exportCSV("security_by_airline", secByAirline)}
+            onExportChart={() => exportCSV("security_by_airline", secByAirline, [], true)}
           />
           <div className="grid md:grid-cols-2 gap-4">
             <StatsTable
@@ -335,13 +415,17 @@ export default function OperationsReportsPage() {
               rows={secByStatus}
               valueCols={[]}
               onExport={() => exportCSV("security_by_status", secByStatus)}
+              onExportChart={() => exportCSV("security_by_status", secByStatus, [], true)}
             />
             <StatsTable
               title="Security — By Station"
               rows={secByStation}
               valueCols={[]}
-              onDrill={(k) => drill("security", k)}
+              activeKey={stationFilter !== "all" ? stationFilter : null}
+              onChartClick={(k) => onChartClick("station", k)}
+              onDrill={(k) => drill("security", "station", k)}
               onExport={() => exportCSV("security_by_station", secByStation)}
+              onExportChart={() => exportCSV("security_by_station", secByStation, [], true)}
             />
           </div>
         </TabsContent>
@@ -351,29 +435,39 @@ export default function OperationsReportsPage() {
             title="Handling — By Handling Type"
             rows={handlingByType}
             valueCols={[{ key: "pax", label: "PAX", format: fmtNum }]}
-            onDrill={(k) => drill("handling", k)}
+            activeKey={typeFilter !== "all" ? typeFilter : null}
+            onChartClick={(k) => onChartClick("type", k)}
+            onDrill={(k) => drill("handling", "type", k)}
             onExport={() => exportCSV("handling_by_type", handlingByType, [{ key: "pax", label: "PAX" }])}
+            onExportChart={() => exportCSV("handling_by_type", handlingByType, [{ key: "pax", label: "PAX" }], true)}
           />
           <StatsTable
             title="Handling — By Airline"
             rows={handlingByAirline}
             valueCols={[]}
-            onDrill={(k) => drill("handling", k)}
+            activeKey={airlineFilter !== "all" ? airlineFilter : null}
+            onChartClick={(k) => onChartClick("airline", k)}
+            onDrill={(k) => drill("handling", "airline", k)}
             onExport={() => exportCSV("handling_by_airline", handlingByAirline)}
+            onExportChart={() => exportCSV("handling_by_airline", handlingByAirline, [], true)}
           />
           <div className="grid md:grid-cols-2 gap-4">
             <StatsTable
               title="Handling — By Station"
               rows={handlingByStation}
               valueCols={[]}
-              onDrill={(k) => drill("handling", k)}
+              activeKey={stationFilter !== "all" ? stationFilter : null}
+              onChartClick={(k) => onChartClick("station", k)}
+              onDrill={(k) => drill("handling", "station", k)}
               onExport={() => exportCSV("handling_by_station", handlingByStation)}
+              onExportChart={() => exportCSV("handling_by_station", handlingByStation, [], true)}
             />
             <StatsTable
               title="Handling — Day vs Night"
               rows={handlingByDayNight}
               valueCols={[]}
               onExport={() => exportCSV("handling_day_night", handlingByDayNight)}
+              onExportChart={() => exportCSV("handling_day_night", handlingByDayNight, [], true)}
             />
           </div>
         </TabsContent>
