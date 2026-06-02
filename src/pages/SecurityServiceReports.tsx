@@ -105,6 +105,23 @@ function timeDiffHours(start: string, end: string): number {
   return minutesToHMM(timeDiffMinutes(start, end));
 }
 
+function normalizeSecurityDates(row: Record<string, any>, taskSheet: Record<string, any>) {
+  const serviceType = String(row.service_type || "").toLowerCase();
+  const isDepartureOnly = serviceType.includes("departure") && !serviceType.includes("arrival");
+  const isArrivalOnly = serviceType.includes("arrival") && !serviceType.includes("departure");
+  const flightDate = row.flight_date || taskSheet.shift_start_date || taskSheet.shift_end_date || "";
+  const departureDate = row.departure_date || taskSheet.shift_end_date || flightDate;
+  if (isDepartureOnly) {
+    const serviceDate = departureDate || flightDate;
+    return { flightDate: serviceDate, arrivalDate: serviceDate, departureDate: serviceDate };
+  }
+  if (isArrivalOnly) {
+    const serviceDate = flightDate || departureDate;
+    return { flightDate: serviceDate, arrivalDate: serviceDate, departureDate: serviceDate };
+  }
+  return { flightDate, arrivalDate: flightDate, departureDate: departureDate || flightDate };
+}
+
 export default function SecurityServiceReportsPage() {
   const navigate = useNavigate();
   const location = useLocation();
