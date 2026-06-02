@@ -633,7 +633,7 @@ export default function ClearancesPage() {
                         </Fragment>
                       );
                     })}
-                    {filtered.length === 0 && <TableRow><TableCell colSpan={14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
+                    {filtered.length === 0 && <TableRow><TableCell colSpan={statusTab === "rejected" ? 15 : 14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
