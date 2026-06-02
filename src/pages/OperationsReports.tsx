@@ -432,7 +432,7 @@ export default function OperationsReportsPage() {
       </div>
 
 
-      <Card className="p-3">
+      <Card className="p-3 no-print">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1 min-w-[180px]">
             <label className="text-xs font-medium text-muted-foreground">Type</label>
