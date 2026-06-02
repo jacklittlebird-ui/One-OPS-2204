@@ -887,7 +887,7 @@ export default function SecurityServiceReportsPage() {
               departure_date: normalizedDates.departureDate || null,
             } as any)
             .eq("id", (row as any).flight_schedule_id);
-          if (fsSyncErr) throw fsSyncErr;
+          if (fsSyncErr && fsSyncErr.code !== "23505") throw fsSyncErr;
           queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
           queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
           toast({ title: "Task Sheet Saved", description: "Step 2 (Station) complete — sent for Operations review." });
@@ -983,7 +983,7 @@ export default function SecurityServiceReportsPage() {
               .from("flight_schedules")
               .update(fsUpdate as any)
               .eq("id", linkedFsId);
-            if (fsErr) throw fsErr;
+            if (fsErr && fsErr.code !== "23505") throw fsErr;
           }
 
           queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
