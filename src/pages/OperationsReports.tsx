@@ -119,10 +119,12 @@ function StatsTable({
                   cursor={onChartClick ? "pointer" : undefined}
                   onClick={(d: any) => onChartClick?.(d.name)}
                 >
-                  {chartData.map((d) => (
+                  {chartData.map((d, i) => (
                     <Cell
                       key={d.name}
-                      fill={activeKey && activeKey === d.name ? "hsl(var(--accent))" : "hsl(var(--primary))"}
+                      fill={activeKey && activeKey === d.name ? "hsl(var(--accent))" : CHART_COLORS[i % CHART_COLORS.length]}
+                      stroke={activeKey === d.name ? "hsl(var(--foreground))" : "transparent"}
+                      strokeWidth={activeKey === d.name ? 1.5 : 0}
                     />
                   ))}
                 </Bar>
