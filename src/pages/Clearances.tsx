@@ -136,6 +136,7 @@ export default function ClearancesPage() {
   const [editItem, setEditItem] = useState<ClearanceRow | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
+  const [selectedRejectedIds, setSelectedRejectedIds] = useState<Set<string>>(new Set());
 
   const airlineMap = Object.fromEntries((airlines || []).map((a: any) => [a.id, a]));
 
