@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import { resolveSecurityRowDisplay } from "@/lib/securityRowDisplay";
+import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
