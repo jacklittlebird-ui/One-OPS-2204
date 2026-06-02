@@ -400,32 +400,38 @@ export default function OperationsReportsPage() {
     const sorted = [...rows].sort((a, b) => b.count - a.count);
     const total = sorted.reduce((s, r) => s + r.count, 0);
     const aoa: any[][] = [
-      ["Item", "Count", "Share %", ...extraCols.map(c => c.label)],
+      ["Color", "Item", "Count", "Share %", ...extraCols.map(c => c.label)],
       ...sorted.map(r => [
+        "",                       // color swatch cell (filled via cell style below)
         r.key,
         r.count,
         total ? Number(((r.count / total) * 100).toFixed(1)) : 0,
         ...extraCols.map(c => r.extra?.[c.key] ?? ""),
       ]),
-      ["Total", total, total ? 100 : 0, ...extraCols.map(() => "")],
+      ["", "Total", total, total ? 100 : 0, ...extraCols.map(() => "")],
     ];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    // Auto-size columns based on max content width
     const headers = aoa[0] as string[];
+    // Auto-size columns based on max content width
     ws["!cols"] = headers.map((_, i) => {
-      const max = Math.max(
-        ...aoa.map(row => String(row[i] ?? "").length),
-        8,
-      );
+      if (i === 0) return { wch: 6 }; // color swatch column
+      const max = Math.max(...aoa.map(row => String(row[i] ?? "").length), 8);
       return { wch: Math.min(max + 2, 40) };
     });
-    // Freeze header row (correct xlsx syntax)
+    // Freeze header row + autofilter on full header range
     ws["!views"] = [{ state: "frozen", ySplit: 1 }] as any;
     (ws as any)["!freeze"] = { xSplit: 0, ySplit: 1 };
+    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: headers.length - 1, r: 0 } }) };
     // Bold header row
     headers.forEach((_, i) => {
       const addr = XLSX.utils.encode_cell({ r: 0, c: i });
-      if (ws[addr]) ws[addr].s = { font: { bold: true } };
+      if (ws[addr]) ws[addr].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFE5E7EB" } } };
+    });
+    // Color-swatch fill per row (matches in-app legend / charts)
+    sorted.forEach((r, idx) => {
+      const addr = XLSX.utils.encode_cell({ r: idx + 1, c: 0 });
+      if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+      ws[addr].s = { fill: { patternType: "solid", fgColor: { rgb: hexToArgb(colorForKey(r.key)) } } };
     });
     return ws;
   };
