@@ -647,6 +647,29 @@ export default function OperationsReportsPage() {
         </div>
       </div>
 
+      {(excelError || pdfError || printError) && (
+        <div className="no-print space-y-2">
+          {printError && (
+            <div className="flex items-start justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <span><b>Print failed:</b> {printError}</span>
+              <Button size="sm" variant="outline" className="h-7" onClick={handlePrint} disabled={printing}>Retry</Button>
+            </div>
+          )}
+          {pdfError && (
+            <div className="flex items-start justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <span><b>PDF export failed:</b> {pdfError}</span>
+              <Button size="sm" variant="outline" className="h-7" onClick={exportPdf} disabled={exportingPdf}>Retry</Button>
+            </div>
+          )}
+          {excelError && (
+            <div className="flex items-start justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <span><b>Excel export failed:</b> {excelError}</span>
+              <Button size="sm" variant="outline" className="h-7" onClick={exportExcel} disabled={exportingExcel}>Retry</Button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="print-only mb-3 text-xs text-muted-foreground border-b border-border pb-2">
         <div><b>Generated:</b> {new Date().toLocaleString()}</div>
         <div><b>Filters:</b> {filterSummary()}</div>
