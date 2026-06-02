@@ -86,6 +86,7 @@ function AppRoutes() {
       <Route path="/flight-schedule" element={<Navigate to="/clearances" replace />} />
       <Route path="/services" element={<ProtectedRoute><AppLayout><ServicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/service-report" element={<ProtectedRoute><AppLayout><ServiceReportPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/operations-reports" element={<ProtectedRoute><AppLayout><OperationsReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/invoices" element={<ProtectedRoute><AppLayout><InvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/overfly-schedule" element={<ProtectedRoute><AppLayout><OverflySchedulePage /></AppLayout></ProtectedRoute>} />
       <Route path="/delay-codes" element={<ProtectedRoute><AppLayout><DelayCodesPage /></AppLayout></ProtectedRoute>} />
