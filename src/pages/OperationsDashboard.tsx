@@ -292,7 +292,7 @@ export default function OperationsDashboard() {
                     <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{f.route || "—"}</td>
                     <td className="px-3 py-2 text-foreground text-xs">{f.sta || "—"}</td>
                     <td className="px-3 py-2 text-foreground text-xs">{f.std || "—"}</td>
-                    <td className="px-3 py-2 text-[10px] text-muted-foreground">{f.clearance_type || "Landing"}</td>
+                    <td className="px-3 py-2 text-[10px]"><span className={`inline-flex px-2 py-0.5 rounded-full font-semibold ${getTypeBadgeClass(f.clearance_type || "Landing")}`}>{f.clearance_type || "Landing"}</span></td>
                     <td className="px-3 py-2">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColor[f.status] || "bg-muted text-muted-foreground"}`}>{f.status}</span>
                     </td>
