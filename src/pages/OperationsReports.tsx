@@ -141,17 +141,46 @@ function StatsTable({
                   cursor={onChartClick ? "pointer" : undefined}
                   onClick={(d: any) => onChartClick?.(d.name)}
                 >
-                  {chartData.map((d, i) => (
-                    <Cell
-                      key={d.name}
-                      fill={activeKey && activeKey === d.name ? "hsl(var(--accent))" : CHART_COLORS[i % CHART_COLORS.length]}
-                      stroke={activeKey === d.name ? "hsl(var(--foreground))" : "transparent"}
-                      strokeWidth={activeKey === d.name ? 1.5 : 0}
-                    />
-                  ))}
+                  {chartData.map((d) => {
+                    const base = colorForKey(d.name);
+                    const isActive = activeKey === d.name;
+                    return (
+                      <Cell
+                        key={d.name}
+                        fill={base}
+                        fillOpacity={!activeKey || isActive ? 1 : 0.45}
+                        stroke={isActive ? ACTIVE_COLOR : "transparent"}
+                        strokeWidth={isActive ? 2 : 0}
+                      />
+                    );
+                  })}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          {/* Legend — consistent color mapping with PDF/Excel */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs">
+            {chartData.map(d => {
+              const isActive = activeKey === d.name;
+              return (
+                <span
+                  key={d.name}
+                  className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded ${isActive ? "ring-1 ring-foreground/60 bg-muted/40" : ""}`}
+                >
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-sm border border-border/50"
+                    style={{ background: colorForKey(d.name) }}
+                  />
+                  <span className="text-foreground/80">{d.name}</span>
+                </span>
+              );
+            })}
+            {activeKey && (
+              <span className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-muted-foreground">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm border-2" style={{ borderColor: ACTIVE_COLOR }} />
+                Selected
+              </span>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
