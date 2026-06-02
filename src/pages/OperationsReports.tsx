@@ -434,8 +434,8 @@ export default function OperationsReportsPage() {
   const exportExcel = async () => {
     if (exportingExcel) return;
     setExportingExcel(true);
+    setExcelError(null);
     try {
-      // Yield so the spinner can paint
       await new Promise(r => setTimeout(r, 30));
       const wb = XLSX.utils.book_new();
 
@@ -469,11 +469,12 @@ export default function OperationsReportsPage() {
       XLSX.utils.book_append_sheet(wb, buildSheet(handlingByDayNight), "Hdl - Day vs Night");
       XLSX.utils.book_append_sheet(wb, buildDetailSheet(filteredHandling, handlingDetailCols), "Hdl - Detail");
 
-      const stamp = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(wb, `operations_report_${stamp}.xlsx`);
+      XLSX.writeFile(wb, buildFileName("xlsx"));
       toast({ title: "Excel export ready", description: "Your report has been downloaded." });
     } catch (err: any) {
-      toast({ title: "Excel export failed", description: err?.message || "Unable to generate the workbook.", variant: "destructive" });
+      const msg = err?.message || "Unable to generate the workbook.";
+      setExcelError(msg);
+      toast({ title: "Excel export failed", description: msg, variant: "destructive" });
     } finally {
       setExportingExcel(false);
     }
