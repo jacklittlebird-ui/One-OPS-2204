@@ -658,7 +658,7 @@ export default function StationDispatchPage() {
                     return (
                       <tr key={f.id} className={`data-table-row ${assigned ? "opacity-60" : ""}`}>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{f.flight_no}</td>
-                        <td className="px-3 py-2.5 text-xs">{f.clearance_type}</td>
+                        <td className="px-3 py-2.5 text-xs"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${getTypeBadgeClass(f.clearance_type)}`}>{f.clearance_type}</span></td>
                         <td className="px-3 py-2.5 text-muted-foreground">{f.route}</td>
                         <td className="px-3 py-2.5 font-mono text-xs">{f.sta || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs">{f.std || "—"}</td>
