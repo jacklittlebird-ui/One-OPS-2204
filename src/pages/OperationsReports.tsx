@@ -274,6 +274,9 @@ export default function OperationsReportsPage() {
     if (eff.airline !== "all") params.set("airline", eff.airline);
     if (dateFrom) params.set("date_from", dateFrom);
     if (dateTo) params.set("date_to", dateTo);
+    // Search fallback so list pages without an explicit airline filter
+    // (e.g. Security) still narrow to the clicked dimension.
+    if (field === "airline") params.set("search", value);
     navigate(`/service-report?${params.toString()}`);
   };
 
