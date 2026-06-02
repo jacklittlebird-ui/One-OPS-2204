@@ -17,6 +17,21 @@ import {
 type StatRow = { key: string; count: number; extra?: Record<string, number | string> };
 type FilterField = "type" | "station" | "airline" | null;
 
+const CHART_COLORS = [
+  "hsl(217 91% 60%)",
+  "hsl(160 84% 39%)",
+  "hsl(38 92% 50%)",
+  "hsl(280 75% 60%)",
+  "hsl(346 77% 58%)",
+  "hsl(199 89% 48%)",
+  "hsl(24 95% 53%)",
+  "hsl(173 80% 40%)",
+  "hsl(262 83% 65%)",
+  "hsl(142 71% 45%)",
+  "hsl(330 81% 60%)",
+  "hsl(48 96% 53%)",
+];
+
 function groupBy<T>(rows: T[], pick: (r: T) => string): Record<string, T[]> {
   const m: Record<string, T[]> = {};
   rows.forEach(r => {
@@ -104,10 +119,12 @@ function StatsTable({
                   cursor={onChartClick ? "pointer" : undefined}
                   onClick={(d: any) => onChartClick?.(d.name)}
                 >
-                  {chartData.map((d) => (
+                  {chartData.map((d, i) => (
                     <Cell
                       key={d.name}
-                      fill={activeKey && activeKey === d.name ? "hsl(var(--accent))" : "hsl(var(--primary))"}
+                      fill={activeKey && activeKey === d.name ? "hsl(var(--accent))" : CHART_COLORS[i % CHART_COLORS.length]}
+                      stroke={activeKey === d.name ? "hsl(var(--foreground))" : "transparent"}
+                      strokeWidth={activeKey === d.name ? 1.5 : 0}
                     />
                   ))}
                 </Bar>
@@ -402,12 +419,23 @@ export default function OperationsReportsPage() {
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [excelError, setExcelError] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [printError, setPrintError] = useState<string | null>(null);
+
+  const fileStamp = () => {
+    if (dateFrom && dateTo) return `${dateFrom}_to_${dateTo}`;
+    if (dateFrom) return `from_${dateFrom}`;
+    if (dateTo) return `until_${dateTo}`;
+    return new Date().toISOString().slice(0, 10);
+  };
+  const buildFileName = (ext: string) => `operations_report_${fileStamp()}.${ext}`;
 
   const exportExcel = async () => {
     if (exportingExcel) return;
     setExportingExcel(true);
+    setExcelError(null);
     try {
-      // Yield so the spinner can paint
       await new Promise(r => setTimeout(r, 30));
       const wb = XLSX.utils.book_new();
 
@@ -441,11 +469,12 @@ export default function OperationsReportsPage() {
       XLSX.utils.book_append_sheet(wb, buildSheet(handlingByDayNight), "Hdl - Day vs Night");
       XLSX.utils.book_append_sheet(wb, buildDetailSheet(filteredHandling, handlingDetailCols), "Hdl - Detail");
 
-      const stamp = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(wb, `operations_report_${stamp}.xlsx`);
+      XLSX.writeFile(wb, buildFileName("xlsx"));
       toast({ title: "Excel export ready", description: "Your report has been downloaded." });
     } catch (err: any) {
-      toast({ title: "Excel export failed", description: err?.message || "Unable to generate the workbook.", variant: "destructive" });
+      const msg = err?.message || "Unable to generate the workbook.";
+      setExcelError(msg);
+      toast({ title: "Excel export failed", description: msg, variant: "destructive" });
     } finally {
       setExportingExcel(false);
     }
@@ -454,6 +483,7 @@ export default function OperationsReportsPage() {
   const exportPdf = async () => {
     if (exportingPdf) return;
     setExportingPdf(true);
+    setPdfError(null);
     try {
       const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
         import("jspdf"),
@@ -488,10 +518,12 @@ export default function OperationsReportsPage() {
         autoTable(doc, {
           head, body,
           startY: cursorY,
-          margin: { left: 40, right: 40 },
+          margin: { left: 40, right: 40, top: 50 },
           styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" },
           headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: "bold" },
           alternateRowStyles: { fillColor: [245, 247, 250] },
+          showHead: "everyPage",
+          rowPageBreak: "avoid",
           didDrawPage: () => {
             doc.setFontSize(10);
             doc.setTextColor(80);
@@ -532,11 +564,12 @@ export default function OperationsReportsPage() {
       addBreakdown("Handling — By Station", handlingByStation);
       addBreakdown("Handling — Day vs Night", handlingByDayNight);
 
-      const stamp = new Date().toISOString().slice(0, 10);
-      doc.save(`operations_report_${stamp}.pdf`);
+      doc.save(buildFileName("pdf"));
       toast({ title: "PDF export ready", description: "Your report has been downloaded." });
     } catch (err: any) {
-      toast({ title: "PDF export failed", description: err?.message || "Unable to generate the PDF.", variant: "destructive" });
+      const msg = err?.message || "Unable to generate the PDF.";
+      setPdfError(msg);
+      toast({ title: "PDF export failed", description: msg, variant: "destructive" });
     } finally {
       setExportingPdf(false);
     }
@@ -545,11 +578,13 @@ export default function OperationsReportsPage() {
   const handlePrint = async () => {
     if (printing) return;
     setPrinting(true);
+    setPrintError(null);
     try {
       await new Promise(r => setTimeout(r, 50));
       window.print();
+    } catch (err: any) {
+      setPrintError(err?.message || "Unable to open the print dialog.");
     } finally {
-      // Reset shortly after the print dialog opens
       setTimeout(() => setPrinting(false), 500);
     }
   };
@@ -611,6 +646,29 @@ export default function OperationsReportsPage() {
           </Button>
         </div>
       </div>
+
+      {(excelError || pdfError || printError) && (
+        <div className="no-print space-y-2">
+          {printError && (
+            <div className="flex items-start justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <span><b>Print failed:</b> {printError}</span>
+              <Button size="sm" variant="outline" className="h-7" onClick={handlePrint} disabled={printing}>Retry</Button>
+            </div>
+          )}
+          {pdfError && (
+            <div className="flex items-start justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <span><b>PDF export failed:</b> {pdfError}</span>
+              <Button size="sm" variant="outline" className="h-7" onClick={exportPdf} disabled={exportingPdf}>Retry</Button>
+            </div>
+          )}
+          {excelError && (
+            <div className="flex items-start justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <span><b>Excel export failed:</b> {excelError}</span>
+              <Button size="sm" variant="outline" className="h-7" onClick={exportExcel} disabled={exportingExcel}>Retry</Button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="print-only mb-3 text-xs text-muted-foreground border-b border-border pb-2">
         <div><b>Generated:</b> {new Date().toLocaleString()}</div>
