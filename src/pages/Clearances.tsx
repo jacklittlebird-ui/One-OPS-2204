@@ -618,7 +618,7 @@ export default function ClearancesPage() {
                           <TableCell className="text-sm font-mono">{c.route || "—"}</TableCell>
                           <TableCell className="text-xs">{c.sta || "—"}</TableCell>
                           <TableCell className="text-xs">{c.std || "—"}</TableCell>
-                          <TableCell className="text-xs">{c.clearance_type || "—"}</TableCell>
+                          <TableCell className="text-xs"><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${getTypeBadgeClass(c.clearance_type)}`}>{c.clearance_type || "—"}</span></TableCell>
                           <TableCell className="text-xs">{c.skd_type || "—"}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>{statusIcon}{c.status}</span>
