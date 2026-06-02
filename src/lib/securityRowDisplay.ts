@@ -25,6 +25,7 @@ export interface SecurityFlightDetails {
 export interface SecurityRowLike {
   flight_no?: string;
   flight_date?: string;
+  departure_date?: string;
   station?: string;
   airline?: string;
   service_type?: string;
@@ -80,18 +81,26 @@ export function resolveSecurityRowDisplay(
   const fd = flightDetails || {};
   const meta = flightMeta || {};
   const ts = (r.task_sheet_data || {}) as Record<string, any>;
+  const serviceType = pick(r.service_type, fd.clearance_type, meta.clearance_type, ts.service_type);
+  const isDepartureOnly = serviceType.toLowerCase().includes("departure") && !serviceType.toLowerCase().includes("arrival");
+  const arrivalDate = isDepartureOnly
+    ? pick(r.flight_date, r.departure_date, fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date)
+    : pick(fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date, r.flight_date);
+  const departureDate = isDepartureOnly
+    ? pick(r.departure_date, fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, r.flight_date, fd.arrival_date, meta.arrival_date, ts.arrival_date)
+    : pick(fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, r.departure_date, r.flight_date);
 
   return {
     flightNo: pick(fd.flight_no, meta.flight_no, r.flight_no, ts.flight_no),
     station: pick(r.station, meta.authority, ts.station),
     airline: pick(r.airline, meta.airline, ts.airline),
-    serviceType: pick(r.service_type, ts.service_type),
+    serviceType,
     registration: pick(fd.registration, meta.registration, ts.registration),
     route: pick(fd.route, meta.route, ts.route),
     aircraftType: pick(fd.aircraft_type, meta.aircraft_type, ts.aircraft_type),
     skdType: pick(fd.skd_type, meta.skd_type, ts.flight_type, ts.skd_type),
-    arrivalDate: pick(fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date, r.flight_date),
-    departureDate: pick(fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, r.flight_date),
+    arrivalDate,
+    departureDate,
     // STA/STD reflect the FLIGHT schedule only. Never fall back to dispatch
     // shift times (scheduled_start/scheduled_end) or actual times — those are
     // guard shift / actual movement times and would fabricate a fake STD when

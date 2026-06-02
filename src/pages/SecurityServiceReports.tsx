@@ -105,6 +105,23 @@ function timeDiffHours(start: string, end: string): number {
   return minutesToHMM(timeDiffMinutes(start, end));
 }
 
+function normalizeSecurityDates(row: Record<string, any>, taskSheet: Record<string, any>) {
+  const serviceType = String(row.service_type || "").toLowerCase();
+  const isDepartureOnly = serviceType.includes("departure") && !serviceType.includes("arrival");
+  const isArrivalOnly = serviceType.includes("arrival") && !serviceType.includes("departure");
+  const flightDate = row.flight_date || taskSheet.shift_start_date || taskSheet.shift_end_date || "";
+  const departureDate = row.departure_date || taskSheet.shift_end_date || flightDate;
+  if (isDepartureOnly) {
+    const serviceDate = departureDate || flightDate;
+    return { flightDate: serviceDate, arrivalDate: serviceDate, departureDate: serviceDate };
+  }
+  if (isArrivalOnly) {
+    const serviceDate = flightDate || departureDate;
+    return { flightDate: serviceDate, arrivalDate: serviceDate, departureDate: serviceDate };
+  }
+  return { flightDate, arrivalDate: flightDate, departureDate: departureDate || flightDate };
+}
+
 export default function SecurityServiceReportsPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -589,22 +606,25 @@ export default function SecurityServiceReportsPage() {
         (r.station || "").toLowerCase().includes(s)
       );
     }
-    // Sort by Arrival Date with flight_no/id tiebreaker so an edited row keeps its position
+    // Sort by the same display date shown in the table so corrected
+    // departure-only Security rows never get ordered by a stale schedule date.
     const ascending = true;
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
       const bMeta = (b as any).flightMeta;
       const aFd = a.flight_schedule_id ? flightDetailsById.get(a.flight_schedule_id) : undefined;
       const bFd = b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined;
-      const ad = aFd?.arrival_date || aMeta?.arrival_date || a.flight_date || "";
-      const bd = bFd?.arrival_date || bMeta?.arrival_date || b.flight_date || "";
+      const aDisplay = resolveSecurityRowDisplay(a as any, aFd, aMeta);
+      const bDisplay = resolveSecurityRowDisplay(b as any, bFd, bMeta);
+      const ad = aDisplay.arrivalDate || "";
+      const bd = bDisplay.arrivalDate || "";
       if (ad !== bd) {
         if (!ad) return 1;
         if (!bd) return -1;
         return ascending ? ad.localeCompare(bd) : bd.localeCompare(ad);
       }
-      const at = aFd?.sta || aMeta?.sta || aFd?.std || aMeta?.std || "";
-      const bt = bFd?.sta || bMeta?.sta || bFd?.std || bMeta?.std || "";
+      const at = aDisplay.sta || aDisplay.std || "";
+      const bt = bDisplay.sta || bDisplay.std || "";
       if (at !== bt) {
         if (!at) return 1;
         if (!bt) return -1;
@@ -795,6 +815,7 @@ export default function SecurityServiceReportsPage() {
       !!originalClearanceType &&
       (row.service_type || "").trim().toLowerCase() !==
         (originalClearanceType || "").trim().toLowerCase();
+    const normalizedDates = normalizeSecurityDates(row as any, taskSheet || {});
 
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
@@ -818,7 +839,7 @@ export default function SecurityServiceReportsPage() {
       station: row.station,
       airline: row.airline,
       flight_no: row.flight_no,
-      flight_date: row.flight_date,
+      flight_date: normalizedDates.flightDate,
       service_type: row.service_type,
       staff_names: row.staff_names,
       staff_count: row.staff_count,
@@ -859,7 +880,16 @@ export default function SecurityServiceReportsPage() {
             .from("dispatch_assignments")
             .insert(dispatchInsert as any);
           if (dispatchErr) throw dispatchErr;
+          const { error: fsSyncErr } = await supabase
+            .from("flight_schedules")
+            .update({
+              arrival_date: normalizedDates.arrivalDate || null,
+              departure_date: normalizedDates.departureDate || null,
+            } as any)
+            .eq("id", (row as any).flight_schedule_id);
+          if (fsSyncErr && fsSyncErr.code !== "23505") throw fsSyncErr;
           queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
           toast({ title: "Task Sheet Saved", description: "Step 2 (Station) complete — sent for Operations review." });
         } catch (e: any) {
           toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -889,8 +919,8 @@ export default function SecurityServiceReportsPage() {
             status: "Pending" as const,
             authority: row.station || "CAI",
             handling_agent: "",
-            arrival_date: row.flight_date || null,
-            departure_date: row.flight_date || null,
+            arrival_date: normalizedDates.arrivalDate || null,
+            departure_date: normalizedDates.departureDate || null,
             remarks: "Added from Security Service – pending Operations approval",
             notes: "",
             purpose: "Security Service",
@@ -941,8 +971,8 @@ export default function SecurityServiceReportsPage() {
               sta: taskSheet.sta || "",
               std: taskSheet.std || "",
               skd_type: taskSheet.flight_type || "",
-              arrival_date: row.flight_date || null,
-              departure_date: (row as any).departure_date || row.flight_date || null,
+              arrival_date: normalizedDates.arrivalDate || null,
+              departure_date: normalizedDates.departureDate || null,
             };
             // Service Type change → revert clearance to Pending (re-approval needed)
             if (serviceTypeChanged) {
@@ -953,7 +983,7 @@ export default function SecurityServiceReportsPage() {
               .from("flight_schedules")
               .update(fsUpdate as any)
               .eq("id", linkedFsId);
-            if (fsErr) throw fsErr;
+            if (fsErr && fsErr.code !== "23505") throw fsErr;
           }
 
           queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
