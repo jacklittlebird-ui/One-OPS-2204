@@ -910,8 +910,8 @@ export default function SecurityServiceReportsPage() {
             status: "Pending" as const,
             authority: row.station || "CAI",
             handling_agent: "",
-            arrival_date: row.flight_date || null,
-            departure_date: row.flight_date || null,
+            arrival_date: normalizedDates.arrivalDate || null,
+            departure_date: normalizedDates.departureDate || null,
             remarks: "Added from Security Service – pending Operations approval",
             notes: "",
             purpose: "Security Service",
@@ -962,8 +962,8 @@ export default function SecurityServiceReportsPage() {
               sta: taskSheet.sta || "",
               std: taskSheet.std || "",
               skd_type: taskSheet.flight_type || "",
-              arrival_date: row.flight_date || null,
-              departure_date: (row as any).departure_date || row.flight_date || null,
+              arrival_date: normalizedDates.arrivalDate || null,
+              departure_date: normalizedDates.departureDate || null,
             };
             // Service Type change → revert clearance to Pending (re-approval needed)
             if (serviceTypeChanged) {
