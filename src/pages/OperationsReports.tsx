@@ -578,9 +578,12 @@ export default function OperationsReportsPage() {
           [role="tabpanel"] { display: block !important; margin-top: 12px; page-break-before: auto; }
           .recharts-responsive-container { page-break-inside: avoid; }
           .card, [class*="rounded-lg"][class*="border"] { box-shadow: none !important; break-inside: avoid; }
-          table { font-size: 11px; }
+          table { font-size: 11px; border-collapse: collapse; width: 100%; }
+          thead { display: table-header-group; }
+          tfoot { display: table-footer-group; }
+          tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }
           h1 { font-size: 18px; }
-          h3 { font-size: 13px; }
+          h3 { font-size: 13px; page-break-after: avoid; }
         }
         .print-only { display: none; }
       `}</style>
@@ -594,11 +597,17 @@ export default function OperationsReportsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 no-print">
-          <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5">
-            <Printer size={14} /> Print
+          <Button variant="outline" size="sm" onClick={handlePrint} disabled={printing} className="gap-1.5">
+            {printing ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
+            {printing ? "Preparing…" : "Print"}
           </Button>
-          <Button variant="default" size="sm" onClick={exportExcel} className="gap-1.5">
-            <FileSpreadsheet size={14} /> Export Excel
+          <Button variant="outline" size="sm" onClick={exportPdf} disabled={exportingPdf} className="gap-1.5">
+            {exportingPdf ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+            {exportingPdf ? "Generating…" : "Export PDF"}
+          </Button>
+          <Button variant="default" size="sm" onClick={exportExcel} disabled={exportingExcel} className="gap-1.5">
+            {exportingExcel ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
+            {exportingExcel ? "Generating…" : "Export Excel"}
           </Button>
         </div>
       </div>
