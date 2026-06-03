@@ -158,6 +158,17 @@ export function applyTheme(t: ThemeSettings) {
     (/^\d+$/.test(t.fontScale) ? `${Math.max(12, Math.min(25, parseInt(t.fontScale, 10)))}px` : "16px");
   root.style.fontSize = fontPx;
 
+  // Font weight
+  const weightMap: Record<FontWeight, string> = {
+    normal: "400",
+    medium: "500",
+    semibold: "600",
+    bold: "700",
+  };
+  const fw = weightMap[t.fontWeight] ?? "400";
+  root.style.setProperty("--app-font-weight", fw);
+  root.style.fontWeight = fw;
+
   // High contrast
   root.classList.toggle("high-contrast", t.highContrast);
 }
