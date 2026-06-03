@@ -827,7 +827,7 @@ export default function SecurityServiceReportsPage() {
       ? flightDetailsById.get(linkedFsId)?.clearance_type
       : undefined;
     const serviceTypeChanged =
-      !isNewReport &&
+      !effectiveIsNew &&
       !!linkedFsId &&
       !!originalClearanceType &&
       (row.service_type || "").trim().toLowerCase() !==
