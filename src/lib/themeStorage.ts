@@ -8,6 +8,7 @@ export type ThemeMode = "light" | "dark";
 export type SidebarStyle = "tinted" | "dark" | "light" | "glass";
 export type BackgroundStyle = "solid" | "subtle-gradient" | "mesh";
 export type FontScale = string;
+export type FontWeight = "normal" | "medium" | "semibold" | "bold";
 
 export interface ThemeSettings {
   mode: ThemeMode;
@@ -17,6 +18,7 @@ export interface ThemeSettings {
   sidebarStyle: SidebarStyle;
   backgroundStyle: BackgroundStyle;
   fontScale: FontScale;
+  fontWeight: FontWeight;
   highContrast: boolean;
 }
 
@@ -43,6 +45,7 @@ export const DEFAULT_THEME: ThemeSettings = {
   sidebarStyle: "tinted",
   backgroundStyle: "solid",
   fontScale: "comfortable",
+  fontWeight: "normal",
   highContrast: false,
 };
 
@@ -154,6 +157,17 @@ export function applyTheme(t: ThemeSettings) {
     legacyPx[t.fontScale] ??
     (/^\d+$/.test(t.fontScale) ? `${Math.max(12, Math.min(25, parseInt(t.fontScale, 10)))}px` : "16px");
   root.style.fontSize = fontPx;
+
+  // Font weight
+  const weightMap: Record<FontWeight, string> = {
+    normal: "400",
+    medium: "500",
+    semibold: "600",
+    bold: "700",
+  };
+  const fw = weightMap[t.fontWeight] ?? "400";
+  root.style.setProperty("--app-font-weight", fw);
+  root.style.fontWeight = fw;
 
   // High contrast
   root.classList.toggle("high-contrast", t.highContrast);
