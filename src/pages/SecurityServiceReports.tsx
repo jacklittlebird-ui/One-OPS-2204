@@ -790,6 +790,12 @@ export default function SecurityServiceReportsPage() {
 
 
   const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
+    // Synthetic pending rows (id "pending-<fs-uuid>") are not real dispatch_assignments
+    // yet — treat them as new completions so we INSERT instead of UPDATE by a bogus uuid.
+    if (typeof row.id === "string" && row.id.startsWith("pending-")) {
+      row = { ...row, id: "new" } as DispatchRow;
+      if (!isNewReport) setIsNewReport(true);
+    }
     const shiftStart = taskSheet.shift_start || row.actual_start || "";
     const shiftEnd = taskSheet.shift_end || row.actual_end || "";
     const actualMins = timeDiffMinutes(shiftStart, shiftEnd);
