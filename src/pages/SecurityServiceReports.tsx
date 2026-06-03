@@ -792,10 +792,15 @@ export default function SecurityServiceReportsPage() {
   const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
     // Synthetic pending rows (id "pending-<fs-uuid>") are not real dispatch_assignments
     // yet — treat them as new completions so we INSERT instead of UPDATE by a bogus uuid.
-    if (typeof row.id === "string" && row.id.startsWith("pending-")) {
+    const isSyntheticPending =
+      typeof row.id === "string" && row.id.startsWith("pending-");
+    if (isSyntheticPending) {
       row = { ...row, id: "new" } as DispatchRow;
       if (!isNewReport) setIsNewReport(true);
     }
+    // Use a local flag so the branch logic below works on the first call even
+    // before the setIsNewReport above flushes to state.
+    const effectiveIsNew = isNewReport || isSyntheticPending;
     const shiftStart = taskSheet.shift_start || row.actual_start || "";
     const shiftEnd = taskSheet.shift_end || row.actual_end || "";
     const actualMins = timeDiffMinutes(shiftStart, shiftEnd);
@@ -810,9 +815,9 @@ export default function SecurityServiceReportsPage() {
 
     // Detect "completing a clearance flight" case: new dispatch but row already
     // has a flight_schedule_id (came from a pending clearance row).
-    const isCompletingClearanceFlight = isNewReport && !!(row as any).flight_schedule_id;
+    const isCompletingClearanceFlight = effectiveIsNew && !!(row as any).flight_schedule_id;
     // If station is editing a previously-rejected report, mark as "Modified" (goes back to ops).
-    const isResubmittingRejected = !isNewReport && row.review_status === "Rejected";
+    const isResubmittingRejected = !effectiveIsNew && row.review_status === "Rejected";
 
     // Detect "service type changed" on an existing linked record. When the
     // station changes the Service Type (clearance_type) for an existing
