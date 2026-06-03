@@ -183,14 +183,14 @@ function StatsTable({
             )}
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm border-collapse">
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
-                  <th className="text-left px-3 py-2 font-medium">Item</th>
-                  <th className="text-right px-3 py-2 font-medium">Count</th>
-                  <th className="text-right px-3 py-2 font-medium">Share</th>
-                  {valueCols.map(c => (
-                    <th key={c.key} className="text-right px-3 py-2 font-medium">{c.label}</th>
+                  <th className="text-left px-3 py-2 font-medium border-r border-border/40">Item</th>
+                  <th className="text-right px-3 py-2 font-medium border-r border-border/40">Count</th>
+                  <th className="text-right px-3 py-2 font-medium border-r border-border/40">Share</th>
+                  {valueCols.map((c, idx) => (
+                    <th key={c.key} className={`text-right px-3 py-2 font-medium ${idx < valueCols.length - 1 || onDrill ? "border-r border-border/40" : ""}`}>{c.label}</th>
                   ))}
                   {onDrill && <th className="px-3 py-2"></th>}
                 </tr>
@@ -201,7 +201,7 @@ function StatsTable({
                     key={r.key}
                     className={`border-t border-border hover:bg-muted/30 ${activeKey === r.key ? "bg-accent/10" : ""}`}
                   >
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 border-r border-border/40">
                       <span className="inline-flex items-center gap-2">
                         <span
                           className="inline-block w-2.5 h-2.5 rounded-sm border border-border/50 shrink-0"
@@ -213,12 +213,12 @@ function StatsTable({
                         </span>
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right font-medium text-foreground">{r.count}</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground">
+                    <td className="px-3 py-2 text-right font-medium text-foreground border-r border-border/40">{r.count}</td>
+                    <td className="px-3 py-2 text-right text-muted-foreground border-r border-border/40">
                       {total ? `${((r.count / total) * 100).toFixed(1)}%` : "—"}
                     </td>
-                    {valueCols.map(c => (
-                      <td key={c.key} className="px-3 py-2 text-right text-foreground">
+                    {valueCols.map((c, idx) => (
+                      <td key={c.key} className={`px-3 py-2 text-right text-foreground ${idx < valueCols.length - 1 || onDrill ? "border-r border-border/40" : ""}`}>
                         {c.format ? c.format(r.extra?.[c.key]) : (r.extra?.[c.key] ?? "—")}
                       </td>
                     ))}
@@ -701,6 +701,8 @@ export default function OperationsReportsPage() {
           thead { display: table-header-group; }
           tfoot { display: table-footer-group; }
           tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }
+          th, td { border-right: 1px solid #d1d5db !important; }
+          th:last-child, td:last-child { border-right: none !important; }
           h1 { font-size: 18px; }
           h3 { font-size: 13px; page-break-after: avoid; }
         }

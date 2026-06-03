@@ -20,7 +20,7 @@ import {
   Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check,
   Sparkles, Layout, Type, Contrast, Wand2, PanelLeft
 } from "lucide-react";
-import { applyTheme, loadTheme, saveTheme, DEFAULT_THEME, THEME_PRESETS, type ThemeSettings, type SidebarStyle, type BackgroundStyle, type FontScale } from "@/lib/themeStorage";
+import { applyTheme, loadTheme, saveTheme, DEFAULT_THEME, THEME_PRESETS, type ThemeSettings, type SidebarStyle, type BackgroundStyle } from "@/lib/themeStorage";
 import { formatDateDMY } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────
@@ -923,26 +923,45 @@ function ThemeAppearanceTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Type size={18} className="text-primary" /> Typography Scale</CardTitle>
-          <CardDescription>Adjusts root font size for the entire app</CardDescription>
+          <CardDescription>Adjusts root font size for the entire app (12 – 25 px)</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-3 max-w-2xl">
-            {([
-              { id: "compact", label: "Compact", px: "14px" },
-              { id: "comfortable", label: "Comfortable", px: "16px" },
-              { id: "spacious", label: "Spacious", px: "17px" },
-            ] as { id: FontScale; label: string; px: string }[]).map(f => {
-              const active = theme.fontScale === f.id;
-              return (
-                <button key={f.id} onClick={() => update({ fontScale: f.id })}
-                  className={`relative p-4 rounded-lg border-2 transition-all ${active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
-                  {active && <div className="absolute top-2 right-2"><Check size={14} className="text-primary" /></div>}
-                  <p className="font-bold text-foreground" style={{ fontSize: f.px }}>Aa</p>
-                  <p className="text-xs font-semibold text-foreground mt-1">{f.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{f.px} root</p>
-                </button>
-              );
-            })}
+          <div className="space-y-4 max-w-2xl">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">12 px</span>
+              <span className="text-sm font-semibold text-foreground">{theme.fontScale}px</span>
+              <span className="text-xs text-muted-foreground">25 px</span>
+            </div>
+            <input
+              type="range"
+              min={12}
+              max={25}
+              step={1}
+              value={/^\d+$/.test(theme.fontScale) ? parseInt(theme.fontScale, 10) : 16}
+              onChange={e => update({ fontScale: e.target.value })}
+              className="w-full h-2 rounded accent-primary"
+            />
+            <div className="flex flex-wrap gap-2">
+              {[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25].map(px => {
+                const active = theme.fontScale === String(px);
+                return (
+                  <button
+                    key={px}
+                    onClick={() => update({ fontScale: String(px) })}
+                    className={`relative px-2.5 py-1 rounded-md border text-xs font-medium transition-all ${
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
+                    }`}
+                  >
+                    {px}px
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Preview: <span className="text-foreground font-medium" style={{ fontSize: `${/^\d+$/.test(theme.fontScale) ? theme.fontScale : 16}px` }}>The quick brown fox jumps over the lazy dog.</span>
+            </p>
           </div>
         </CardContent>
       </Card>

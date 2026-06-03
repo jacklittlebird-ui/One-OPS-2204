@@ -7,7 +7,7 @@
 export type ThemeMode = "light" | "dark";
 export type SidebarStyle = "tinted" | "dark" | "light" | "glass";
 export type BackgroundStyle = "solid" | "subtle-gradient" | "mesh";
-export type FontScale = "compact" | "comfortable" | "spacious";
+export type FontScale = string;
 
 export interface ThemeSettings {
   mode: ThemeMode;
@@ -144,11 +144,15 @@ export function applyTheme(t: ThemeSettings) {
   root.classList.remove("bg-solid", "bg-subtle-gradient", "bg-mesh");
   root.classList.add(`bg-${t.backgroundStyle}`);
 
-  // Font scale
+  // Font scale — accepts 12–25 (numeric string) or legacy aliases
+  const legacyPx: Record<string, string> = {
+    compact: "14px",
+    comfortable: "16px",
+    spacious: "17px",
+  };
   const fontPx =
-    t.fontScale === "compact"   ? "14px" :
-    t.fontScale === "spacious"  ? "17px" :
-    /* comfortable */             "16px";
+    legacyPx[t.fontScale] ??
+    (/^\d+$/.test(t.fontScale) ? `${Math.max(12, Math.min(25, parseInt(t.fontScale, 10)))}px` : "16px");
   root.style.fontSize = fontPx;
 
   // High contrast
