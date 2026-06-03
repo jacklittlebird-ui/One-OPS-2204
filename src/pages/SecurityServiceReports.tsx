@@ -1493,7 +1493,14 @@ export default function SecurityServiceReportsPage() {
                         return (
                           <button
                             key={r.id}
-                            onClick={() => setEditRow(r)}
+                            onClick={() => {
+                              if ((r as any).isPending) {
+                                setIsNewReport(true);
+                                setEditRow({ ...r, id: "new" } as DispatchRow);
+                              } else {
+                                setEditRow(r);
+                              }
+                            }}
                             className="text-left bg-card border rounded p-2.5 hover:border-primary hover:shadow-sm transition-all"
                           >
                             <div className="flex items-center justify-between gap-2 mb-1">
