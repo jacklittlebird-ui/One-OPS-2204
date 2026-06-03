@@ -8,6 +8,7 @@ export type ThemeMode = "light" | "dark";
 export type SidebarStyle = "tinted" | "dark" | "light" | "glass";
 export type BackgroundStyle = "solid" | "subtle-gradient" | "mesh";
 export type FontScale = string;
+export type FontWeight = "normal" | "medium" | "semibold" | "bold";
 
 export interface ThemeSettings {
   mode: ThemeMode;
@@ -17,6 +18,7 @@ export interface ThemeSettings {
   sidebarStyle: SidebarStyle;
   backgroundStyle: BackgroundStyle;
   fontScale: FontScale;
+  fontWeight: FontWeight;
   highContrast: boolean;
 }
 
