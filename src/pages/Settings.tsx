@@ -960,8 +960,40 @@ function ThemeAppearanceTab() {
               })}
             </div>
             <p className="text-xs text-muted-foreground">
-              Preview: <span className="text-foreground font-medium" style={{ fontSize: `${/^\d+$/.test(theme.fontScale) ? theme.fontScale : 16}px` }}>The quick brown fox jumps over the lazy dog.</span>
+              Preview: <span className="text-foreground" style={{ fontSize: `${/^\d+$/.test(theme.fontScale) ? theme.fontScale : 16}px`, fontWeight: ({normal:400,medium:500,semibold:600,bold:700} as any)[theme.fontWeight ?? "normal"] }}>The quick brown fox jumps over the lazy dog.</span>
             </p>
+
+            <div className="pt-4 border-t border-border space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">Font Weight</span>
+                <span className="text-xs text-muted-foreground capitalize">{theme.fontWeight ?? "normal"}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { id: "normal",   label: "Normal",   w: 400 },
+                  { id: "medium",   label: "Medium",   w: 500 },
+                  { id: "semibold", label: "Semibold", w: 600 },
+                  { id: "bold",     label: "Bold",     w: 700 },
+                ] as const).map(opt => {
+                  const active = (theme.fontWeight ?? "normal") === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => update({ fontWeight: opt.id })}
+                      style={{ fontWeight: opt.w }}
+                      className={`px-3 py-1.5 rounded-md border text-sm transition-all ${
+                        active
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">Applies globally; headings and bold text remain stronger.</p>
+            </div>
           </div>
         </CardContent>
       </Card>
