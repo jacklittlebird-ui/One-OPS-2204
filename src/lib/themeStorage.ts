@@ -45,6 +45,7 @@ export const DEFAULT_THEME: ThemeSettings = {
   sidebarStyle: "tinted",
   backgroundStyle: "solid",
   fontScale: "comfortable",
+  fontWeight: "normal",
   highContrast: false,
 };
 
