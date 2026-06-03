@@ -912,7 +912,7 @@ export default function SecurityServiceReportsPage() {
           toast({ title: "Error", description: e.message, variant: "destructive" });
         }
       })();
-    } else if (isNewReport) {
+    } else if (effectiveIsNew) {
       // Create the dispatch + clearance flight_schedule together, then link them.
       (async () => {
         try {
