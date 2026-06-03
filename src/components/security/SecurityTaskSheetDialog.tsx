@@ -324,44 +324,55 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     enabled: !!contractId,
   });
 
+  // Initialize the form ONCE per opened row. Keying on row?.id + isNew prevents
+  // the effect from re-firing on parent re-renders (e.g. background react-query
+  // refetches), which previously wiped the user's unsaved edits to fields like
+  // Flight No, Registration and Route — forcing them to re-type and save 2-3 times.
+  const initializedRowKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (row) {
-      // Default arrival/departure date from clearance (flight schedule) when missing
-      setEditableRow({
-        ...row,
-        flight_date: row.flight_date || arrivalDate || "",
-        departure_date: (row as any).departure_date || departureDate || "",
-      } as DispatchRow);
-      setReviewComment(row.review_comment || "");
-      setContractId((row as any).contract_id || "");
-      setExtraManpower((row as any).extra_manpower_count || 0);
-      setRampVehicleTrips((row as any).ramp_vehicle_trips || 0);
-      setShortNotice((row as any).short_notice || false);
-      setReturnToRamp((row as any).return_to_ramp_with_load || false);
-      const saved = row.task_sheet_data as Record<string, any> | null;
-      if (saved && typeof saved === "object") {
-        const restored = { ...emptyTaskSheet(), ...saved } as TaskSheetData;
-        if (!restored.flight_type && skdType) restored.flight_type = skdType;
-        if (!restored.sta && sta) restored.sta = sta;
-        if (!restored.std && std) restored.std = std;
-        if (!restored.ata && ata) restored.ata = ata;
-        if (!restored.atd && atd) restored.atd = atd;
-        // Linked flight schedule is authoritative for registration & route — override
-        // any stale value cached in task_sheet_data so list view and edit form agree.
-        if (registration) restored.registration = registration;
-        if (route) restored.route = route;
-        setSheet(restored);
-      } else {
-        setSheet({
-          ...emptyTaskSheet(),
-          flight_type: skdType || "",
-          sta: sta || "", std: std || "", ata: ata || "", atd: atd || "",
-          registration: registration || "", route: route || "",
-          remarks: row.notes || "",
-        });
-      }
+    if (!row) {
+      initializedRowKeyRef.current = null;
+      return;
     }
-  }, [row, skdType, sta, std, ata, atd, registration, route, arrivalDate, departureDate]);
+    const key = `${row.id || "new"}::${isNew ? "new" : "edit"}`;
+    if (initializedRowKeyRef.current === key) return;
+    initializedRowKeyRef.current = key;
+
+    // Default arrival/departure date from clearance (flight schedule) when missing
+    setEditableRow({
+      ...row,
+      flight_date: row.flight_date || arrivalDate || "",
+      departure_date: (row as any).departure_date || departureDate || "",
+    } as DispatchRow);
+    setReviewComment(row.review_comment || "");
+    setContractId((row as any).contract_id || "");
+    setExtraManpower((row as any).extra_manpower_count || 0);
+    setRampVehicleTrips((row as any).ramp_vehicle_trips || 0);
+    setShortNotice((row as any).short_notice || false);
+    setReturnToRamp((row as any).return_to_ramp_with_load || false);
+    const saved = row.task_sheet_data as Record<string, any> | null;
+    if (saved && typeof saved === "object") {
+      const restored = { ...emptyTaskSheet(), ...saved } as TaskSheetData;
+      if (!restored.flight_type && skdType) restored.flight_type = skdType;
+      if (!restored.sta && sta) restored.sta = sta;
+      if (!restored.std && std) restored.std = std;
+      if (!restored.ata && ata) restored.ata = ata;
+      if (!restored.atd && atd) restored.atd = atd;
+      // Use linked flight schedule as fallback only — never overwrite a value
+      // already present in task_sheet_data (that is the latest user-edited value).
+      if (!restored.registration && registration) restored.registration = registration;
+      if (!restored.route && route) restored.route = route;
+      setSheet(restored);
+    } else {
+      setSheet({
+        ...emptyTaskSheet(),
+        flight_type: skdType || "",
+        sta: sta || "", std: std || "", ata: ata || "", atd: atd || "",
+        registration: registration || "", route: route || "",
+        remarks: row.notes || "",
+      });
+    }
+  }, [row?.id, isNew, row, skdType, sta, std, ata, atd, registration, route, arrivalDate, departureDate]);
 
   // Auto-pick the first matching contract when only one exists
   useEffect(() => {
