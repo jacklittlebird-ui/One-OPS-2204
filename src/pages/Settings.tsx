@@ -20,7 +20,7 @@ import {
   Save, Plus, Pencil, Trash2, Key, Eye, EyeOff, RefreshCw, History, Palette, Sun, Moon, Check,
   Sparkles, Layout, Type, Contrast, Wand2, PanelLeft
 } from "lucide-react";
-import { applyTheme, loadTheme, saveTheme, DEFAULT_THEME, THEME_PRESETS, type ThemeSettings, type SidebarStyle, type BackgroundStyle, type FontScale } from "@/lib/themeStorage";
+import { applyTheme, loadTheme, saveTheme, DEFAULT_THEME, THEME_PRESETS, type ThemeSettings, type SidebarStyle, type BackgroundStyle } from "@/lib/themeStorage";
 import { formatDateDMY } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────

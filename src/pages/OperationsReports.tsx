@@ -701,6 +701,8 @@ export default function OperationsReportsPage() {
           thead { display: table-header-group; }
           tfoot { display: table-footer-group; }
           tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }
+          th, td { border-right: 1px solid #d1d5db !important; }
+          th:last-child, td:last-child { border-right: none !important; }
           h1 { font-size: 18px; }
           h3 { font-size: 13px; page-break-after: avoid; }
         }
