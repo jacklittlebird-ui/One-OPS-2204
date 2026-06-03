@@ -850,7 +850,7 @@ export default function SecurityServiceReportsPage() {
       // so the pipeline reverts to step 1 (Clearance) for re-approval.
       status: serviceTypeChanged
         ? "Pending"
-        : (isNewReport && !isCompletingClearanceFlight)
+        : (effectiveIsNew && !isCompletingClearanceFlight)
           ? "Pending"
           : "Completed",
       station: row.station,
