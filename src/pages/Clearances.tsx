@@ -457,12 +457,15 @@ export default function ClearancesPage() {
                   if (!window.confirm(`Delete ${selectedRejectedIds.size} selected rejected record(s)? This cannot be undone.`)) return;
                   const ids = Array.from(selectedRejectedIds);
                   let failed = 0;
+                  let locked = 0;
                   for (const id of ids) {
+                    const row = data.find((r: any) => r.id === id) as ClearanceRow | undefined;
+                    if (row && isFlightLocked(row)) { locked++; continue; }
                     try { await remove(id); } catch { failed++; }
                   }
                   setSelectedRejectedIds(new Set());
-                  if (failed > 0) {
-                    toast({ title: "Partial failure", description: `${failed} of ${ids.length} records could not be deleted.`, variant: "destructive" });
+                  if (locked > 0 || failed > 0) {
+                    toast({ title: "Partial failure", description: `${locked} locked (completed & approved), ${failed} other failures out of ${ids.length}.`, variant: "destructive" });
                   } else {
                     toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
                   }
