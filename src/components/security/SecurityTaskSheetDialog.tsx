@@ -486,7 +486,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setSheet(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Guard against double-clicks / re-entry while a save is in flight.
+    if (savingRef.current) return;
     // In receivables view the task sheet is read-only — only the Security
     // Charges panel is editable. Skip task-sheet field validation so the
     // billing user can save contract/charges updates without re-entering
@@ -543,7 +545,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       total_security_charges: computedCharges?.total || 0,
       charges_currency: computedCharges?.currency || "USD",
     } as any;
-    onSave(enrichedRow, sheet);
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await Promise.resolve(onSave(enrichedRow, sheet));
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
   const formatDate = (d: string) => formatDateDMY(d) || "";
