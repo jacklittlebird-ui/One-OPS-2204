@@ -933,8 +933,11 @@ export default function SecurityServiceReportsPage() {
       // New reports start in Draft; completing a clearance flight goes straight to Pending Review.
       // Resubmitting a rejected report → "Modified" so it appears under Operations → Modified tab.
       // Service Type change → "Draft" (returns to clearance, removes from ops queue).
+      // New reports go straight to Pending Review (Operations queue) — step 2 (Station) done.
+      // Resubmitting a rejected report → "Modified" so it appears under Operations → Modified tab.
+      // Service Type change → "Draft" (returns to clearance, removes from ops queue).
       ...(effectiveIsNew
-        ? { review_status: isCompletingClearanceFlight ? "Pending Review" : "Draft" }
+        ? { review_status: "Pending Review" }
         : isResubmittingRejected
           ? { review_status: "Modified" }
           : serviceTypeChanged
