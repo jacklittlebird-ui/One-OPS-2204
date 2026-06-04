@@ -962,12 +962,24 @@ export default function SecurityServiceReportsPage() {
           .single();
         if (dispatchErr) throw dispatchErr;
         insertedDispatch = insRow1;
+        // Sync ALL task-sheet fields back to the linked flight_schedule so the
+        // station's edits to Registration / Route / Aircraft Type / STA / STD /
+        // SKD type / Service Type are reflected everywhere (list views read REG
+        // from flight_schedules when a dispatch is linked).
+        const fsSync: Record<string, any> = {
+          arrival_date: normalizedDates.arrivalDate || null,
+          departure_date: normalizedDates.departureDate || null,
+        };
+        if (taskSheet.registration !== undefined) fsSync.registration = taskSheet.registration || "";
+        if (taskSheet.route !== undefined) fsSync.route = taskSheet.route || "";
+        if (taskSheet.aircraft_type !== undefined) fsSync.aircraft_type = taskSheet.aircraft_type || "";
+        if (taskSheet.sta !== undefined) fsSync.sta = taskSheet.sta || "";
+        if (taskSheet.std !== undefined) fsSync.std = taskSheet.std || "";
+        if (taskSheet.flight_type) fsSync.skd_type = taskSheet.flight_type;
+        if (row.service_type) fsSync.clearance_type = row.service_type;
         const { error: fsSyncErr } = await supabase
           .from("flight_schedules")
-          .update({
-            arrival_date: normalizedDates.arrivalDate || null,
-            departure_date: normalizedDates.departureDate || null,
-          } as any)
+          .update(fsSync as any)
           .eq("id", (row as any).flight_schedule_id);
         if (fsSyncErr && fsSyncErr.code !== "23505") throw fsSyncErr;
         toast({ title: "Task Sheet Saved", description: "Step 2 (Station) complete — sent for Operations review." });
