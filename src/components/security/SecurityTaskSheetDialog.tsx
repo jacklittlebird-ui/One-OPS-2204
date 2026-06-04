@@ -548,7 +548,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     savingRef.current = true;
     setSaving(true);
     try {
-      await Promise.resolve(onSave(enrichedRow, sheet));
+      await Promise.resolve(onSave(enrichedRow, sheet, { close: closeAfter }));
     } finally {
       savingRef.current = false;
       setSaving(false);
