@@ -1,9 +1,9 @@
 /**
  * Resolves the display fields for a Security service report row, falling back
  * through three sources in priority order:
- *   1. flight_schedules lookup (when dispatch is linked to a schedule)
- *   2. flightMeta (the merged-pending row's clearance metadata)
- *   3. dispatch_assignments.task_sheet_data (the security task sheet itself)
+ *   1. dispatch_assignments.task_sheet_data (the latest station task sheet edit)
+ *   2. flight_schedules lookup (when dispatch is linked to a schedule)
+ *   3. flightMeta (the merged-pending row's clearance metadata)
  *
  * This guarantees that every column has a value as long as ANY of the data
  * sources contains it — so unlinked records (like SM 0486) never appear empty.
@@ -91,22 +91,22 @@ export function resolveSecurityRowDisplay(
     : pick(fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, r.departure_date, r.flight_date);
 
   return {
-    flightNo: pick(fd.flight_no, meta.flight_no, r.flight_no, ts.flight_no),
+    flightNo: pick(ts.flight_no, fd.flight_no, meta.flight_no, r.flight_no),
     station: pick(r.station, meta.authority, ts.station),
     airline: pick(r.airline, meta.airline, ts.airline),
     serviceType,
-    registration: pick(fd.registration, meta.registration, ts.registration),
-    route: pick(fd.route, meta.route, ts.route),
-    aircraftType: pick(fd.aircraft_type, meta.aircraft_type, ts.aircraft_type),
-    skdType: pick(fd.skd_type, meta.skd_type, ts.flight_type, ts.skd_type),
+    registration: pick(ts.registration, fd.registration, meta.registration),
+    route: pick(ts.route, fd.route, meta.route),
+    aircraftType: pick(ts.aircraft_type, fd.aircraft_type, meta.aircraft_type),
+    skdType: pick(ts.flight_type, ts.skd_type, fd.skd_type, meta.skd_type),
     arrivalDate,
     departureDate,
     // STA/STD reflect the FLIGHT schedule only. Never fall back to dispatch
     // shift times (scheduled_start/scheduled_end) or actual times — those are
     // guard shift / actual movement times and would fabricate a fake STD when
     // the flight has no scheduled departure (e.g. arrival-only flights).
-    sta: pick(fd.sta, meta.sta, ts.sta),
-    std: pick(fd.std, meta.std, ts.std),
+    sta: pick(ts.sta, fd.sta, meta.sta),
+    std: pick(ts.std, fd.std, meta.std),
     ata: pick(ts.ata, r.actual_start),
     atd: pick(ts.atd, r.actual_end),
     scheduledStart: pick(r.scheduled_start, ts.shift_start, ts.sta),
@@ -115,7 +115,7 @@ export function resolveSecurityRowDisplay(
     actualEnd: pick(r.actual_end, ts.atd, ts.shift_end),
     staffNames: pick(r.staff_names, ts.staff_names),
     staffCount: typeof r.staff_count === "number" && r.staff_count > 0 ? r.staff_count : 0,
-    flightType: pick(ts.flight_type, fd.skd_type, meta.skd_type),
+    flightType: pick(ts.flight_type, ts.skd_type, fd.skd_type, meta.skd_type),
     remarks: pick(ts.remarks, meta.remarks),
   };
 }

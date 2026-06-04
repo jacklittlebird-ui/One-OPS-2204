@@ -1065,7 +1065,22 @@ export default function SecurityServiceReportsPage() {
             .from("flight_schedules")
             .update(fsUpdate as any)
             .eq("id", linkedFsId);
-          if (fsErr && fsErr.code !== "23505") throw fsErr;
+          if (fsErr?.code === "23505") {
+            // Route/date/service changes can collide with the no-duplicate-flight
+            // rule. Still persist the non-unique task-sheet fields so REG edits
+            // are never lost or hidden behind the old linked schedule value.
+            const { error: fallbackFsErr } = await supabase
+              .from("flight_schedules")
+              .update({
+                registration: taskSheet.registration || "",
+                aircraft_type: taskSheet.aircraft_type || "",
+                sta: taskSheet.sta || "",
+                std: taskSheet.std || "",
+                skd_type: taskSheet.flight_type || "",
+              } as any)
+              .eq("id", linkedFsId);
+            if (fallbackFsErr) throw fallbackFsErr;
+          } else if (fsErr) throw fsErr;
         }
 
         if (serviceTypeChanged) {
