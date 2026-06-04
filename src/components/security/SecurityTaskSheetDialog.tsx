@@ -198,7 +198,7 @@ interface DispatchRow {
 interface Props {
   row: DispatchRow | null;
   onClose: () => void;
-  onSave: (row: DispatchRow, taskSheet: TaskSheetData) => void;
+  onSave: (row: DispatchRow, taskSheet: TaskSheetData) => void | Promise<void>;
   registration?: string;
   route?: string;
   sta?: string;
@@ -261,6 +261,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const reviewMode = isOperationsView && !isNew;
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
   const [contractId, setContractId] = useState<string>("");
@@ -484,7 +486,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setSheet(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Guard against double-clicks / re-entry while a save is in flight.
+    if (savingRef.current) return;
     // In receivables view the task sheet is read-only — only the Security
     // Charges panel is editable. Skip task-sheet field validation so the
     // billing user can save contract/charges updates without re-entering
@@ -541,7 +545,14 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       total_security_charges: computedCharges?.total || 0,
       charges_currency: computedCharges?.currency || "USD",
     } as any;
-    onSave(enrichedRow, sheet);
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await Promise.resolve(onSave(enrichedRow, sheet));
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
   const formatDate = (d: string) => formatDateDMY(d) || "";
@@ -1229,9 +1240,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={handleSave} disabled={isReceivablesView && receivablesLocked} className="shadow-sm">
-                {isReceivablesView ? (
+              <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving || (isReceivablesView && receivablesLocked)} className="shadow-sm">
+                {saving ? (
+                  <>Saving…</>
+                ) : isReceivablesView ? (
                   <><DollarSign size={14} className="mr-1" /> Save Security Charges</>
                 ) : (
                   <><Shield size={14} className="mr-1" /> Save Task Sheet</>

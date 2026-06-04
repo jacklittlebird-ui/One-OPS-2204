@@ -789,7 +789,7 @@ export default function SecurityServiceReportsPage() {
   };
 
 
-  const saveTaskSheet = (row: DispatchRow, taskSheet: any) => {
+  const saveTaskSheet = async (row: DispatchRow, taskSheet: any) => {
     // Synthetic pending rows (id "pending-<fs-uuid>") are not real dispatch_assignments
     // yet — treat them as new completions so we INSERT instead of UPDATE by a bogus uuid.
     const isSyntheticPending =
@@ -884,143 +884,132 @@ export default function SecurityServiceReportsPage() {
             : {}),
     };
 
-    if (isCompletingClearanceFlight) {
-      // Reuse the existing clearance flight schedule — just create the dispatch
-      // record linked to it. Step 2 (Station) is now complete.
-      (async () => {
-        try {
-          const linkedFlightNo = (row as any).flight_schedule_id
-            ? flightDetailsById.get((row as any).flight_schedule_id)?.flight_no
-            : undefined;
-          const dispatchInsert = { ...payload, flight_no: linkedFlightNo || payload.flight_no, flight_schedule_id: (row as any).flight_schedule_id };
-          const { error: dispatchErr } = await supabase
-            .from("dispatch_assignments")
-            .insert(dispatchInsert as any);
-          if (dispatchErr) throw dispatchErr;
-          const { error: fsSyncErr } = await supabase
-            .from("flight_schedules")
-            .update({
-              arrival_date: normalizedDates.arrivalDate || null,
-              departure_date: normalizedDates.departureDate || null,
-            } as any)
-            .eq("id", (row as any).flight_schedule_id);
-          if (fsSyncErr && fsSyncErr.code !== "23505") throw fsSyncErr;
-          queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-          toast({ title: "Task Sheet Saved", description: "Step 2 (Station) complete — sent for Operations review." });
-        } catch (e: any) {
-          toast({ title: "Error", description: e.message, variant: "destructive" });
-        }
-      })();
-    } else if (effectiveIsNew) {
-      // Create the dispatch + clearance flight_schedule together, then link them.
-      (async () => {
-        try {
-          // 1. Look up airline_id by name
-          const { data: airlineData } = await supabase
-            .from("airlines")
-            .select("id")
-            .eq("name", row.airline)
-            .maybeSingle();
+    try {
+      if (isCompletingClearanceFlight) {
+        // Reuse the existing clearance flight schedule — just create the dispatch
+        // record linked to it. Step 2 (Station) is now complete.
+        const linkedFlightNo = (row as any).flight_schedule_id
+          ? flightDetailsById.get((row as any).flight_schedule_id)?.flight_no
+          : undefined;
+        const dispatchInsert = { ...payload, flight_no: linkedFlightNo || payload.flight_no, flight_schedule_id: (row as any).flight_schedule_id };
+        const { error: dispatchErr } = await supabase
+          .from("dispatch_assignments")
+          .insert(dispatchInsert as any);
+        if (dispatchErr) throw dispatchErr;
+        const { error: fsSyncErr } = await supabase
+          .from("flight_schedules")
+          .update({
+            arrival_date: normalizedDates.arrivalDate || null,
+            departure_date: normalizedDates.departureDate || null,
+          } as any)
+          .eq("id", (row as any).flight_schedule_id);
+        if (fsSyncErr && fsSyncErr.code !== "23505") throw fsSyncErr;
+        toast({ title: "Task Sheet Saved", description: "Step 2 (Station) complete — sent for Operations review." });
+      } else if (effectiveIsNew) {
+        // Create the dispatch + clearance flight_schedule together, then link them.
+        // 1. Look up airline_id by name
+        const { data: airlineData } = await supabase
+          .from("airlines")
+          .select("id")
+          .eq("name", row.airline)
+          .maybeSingle();
 
-          // 2. Create flight_schedule for Operations approval (Pending)
-          const clearancePayload: Record<string, any> = {
+        // 2. Create flight_schedule for Operations approval (Pending)
+        const clearancePayload: Record<string, any> = {
+          flight_no: row.flight_no,
+          aircraft_type: taskSheet.aircraft_type || "",
+          registration: taskSheet.registration || "",
+          route: taskSheet.route || "",
+          sta: taskSheet.sta || "",
+          std: taskSheet.std || "",
+          skd_type: taskSheet.flight_type || "",
+          clearance_type: row.service_type || "Arrival Security",
+          status: "Pending" as const,
+          authority: row.station || "CAI",
+          handling_agent: "",
+          arrival_date: normalizedDates.arrivalDate || null,
+          departure_date: normalizedDates.departureDate || null,
+          remarks: "Added from Security Service – pending Operations approval",
+          notes: "",
+          purpose: "Security Service",
+        };
+        if (airlineData?.id) clearancePayload.airline_id = airlineData.id;
+
+        const { data: createdFlight, error: flightErr } = await supabase
+          .from("flight_schedules")
+          .insert(clearancePayload as any)
+          .select("id")
+          .single();
+        if (flightErr) throw flightErr;
+
+        // 3. Insert dispatch with link to the flight_schedule
+        const dispatchInsert = { ...payload, flight_schedule_id: createdFlight?.id || null };
+        const { error: dispatchErr } = await supabase
+          .from("dispatch_assignments")
+          .insert(dispatchInsert as any);
+        if (dispatchErr) throw dispatchErr;
+
+        toast({ title: "Submitted for Operations", description: "Report sent to Operations for approval." });
+      } else {
+        // Editing an existing dispatch. Always sync changed fields back to the
+        // linked flight_schedule. If the Service Type changed, reset the schedule
+        // to Pending so the flight returns to Operations → Pending Approval.
+        // 1. Update the dispatch
+        const { error: dispatchErr } = await supabase
+          .from("dispatch_assignments")
+          .update(payload as any)
+          .eq("id", row.id);
+        if (dispatchErr) throw dispatchErr;
+
+        // 2. Sync changes back to the linked flight_schedule (if any)
+        if (linkedFsId) {
+          const fsUpdate: Record<string, any> = {
             flight_no: row.flight_no,
-            aircraft_type: taskSheet.aircraft_type || "",
+            clearance_type: row.service_type,
             registration: taskSheet.registration || "",
             route: taskSheet.route || "",
             sta: taskSheet.sta || "",
             std: taskSheet.std || "",
             skd_type: taskSheet.flight_type || "",
-            clearance_type: row.service_type || "Arrival Security",
-            status: "Pending" as const,
-            authority: row.station || "CAI",
-            handling_agent: "",
             arrival_date: normalizedDates.arrivalDate || null,
             departure_date: normalizedDates.departureDate || null,
-            remarks: "Added from Security Service – pending Operations approval",
-            notes: "",
-            purpose: "Security Service",
           };
-          if (airlineData?.id) clearancePayload.airline_id = airlineData.id;
-
-          const { data: createdFlight, error: flightErr } = await supabase
-            .from("flight_schedules")
-            .insert(clearancePayload as any)
-            .select("id")
-            .single();
-          if (flightErr) throw flightErr;
-
-          // 3. Insert dispatch with link to the flight_schedule
-          const dispatchInsert = { ...payload, flight_schedule_id: createdFlight?.id || null };
-          const { error: dispatchErr } = await supabase
-            .from("dispatch_assignments")
-            .insert(dispatchInsert as any);
-          if (dispatchErr) throw dispatchErr;
-
-          queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-          toast({ title: "Submitted for Operations", description: "Report sent to Operations for approval." });
-        } catch (e: any) {
-          toast({ title: "Error", description: e.message, variant: "destructive" });
-        }
-      })();
-    } else {
-      // Editing an existing dispatch. Always sync changed fields back to the
-      // linked flight_schedule. If the Service Type changed, reset the schedule
-      // to Pending so the flight returns to Operations → Pending Approval.
-      (async () => {
-        try {
-          // 1. Update the dispatch
-          const { error: dispatchErr } = await supabase
-            .from("dispatch_assignments")
-            .update(payload as any)
-            .eq("id", row.id);
-          if (dispatchErr) throw dispatchErr;
-
-          // 2. Sync changes back to the linked flight_schedule (if any)
-          if (linkedFsId) {
-            const fsUpdate: Record<string, any> = {
-              flight_no: row.flight_no,
-              clearance_type: row.service_type,
-              registration: taskSheet.registration || "",
-              route: taskSheet.route || "",
-              sta: taskSheet.sta || "",
-              std: taskSheet.std || "",
-              skd_type: taskSheet.flight_type || "",
-              arrival_date: normalizedDates.arrivalDate || null,
-              departure_date: normalizedDates.departureDate || null,
-            };
-            // Service Type change → revert clearance to Pending (re-approval needed)
-            if (serviceTypeChanged) {
-              fsUpdate.status = "Pending";
-              fsUpdate.remarks = "Service Type changed by Station — Operations re-approval required";
-            }
-            const { error: fsErr } = await supabase
-              .from("flight_schedules")
-              .update(fsUpdate as any)
-              .eq("id", linkedFsId);
-            if (fsErr && fsErr.code !== "23505") throw fsErr;
-          }
-
-          queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-
+          // Service Type change → revert clearance to Pending (re-approval needed)
           if (serviceTypeChanged) {
-            toast({
-              title: "Returned to Operations",
-              description: "Service Type changed — flight sent back to Operations → Pending Approval.",
-            });
-          } else {
-            toast({ title: "Task Sheet Updated", description: "Changes saved and synced to Operations." });
+            fsUpdate.status = "Pending";
+            fsUpdate.remarks = "Service Type changed by Station — Operations re-approval required";
           }
-        } catch (e: any) {
-          toast({ title: "Error", description: e.message, variant: "destructive" });
+          const { error: fsErr } = await supabase
+            .from("flight_schedules")
+            .update(fsUpdate as any)
+            .eq("id", linkedFsId);
+          if (fsErr && fsErr.code !== "23505") throw fsErr;
         }
-      })();
+
+        if (serviceTypeChanged) {
+          toast({
+            title: "Returned to Operations",
+            description: "Service Type changed — flight sent back to Operations → Pending Approval.",
+          });
+        } else {
+          toast({ title: "Task Sheet Updated", description: "Changes saved and synced to Operations." });
+        }
+      }
+
+      // Refresh caches and wait so the parent list reflects the saved values
+      // BEFORE we close the dialog. This prevents the "had to click save 2-3
+      // times" symptom where the user reopened a still-stale row.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
+        queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
+      ]);
+      setEditRow(null);
+      setIsNewReport(false);
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+      // Keep the dialog open with the user's edits intact so they can retry.
+      throw e;
     }
-    setEditRow(null);
-    setIsNewReport(false);
   };
 
   // Submit for review
