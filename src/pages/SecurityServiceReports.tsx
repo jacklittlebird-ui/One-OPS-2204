@@ -1049,6 +1049,7 @@ export default function SecurityServiceReportsPage() {
             clearance_type: row.service_type,
             registration: taskSheet.registration || "",
             route: taskSheet.route || "",
+            aircraft_type: taskSheet.aircraft_type || "",
             sta: taskSheet.sta || "",
             std: taskSheet.std || "",
             skd_type: taskSheet.flight_type || "",
