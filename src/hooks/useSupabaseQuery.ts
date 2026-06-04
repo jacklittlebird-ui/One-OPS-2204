@@ -77,7 +77,12 @@ export function useSupabaseTable<T extends Record<string, any>>(
     refetchOnReconnect: true,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: [table] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: [table] });
+    if (table === "flight_schedules") {
+      queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+    }
+  };
 
   const addMutation = useMutation({
     mutationFn: async (row: Partial<T>) => {
