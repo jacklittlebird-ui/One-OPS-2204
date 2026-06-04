@@ -147,8 +147,6 @@ export default function SecurityServiceReportsPage() {
   const canCreateNew = !isReceivablesView && !isOperationsView;
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
   const [opsTab, setOpsTab] = useState<"all" | "modified" | "clearance-flights" | "pending-approval">("all");
-  const [editPendingFlight, setEditPendingFlight] = useState<any | null>(null);
-  const [editPendingForm, setEditPendingForm] = useState<any>({});
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
