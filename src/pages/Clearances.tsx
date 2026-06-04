@@ -110,8 +110,30 @@ function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdi
 
 export default function ClearancesPage() {
   const { data, isLoading, refetch, add, update, remove } = useSupabaseTable<ClearanceRow>("flight_schedules", { stationFilter: true });
+  const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments");
   const { data: airlines } = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("id,name,code"); return data || []; } });
   const { data: airportsList } = useQuery({ queryKey: ["airports-iata"], queryFn: async () => { const { data } = await supabase.from("airports").select("iata_code,name").order("iata_code"); return data || []; } });
+
+  const isFlightLocked = (c: ClearanceRow): boolean => {
+    const match = (dispatches || []).find((d: any) =>
+      (d.flight_schedule_id && d.flight_schedule_id === c.id) ||
+      (String(d.flight_no || "").trim().toLowerCase() === String(c.flight_no || "").trim().toLowerCase() &&
+        String(d.station || "").trim().toLowerCase() === String(c.authority || "").trim().toLowerCase())
+    );
+    if (!match) return false;
+    const completed = String(match.status || "").toLowerCase() === "completed";
+    const approved = String(match.review_status || "").toLowerCase() === "approved";
+    return completed && approved;
+  };
+
+  const safeRemove = async (c: ClearanceRow) => {
+    if (isFlightLocked(c)) {
+      toast({ title: "Cannot delete", description: "This flight is completed by Station and approved by Operations. Deletion is not allowed.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm("Delete this clearance flight? This cannot be undone.")) return;
+    await remove(c.id);
+  };
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -435,12 +457,15 @@ export default function ClearancesPage() {
                   if (!window.confirm(`Delete ${selectedRejectedIds.size} selected rejected record(s)? This cannot be undone.`)) return;
                   const ids = Array.from(selectedRejectedIds);
                   let failed = 0;
+                  let locked = 0;
                   for (const id of ids) {
+                    const row = data.find((r: any) => r.id === id) as ClearanceRow | undefined;
+                    if (row && isFlightLocked(row)) { locked++; continue; }
                     try { await remove(id); } catch { failed++; }
                   }
                   setSelectedRejectedIds(new Set());
-                  if (failed > 0) {
-                    toast({ title: "Partial failure", description: `${failed} of ${ids.length} records could not be deleted.`, variant: "destructive" });
+                  if (locked > 0 || failed > 0) {
+                    toast({ title: "Partial failure", description: `${locked} locked (completed & approved), ${failed} other failures out of ${ids.length}.`, variant: "destructive" });
                   } else {
                     toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
                   }
@@ -627,7 +652,7 @@ export default function ClearancesPage() {
                             <div className="flex gap-1">
                               <Button size="icon" variant="ghost" onClick={() => setDetailItem(c)}><Eye size={14} /></Button>
                               <Button size="icon" variant="ghost" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
-                              <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(c.id)}><Trash2 size={14} /></Button>
+                              <Button size="icon" variant="ghost" className="text-destructive disabled:opacity-40" disabled={isFlightLocked(c)} title={isFlightLocked(c) ? "Locked: completed by Station and approved by Operations" : "Delete"} onClick={() => safeRemove(c)}><Trash2 size={14} /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
