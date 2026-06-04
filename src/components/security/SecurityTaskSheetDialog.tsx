@@ -261,6 +261,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const reviewMode = isOperationsView && !isNew;
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
   const [contractId, setContractId] = useState<string>("");
