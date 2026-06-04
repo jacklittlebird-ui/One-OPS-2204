@@ -198,7 +198,7 @@ interface DispatchRow {
 interface Props {
   row: DispatchRow | null;
   onClose: () => void;
-  onSave: (row: DispatchRow, taskSheet: TaskSheetData) => void;
+  onSave: (row: DispatchRow, taskSheet: TaskSheetData) => void | Promise<void>;
   registration?: string;
   route?: string;
   sta?: string;
