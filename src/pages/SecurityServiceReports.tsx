@@ -1010,12 +1010,13 @@ export default function SecurityServiceReportsPage() {
 
         // 3. Insert dispatch with link to the flight_schedule
         const dispatchInsert = { ...payload, flight_schedule_id: createdFlight?.id || null };
-        const { data: insertedDispatch, error: dispatchErr } = await supabase
+        const { data: insRow2, error: dispatchErr } = await supabase
           .from("dispatch_assignments")
           .insert(dispatchInsert as any)
           .select("*")
           .single();
         if (dispatchErr) throw dispatchErr;
+        insertedDispatch = insRow2;
 
         toast({ title: "Submitted for Operations", description: "Report sent to Operations for approval." });
       } else {
