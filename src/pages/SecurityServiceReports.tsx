@@ -1965,21 +1965,6 @@ export default function SecurityServiceReportsPage() {
         )}
       </div>
 
-      {/* Security Task Sheet Dialog */}
-      <SecurityTaskSheetDialog
-        row={editRow}
-        onClose={() => { setEditRow(null); setIsNewReport(false); }}
-        onSave={saveTaskSheet}
-        isNew={isNewReport}
-        registration={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.registration : undefined}
-        route={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.route : undefined}
-        sta={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.sta : undefined}
-        std={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.std : undefined}
-        skdType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.skd_type : undefined}
-        serviceType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.clearance_type : undefined}
-        arrivalDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.arrival_date : undefined}
-        departureDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.departure_date : undefined}
-      />
       {/* Review Dialog */}
       <Dialog open={!!reviewRow} onOpenChange={(open) => !open && setReviewRow(null)}>
         <DialogContent className="max-w-md">
@@ -2032,8 +2017,23 @@ export default function SecurityServiceReportsPage() {
       </>
       )}
 
-
+      {/* Security Task Sheet Dialog (rendered outside conditional branches so it works in Pending Approval too) */}
+      <SecurityTaskSheetDialog
+        row={editRow}
+        onClose={() => { setEditRow(null); setIsNewReport(false); }}
+        onSave={saveTaskSheet}
+        isNew={isNewReport}
+        registration={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.registration : undefined}
+        route={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.route : undefined}
+        sta={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.sta : undefined}
+        std={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.std : undefined}
+        skdType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.skd_type : undefined}
+        serviceType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.clearance_type : undefined}
+        arrivalDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.arrival_date : undefined}
+        departureDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.departure_date : undefined}
+      />
 
     </div>
+
   );
 }
