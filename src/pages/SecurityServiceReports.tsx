@@ -147,8 +147,6 @@ export default function SecurityServiceReportsPage() {
   const canCreateNew = !isReceivablesView && !isOperationsView;
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
   const [opsTab, setOpsTab] = useState<"all" | "modified" | "clearance-flights" | "pending-approval">("all");
-  const [editPendingFlight, setEditPendingFlight] = useState<any | null>(null);
-  const [editPendingForm, setEditPendingForm] = useState<any>({});
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
@@ -349,43 +347,55 @@ export default function SecurityServiceReportsPage() {
 
 
   const openEditPending = (f: any) => {
-    setEditPendingFlight(f);
-    setEditPendingForm({
-      flight_no: f.flight_no || "",
-      registration: f.registration || "",
-      route: f.route || "",
-      sta: f.sta || "",
-      std: f.std || "",
-      arrival_date: f.arrival_date || "",
-      departure_date: f.departure_date || "",
-      clearance_type: f.clearance_type || "",
-      remarks: f.remarks || "",
-    });
-  };
-
-  const saveEditPending = async () => {
-    if (!editPendingFlight) return;
-    const { error } = await supabase
-      .from("flight_schedules")
-      .update({
-        flight_no: editPendingForm.flight_no || null,
-        registration: editPendingForm.registration || null,
-        route: editPendingForm.route || null,
-        sta: editPendingForm.sta || null,
-        std: editPendingForm.std || null,
-        arrival_date: editPendingForm.arrival_date || null,
-        departure_date: editPendingForm.departure_date || null,
-        clearance_type: editPendingForm.clearance_type || null,
-        remarks: editPendingForm.remarks || null,
-      } as any)
-      .eq("id", editPendingFlight.id);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    // Try to locate an existing dispatch_assignments row for this flight
+    const existing = (dispatches as any[]).find(
+      (d: any) => d.flight_schedule_id === f.id
+    );
+    if (existing) {
+      setIsNewReport(false);
+      setEditRow(existing as DispatchRow);
       return;
     }
-    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-    toast({ title: "Updated", description: "Flight details updated." });
-    setEditPendingFlight(null);
+    // Otherwise create a blank Task Sheet pre-populated from the pending flight
+    const airlineName = f.airlines?.name || f.handling_agent || "";
+    const flightDate =
+      f.arrival_date || f.departure_date || f.flight_date || new Date().toISOString().slice(0, 10);
+    const blankRow: DispatchRow = {
+      id: "new",
+      flight_schedule_id: f.id,
+      contract_id: null,
+      station: f.authority || f.station || "",
+      airline: airlineName,
+      flight_no: f.flight_no || "",
+      flight_date: flightDate,
+      service_type: f.clearance_type || "Arrival Security",
+      staff_names: "",
+      staff_count: 0,
+      scheduled_start: f.sta || f.std || "",
+      scheduled_end: f.std || f.sta || "",
+      actual_start: "",
+      actual_end: "",
+      contract_duration_hours: 0,
+      actual_duration_hours: 0,
+      overtime_hours: 0,
+      overtime_rate: 0,
+      base_fee: 0,
+      service_rate: 0,
+      overtime_charge: 0,
+      total_charge: 0,
+      status: "Pending",
+      notes: f.remarks || "",
+      dispatched_by: session?.user?.email || "",
+      review_status: "Draft",
+      review_comment: "",
+      reviewed_by: "",
+      reviewed_at: null,
+      irregularity_id: null,
+      created_at: "",
+      updated_at: "",
+    };
+    setIsNewReport(true);
+    setEditRow(blankRow);
   };
 
 
@@ -2023,49 +2033,6 @@ export default function SecurityServiceReportsPage() {
       )}
 
 
-      {/* Edit Pending Flight Dialog */}
-      <Dialog open={!!editPendingFlight} onOpenChange={(o) => !o && setEditPendingFlight(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Eye size={16} /> View Pending Flight</DialogTitle>
-          </DialogHeader>
-          {editPendingFlight && (
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { k: "flight_no", label: "Flight No" },
-                { k: "registration", label: "Registration" },
-                { k: "route", label: "Route" },
-                { k: "clearance_type", label: "Service Type" },
-                { k: "arrival_date", label: "Arrival Date", type: "date" },
-                { k: "departure_date", label: "Departure Date", type: "date" },
-                { k: "sta", label: "STA (HH:MM)" },
-                { k: "std", label: "STD (HH:MM)" },
-              ].map(f => (
-                <div key={f.k} className={f.k === "remarks" ? "col-span-2" : ""}>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">{f.label}</label>
-                  <input
-                    type={f.type || "text"}
-                    value={editPendingForm[f.k] || ""}
-                    readOnly
-                    className="w-full text-sm border rounded px-2 py-1.5 bg-muted text-foreground focus:outline-none cursor-default"
-                  />
-                </div>
-              ))}
-              <div className="col-span-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1">Remarks</label>
-                <textarea
-                  value={editPendingForm.remarks || ""}
-                  readOnly
-                  className="w-full text-sm border rounded px-2 py-1.5 bg-muted text-foreground focus:outline-none resize-none min-h-[60px] cursor-default"
-                />
-              </div>
-              <div className="col-span-2 flex justify-end gap-2 pt-2">
-                <Button size="sm" onClick={() => setEditPendingFlight(null)}>Close</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
     </div>
   );
