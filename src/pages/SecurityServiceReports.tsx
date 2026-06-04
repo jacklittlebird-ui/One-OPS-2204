@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, lazy, Suspense } from "react";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Pencil, CheckCircle2, XCircle, AlertTriangle,
@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
-import SecurityTaskSheetDialog from "@/components/security/SecurityTaskSheetDialog";
+const SecurityTaskSheetDialog = lazy(() => import("@/components/security/SecurityTaskSheetDialog"));
 import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
@@ -2017,21 +2017,25 @@ export default function SecurityServiceReportsPage() {
       </>
       )}
 
-      {/* Security Task Sheet Dialog (rendered outside conditional branches so it works in Pending Approval too) */}
-      <SecurityTaskSheetDialog
-        row={editRow}
-        onClose={() => { setEditRow(null); setIsNewReport(false); }}
-        onSave={saveTaskSheet}
-        isNew={isNewReport}
-        registration={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.registration : undefined}
-        route={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.route : undefined}
-        sta={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.sta : undefined}
-        std={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.std : undefined}
-        skdType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.skd_type : undefined}
-        serviceType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.clearance_type : undefined}
-        arrivalDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.arrival_date : undefined}
-        departureDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.departure_date : undefined}
-      />
+      {/* Security Task Sheet Dialog — lazy + only mounted when opened to avoid blocking initial render */}
+      {editRow && (
+        <Suspense fallback={null}>
+          <SecurityTaskSheetDialog
+            row={editRow}
+            onClose={() => { setEditRow(null); setIsNewReport(false); }}
+            onSave={saveTaskSheet}
+            isNew={isNewReport}
+            registration={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.registration : undefined}
+            route={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.route : undefined}
+            sta={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.sta : undefined}
+            std={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.std : undefined}
+            skdType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.skd_type : undefined}
+            serviceType={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.clearance_type : undefined}
+            arrivalDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.arrival_date : undefined}
+            departureDate={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.departure_date : undefined}
+          />
+        </Suspense>
+      )}
 
     </div>
 
