@@ -848,7 +848,8 @@ export default function SecurityServiceReportsPage() {
   };
 
 
-  const saveTaskSheet = async (row: DispatchRow, taskSheet: any) => {
+  const saveTaskSheet = async (row: DispatchRow, taskSheet: any, options?: { close?: boolean }) => {
+    const closeAfter = options?.close !== false;
     // Synthetic pending rows (id "pending-<fs-uuid>") are not real dispatch_assignments
     // yet — treat them as new completions so we INSERT instead of UPDATE by a bogus uuid.
     const isSyntheticPending =
