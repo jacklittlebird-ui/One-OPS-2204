@@ -1069,8 +1069,14 @@ export default function SecurityServiceReportsPage() {
         queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
       ]);
-      setEditRow(null);
-      setIsNewReport(false);
+      if (closeAfter) {
+        setEditRow(null);
+        setIsNewReport(false);
+      } else if (effectiveIsNew && insertedDispatch) {
+        // Rebind dialog to the newly-inserted record so the next "Save" updates it.
+        setEditRow(insertedDispatch as any);
+        setIsNewReport(false);
+      }
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
       // Keep the dialog open with the user's edits intact so they can retry.
