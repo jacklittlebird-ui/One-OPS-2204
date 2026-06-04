@@ -946,6 +946,7 @@ export default function SecurityServiceReportsPage() {
             : {}),
     };
 
+    let insertedDispatch: any = null;
     try {
       if (isCompletingClearanceFlight) {
         // Reuse the existing clearance flight schedule — just create the dispatch
