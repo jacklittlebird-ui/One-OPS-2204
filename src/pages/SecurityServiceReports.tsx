@@ -311,13 +311,58 @@ export default function SecurityServiceReportsPage() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
-    await supabase
+
+    const reviewer = session?.user?.email || "Operations";
+    const reviewedAt = new Date().toISOString();
+
+    // Find any existing dispatch_assignments rows for this flight
+    const { data: existingDispatches } = await supabase
       .from("dispatch_assignments")
-      .update({ status: "Completed", review_status: "Approved", reviewed_by: session?.user?.email || "Operations", reviewed_at: new Date().toISOString() } as any)
+      .select("id")
       .eq("flight_schedule_id", flightId);
+
+    if (existingDispatches && existingDispatches.length > 0) {
+      await supabase
+        .from("dispatch_assignments")
+        .update({
+          status: "Completed",
+          review_status: "Approved",
+          reviewed_by: reviewer,
+          reviewed_at: reviewedAt,
+        } as any)
+        .eq("flight_schedule_id", flightId);
+    } else {
+      // No task sheet was filed yet — create a minimal dispatch row so the
+      // pipeline reflects the Operations approval (steps 1, 2 and 3 complete).
+      const { data: fs } = await supabase
+        .from("flight_schedules")
+        .select("flight_no, authority, airlines(name), handling_agent, clearance_type, arrival_date, departure_date, sta, std, remarks")
+        .eq("id", flightId)
+        .maybeSingle();
+      if (fs) {
+        const f: any = fs;
+        await supabase.from("dispatch_assignments").insert({
+          flight_schedule_id: flightId,
+          station: f.authority || "",
+          airline: f.airlines?.name || f.handling_agent || "",
+          flight_no: f.flight_no || "",
+          flight_date: f.arrival_date || f.departure_date || new Date().toISOString().slice(0, 10),
+          service_type: f.clearance_type || "Arrival Security",
+          scheduled_start: f.sta || f.std || "",
+          scheduled_end: f.std || f.sta || "",
+          status: "Completed",
+          review_status: "Approved",
+          reviewed_by: reviewer,
+          reviewed_at: reviewedAt,
+          dispatched_by: reviewer,
+          notes: f.remarks || "",
+        } as any);
+      }
+    }
+
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-    toast({ title: "Approved", description: "Flight approved by Operations." });
+    toast({ title: "Approved", description: "Flight approved by Operations — pipeline advanced to Receivables." });
   };
 
   const rejectPendingFlight = async (flightId: string) => {
