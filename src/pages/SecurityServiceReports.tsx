@@ -955,12 +955,13 @@ export default function SecurityServiceReportsPage() {
           ? flightDetailsById.get((row as any).flight_schedule_id)?.flight_no
           : undefined;
         const dispatchInsert = { ...payload, flight_no: linkedFlightNo || payload.flight_no, flight_schedule_id: (row as any).flight_schedule_id };
-        const { data: insertedDispatch, error: dispatchErr } = await supabase
+        const { data: insRow1, error: dispatchErr } = await supabase
           .from("dispatch_assignments")
           .insert(dispatchInsert as any)
           .select("*")
           .single();
         if (dispatchErr) throw dispatchErr;
+        insertedDispatch = insRow1;
         const { error: fsSyncErr } = await supabase
           .from("flight_schedules")
           .update({
