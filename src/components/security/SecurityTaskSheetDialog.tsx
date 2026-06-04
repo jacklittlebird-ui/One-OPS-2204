@@ -486,7 +486,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setSheet(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (closeAfter: boolean = true) => {
     // Guard against double-clicks / re-entry while a save is in flight.
     if (savingRef.current) return;
     // In receivables view the task sheet is read-only — only the Security
