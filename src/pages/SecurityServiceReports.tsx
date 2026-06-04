@@ -907,11 +907,10 @@ export default function SecurityServiceReportsPage() {
       // editing an existing report → mark "Completed" so step 2 (Station) is done.
       // EXCEPTION: if Service Type changed, send the dispatch back to "Pending"
       // so the pipeline reverts to step 1 (Clearance) for re-approval.
-      status: serviceTypeChanged
-        ? "Pending"
-        : (effectiveIsNew && !isCompletingClearanceFlight)
-          ? "Pending"
-          : "Completed",
+      // Saving the task sheet always marks Station (step 2) as complete.
+      // EXCEPTION: if Service Type changed on an existing linked clearance flight,
+      // send the dispatch back to "Pending" so the pipeline reverts to step 1.
+      status: serviceTypeChanged ? "Pending" : "Completed",
       station: row.station,
       airline: row.airline,
       flight_no: row.flight_no,
@@ -934,8 +933,11 @@ export default function SecurityServiceReportsPage() {
       // New reports start in Draft; completing a clearance flight goes straight to Pending Review.
       // Resubmitting a rejected report → "Modified" so it appears under Operations → Modified tab.
       // Service Type change → "Draft" (returns to clearance, removes from ops queue).
+      // New reports go straight to Pending Review (Operations queue) — step 2 (Station) done.
+      // Resubmitting a rejected report → "Modified" so it appears under Operations → Modified tab.
+      // Service Type change → "Draft" (returns to clearance, removes from ops queue).
       ...(effectiveIsNew
-        ? { review_status: isCompletingClearanceFlight ? "Pending Review" : "Draft" }
+        ? { review_status: "Pending Review" }
         : isResubmittingRejected
           ? { review_status: "Modified" }
           : serviceTypeChanged
