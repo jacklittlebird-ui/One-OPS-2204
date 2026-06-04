@@ -272,6 +272,10 @@ export default function SecurityServiceReportsPage() {
       } else if (!includeAllFlights) {
         q = (q as any).in("clearance_type", SECURITY_CLEARANCE_TYPES);
       }
+      // Never surface clearance-cancelled or clearance-rejected flights as
+      // pending security work. Stations were seeing "ghost" rows for flights
+      // Clearance had already cancelled/rejected/returned.
+      q = (q as any).not("status", "in", "(Cancelled,Rejected)");
       const { data, error } = await q;
       if (error) throw error;
       return data as any[];
