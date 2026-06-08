@@ -613,7 +613,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 </style>
 </head><body>
 
-<div class="title">${row.airline} AIRLINES SECURITY TASK SHEET</div>
+<div class="title">${airlineName} AIRLINES SECURITY TASK SHEET</div>
 
 <table style="margin-bottom:10px;">
   <tr class="header-row">
@@ -623,7 +623,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <th>Route</th>
   </tr>
   <tr>
-    <td class="value-cell" style="font-weight:800;font-size:15px;">${row.flight_no}</td>
+    <td class="value-cell" style="font-weight:800;font-size:15px;">${flightNoVal}</td>
     <td class="value-cell">${flightDate}</td>
     <td class="value-cell mono">${reg}</td>
     <td class="value-cell">${rt}</td>
@@ -637,7 +637,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="label" style="width:55px;">ATA</td>
     <td class="mono" style="width:75px;">${ataVal}</td>
      <td class="label" style="width:85px;">Skd Type</td>
-     <td colspan="${FLIGHT_TYPES.length}" class="value-cell" style="font-size:13px;font-weight:600;">${v.flight_type || "—"}</td>
+     <td colspan="${FLIGHT_TYPES.length}" class="value-cell" style="font-size:13px;font-weight:600;">${skdVal}</td>
   </tr>
   <tr>
     <td class="label">STD</td>
@@ -645,7 +645,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="label">ATD</td>
     <td class="mono">${atdVal}</td>
     <td class="label">Service Type</td>
-    <td colspan="5" class="value-cell" style="font-size:13px;font-weight:600;">${serviceType || row.service_type || "—"}</td>
+    <td colspan="5" class="value-cell" style="font-size:13px;font-weight:600;">${svcType}</td>
   </tr>
   <tr>
     <td class="label" colspan="2"></td>
@@ -682,12 +682,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 </table>
 
 <table style="margin-bottom:10px;">
-  <tr><td class="section">${row.airline.toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</td></tr>
+  <tr><td class="section">${String(airlineName).toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</td></tr>
   <tr><td class="value-cell" style="padding:10px;">${v.security_supervisor || ""}</td></tr>
 </table>
 
 <div class="footer">
-  <span>${row.airline} Security Task Sheet</span>
+  <span>${airlineName} Security Task Sheet</span>
   <span>V.03 22Jan2023</span>
 </div>
 
