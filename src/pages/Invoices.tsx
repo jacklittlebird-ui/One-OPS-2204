@@ -999,10 +999,10 @@ export default function InvoicesPage() {
         overtimeHours: Number(d.overtime_hours) || 0,
         staffCount: Number(d.staff_count) || 0,
         civil: 0,
-        handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
+        handling: Number(d._effBase) || 0,           // base fee → handling column in Annex A
         airport: 0,
-        other: Number(d.overtime_charge) || 0,       // overtime → other column in Annex A
-        total: Number(d.total_charge) || 0,
+        other: Number(d._effOvertime) || 0,          // overtime → other column in Annex A
+        total: Number(d._effTotal) || 0,
       };
     });
     const headerNote = `Monthly Security invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${rows.length} approved security assignments across ${new Set(rows.map((d: any) => d.station)).size} station(s). See Annex A for per-flight detail.`;
