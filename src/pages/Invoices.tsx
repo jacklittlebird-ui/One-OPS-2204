@@ -18,6 +18,7 @@ import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrint
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
 import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail } from "@/lib/securityInvoiceDetail";
+import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
