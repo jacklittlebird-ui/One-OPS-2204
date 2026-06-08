@@ -872,9 +872,9 @@ export default function InvoicesPage() {
       flight: d.flight_no || "",
       station: d.station || "",
       type: d.service_type || "",
-      base: Number(d.base_fee) || 0,            // → "Handling" column in printed Annex A
-      overtime: Number(d.overtime_charge) || 0, // → "Other" column in printed Annex A
-      total: Number(d.total_charge) || 0,
+      base: Number(d._effBase) || 0,            // → "Handling" column in printed Annex A
+      overtime: Number(d._effOvertime) || 0,    // → "Other" column in printed Annex A
+      total: Number(d._effTotal) || 0,
     }));
     // Stable ordering (matches print/CSV): date asc, then flight no
     rows.sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.flight || "").localeCompare(b.flight || ""));
