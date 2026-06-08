@@ -664,7 +664,7 @@ export default function ClearancesPage() {
                             <div className="flex gap-1">
                               <Button size="icon" variant="ghost" onClick={() => setDetailItem(c)}><Eye size={14} /></Button>
                               <Button size="icon" variant="ghost" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
-                              <Button size="icon" variant="ghost" className="text-destructive disabled:opacity-40" disabled={isFlightLocked(c)} title={isFlightLocked(c) ? "Locked: completed by Station and approved by Operations" : "Delete"} onClick={() => safeRemove(c)}><Trash2 size={14} /></Button>
+                              <Button size="icon" variant="ghost" className="text-destructive" title="Delete" onClick={() => safeRemove(c)}><Trash2 size={14} /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
