@@ -18,6 +18,7 @@ import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrint
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
 import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail } from "@/lib/securityInvoiceDetail";
+import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -148,6 +149,7 @@ export default function InvoicesPage() {
   const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules", { stationFilter: true });
+  const { data: contractRates } = useSupabaseTable<any>("contract_service_rates");
   const { data: airports } = useSupabaseTable<any>("airports");
 
   // Map: first flight_no in flight_ref -> registration
@@ -758,21 +760,57 @@ export default function InvoicesPage() {
   // ============================================================
   // SECURITY: monthly airline invoice (sourced from dispatch_assignments)
   // ============================================================
+  // Map dispatch service_type → contract flight_type (mirrors SecurityServiceReports)
+  const mapServiceTypeToFlightType = useCallback((st: string): string => {
+    const s = (st || "").toLowerCase();
+    if (s.includes("turnaround")) return "Turnaround";
+    if (s.includes("maintenance")) return "Maintenance Security";
+    if (s.includes("departure")) return "Departure Security";
+    if (s.includes("arrival")) return "Arrival Security";
+    return st || "Turnaround";
+  }, []);
+
+  // Compute live charge from contract rates when stored values are zero/missing.
+  const computeLiveCharge = useCallback((d: any): { base: number; overtime: number; total: number } => {
+    if (!d?.contract_id) return { base: 0, overtime: 0, total: 0 };
+    const rates = (contractRates || []).filter((x: any) => x.contract_id === d.contract_id);
+    if (!rates.length) return { base: 0, overtime: 0, total: 0 };
+    const fi = lookupFlightInfo(d);
+    const skd = (fi.skdType || "").toString().trim().toUpperCase();
+    const result = calculateSecurityCharges({
+      airport: d.station || "CAI",
+      flightType: mapServiceTypeToFlightType(d.service_type),
+      groundTimeHours: Number(d.actual_duration_hours) || 0,
+      isAdhoc: skd === "ADHOC",
+      rates: rates as any,
+    });
+    const lines = result.lines || [];
+    const base = lines.filter((l: any) => !/overtime/i.test(l.label)).reduce((s: number, l: any) => s + (Number(l.amount) || 0), 0);
+    const overtime = lines.filter((l: any) => /overtime/i.test(l.label)).reduce((s: number, l: any) => s + (Number(l.amount) || 0), 0);
+    return { base, overtime, total: result.total || 0 };
+  }, [contractRates, lookupFlightInfo, mapServiceTypeToFlightType]);
+
   const monthlySecurityPreview = useMemo(() => {
-    const rows = (dispatches || []).filter((d: any) => {
+    const baseRows = (dispatches || []).filter((d: any) => {
       const rs = (d.review_status || "").toLowerCase().trim();
       return (rs === "approved" || rs === "ready for billing") &&
         d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
         (d.flight_date || "").startsWith(monthlyAirlineMonth);
     });
+    // Enrich each row with effective charges (stored or live-computed fallback).
+    const rows = baseRows.map((d: any) => {
+      const storedBase = Number(d.base_fee) || 0;
+      const storedOt = Number(d.overtime_charge) || 0;
+      const storedTotal = Number(d.total_charge) || 0;
+      let base = storedBase, overtime = storedOt, total = storedTotal || (storedBase + storedOt);
+      if (total <= 0) {
+        const live = computeLiveCharge(d);
+        if (live.total > 0) { base = live.base; overtime = live.overtime; total = live.total; }
+      }
+      return { ...d, _effBase: base, _effOvertime: overtime, _effTotal: total };
+    });
     const totals = rows.reduce(
-      (acc: any, d: any) => {
-        const base = Number(d.base_fee) || 0;
-        const ot = Number(d.overtime_charge) || 0;
-        const t = Number(d.total_charge) || base + ot;
-        acc.base += base; acc.overtime += ot; acc.total += t;
-        return acc;
-      },
+      (acc: any, d: any) => { acc.base += d._effBase; acc.overtime += d._effOvertime; acc.total += d._effTotal; return acc; },
       { base: 0, overtime: 0, total: 0 }
     );
     const byStationType: Record<string, { station: string; type: string; flights: number; total: number }> = {};
@@ -780,17 +818,17 @@ export default function InvoicesPage() {
       const key = `${d.station}__${d.service_type}`;
       if (!byStationType[key]) byStationType[key] = { station: d.station, type: d.service_type, flights: 0, total: 0 };
       byStationType[key].flights++;
-      byStationType[key].total += Number(d.total_charge) || 0;
+      byStationType[key].total += d._effTotal;
     });
     return { rows, totals, breakdown: Object.values(byStationType) };
-  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth]);
+  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, computeLiveCharge]);
 
   type SecIssue = { id: string; flight: string; date: string; station: string; severity: "error" | "warning"; issues: string[] };
   const monthlySecurityValidation = useMemo(() => {
     const issues: SecIssue[] = [];
     const rows = monthlySecurityPreview.rows;
     if (rows.length === 0) return { issues, errorCount: 0, warningCount: 0, cleanCount: 0 };
-    const totals = rows.map((d: any) => Number(d.total_charge) || 0).filter((t: number) => t > 0).sort((a: number, b: number) => a - b);
+    const totals = rows.map((d: any) => d._effTotal || 0).filter((t: number) => t > 0).sort((a: number, b: number) => a - b);
     const median = totals.length ? totals[Math.floor(totals.length / 2)] : 0;
     const outlierHigh = median * 5;
     const outlierLow = median > 0 ? median / 10 : 0;
@@ -801,12 +839,18 @@ export default function InvoicesPage() {
       if (!d.station?.trim()) { rowIssues.push("Missing station"); severity = "error"; }
       if (!d.flight_date) { rowIssues.push("Missing flight date"); severity = "error"; }
       if (!d.service_type?.trim()) { rowIssues.push("Missing service type"); }
-      const total = Number(d.total_charge) || 0;
-      if (total <= 0) { rowIssues.push("Total charge is zero"); severity = "error"; }
-      if ((Number(d.base_fee) || 0) < 0 || (Number(d.overtime_charge) || 0) < 0) {
+      const total = Number(d._effTotal) || 0;
+      const effBase = Number(d._effBase) || 0;
+      const effOt = Number(d._effOvertime) || 0;
+      if (total <= 0) {
+        if (!d.contract_id) rowIssues.push("No contract linked — cannot price");
+        else rowIssues.push("Total charge is zero (no matching contract rate)");
+        severity = "error";
+      }
+      if (effBase < 0 || effOt < 0) {
         rowIssues.push("Negative charge amount"); severity = "error";
       }
-      const partsSum = (Number(d.base_fee) || 0) + (Number(d.overtime_charge) || 0);
+      const partsSum = effBase + effOt;
       if (total > 0 && partsSum > 0 && Math.abs(total - partsSum) > 0.5) {
         rowIssues.push(`Total ${total.toFixed(2)} ≠ base+overtime ${partsSum.toFixed(2)}`);
       }
@@ -828,9 +872,9 @@ export default function InvoicesPage() {
       flight: d.flight_no || "",
       station: d.station || "",
       type: d.service_type || "",
-      base: Number(d.base_fee) || 0,            // → "Handling" column in printed Annex A
-      overtime: Number(d.overtime_charge) || 0, // → "Other" column in printed Annex A
-      total: Number(d.total_charge) || 0,
+      base: Number(d._effBase) || 0,            // → "Handling" column in printed Annex A
+      overtime: Number(d._effOvertime) || 0,    // → "Other" column in printed Annex A
+      total: Number(d._effTotal) || 0,
     }));
     // Stable ordering (matches print/CSV): date asc, then flight no
     rows.sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.flight || "").localeCompare(b.flight || ""));
@@ -955,10 +999,10 @@ export default function InvoicesPage() {
         overtimeHours: Number(d.overtime_hours) || 0,
         staffCount: Number(d.staff_count) || 0,
         civil: 0,
-        handling: Number(d.base_fee) || 0,           // base fee → handling column in Annex A
+        handling: Number(d._effBase) || 0,           // base fee → handling column in Annex A
         airport: 0,
-        other: Number(d.overtime_charge) || 0,       // overtime → other column in Annex A
-        total: Number(d.total_charge) || 0,
+        other: Number(d._effOvertime) || 0,          // overtime → other column in Annex A
+        total: Number(d._effTotal) || 0,
       };
     });
     const headerNote = `Monthly Security invoice for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}. ${rows.length} approved security assignments across ${new Set(rows.map((d: any) => d.station)).size} station(s). See Annex A for per-flight detail.`;
@@ -1025,7 +1069,7 @@ export default function InvoicesPage() {
         station: d.station || "",
         type: buildServiceTypeLabel(d),
         category: "Security",
-        civil: 0, handling: Number(d.base_fee) || 0, airport: 0, other: Number(d.overtime_charge) || 0, total: Number(d.total_charge) || 0,
+        civil: 0, handling: Number(d._effBase) || 0, airport: 0, other: Number(d._effOvertime) || 0, total: Number(d._effTotal) || 0,
       };
     });
     const detailRows = [...handlingRows, ...securityRows];
