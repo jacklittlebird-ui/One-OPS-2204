@@ -30,6 +30,7 @@ import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 import { parseDeletionRequests } from "@/lib/statusRouting";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
 
 // ─── Calendar View Component ───
 function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdit }: {
@@ -124,12 +125,16 @@ export default function ClearancesPage() {
   const { data: airlines } = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("id,name,code"); return data || []; } });
   const { data: airportsList } = useQuery({ queryKey: ["airports-iata"], queryFn: async () => { const { data } = await supabase.from("airports").select("iata_code,name").order("iata_code"); return data || []; } });
 
-  const isFlightLocked = (c: ClearanceRow): boolean => {
-    const match = (dispatches || []).find((d: any) =>
+  const findDispatch = (c: ClearanceRow): any | undefined => {
+    return (dispatches || []).find((d: any) =>
       (d.flight_schedule_id && d.flight_schedule_id === c.id) ||
       (String(d.flight_no || "").trim().toLowerCase() === String(c.flight_no || "").trim().toLowerCase() &&
         String(d.station || "").trim().toLowerCase() === String(c.authority || "").trim().toLowerCase())
     );
+  };
+
+  const isFlightLocked = (c: ClearanceRow): boolean => {
+    const match = findDispatch(c);
     if (!match) return false;
     const completed = String(match.status || "").toLowerCase() === "completed";
     const approved = String(match.review_status || "").toLowerCase() === "approved";
@@ -560,6 +565,7 @@ export default function ClearancesPage() {
                       <TableHead>Service Type</TableHead>
                       <TableHead>Skd Type</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Pipeline</TableHead>
                       <TableHead className="w-24">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -575,7 +581,7 @@ export default function ClearancesPage() {
                         <Fragment key={c.id}>
                         {statusTab === "rejected" && latestDeletionEntry && (
                           <TableRow className="bg-warning/5 border-l-2 border-l-warning" data-testid={`clearance-delete-row-${c.id}`}>
-                            <TableCell colSpan={statusTab === "rejected" ? 15 : 14} className="px-4 py-2">
+                            <TableCell colSpan={statusTab === "rejected" ? 16 : 15} className="px-4 py-2">
                               <div className="flex items-start gap-2 text-xs">
                                 <Trash2 size={14} className="text-warning shrink-0 mt-0.5" />
                                 <div className="flex-1 min-w-0">
@@ -660,6 +666,26 @@ export default function ClearancesPage() {
                           <TableCell>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>{statusIcon}{c.status}</span>
                           </TableCell>
+                          <TableCell className="text-center">
+                            {(() => {
+                              const d = findDispatch(c);
+                              const stageOpts = {
+                                isLinked: !!d,
+                                reviewStatus: d?.review_status || "",
+                                clearanceStatus: c.status,
+                                dispatchStatus: d?.status,
+                              };
+                              return (
+                                <div className="flex justify-center">
+                                  <PipelineStepper
+                                    compact
+                                    currentStage={derivePipelineStage(stageOpts)}
+                                    completedStages={derivePipelineCompletedStages(stageOpts)}
+                                  />
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
                               <Button size="icon" variant="ghost" onClick={() => setDetailItem(c)}><Eye size={14} /></Button>
@@ -671,7 +697,7 @@ export default function ClearancesPage() {
                         </Fragment>
                       );
                     })}
-                    {filtered.length === 0 && <TableRow><TableCell colSpan={statusTab === "rejected" ? 15 : 14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
+                    {filtered.length === 0 && <TableRow><TableCell colSpan={statusTab === "rejected" ? 16 : 15} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
