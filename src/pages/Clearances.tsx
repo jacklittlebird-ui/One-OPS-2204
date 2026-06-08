@@ -9,6 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, Search, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle, Download, Eye, Users, Upload, CalendarDays, TableIcon, ChevronLeft, ChevronRight, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
@@ -131,8 +141,31 @@ export default function ClearancesPage() {
       toast({ title: "Cannot delete", description: "This flight is completed by Station and approved by Operations. Deletion is not allowed.", variant: "destructive" });
       return;
     }
-    if (!window.confirm("Delete this clearance flight? This cannot be undone.")) return;
-    await remove(c.id);
+    setDeleteConfirm({ open: true, mode: "single", target: c });
+  };
+
+  const executeSingleDelete = async () => {
+    if (!deleteConfirm.target) return;
+    await remove(deleteConfirm.target.id);
+    setDeleteConfirm({ open: false, mode: null, target: null });
+  };
+
+  const executeBulkDelete = async () => {
+    const ids = Array.from(selectedRejectedIds);
+    let failed = 0;
+    let locked = 0;
+    for (const id of ids) {
+      const row = data.find((r: any) => r.id === id) as ClearanceRow | undefined;
+      if (row && isFlightLocked(row)) { locked++; continue; }
+      try { await remove(id); } catch { failed++; }
+    }
+    setSelectedRejectedIds(new Set());
+    setDeleteConfirm({ open: false, mode: null, target: null });
+    if (locked > 0 || failed > 0) {
+      toast({ title: "Partial failure", description: `${locked} locked (completed & approved), ${failed} other failures out of ${ids.length}.`, variant: "destructive" });
+    } else {
+      toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
+    }
   };
 
   const [search, setSearch] = useState("");
@@ -160,6 +193,7 @@ export default function ClearancesPage() {
   const [form, setForm] = useState<any>(emptyForm);
   const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
   const [selectedRejectedIds, setSelectedRejectedIds] = useState<Set<string>>(new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; mode: "single" | "bulk" | null; target: ClearanceRow | null }>({ open: false, mode: null, target: null });
 
   const airlineMap = Object.fromEntries((airlines || []).map((a: any) => [a.id, a]));
 
@@ -453,23 +487,7 @@ export default function ClearancesPage() {
                 size="sm"
                 variant="destructive"
                 className="gap-1"
-                onClick={async () => {
-                  if (!window.confirm(`Delete ${selectedRejectedIds.size} selected rejected record(s)? This cannot be undone.`)) return;
-                  const ids = Array.from(selectedRejectedIds);
-                  let failed = 0;
-                  let locked = 0;
-                  for (const id of ids) {
-                    const row = data.find((r: any) => r.id === id) as ClearanceRow | undefined;
-                    if (row && isFlightLocked(row)) { locked++; continue; }
-                    try { await remove(id); } catch { failed++; }
-                  }
-                  setSelectedRejectedIds(new Set());
-                  if (locked > 0 || failed > 0) {
-                    toast({ title: "Partial failure", description: `${locked} locked (completed & approved), ${failed} other failures out of ${ids.length}.`, variant: "destructive" });
-                  } else {
-                    toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
-                  }
-                }}
+                onClick={() => setDeleteConfirm({ open: true, mode: "bulk", target: null })}
               >
                 <Trash2 size={14} /> Delete All ({selectedRejectedIds.size})
               </Button>
@@ -694,6 +712,38 @@ export default function ClearancesPage() {
       />
 
       <ScheduleUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} defaultCategory={serviceCategory} />
+
+      <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteConfirm.mode === "bulk"
+                ? `Delete ${selectedRejectedIds.size} rejected record(s)?`
+                : "Delete this clearance flight?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteConfirm.mode === "bulk"
+                ? `This will permanently remove ${selectedRejectedIds.size} selected rejected record(s). This action cannot be undone.`
+                : `Flight ${deleteConfirm.target?.flight_no || ""} will be permanently removed. This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteConfirm({ open: false, mode: null, target: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirm.mode === "bulk") {
+                  executeBulkDelete();
+                } else {
+                  executeSingleDelete();
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
