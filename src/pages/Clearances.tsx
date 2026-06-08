@@ -581,7 +581,7 @@ export default function ClearancesPage() {
                         <Fragment key={c.id}>
                         {statusTab === "rejected" && latestDeletionEntry && (
                           <TableRow className="bg-warning/5 border-l-2 border-l-warning" data-testid={`clearance-delete-row-${c.id}`}>
-                            <TableCell colSpan={statusTab === "rejected" ? 15 : 14} className="px-4 py-2">
+                            <TableCell colSpan={statusTab === "rejected" ? 16 : 15} className="px-4 py-2">
                               <div className="flex items-start gap-2 text-xs">
                                 <Trash2 size={14} className="text-warning shrink-0 mt-0.5" />
                                 <div className="flex-1 min-w-0">
@@ -697,7 +697,7 @@ export default function ClearancesPage() {
                         </Fragment>
                       );
                     })}
-                    {filtered.length === 0 && <TableRow><TableCell colSpan={statusTab === "rejected" ? 15 : 14} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
+                    {filtered.length === 0 && <TableRow><TableCell colSpan={statusTab === "rejected" ? 16 : 15} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
