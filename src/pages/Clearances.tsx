@@ -469,8 +469,11 @@ export default function ClearancesPage() {
         <TabsContent value={serviceCategory}>
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="inline-flex border rounded-lg overflow-hidden">
-              <Button variant={statusTab === "active" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3" onClick={() => { setStatusTab("active"); setSelectedRejectedIds(new Set()); }}>
+              <Button variant={statusTab === "active" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3 gap-1" onClick={() => { setStatusTab("active"); setSelectedRejectedIds(new Set()); }}>
                 Active
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${statusTab === "active" ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {filtered.length}
+                </span>
               </Button>
               <Button variant={statusTab === "rejected" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3 gap-1" onClick={() => setStatusTab("rejected")}>
                 <XCircle size={14} /> Rejected
