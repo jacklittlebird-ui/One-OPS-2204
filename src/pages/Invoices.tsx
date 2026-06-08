@@ -828,7 +828,7 @@ export default function InvoicesPage() {
     const issues: SecIssue[] = [];
     const rows = monthlySecurityPreview.rows;
     if (rows.length === 0) return { issues, errorCount: 0, warningCount: 0, cleanCount: 0 };
-    const totals = rows.map((d: any) => Number(d.total_charge) || 0).filter((t: number) => t > 0).sort((a: number, b: number) => a - b);
+    const totals = rows.map((d: any) => d._effTotal || 0).filter((t: number) => t > 0).sort((a: number, b: number) => a - b);
     const median = totals.length ? totals[Math.floor(totals.length / 2)] : 0;
     const outlierHigh = median * 5;
     const outlierLow = median > 0 ? median / 10 : 0;
@@ -839,12 +839,18 @@ export default function InvoicesPage() {
       if (!d.station?.trim()) { rowIssues.push("Missing station"); severity = "error"; }
       if (!d.flight_date) { rowIssues.push("Missing flight date"); severity = "error"; }
       if (!d.service_type?.trim()) { rowIssues.push("Missing service type"); }
-      const total = Number(d.total_charge) || 0;
-      if (total <= 0) { rowIssues.push("Total charge is zero"); severity = "error"; }
-      if ((Number(d.base_fee) || 0) < 0 || (Number(d.overtime_charge) || 0) < 0) {
+      const total = Number(d._effTotal) || 0;
+      const effBase = Number(d._effBase) || 0;
+      const effOt = Number(d._effOvertime) || 0;
+      if (total <= 0) {
+        if (!d.contract_id) rowIssues.push("No contract linked — cannot price");
+        else rowIssues.push("Total charge is zero (no matching contract rate)");
+        severity = "error";
+      }
+      if (effBase < 0 || effOt < 0) {
         rowIssues.push("Negative charge amount"); severity = "error";
       }
-      const partsSum = (Number(d.base_fee) || 0) + (Number(d.overtime_charge) || 0);
+      const partsSum = effBase + effOt;
       if (total > 0 && partsSum > 0 && Math.abs(total - partsSum) > 0.5) {
         rowIssues.push(`Total ${total.toFixed(2)} ≠ base+overtime ${partsSum.toFixed(2)}`);
       }
