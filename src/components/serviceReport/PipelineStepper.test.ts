@@ -263,3 +263,80 @@ describe("backend-derived completion when opening an edited record", () => {
     expect(done).not.toContain("receivables");
   });
 });
+
+describe("review_status states — Draft vs Submitted vs Approved (record/list view)", () => {
+  const base = {
+    isLinked: true,
+    clearanceStatus: "approved",
+    dispatchStatus: "completed", // intentionally Completed to prove it alone does NOT mark station done
+  } as const;
+
+  it("Draft review_status: station NOT done (station hasn't submitted)", () => {
+    const done = derivePipelineCompletedStages({ ...base, reviewStatus: "draft" });
+    expect(done).toContain("clearance");
+    expect(done).not.toContain("station");
+    expect(done).not.toContain("operations");
+    expect(derivePipelineStage({ ...base, reviewStatus: "draft" })).toBe("station");
+  });
+
+  it("Empty review_status: station NOT done", () => {
+    const done = derivePipelineCompletedStages({ ...base, reviewStatus: "" });
+    expect(done).not.toContain("station");
+    expect(derivePipelineStage({ ...base, reviewStatus: "" })).toBe("station");
+  });
+
+  it("Submitted (Pending Review): station DONE, operations NOT done", () => {
+    const done = derivePipelineCompletedStages({ ...base, reviewStatus: "pending review" });
+    expect(done).toContain("station");
+    expect(done).not.toContain("operations");
+    expect(derivePipelineStage({ ...base, reviewStatus: "pending review" })).toBe("operations");
+  });
+
+  it("Modified: station DONE, operations NOT done", () => {
+    const done = derivePipelineCompletedStages({ ...base, reviewStatus: "modified" });
+    expect(done).toContain("station");
+    expect(done).not.toContain("operations");
+  });
+
+  it("Rejected: station DONE (station did submit), operations NOT done", () => {
+    const done = derivePipelineCompletedStages({ ...base, reviewStatus: "rejected" });
+    expect(done).toContain("station");
+    expect(done).not.toContain("operations");
+  });
+
+  it("Approved: station + operations both DONE", () => {
+    const done = derivePipelineCompletedStages({ ...base, reviewStatus: "approved" });
+    expect(done).toContain("station");
+    expect(done).toContain("operations");
+  });
+
+  it("Ready for Billing: station + operations both DONE", () => {
+    const done = derivePipelineCompletedStages({ ...base, reviewStatus: "ready for billing" });
+    expect(done).toContain("station");
+    expect(done).toContain("operations");
+  });
+
+  it("REGRESSION: dispatch.status=Completed + review_status=Draft must NOT mark station/operations done", () => {
+    // This was the original bug — auto-Completed dispatches with no station work
+    // were incorrectly showing steps 2 and 3 as green.
+    const done = derivePipelineCompletedStages({
+      isLinked: true,
+      clearanceStatus: "approved",
+      dispatchStatus: "completed",
+      reviewStatus: "draft",
+    });
+    expect(done).toEqual(["clearance"]);
+  });
+
+  it("REGRESSION: dispatch.status=Pending + review_status=Approved still marks station+operations done", () => {
+    // review_status is the source of truth for station/ops completion — not dispatch.status.
+    const done = derivePipelineCompletedStages({
+      isLinked: true,
+      clearanceStatus: "approved",
+      dispatchStatus: "pending",
+      reviewStatus: "approved",
+    });
+    expect(done).toContain("station");
+    expect(done).toContain("operations");
+  });
+});
