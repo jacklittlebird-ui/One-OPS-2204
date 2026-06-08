@@ -42,7 +42,7 @@ export function derivePipelineStage(opts: {
   invoiceStatus?: "none" | "issued" | "paid";
 }): PipelineStage {
   const rs = (opts.reviewStatus || "").toLowerCase();
-  const ds = (opts.dispatchStatus || "").toLowerCase();
+  void opts.dispatchStatus;
   const cs = (opts.clearanceStatus || "").toLowerCase();
   const ch = (opts.channel || "").toLowerCase();
   const inv = opts.invoiceStatus || "none";
@@ -130,7 +130,7 @@ export function derivePipelineCompletedStages(opts: {
   invoiceStatus?: "none" | "issued" | "paid";
 }): PipelineStage[] {
   const rs = (opts.reviewStatus || "").toLowerCase();
-  const ds = (opts.dispatchStatus || "").toLowerCase();
+  void opts.dispatchStatus;
   const cs = (opts.clearanceStatus || "").toLowerCase();
   const inv = opts.invoiceStatus || "none";
 
