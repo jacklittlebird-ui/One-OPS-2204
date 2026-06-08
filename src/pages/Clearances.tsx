@@ -666,6 +666,26 @@ export default function ClearancesPage() {
                           <TableCell>
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>{statusIcon}{c.status}</span>
                           </TableCell>
+                          <TableCell className="text-center">
+                            {(() => {
+                              const d = findDispatch(c);
+                              const stageOpts = {
+                                isLinked: !!d,
+                                reviewStatus: d?.review_status || "",
+                                clearanceStatus: c.status,
+                                dispatchStatus: d?.status,
+                              };
+                              return (
+                                <div className="flex justify-center">
+                                  <PipelineStepper
+                                    compact
+                                    currentStage={derivePipelineStage(stageOpts)}
+                                    completedStages={derivePipelineCompletedStages(stageOpts)}
+                                  />
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
                               <Button size="icon" variant="ghost" onClick={() => setDetailItem(c)}><Eye size={14} /></Button>
