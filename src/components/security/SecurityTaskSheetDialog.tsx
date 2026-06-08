@@ -558,18 +558,23 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const formatDate = (d: string) => formatDateDMY(d) || "";
 
   const handlePrint = () => {
-    if (!row) return;
+    const baseRow = (currentRow || editableRow || row) as DispatchRow | null;
+    if (!baseRow) return;
     const v = sheet;
-    const flightDate = formatDate(row.flight_date);
-    const reg = v.registration || registration || "—";
-    const rt = v.route || route || "—";
-    const staVal = v.sta || sta || "—";
-    const stdVal = v.std || std || "—";
-    const ataVal = v.ata || ata || "—";
-    const atdVal = v.atd || atd || "—";
+    const airlineName = baseRow.airline || (row as any)?.airline || "—";
+    const flightNoVal = baseRow.flight_no || (row as any)?.flight_no || "—";
+    const flightDate = formatDate(baseRow.flight_date || (row as any)?.flight_date || "");
+    const reg = v.registration || registration || (baseRow as any).registration || "—";
+    const rt = v.route || route || (baseRow as any).route || "—";
+    const staVal = v.sta || sta || (baseRow as any).scheduled_start || "—";
+    const stdVal = v.std || std || (baseRow as any).scheduled_end || "—";
+    const ataVal = v.ata || ata || (baseRow as any).actual_start || "—";
+    const atdVal = v.atd || atd || (baseRow as any).actual_end || "—";
+    const svcType = v.service_type || serviceType || baseRow.service_type || "—";
+    const skdVal = v.flight_type || skdType || (baseRow as any).skd_type || "—";
 
     const ftChecks = FLIGHT_TYPES.map(ft =>
-      `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === v.flight_type ? "☒" : "☐"} ${ft}</td>`
+      `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === skdVal ? "☒" : "☐"} ${ft}</td>`
     ).join("");
 
     const obsSection = (title: string, rows: [string, string][]) => {
@@ -582,7 +587,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     };
 
     const html = `<!DOCTYPE html><html><head>
-<title>${row.airline} Security Task Sheet - ${row.flight_no}</title>
+<title>${airlineName} Security Task Sheet - ${flightNoVal}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #000; padding: 30px 40px; }
