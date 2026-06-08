@@ -712,6 +712,38 @@ export default function ClearancesPage() {
       />
 
       <ScheduleUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} defaultCategory={serviceCategory} />
+
+      <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteConfirm.mode === "bulk"
+                ? `Delete ${selectedRejectedIds.size} rejected record(s)?`
+                : "Delete this clearance flight?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteConfirm.mode === "bulk"
+                ? `This will permanently remove ${selectedRejectedIds.size} selected rejected record(s). This action cannot be undone.`
+                : `Flight ${deleteConfirm.target?.flight_no || ""} will be permanently removed. This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteConfirm({ open: false, mode: null, target: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirm.mode === "bulk") {
+                  executeBulkDelete();
+                } else {
+                  executeSingleDelete();
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
