@@ -51,10 +51,17 @@ export function derivePipelineStage(opts: {
   let step1Done = cs === "approved" || (opts.isLinked && cs !== "pending" && cs !== "rejected");
   if (!cs && opts.isLinked) step1Done = true;
 
-  let step2Done = ds === "completed";
+  // Step 2 (Station) is only complete when the station has actually submitted the
+  // task sheet — i.e. the review_status has moved past "draft"/empty. dispatch.status
+  // alone is not reliable: it can be "Completed" (auto) while review_status is still
+  // "Draft" (station hasn't done anything yet).
+  const reviewSubmitted =
+    rs !== "" && rs !== "draft";
+  let step2Done = reviewSubmitted;
 
   let step3Done =
     rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing";
+
 
   // Step 4 (receivables) — only complete once the invoice is PAID.
   const step4Done = inv === "paid";
@@ -97,10 +104,10 @@ export function derivePipelineStage(opts: {
     if (maxStage && order.indexOf(stage) > order.indexOf(maxStage)) {
       stage = maxStage;
     }
-    // Station view: uncompleted (dispatch not completed) → step 1 active;
-    // completed → step 2 active (and station appears in completedStages).
+    // Station view: uncompleted (station hasn't submitted) → step 1 active;
+    // completed (review_status past draft) → step 2 active.
     if (ch === "station") {
-      stage = ds === "completed" ? "station" : "clearance";
+      stage = reviewSubmitted ? "station" : "clearance";
     }
     // Receivables view: stage 4 only lights up once the invoice is PAID.
     // Until then, show stage 3 (operations) as the active step.
@@ -133,7 +140,7 @@ export function derivePipelineCompletedStages(opts: {
   } else if (!cs && opts.isLinked) {
     done.push("clearance");
   }
-  if (ds === "completed") done.push("station");
+  if (rs !== "" && rs !== "draft") done.push("station");
   if (rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing") {
     done.push("operations");
   }
