@@ -149,6 +149,7 @@ export default function InvoicesPage() {
   const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules", { stationFilter: true });
+  const { data: contractRates } = useSupabaseTable<any>("contract_service_rates");
   const { data: airports } = useSupabaseTable<any>("airports");
 
   // Map: first flight_no in flight_ref -> registration
