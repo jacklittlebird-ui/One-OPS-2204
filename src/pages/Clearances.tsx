@@ -126,12 +126,13 @@ export default function ClearancesPage() {
   const { data: airportsList } = useQuery({ queryKey: ["airports-iata"], queryFn: async () => { const { data } = await supabase.from("airports").select("iata_code,name").order("iata_code"); return data || []; } });
 
   const findDispatch = (c: ClearanceRow): any | undefined => {
-    return (dispatches || []).find((d: any) =>
-      (d.flight_schedule_id && d.flight_schedule_id === c.id) ||
-      (String(d.flight_no || "").trim().toLowerCase() === String(c.flight_no || "").trim().toLowerCase() &&
-        String(d.station || "").trim().toLowerCase() === String(c.authority || "").trim().toLowerCase())
-    );
+    // Strict match: only consider a dispatch belonging to THIS clearance
+    // (by flight_schedule_id). Matching by flight_no+station alone caused
+    // unrelated approved dispatches from other dates to leak into the pipeline.
+    if (!c?.id) return undefined;
+    return (dispatches || []).find((d: any) => d.flight_schedule_id === c.id);
   };
+
 
   const isFlightLocked = (c: ClearanceRow): boolean => {
     const match = findDispatch(c);
