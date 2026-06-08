@@ -137,10 +137,6 @@ export default function ClearancesPage() {
   };
 
   const safeRemove = async (c: ClearanceRow) => {
-    if (isFlightLocked(c)) {
-      toast({ title: "Cannot delete", description: "This flight is completed by Station and approved by Operations. Deletion is not allowed.", variant: "destructive" });
-      return;
-    }
     setDeleteConfirm({ open: true, mode: "single", target: c });
   };
 
@@ -153,20 +149,18 @@ export default function ClearancesPage() {
   const executeBulkDelete = async () => {
     const ids = Array.from(selectedRejectedIds);
     let failed = 0;
-    let locked = 0;
     for (const id of ids) {
-      const row = data.find((r: any) => r.id === id) as ClearanceRow | undefined;
-      if (row && isFlightLocked(row)) { locked++; continue; }
       try { await remove(id); } catch { failed++; }
     }
     setSelectedRejectedIds(new Set());
     setDeleteConfirm({ open: false, mode: null, target: null });
-    if (locked > 0 || failed > 0) {
-      toast({ title: "Partial failure", description: `${locked} locked (completed & approved), ${failed} other failures out of ${ids.length}.`, variant: "destructive" });
+    if (failed > 0) {
+      toast({ title: "Partial failure", description: `${failed} failures out of ${ids.length}.`, variant: "destructive" });
     } else {
-      toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
+      toast({ title: "Deleted", description: `${ids.length} record(s) deleted.` });
     }
   };
+
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
