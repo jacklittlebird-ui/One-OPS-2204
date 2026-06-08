@@ -565,6 +565,7 @@ export default function ClearancesPage() {
                       <TableHead>Service Type</TableHead>
                       <TableHead>Skd Type</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Pipeline</TableHead>
                       <TableHead className="w-24">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
