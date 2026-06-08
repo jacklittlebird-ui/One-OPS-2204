@@ -570,7 +570,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     const stdVal = v.std || std || (baseRow as any).scheduled_end || "—";
     const ataVal = v.ata || ata || (baseRow as any).actual_start || "—";
     const atdVal = v.atd || atd || (baseRow as any).actual_end || "—";
-    const svcType = v.service_type || serviceType || baseRow.service_type || "—";
+    const svcType = serviceType || baseRow.service_type || "—";
     const skdVal = v.flight_type || skdType || (baseRow as any).skd_type || "—";
 
     const ftChecks = FLIGHT_TYPES.map(ft =>
