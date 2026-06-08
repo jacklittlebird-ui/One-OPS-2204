@@ -141,8 +141,31 @@ export default function ClearancesPage() {
       toast({ title: "Cannot delete", description: "This flight is completed by Station and approved by Operations. Deletion is not allowed.", variant: "destructive" });
       return;
     }
-    if (!window.confirm("Delete this clearance flight? This cannot be undone.")) return;
-    await remove(c.id);
+    setDeleteConfirm({ open: true, mode: "single", target: c });
+  };
+
+  const executeSingleDelete = async () => {
+    if (!deleteConfirm.target) return;
+    await remove(deleteConfirm.target.id);
+    setDeleteConfirm({ open: false, mode: null, target: null });
+  };
+
+  const executeBulkDelete = async () => {
+    const ids = Array.from(selectedRejectedIds);
+    let failed = 0;
+    let locked = 0;
+    for (const id of ids) {
+      const row = data.find((r: any) => r.id === id) as ClearanceRow | undefined;
+      if (row && isFlightLocked(row)) { locked++; continue; }
+      try { await remove(id); } catch { failed++; }
+    }
+    setSelectedRejectedIds(new Set());
+    setDeleteConfirm({ open: false, mode: null, target: null });
+    if (locked > 0 || failed > 0) {
+      toast({ title: "Partial failure", description: `${locked} locked (completed & approved), ${failed} other failures out of ${ids.length}.`, variant: "destructive" });
+    } else {
+      toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
+    }
   };
 
   const [search, setSearch] = useState("");
@@ -170,6 +193,7 @@ export default function ClearancesPage() {
   const [form, setForm] = useState<any>(emptyForm);
   const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
   const [selectedRejectedIds, setSelectedRejectedIds] = useState<Set<string>>(new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; mode: "single" | "bulk" | null; target: ClearanceRow | null }>({ open: false, mode: null, target: null });
 
   const airlineMap = Object.fromEntries((airlines || []).map((a: any) => [a.id, a]));
 
