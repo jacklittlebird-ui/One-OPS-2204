@@ -1069,7 +1069,7 @@ export default function InvoicesPage() {
         station: d.station || "",
         type: buildServiceTypeLabel(d),
         category: "Security",
-        civil: 0, handling: Number(d.base_fee) || 0, airport: 0, other: Number(d.overtime_charge) || 0, total: Number(d.total_charge) || 0,
+        civil: 0, handling: Number(d._effBase) || 0, airport: 0, other: Number(d._effOvertime) || 0, total: Number(d._effTotal) || 0,
       };
     });
     const detailRows = [...handlingRows, ...securityRows];
