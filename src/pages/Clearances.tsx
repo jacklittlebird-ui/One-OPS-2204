@@ -487,23 +487,7 @@ export default function ClearancesPage() {
                 size="sm"
                 variant="destructive"
                 className="gap-1"
-                onClick={async () => {
-                  if (!window.confirm(`Delete ${selectedRejectedIds.size} selected rejected record(s)? This cannot be undone.`)) return;
-                  const ids = Array.from(selectedRejectedIds);
-                  let failed = 0;
-                  let locked = 0;
-                  for (const id of ids) {
-                    const row = data.find((r: any) => r.id === id) as ClearanceRow | undefined;
-                    if (row && isFlightLocked(row)) { locked++; continue; }
-                    try { await remove(id); } catch { failed++; }
-                  }
-                  setSelectedRejectedIds(new Set());
-                  if (locked > 0 || failed > 0) {
-                    toast({ title: "Partial failure", description: `${locked} locked (completed & approved), ${failed} other failures out of ${ids.length}.`, variant: "destructive" });
-                  } else {
-                    toast({ title: "Deleted", description: `${ids.length} rejected record(s) deleted.` });
-                  }
-                }}
+                onClick={() => setDeleteConfirm({ open: true, mode: "bulk", target: null })}
               >
                 <Trash2 size={14} /> Delete All ({selectedRejectedIds.size})
               </Button>
