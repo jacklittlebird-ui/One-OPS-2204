@@ -653,11 +653,12 @@ export default function InvoicesPage() {
   };
 
   const monthlyAirlinePreview = useMemo(() => {
-    const reports = (serviceReports || []).filter((r: any) =>
-      r.review_status === "approved" &&
-      r.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
-      (r.arrival_date || "").startsWith(monthlyAirlineMonth)
-    );
+    const reports = (serviceReports || []).filter((r: any) => {
+      const rs = (r.review_status || "").toLowerCase().trim();
+      return (rs === "approved" || rs === "ready for billing") &&
+        r.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+        (r.arrival_date || "").startsWith(monthlyAirlineMonth);
+    });
     const totals = reports.reduce((acc: any, r: any) => {
       const m = rollupReport(r);
       acc.civil += m.civil;
@@ -758,11 +759,12 @@ export default function InvoicesPage() {
   // SECURITY: monthly airline invoice (sourced from dispatch_assignments)
   // ============================================================
   const monthlySecurityPreview = useMemo(() => {
-    const rows = (dispatches || []).filter((d: any) =>
-      (d.review_status || "").toLowerCase() === "approved" &&
-      d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
-      (d.flight_date || "").startsWith(monthlyAirlineMonth)
-    );
+    const rows = (dispatches || []).filter((d: any) => {
+      const rs = (d.review_status || "").toLowerCase().trim();
+      return (rs === "approved" || rs === "ready for billing") &&
+        d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
+        (d.flight_date || "").startsWith(monthlyAirlineMonth);
+    });
     const totals = rows.reduce(
       (acc: any, d: any) => {
         const base = Number(d.base_fee) || 0;
