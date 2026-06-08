@@ -475,7 +475,7 @@ export default function ClearancesPage() {
                   {filtered.length}
                 </span>
               </Button>
-              <Button variant={statusTab === "rejected" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3 gap-1" onClick={() => setStatusTab("rejected")}>
+              <Button variant={statusTab === "rejected" ? "default" : "ghost"} size="sm" className="rounded-none h-9 px-3 gap-1" onClick={() => { setStatusTab("rejected"); setSelectedRejectedIds(new Set()); }}>
                 <XCircle size={14} /> Rejected
                 {categoryData.filter(c => c.status === "Rejected").length > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive text-[10px] font-bold">
@@ -484,7 +484,7 @@ export default function ClearancesPage() {
                 )}
               </Button>
             </div>
-            {statusTab === "rejected" && selectedRejectedIds.size > 0 && (
+            {selectedRejectedIds.size > 0 && (
               <Button
                 size="sm"
                 variant="destructive"
@@ -540,21 +540,19 @@ export default function ClearancesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {statusTab === "rejected" && (
-                        <TableHead className="w-10">
-                          <Checkbox
-                            checked={filtered.length > 0 && filtered.every(c => selectedRejectedIds.has(c.id))}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedRejectedIds(new Set(filtered.map(c => c.id)));
-                              } else {
-                                setSelectedRejectedIds(new Set());
-                              }
-                            }}
-                            aria-label="Select all rejected"
-                          />
-                        </TableHead>
-                      )}
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={filtered.length > 0 && filtered.every(c => selectedRejectedIds.has(c.id))}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedRejectedIds(new Set(filtered.map(c => c.id)));
+                            } else {
+                              setSelectedRejectedIds(new Set());
+                            }
+                          }}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead>Arrival Date</TableHead>
                       <TableHead>Departure Date</TableHead>
                       <TableHead>Flight</TableHead>
@@ -584,7 +582,7 @@ export default function ClearancesPage() {
                         <Fragment key={c.id}>
                         {statusTab === "rejected" && latestDeletionEntry && (
                           <TableRow className="bg-warning/5 border-l-2 border-l-warning" data-testid={`clearance-delete-row-${c.id}`}>
-                            <TableCell colSpan={statusTab === "rejected" ? 16 : 15} className="px-4 py-2">
+                            <TableCell colSpan={16} className="px-4 py-2">
                               <div className="flex items-start gap-2 text-xs">
                                 <Trash2 size={14} className="text-warning shrink-0 mt-0.5" />
                                 <div className="flex-1 min-w-0">
@@ -639,21 +637,19 @@ export default function ClearancesPage() {
                           </TableRow>
                         )}
                         <TableRow key={c.id}>
-                          {statusTab === "rejected" && (
-                            <TableCell className="w-10">
-                              <Checkbox
-                                checked={selectedRejectedIds.has(c.id)}
-                                onCheckedChange={(checked) => {
-                                  setSelectedRejectedIds(prev => {
-                                    const next = new Set(prev);
-                                    if (checked) next.add(c.id); else next.delete(c.id);
-                                    return next;
-                                  });
-                                }}
-                                aria-label={`Select ${c.flight_no}`}
-                              />
-                            </TableCell>
-                          )}
+                          <TableCell className="w-10">
+                            <Checkbox
+                              checked={selectedRejectedIds.has(c.id)}
+                              onCheckedChange={(checked) => {
+                                setSelectedRejectedIds(prev => {
+                                  const next = new Set(prev);
+                                  if (checked) next.add(c.id); else next.delete(c.id);
+                                  return next;
+                                });
+                              }}
+                              aria-label={`Select ${c.flight_no}`}
+                            />
+                          </TableCell>
                           <TableCell className="text-xs">{formatDateDMY(c.arrival_date)}</TableCell>
                           <TableCell className="text-xs">{formatDateDMY(c.departure_date)}</TableCell>
                           <TableCell className="font-medium font-mono">{c.flight_no}</TableCell>
@@ -700,7 +696,7 @@ export default function ClearancesPage() {
                         </Fragment>
                       );
                     })}
-                    {filtered.length === 0 && <TableRow><TableCell colSpan={statusTab === "rejected" ? 16 : 15} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
+                    {filtered.length === 0 && <TableRow><TableCell colSpan={16} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
