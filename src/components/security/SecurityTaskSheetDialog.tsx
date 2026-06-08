@@ -558,18 +558,23 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const formatDate = (d: string) => formatDateDMY(d) || "";
 
   const handlePrint = () => {
-    if (!row) return;
+    const baseRow = (currentRow || editableRow || row) as DispatchRow | null;
+    if (!baseRow) return;
     const v = sheet;
-    const flightDate = formatDate(row.flight_date);
-    const reg = v.registration || registration || "—";
-    const rt = v.route || route || "—";
-    const staVal = v.sta || sta || "—";
-    const stdVal = v.std || std || "—";
-    const ataVal = v.ata || ata || "—";
-    const atdVal = v.atd || atd || "—";
+    const airlineName = baseRow.airline || (row as any)?.airline || "—";
+    const flightNoVal = baseRow.flight_no || (row as any)?.flight_no || "—";
+    const flightDate = formatDate(baseRow.flight_date || (row as any)?.flight_date || "");
+    const reg = v.registration || registration || (baseRow as any).registration || "—";
+    const rt = v.route || route || (baseRow as any).route || "—";
+    const staVal = v.sta || sta || (baseRow as any).scheduled_start || "—";
+    const stdVal = v.std || std || (baseRow as any).scheduled_end || "—";
+    const ataVal = v.ata || ata || (baseRow as any).actual_start || "—";
+    const atdVal = v.atd || atd || (baseRow as any).actual_end || "—";
+    const svcType = serviceType || baseRow.service_type || "—";
+    const skdVal = v.flight_type || skdType || (baseRow as any).skd_type || "—";
 
     const ftChecks = FLIGHT_TYPES.map(ft =>
-      `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === v.flight_type ? "☒" : "☐"} ${ft}</td>`
+      `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === skdVal ? "☒" : "☐"} ${ft}</td>`
     ).join("");
 
     const obsSection = (title: string, rows: [string, string][]) => {
@@ -582,7 +587,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     };
 
     const html = `<!DOCTYPE html><html><head>
-<title>${row.airline} Security Task Sheet - ${row.flight_no}</title>
+<title>${airlineName} Security Task Sheet - ${flightNoVal}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #000; padding: 30px 40px; }
@@ -608,7 +613,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 </style>
 </head><body>
 
-<div class="title">${row.airline} AIRLINES SECURITY TASK SHEET</div>
+<div class="title">${airlineName} AIRLINES SECURITY TASK SHEET</div>
 
 <table style="margin-bottom:10px;">
   <tr class="header-row">
@@ -618,7 +623,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <th>Route</th>
   </tr>
   <tr>
-    <td class="value-cell" style="font-weight:800;font-size:15px;">${row.flight_no}</td>
+    <td class="value-cell" style="font-weight:800;font-size:15px;">${flightNoVal}</td>
     <td class="value-cell">${flightDate}</td>
     <td class="value-cell mono">${reg}</td>
     <td class="value-cell">${rt}</td>
@@ -632,7 +637,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="label" style="width:55px;">ATA</td>
     <td class="mono" style="width:75px;">${ataVal}</td>
      <td class="label" style="width:85px;">Skd Type</td>
-     <td colspan="${FLIGHT_TYPES.length}" class="value-cell" style="font-size:13px;font-weight:600;">${v.flight_type || "—"}</td>
+     <td colspan="${FLIGHT_TYPES.length}" class="value-cell" style="font-size:13px;font-weight:600;">${skdVal}</td>
   </tr>
   <tr>
     <td class="label">STD</td>
@@ -640,7 +645,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="label">ATD</td>
     <td class="mono">${atdVal}</td>
     <td class="label">Service Type</td>
-    <td colspan="5" class="value-cell" style="font-size:13px;font-weight:600;">${serviceType || row.service_type || "—"}</td>
+    <td colspan="5" class="value-cell" style="font-size:13px;font-weight:600;">${svcType}</td>
   </tr>
   <tr>
     <td class="label" colspan="2"></td>
@@ -677,12 +682,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 </table>
 
 <table style="margin-bottom:10px;">
-  <tr><td class="section">${row.airline.toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</td></tr>
+  <tr><td class="section">${String(airlineName).toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</td></tr>
   <tr><td class="value-cell" style="padding:10px;">${v.security_supervisor || ""}</td></tr>
 </table>
 
 <div class="footer">
-  <span>${row.airline} Security Task Sheet</span>
+  <span>${airlineName} Security Task Sheet</span>
   <span>V.03 22Jan2023</span>
 </div>
 
