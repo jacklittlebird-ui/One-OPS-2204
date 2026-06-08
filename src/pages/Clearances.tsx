@@ -125,12 +125,16 @@ export default function ClearancesPage() {
   const { data: airlines } = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("id,name,code"); return data || []; } });
   const { data: airportsList } = useQuery({ queryKey: ["airports-iata"], queryFn: async () => { const { data } = await supabase.from("airports").select("iata_code,name").order("iata_code"); return data || []; } });
 
-  const isFlightLocked = (c: ClearanceRow): boolean => {
-    const match = (dispatches || []).find((d: any) =>
+  const findDispatch = (c: ClearanceRow): any | undefined => {
+    return (dispatches || []).find((d: any) =>
       (d.flight_schedule_id && d.flight_schedule_id === c.id) ||
       (String(d.flight_no || "").trim().toLowerCase() === String(c.flight_no || "").trim().toLowerCase() &&
         String(d.station || "").trim().toLowerCase() === String(c.authority || "").trim().toLowerCase())
     );
+  };
+
+  const isFlightLocked = (c: ClearanceRow): boolean => {
+    const match = findDispatch(c);
     if (!match) return false;
     const completed = String(match.status || "").toLowerCase() === "completed";
     const approved = String(match.review_status || "").toLowerCase() === "approved";
