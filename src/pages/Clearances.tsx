@@ -30,6 +30,7 @@ import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 import { parseDeletionRequests } from "@/lib/statusRouting";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
 
 // ─── Calendar View Component ───
 function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdit }: {
