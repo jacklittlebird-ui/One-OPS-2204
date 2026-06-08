@@ -674,12 +674,31 @@ export default function ClearancesPage() {
                                 clearanceStatus: c.status,
                                 dispatchStatus: d?.status,
                               };
+                              const completed = derivePipelineCompletedStages(stageOpts);
+                              const rs = d?.review_status || "—";
+                              const ds = d?.status || "—";
+                              const cs = c.status || "—";
+                              const reason = (k: "clearance" | "station" | "operations" | "receivables") => {
+                                const done = completed.includes(k);
+                                switch (k) {
+                                  case "clearance":
+                                    return `${done ? "✓" : "○"} Clearance — clearance.status="${cs}"${d ? " (dispatch linked)" : ""}`;
+                                  case "station":
+                                    return `${done ? "✓" : "○"} Station — review_status="${rs}" (must be past Draft)`;
+                                  case "operations":
+                                    return `${done ? "✓" : "○"} Operations — review_status="${rs}" (must be Approved / Ready for Billing)`;
+                                  case "receivables":
+                                    return `${done ? "✓" : "○"} Receivables — invoice must be Paid`;
+                                }
+                              };
+                              const reasonText = [reason("clearance"), reason("station"), reason("operations"), reason("receivables")].join("\n")
+                                + `\n\nRaw: dispatch.status="${ds}", review_status="${rs}"`;
                               return (
-                                <div className="flex justify-center">
+                                <div className="flex justify-center" title={reasonText}>
                                   <PipelineStepper
                                     compact
                                     currentStage={derivePipelineStage(stageOpts)}
-                                    completedStages={derivePipelineCompletedStages(stageOpts)}
+                                    completedStages={completed}
                                   />
                                 </div>
                               );
