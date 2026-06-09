@@ -39,6 +39,7 @@ export interface FuelLineItem {
 
 export interface ReportFormData {
   id?: string;
+  flightScheduleId?: string;
   operator: string;
   handlingType: HandlingType;
   station: string;
