@@ -715,11 +715,19 @@ function HandlingServiceReportContent() {
         if (dErr) throw dErr;
       }
       await saveLineItems(inserted.id, data);
+      // Mark the underlying flight schedule as Approved once a service report exists
+      if (data.flightScheduleId) {
+        await supabase
+          .from("flight_schedules")
+          .update({ status: "Approved" } as any)
+          .eq("id", data.flightScheduleId);
+      }
       return inserted;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
+      queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
       toast({ title: "Saved", description: "Service report added." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
