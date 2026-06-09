@@ -27,7 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={!isMobile ? () => setSidebarCollapsed(c => !c) : undefined}
         />
-        <main className="flex-1 p-3 md:p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-3 md:p-6 overflow-y-auto overflow-x-hidden">{children}</main>
       </div>
     </div>
   );
