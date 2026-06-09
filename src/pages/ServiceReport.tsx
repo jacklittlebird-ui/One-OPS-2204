@@ -1509,13 +1509,13 @@ function HandlingServiceReportContent() {
                             }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
                           )}
                           <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
-                          {(!isOperationsView || isAdmin) && (
+                          {isAdmin && (
                             <button
                               onClick={() => {
                                 if (confirm("Delete this service report?")) deleteReport(r.id!);
                               }}
                               className="text-destructive hover:text-destructive/80"
-                              title={isOperationsView ? "Delete Report (Admin)" : "Delete Report"}
+                              title="Delete Report (Admin only)"
                             >
                               <Trash2 size={13} />
                             </button>
