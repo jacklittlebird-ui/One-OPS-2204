@@ -234,16 +234,42 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
       };
       });
 
-      // Remove duplicates: delete existing records matching same airline + station + flight_no + dates
+      // Remove duplicates only when the same airline + station + flight + route + dates + service already exists.
+      // Never delete by flight number alone: repeating flight numbers across different dates are valid schedule rows.
       const uniqueKeys = [...new Set(records.map(r => r.flight_no).filter(Boolean))];
       if (uniqueKeys.length > 0 && selectedAirline) {
-        let query = supabase
+        const { data: existingRows, error: lookupError } = await supabase
           .from("flight_schedules")
-          .delete()
+          .select("id,flight_no,route,arrival_date,departure_date,clearance_type")
           .eq("airline_id", selectedAirline)
           .eq("authority", selectedStation)
           .in("flight_no", uniqueKeys as string[]);
-        await query;
+        if (lookupError) throw lookupError;
+
+        const duplicateKeys = new Set(records.map(r => [
+          r.flight_no || "",
+          r.route || "",
+          r.arrival_date || "",
+          r.departure_date || "",
+          r.clearance_type || "",
+        ].join("||")));
+        const idsToDelete = (existingRows || [])
+          .filter(r => duplicateKeys.has([
+            r.flight_no || "",
+            r.route || "",
+            r.arrival_date || "",
+            r.departure_date || "",
+            r.clearance_type || "",
+          ].join("||")))
+          .map(r => r.id);
+
+        if (idsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from("flight_schedules")
+            .delete()
+            .in("id", idsToDelete);
+          if (deleteError) throw deleteError;
+        }
       }
 
       const { error } = await supabase.from("flight_schedules").insert(records);
