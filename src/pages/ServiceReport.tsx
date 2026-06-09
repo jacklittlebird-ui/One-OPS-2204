@@ -715,11 +715,19 @@ function HandlingServiceReportContent() {
         if (dErr) throw dErr;
       }
       await saveLineItems(inserted.id, data);
+      // Mark the underlying flight schedule as Approved once a service report exists
+      if (data.flightScheduleId) {
+        await supabase
+          .from("flight_schedules")
+          .update({ status: "Approved" } as any)
+          .eq("id", data.flightScheduleId);
+      }
       return inserted;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
+      queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
       toast({ title: "Saved", description: "Service report added." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -1429,6 +1437,7 @@ function HandlingServiceReportContent() {
                               setNewReport({
                                 ...emptyReport(),
                                 station: scopedStation || emptyReport().station,
+                                flightScheduleId: r.flightScheduleId,
                                 flightNo: r.flightNo,
                                 operator: r.operator,
                                 aircraftType: r.aircraftType,
@@ -1500,13 +1509,13 @@ function HandlingServiceReportContent() {
                             }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
                           )}
                           <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
-                          {(!isOperationsView || isAdmin) && (
+                          {isAdmin && (
                             <button
                               onClick={() => {
                                 if (confirm("Delete this service report?")) deleteReport(r.id!);
                               }}
                               className="text-destructive hover:text-destructive/80"
-                              title={isOperationsView ? "Delete Report (Admin)" : "Delete Report"}
+                              title="Delete Report (Admin only)"
                             >
                               <Trash2 size={13} />
                             </button>
