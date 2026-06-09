@@ -1437,6 +1437,7 @@ function HandlingServiceReportContent() {
                               setNewReport({
                                 ...emptyReport(),
                                 station: scopedStation || emptyReport().station,
+                                flightScheduleId: r.flightScheduleId,
                                 flightNo: r.flightNo,
                                 operator: r.operator,
                                 aircraftType: r.aircraftType,
