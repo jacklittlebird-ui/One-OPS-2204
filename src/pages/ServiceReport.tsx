@@ -911,6 +911,10 @@ function HandlingServiceReportContent() {
     });
   }, [mergedRows, statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, operationsTab, isStationScoped, userStation, reviewIdsFilter]);
 
+  const { pageRows: pageData, ...pag } = usePagination(filtered, { resetKey: [statusFilter, handlingFilter, stationFilter, reviewFilter, airlineFilter, dateFrom, dateTo, search] });
+
+
+
   // Receivables-only: every approved service report whose flight has not been billed yet
   const unbilledRows = useMemo(() => {
     const billedFlightRefs = new Set(
