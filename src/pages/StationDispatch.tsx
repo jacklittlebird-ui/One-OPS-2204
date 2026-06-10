@@ -11,6 +11,7 @@ import { SECURITY_CLEARANCE_TYPES, getServiceCategory, type ServiceCategory } fr
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { MaskedTimeInput } from "@/components/ui/masked-time-input";
+import { DISPATCH_STATUS_COLORS } from "@/lib/statusConstants";
 
 type FlightRow = {
   id: string;
