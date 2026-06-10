@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TablePagination, usePagination } from \"@/components/ui/table-pagination\";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { AdvancedFilters, FilterField } from "@/components/filters/AdvancedFilters";
 import * as XLSX from "xlsx";
 
