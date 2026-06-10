@@ -1191,56 +1191,40 @@ export default function SecurityServiceReportsPage() {
     const dispatchById = new Map(freshDispatch.map((r: any) => [r.id, r]));
     const flightById = new Map(freshFlights.map((r: any) => [r.id, r]));
 
-    // Helper: strict pick — returns empty string if every candidate is blank.
-    const pick = (...vals: Array<unknown>): string => {
-      for (const v of vals) {
-        if (v === null || v === undefined) continue;
-        const s = String(v).trim();
-        if (s) return s;
-      }
-      return "";
-    };
-
     const rows = filtered.map((r) => {
       const dbRow: any = dispatchById.get(r.id) || r;
       const dbFlight: any = (r.flight_schedule_id && flightById.get(r.flight_schedule_id)) || (r as any).flightMeta || null;
-      const ts: any = (dbRow.task_sheet_data || {}) as any;
-
-      // Per-field sourcing rules (saved DB only — no UI props):
-      //   ATA / ATD : task_sheet_data ONLY. Empty stays empty.
-      //   STA / STD : task_sheet_data → flight_schedules.
-      //   Flight metadata (reg/route/aircraft/skd): task_sheet_data → flight_schedules → dispatch row.
-      //   Operational fields (staff/times/charges): authoritative dispatch_assignments columns.
+      const f = resolveDownloadFields(dbRow, dbFlight);
       return {
-        "Station":           pick(dbRow.station, dbFlight?.authority),
-        "Airline":           pick(dbRow.airline, dbFlight?.handling_agent),
-        "Flight No":         pick(ts.flight_no, dbFlight?.flight_no, dbRow.flight_no),
-        "Date":              pick(dbRow.flight_date, dbFlight?.arrival_date, dbFlight?.departure_date),
-        "Service Type":      pick(dbRow.service_type, dbFlight?.clearance_type),
-        "Registration":      pick(ts.registration, dbFlight?.registration),
-        "Route":             pick(ts.route, dbFlight?.route),
-        "Aircraft Type":     pick(ts.aircraft_type, dbFlight?.aircraft_type),
-        "SKD Type":          pick(ts.flight_type, ts.skd_type, dbFlight?.skd_type),
-        "STA":               pick(ts.sta, dbFlight?.sta),
-        "STD":               pick(ts.std, dbFlight?.std),
-        "ATA":               pick(ts.ata),   // strict: blank when not saved
-        "ATD":               pick(ts.atd),   // strict: blank when not saved
-        "Staff Count":       typeof dbRow.staff_count === "number" ? dbRow.staff_count : 0,
-        "Staff Names":       pick(dbRow.staff_names),
-        "Scheduled Start":   pick(dbRow.scheduled_start),
-        "Scheduled End":     pick(dbRow.scheduled_end),
-        "Actual Start":      pick(dbRow.actual_start),
-        "Actual End":        pick(dbRow.actual_end),
-        "Contract Duration (h)": dbRow.contract_duration_hours ?? 0,
-        "Actual Duration (h)":   dbRow.actual_duration_hours ?? 0,
-        "Overtime (h)":          dbRow.overtime_hours ?? 0,
-        "Base Fee":              dbRow.base_fee ?? 0,
-        "Service Rate":          dbRow.service_rate ?? 0,
-        "Overtime Charge":       dbRow.overtime_charge ?? 0,
-        "Total Charge":          dbRow.total_charge ?? 0,
-        "Status":            pick(dbRow.status),
-        "Review Status":     pick(dbRow.review_status),
-        "Remarks":           pick(ts.remarks, dbRow.notes),
+        "Station": f.station,
+        "Airline": f.airline,
+        "Flight No": f.flightNo,
+        "Date": f.date,
+        "Service Type": f.serviceType,
+        "Registration": f.registration,
+        "Route": f.route,
+        "Aircraft Type": f.aircraftType,
+        "SKD Type": f.skdType,
+        "STA": f.sta,
+        "STD": f.std,
+        "ATA": f.ata, // strict: blank when not saved
+        "ATD": f.atd, // strict: blank when not saved
+        "Staff Count": f.staffCount,
+        "Staff Names": f.staffNames,
+        "Scheduled Start": f.scheduledStart,
+        "Scheduled End": f.scheduledEnd,
+        "Actual Start": f.actualStart,
+        "Actual End": f.actualEnd,
+        "Contract Duration (h)": f.contractDurationHours,
+        "Actual Duration (h)": f.actualDurationHours,
+        "Overtime (h)": f.overtimeHours,
+        "Base Fee": f.baseFee,
+        "Service Rate": f.serviceRate,
+        "Overtime Charge": f.overtimeCharge,
+        "Total Charge": f.totalCharge,
+        "Status": f.status,
+        "Review Status": f.reviewStatus,
+        "Remarks": f.remarks,
       };
     });
 
