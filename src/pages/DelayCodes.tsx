@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Search, Plus, Pencil, Trash2, X, Clock, AlertCircle, Database } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 
@@ -120,6 +121,9 @@ export default function DelayCodesPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="p-4 border-t">
+          <TablePagination {...pag} />
         </div>
       </div>
     </div>

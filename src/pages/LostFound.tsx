@@ -4,6 +4,7 @@ import { Search, Plus, Pencil, Trash2, X, Package, CheckCircle, Clock, AlertCirc
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -160,6 +161,9 @@ export default function LostFoundPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="p-4 border-t">
+          <TablePagination {...pag} />
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import { Search, Plus, Pencil, Trash2, X, Users, CheckCircle, Clock, AlertCircle
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -142,6 +143,9 @@ export default function StaffRosterPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="p-4 border-t">
+          <TablePagination {...pag} />
         </div>
       </div>
 
