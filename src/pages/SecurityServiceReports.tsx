@@ -740,6 +740,11 @@ export default function SecurityServiceReportsPage() {
     return rows;
   }, [pendingApprovalFlights, pendingStationFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
 
+  const { pageRows: pagePending, ...pagPending } = usePagination(filteredPendingFlights, { resetKey: [pendingSearch, pendingStationFilter, pendingDateFrom, pendingDateTo] });
+  const { pageRows: pageData, ...pagMain } = usePagination(filtered, { resetKey: [filtered.length] });
+
+
+
   const todayStr = new Date().toISOString().slice(0, 10);
   const pendingTotal = filteredPendingFlights.length;
   const pendingToday = filteredPendingFlights.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") === todayStr).length;
