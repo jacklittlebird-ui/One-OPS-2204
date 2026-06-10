@@ -155,6 +155,7 @@ export default function SecurityServiceReportsPage() {
         reviewStatus: r.review_status,
         clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
         dispatchStatus: r.status,
+        createdVia: (r as any).created_via,
       });
       // Receivables can edit once Station (task sheet saved) and Operations (review approved)
       // are complete. Clearance status is informational at billing stage.
