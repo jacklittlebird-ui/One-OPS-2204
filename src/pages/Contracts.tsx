@@ -298,10 +298,10 @@ export default function ContractsPage() {
       {viewContract && (
         <ContractDetailModal
           contract={viewContract}
-          isOpen={!!viewContract}
           onClose={() => setViewContract(null)}
         />
       )}
+
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
