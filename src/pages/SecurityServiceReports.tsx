@@ -1148,8 +1148,18 @@ export default function SecurityServiceReportsPage() {
     updateMutation.mutate({ id: row.id, review_status: "Ready for Billing" });
   };
 
-  // Export
-  const handleExport = () => {
+  // Export — refetches the latest data from the DB before writing the file
+  // so the exported rows always match what is currently stored (not the React
+  // Query cache, which has a 30s staleTime).
+  const handleExport = async () => {
+    try {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["dispatch_assignments"] }),
+        queryClient.refetchQueries({ queryKey: ["flight_schedules"] }),
+      ]);
+    } catch (err) {
+      console.warn("[export] refetch failed, exporting current cache", err);
+    }
     const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({
       "Station": r.station,
       "Airline": r.airline,
