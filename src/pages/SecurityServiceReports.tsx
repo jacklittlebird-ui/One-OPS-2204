@@ -534,6 +534,12 @@ export default function SecurityServiceReportsPage() {
     return map;
   }, [securityFlights]);
 
+  const flightCreatedViaById = useMemo(() => {
+    const map = new Map<string, string>();
+    securityFlights.forEach((f: any) => map.set(f.id, f.created_via || ""));
+    return map;
+  }, [securityFlights]);
+
   // Build lookup for flight schedule details (flight no, registration, route, sta, std, dates, aircraft type)
   const flightDetailsById = useMemo(() => {
     const map = new Map<string, { flight_no: string; registration: string; route: string; sta: string; std: string; ata: string; atd: string; skd_type: string; clearance_type: string; arrival_date: string; departure_date: string; aircraft_type: string }>();
