@@ -53,7 +53,7 @@ export function derivePipelineStage(opts: {
 }): PipelineStage {
   const rsCanonical = normalizeReviewStatus(opts.reviewStatus);
   const rs = rsCanonical.toLowerCase();
-  void opts.dispatchStatus;
+  const dispatchCompleted = (opts.dispatchStatus || "").toLowerCase() === "completed";
   const csCanonical = normalizeFlightStatus(opts.clearanceStatus);
   const cs = csCanonical.toLowerCase();
   const ch = (opts.channel || "").toLowerCase();
