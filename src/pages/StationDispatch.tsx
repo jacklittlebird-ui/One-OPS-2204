@@ -506,7 +506,7 @@ export default function StationDispatchPage() {
         scheduleId = newSchedule.id;
         toast({ title: "Sent to Operations", description: "New service report awaiting Operations approval." });
       }
-      await add({ ...formData, flight_schedule_id: scheduleId } as any);
+      await add({ ...formData, flight_schedule_id: scheduleId, created_via: "station" } as any);
     }
     setShowForm(false);
     setEditId(null);
