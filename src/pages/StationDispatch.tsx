@@ -84,7 +84,7 @@ const STATIONS = [
   { code: "SSH", name: "Sharm El Sheikh" },
 ];
 
-const DISPATCH_STATUSES = ["Pending", "Dispatched", "In Progress", "Completed", "Cancelled"];
+const DISPATCH_STATUSES = ["Approved", "Pending", "Dispatched", "In Progress", "Completed", "Cancelled"];
 const SERVICE_TYPES_HANDLING = ["Arrival", "Departure", "Turnaround", "Maintenance", "ADHOC", "Transportation"];
 const SERVICE_TYPES_SECURITY = ["Arrival Security", "Departure Security", "Maintenance Security", "Turnaround Security"];
 const SERVICE_TYPES = [...SERVICE_TYPES_HANDLING, ...SERVICE_TYPES_SECURITY];
@@ -92,6 +92,7 @@ const SERVICE_TYPES = [...SERVICE_TYPES_HANDLING, ...SERVICE_TYPES_SECURITY];
 const PAGE_SIZE = 15;
 
 const statusColors: Record<string, string> = {
+  Approved: "bg-success/15 text-success",
   Pending: "bg-warning/15 text-warning",
   Dispatched: "bg-info/15 text-info",
   "In Progress": "bg-primary/15 text-primary",
@@ -392,7 +393,7 @@ export default function StationDispatchPage() {
       service_rate: match?.rate?.rate || 0,
       overtime_charge: 0,
       total_charge: 0,
-      status: "Pending",
+      status: "Approved",
       notes: "",
       dispatched_by: "",
       contract_id: match?.contract?.id || null,
@@ -422,7 +423,7 @@ export default function StationDispatchPage() {
       service_rate: 0,
       overtime_charge: 0,
       total_charge: 0,
-      status: "Pending",
+      status: "Approved",
       notes: "",
       dispatched_by: "",
     });
@@ -480,7 +481,7 @@ export default function StationDispatchPage() {
             aircraft_type: "",
             registration: "",
             clearance_type: svcType === "Arrival" ? "Full Handling" : svcType === "Departure" ? "Full Handling" : svcType,
-            status: "Pending" as any,
+            status: "Approved" as any,
             authority: stationCode,
             purpose: "Station Dispatch",
             airline_id: matchedAirline?.id || null,
