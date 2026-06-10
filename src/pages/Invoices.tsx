@@ -1383,7 +1383,7 @@ export default function InvoicesPage() {
                   <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
                     <input type="checkbox" checked={selectedIds.has(inv.id)} onChange={() => toggleSelect(inv.id)} className="rounded border-border" />
                   </td>
-                  <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground text-xs">{pag.start + i + 1}</td>
                   <td className="px-3 py-2.5 font-mono text-xs font-semibold text-foreground">{inv.invoice_no}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(inv.date)}</td>
                   <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{formatDateDMY(inv.due_date)}</td>
