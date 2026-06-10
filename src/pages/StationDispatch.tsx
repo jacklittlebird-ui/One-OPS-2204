@@ -11,6 +11,7 @@ import { SECURITY_CLEARANCE_TYPES, getServiceCategory, type ServiceCategory } fr
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { MaskedTimeInput } from "@/components/ui/masked-time-input";
+import { DISPATCH_STATUS_COLORS } from "@/lib/statusConstants";
 
 type FlightRow = {
   id: string;
@@ -91,14 +92,7 @@ const SERVICE_TYPES = [...SERVICE_TYPES_HANDLING, ...SERVICE_TYPES_SECURITY];
 
 const PAGE_SIZE = 15;
 
-const statusColors: Record<string, string> = {
-  Approved: "bg-success/15 text-success",
-  Pending: "bg-warning/15 text-warning",
-  Dispatched: "bg-info/15 text-info",
-  "In Progress": "bg-primary/15 text-primary",
-  Completed: "bg-success/15 text-success",
-  Cancelled: "bg-muted text-muted-foreground",
-};
+const statusColors: Record<string, string> = { ...DISPATCH_STATUS_COLORS };
 
 const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
 const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
