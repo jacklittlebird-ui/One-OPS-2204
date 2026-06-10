@@ -557,21 +557,70 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   const formatDate = (d: string) => formatDateDMY(d) || "";
 
-  const handlePrint = () => {
-    const baseRow = (currentRow || editableRow || row) as DispatchRow | null;
-    if (!baseRow) return;
-    const v = sheet;
-    const airlineName = baseRow.airline || (row as any)?.airline || "—";
-    const flightNoVal = baseRow.flight_no || (row as any)?.flight_no || "—";
-    const flightDate = formatDate(baseRow.flight_date || (row as any)?.flight_date || "");
-    const reg = v.registration || registration || (baseRow as any).registration || "—";
-    const rt = v.route || route || (baseRow as any).route || "—";
-    const staVal = v.sta || sta || (baseRow as any).scheduled_start || "—";
-    const stdVal = v.std || std || (baseRow as any).scheduled_end || "—";
-    const ataVal = v.ata || ata || (baseRow as any).actual_start || "—";
-    const atdVal = v.atd || atd || (baseRow as any).actual_end || "—";
-    const svcType = serviceType || baseRow.service_type || "—";
-    const skdVal = v.flight_type || skdType || (baseRow as any).skd_type || "—";
+  const handlePrint = async () => {
+    const localBase = (currentRow || editableRow || row) as DispatchRow | null;
+    if (!localBase) return;
+
+    // ---- DEEP FIX ----
+    // Always pull the freshest record from the database before rendering the
+    // download. The dialog's `row` prop and `sheet` state can drift from the
+    // DB (parent cache may be stale right after a save, sync triggers may
+    // have updated linked rows). We fetch the dispatch_assignments row AND
+    // the linked flight_schedule so the printout exactly matches stored data.
+    let dbRow: any = localBase;
+    let dbSheet: any = sheet;
+    let dbFlight: any = null;
+    try {
+      if (localBase.id && localBase.id !== "new") {
+        const { data: freshDispatch } = await supabase
+          .from("dispatch_assignments")
+          .select("*")
+          .eq("id", localBase.id)
+          .maybeSingle();
+        if (freshDispatch) {
+          dbRow = freshDispatch;
+          if (freshDispatch.task_sheet_data && typeof freshDispatch.task_sheet_data === "object") {
+            dbSheet = { ...emptyTaskSheet(), ...(freshDispatch.task_sheet_data as any) };
+          }
+          if (freshDispatch.flight_schedule_id) {
+            const { data: freshFlight } = await supabase
+              .from("flight_schedules")
+              .select("*")
+              .eq("id", freshDispatch.flight_schedule_id)
+              .maybeSingle();
+            if (freshFlight) dbFlight = freshFlight;
+          }
+        }
+      }
+    } catch (err) {
+      // Fall back silently to local state if the fetch fails.
+      console.warn("[print] fresh fetch failed, using local state", err);
+    }
+
+    const baseRow = dbRow as DispatchRow;
+    const v = dbSheet;
+    // Resolve airline name: prefer linked airlines table, then flight_schedule, then dispatch row.
+    const matchedAirline = airlines.find((a: any) =>
+      dbFlight?.airline_id && a.id === dbFlight.airline_id,
+    );
+    const airlineName =
+      matchedAirline?.name ||
+      baseRow.airline ||
+      dbFlight?.handling_agent ||
+      (row as any)?.airline ||
+      "—";
+    const flightNoVal = dbFlight?.flight_no || baseRow.flight_no || "—";
+    const flightDate = formatDate(baseRow.flight_date || dbFlight?.arrival_date || dbFlight?.departure_date || "");
+    // Prefer values stored in task_sheet_data (authoritative for the report),
+    // then linked flight_schedule, then the dispatch row, then props as last resort.
+    const reg = v.registration || dbFlight?.registration || (baseRow as any).registration || registration || "—";
+    const rt = v.route || dbFlight?.route || (baseRow as any).route || route || "—";
+    const staVal = v.sta || dbFlight?.sta || (baseRow as any).scheduled_start || sta || "—";
+    const stdVal = v.std || dbFlight?.std || (baseRow as any).scheduled_end || std || "—";
+    const ataVal = v.ata || (baseRow as any).actual_start || ata || "—";
+    const atdVal = v.atd || (baseRow as any).actual_end || atd || "—";
+    const svcType = baseRow.service_type || dbFlight?.clearance_type || serviceType || "—";
+    const skdVal = v.flight_type || dbFlight?.skd_type || (baseRow as any).skd_type || skdType || "—";
 
     const ftChecks = FLIGHT_TYPES.map(ft =>
       `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === skdVal ? "☒" : "☐"} ${ft}</td>`
