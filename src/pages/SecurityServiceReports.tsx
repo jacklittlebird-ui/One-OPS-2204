@@ -1148,41 +1148,102 @@ export default function SecurityServiceReportsPage() {
     updateMutation.mutate({ id: row.id, review_status: "Ready for Billing" });
   };
 
-  // Export — refetches the latest data from the DB before writing the file
-  // so the exported rows always match what is currently stored (not the React
-  // Query cache, which has a 30s staleTime).
+  // Export — fetches the latest dispatch_assignments + flight_schedules
+  // directly from the DB so the exported rows always match what is currently
+  // stored. The React Query cache has a 30s staleTime AND the merged
+  // `filtered` rows are derived from a snapshot that may pre-date a recent
+  // save, so we re-read both tables before serializing.
+  // ATA/ATD and every other field are sourced strictly from saved DB data;
+  // dialog props / local UI state are never used as fallbacks.
   const handleExport = async () => {
+    // Refresh React Query first so anything still bound to the cache (table,
+    // KPIs) updates as well.
     try {
       await Promise.all([
         queryClient.refetchQueries({ queryKey: ["dispatch_assignments"] }),
         queryClient.refetchQueries({ queryKey: ["flight_schedules"] }),
       ]);
     } catch (err) {
-      console.warn("[export] refetch failed, exporting current cache", err);
+      console.warn("[export] refetch failed, falling back to direct fetch", err);
     }
-    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({
-      "Station": r.station,
-      "Airline": r.airline,
-      "Flight No": r.flight_no,
-      "Date": r.flight_date,
-      "Service Type": r.service_type,
-      "Staff Count": r.staff_count,
-      "Staff Names": r.staff_names,
-      "Scheduled Start": r.scheduled_start,
-      "Scheduled End": r.scheduled_end,
-      "Actual Start": r.actual_start,
-      "Actual End": r.actual_end,
-      "Contract Duration (h)": r.contract_duration_hours,
-      "Actual Duration (h)": r.actual_duration_hours,
-      "Overtime (h)": r.overtime_hours,
-      "Base Fee": r.base_fee,
-      "Service Rate": r.service_rate,
-      "Overtime Charge": r.overtime_charge,
-      "Total Charge": r.total_charge,
-      "Status": r.status,
-      "Review Status": r.review_status,
-      "Notes": r.notes,
-    })));
+
+    // Pull authoritative DB rows for the IDs currently in scope.
+    const realIds = filtered.filter(r => !r.isPending && r.id && !r.id.startsWith("pending-")).map(r => r.id);
+    const flightIds = Array.from(new Set(filtered.map(r => r.flight_schedule_id).filter(Boolean) as string[]));
+
+    let freshDispatch: any[] = [];
+    let freshFlights: any[] = [];
+    try {
+      const [d, f] = await Promise.all([
+        realIds.length
+          ? supabase.from("dispatch_assignments").select("*").in("id", realIds).then(r => r.data || [])
+          : Promise.resolve([] as any[]),
+        flightIds.length
+          ? supabase.from("flight_schedules").select("*").in("id", flightIds).then(r => r.data || [])
+          : Promise.resolve([] as any[]),
+      ]);
+      freshDispatch = d;
+      freshFlights = f;
+    } catch (err) {
+      console.warn("[export] direct DB fetch failed, using cached rows", err);
+    }
+    const dispatchById = new Map(freshDispatch.map((r: any) => [r.id, r]));
+    const flightById = new Map(freshFlights.map((r: any) => [r.id, r]));
+
+    // Helper: strict pick — returns empty string if every candidate is blank.
+    const pick = (...vals: Array<unknown>): string => {
+      for (const v of vals) {
+        if (v === null || v === undefined) continue;
+        const s = String(v).trim();
+        if (s) return s;
+      }
+      return "";
+    };
+
+    const rows = filtered.map((r) => {
+      const dbRow: any = dispatchById.get(r.id) || r;
+      const dbFlight: any = (r.flight_schedule_id && flightById.get(r.flight_schedule_id)) || (r as any).flightMeta || null;
+      const ts: any = (dbRow.task_sheet_data || {}) as any;
+
+      // Per-field sourcing rules (saved DB only — no UI props):
+      //   ATA / ATD : task_sheet_data ONLY. Empty stays empty.
+      //   STA / STD : task_sheet_data → flight_schedules.
+      //   Flight metadata (reg/route/aircraft/skd): task_sheet_data → flight_schedules → dispatch row.
+      //   Operational fields (staff/times/charges): authoritative dispatch_assignments columns.
+      return {
+        "Station":           pick(dbRow.station, dbFlight?.authority),
+        "Airline":           pick(dbRow.airline, dbFlight?.handling_agent),
+        "Flight No":         pick(ts.flight_no, dbFlight?.flight_no, dbRow.flight_no),
+        "Date":              pick(dbRow.flight_date, dbFlight?.arrival_date, dbFlight?.departure_date),
+        "Service Type":      pick(dbRow.service_type, dbFlight?.clearance_type),
+        "Registration":      pick(ts.registration, dbFlight?.registration),
+        "Route":             pick(ts.route, dbFlight?.route),
+        "Aircraft Type":     pick(ts.aircraft_type, dbFlight?.aircraft_type),
+        "SKD Type":          pick(ts.flight_type, ts.skd_type, dbFlight?.skd_type),
+        "STA":               pick(ts.sta, dbFlight?.sta),
+        "STD":               pick(ts.std, dbFlight?.std),
+        "ATA":               pick(ts.ata),   // strict: blank when not saved
+        "ATD":               pick(ts.atd),   // strict: blank when not saved
+        "Staff Count":       typeof dbRow.staff_count === "number" ? dbRow.staff_count : 0,
+        "Staff Names":       pick(dbRow.staff_names),
+        "Scheduled Start":   pick(dbRow.scheduled_start),
+        "Scheduled End":     pick(dbRow.scheduled_end),
+        "Actual Start":      pick(dbRow.actual_start),
+        "Actual End":        pick(dbRow.actual_end),
+        "Contract Duration (h)": dbRow.contract_duration_hours ?? 0,
+        "Actual Duration (h)":   dbRow.actual_duration_hours ?? 0,
+        "Overtime (h)":          dbRow.overtime_hours ?? 0,
+        "Base Fee":              dbRow.base_fee ?? 0,
+        "Service Rate":          dbRow.service_rate ?? 0,
+        "Overtime Charge":       dbRow.overtime_charge ?? 0,
+        "Total Charge":          dbRow.total_charge ?? 0,
+        "Status":            pick(dbRow.status),
+        "Review Status":     pick(dbRow.review_status),
+        "Remarks":           pick(ts.remarks, dbRow.notes),
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Security Service Reports");
     XLSX.writeFile(wb, "Security_Service_Reports.xlsx");
