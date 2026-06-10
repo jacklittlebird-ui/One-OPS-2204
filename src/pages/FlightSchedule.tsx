@@ -313,9 +313,7 @@ export default function FlightSchedulePage() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          </div>
-        )}
+        <TablePagination {...pag} />
       </div>
 
       {showAdd && <FlightForm title="New Flight" data={newRow} onChange={setNewRow} onSave={saveNew} onCancel={() => setShowAdd(false)} isSaving={isAdding} />}

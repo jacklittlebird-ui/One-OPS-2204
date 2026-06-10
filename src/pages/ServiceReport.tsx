@@ -1552,15 +1552,9 @@ function HandlingServiceReportContent() {
             </tbody>
           </table>
           </div>
-
           <TablePagination {...pag} />
-              <div className="flex items-center gap-2">
-                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-                <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-              </div>
-            </div>
-          )}
+        </>
+      )}
         </>
         )}
       </div>

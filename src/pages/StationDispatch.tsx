@@ -625,9 +625,9 @@ export default function StationDispatchPage() {
                 </tbody>
               </table>
             <TablePagination {...pagDispatches} />
-            )}
-          </div>
+            </div>
           )}
+        </TabsContent>
         </TabsContent>
 
         {/* Station Flights (assign from here) */}

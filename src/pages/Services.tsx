@@ -92,7 +92,6 @@ function CivilAviationTab() {
         </table>
       </div>
       <TablePagination {...pag} />
-      </div>
 
       {/* Additional Civil Aviation Services */}
       {showServices && (

@@ -167,15 +167,15 @@ export default function AirportChargesPage() {
               type="text"
               placeholder="Search by Vendor, MTOW, or Charge…"
               value={search}
-              onChange={e => { setSearch(e.target.value);  }
+              onChange={e => setSearch(e.target.value)}
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-64 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <select value={vendorFilter} onChange={e => { setVendorFilter(e.target.value);  } className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Vendors</option>
             {vendors.map(v => <option key={v}>{v}</option>)}
           </select>
-          <select value={mtowFilter} onChange={e => { setMtowFilter(e.target.value);  } className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={mtowFilter} onChange={e => setMtowFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All MTOW</option>
             {mtows.map(m => <option key={m}>{m}</option>)}
           </select>
@@ -261,14 +261,7 @@ export default function AirportChargesPage() {
         </div>
 
         {/* Pagination */}
-        <TablePagination {...pag} /> of {filtered.length} records</span>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        )}
+        <TablePagination {...pag} />
       </div>
     </div>
   );
