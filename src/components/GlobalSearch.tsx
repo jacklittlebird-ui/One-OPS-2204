@@ -12,21 +12,22 @@ interface SearchResult {
   icon: React.ReactNode;
 }
 
-function useSearchData() {
-  const airlines = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("code,name,country"); return data || []; } });
-  const aircrafts = useQuery({ queryKey: ["aircrafts"], queryFn: async () => { const { data } = await supabase.from("aircrafts").select("registration,type,airline"); return data || []; } });
-  const flights = useQuery({ queryKey: ["flight_schedules"], queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("flight_no,route,aircraft_type,status"); return data || []; } });
-  const catering = useQuery({ queryKey: ["catering_items"], queryFn: async () => { const { data } = await supabase.from("catering_items").select("item,price,category"); return data || []; } });
-  const tubes = useQuery({ queryKey: ["tube_charges"], queryFn: async () => { const { data } = await supabase.from("tube_charges").select("service,price,airport"); return data || []; } });
-  const taxes = useQuery({ queryKey: ["airport_tax"], queryFn: async () => { const { data } = await supabase.from("airport_tax").select("tax,amount,applicability"); return data || []; } });
-  const ramp = useQuery({ queryKey: ["basic_ramp"], queryFn: async () => { const { data } = await supabase.from("basic_ramp").select("service,price"); return data || []; } });
-  const equipment = useQuery({ queryKey: ["vendor_equipment"], queryFn: async () => { const { data } = await supabase.from("vendor_equipment").select("equipment,vendor,rate"); return data || []; } });
-  const hall = useQuery({ queryKey: ["hall_vvip"], queryFn: async () => { const { data } = await supabase.from("hall_vvip").select("service,price,terminal"); return data || []; } });
-  const abbr = useQuery({ queryKey: ["abbreviations"], queryFn: async () => { const { data } = await supabase.from("abbreviations").select("abbr,full_text"); return data || []; } });
-  const acTypes = useQuery({ queryKey: ["aircraft_types_ref"], queryFn: async () => { const { data } = await supabase.from("aircraft_types_ref").select("icao,iata,name,category"); return data || []; } });
-  const bulletins = useQuery({ queryKey: ["bulletins"], queryFn: async () => { const { data } = await supabase.from("bulletins").select("bulletin_id,title,type"); return data || []; } });
-  const manuals = useQuery({ queryKey: ["manuals_forms"], queryFn: async () => { const { data } = await supabase.from("manuals_forms").select("doc_id,title,category"); return data || []; } });
-  const rights = useQuery({ queryKey: ["traffic_rights"], queryFn: async () => { const { data } = await supabase.from("traffic_rights").select("right_name,description"); return data || []; } });
+function useSearchData(enabled: boolean) {
+  const opts = { enabled, staleTime: 10 * 60_000, gcTime: 30 * 60_000, refetchOnWindowFocus: false, refetchOnMount: false };
+  const airlines = useQuery({ ...opts, queryKey: ["search:airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("code,name,country"); return data || []; } });
+  const aircrafts = useQuery({ ...opts, queryKey: ["search:aircrafts"], queryFn: async () => { const { data } = await supabase.from("aircrafts").select("registration,type,airline"); return data || []; } });
+  const flights = useQuery({ ...opts, queryKey: ["search:flight_schedules"], queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("flight_no,route,aircraft_type,status").order("arrival_date", { ascending: false, nullsFirst: false }).limit(500); return data || []; } });
+  const catering = useQuery({ ...opts, queryKey: ["search:catering_items"], queryFn: async () => { const { data } = await supabase.from("catering_items").select("item,price,category"); return data || []; } });
+  const tubes = useQuery({ ...opts, queryKey: ["search:tube_charges"], queryFn: async () => { const { data } = await supabase.from("tube_charges").select("service,price,airport"); return data || []; } });
+  const taxes = useQuery({ ...opts, queryKey: ["search:airport_tax"], queryFn: async () => { const { data } = await supabase.from("airport_tax").select("tax,amount,applicability"); return data || []; } });
+  const ramp = useQuery({ ...opts, queryKey: ["search:basic_ramp"], queryFn: async () => { const { data } = await supabase.from("basic_ramp").select("service,price"); return data || []; } });
+  const equipment = useQuery({ ...opts, queryKey: ["search:vendor_equipment"], queryFn: async () => { const { data } = await supabase.from("vendor_equipment").select("equipment,vendor,rate"); return data || []; } });
+  const hall = useQuery({ ...opts, queryKey: ["search:hall_vvip"], queryFn: async () => { const { data } = await supabase.from("hall_vvip").select("service,price,terminal"); return data || []; } });
+  const abbr = useQuery({ ...opts, queryKey: ["search:abbreviations"], queryFn: async () => { const { data } = await supabase.from("abbreviations").select("abbr,full_text"); return data || []; } });
+  const acTypes = useQuery({ ...opts, queryKey: ["search:aircraft_types_ref"], queryFn: async () => { const { data } = await supabase.from("aircraft_types_ref").select("icao,iata,name,category"); return data || []; } });
+  const bulletins = useQuery({ ...opts, queryKey: ["search:bulletins"], queryFn: async () => { const { data } = await supabase.from("bulletins").select("bulletin_id,title,type"); return data || []; } });
+  const manuals = useQuery({ ...opts, queryKey: ["search:manuals_forms"], queryFn: async () => { const { data } = await supabase.from("manuals_forms").select("doc_id,title,category"); return data || []; } });
+  const rights = useQuery({ ...opts, queryKey: ["search:traffic_rights"], queryFn: async () => { const { data } = await supabase.from("traffic_rights").select("right_name,description"); return data || []; } });
 
   return { airlines, aircrafts, flights, catering, tubes, taxes, ramp, equipment, hall, abbr, acTypes, bulletins, manuals, rights };
 }
@@ -59,7 +60,7 @@ export default function GlobalSearch() {
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const searchData = useSearchData();
+  const searchData = useSearchData(open);
 
   const index = useMemo(() => buildIndex(searchData), [
     searchData.airlines.data, searchData.aircrafts.data, searchData.flights.data,
