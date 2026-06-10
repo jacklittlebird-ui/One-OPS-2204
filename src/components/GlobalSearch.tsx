@@ -60,7 +60,7 @@ export default function GlobalSearch() {
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const searchData = useSearchData();
+  const searchData = useSearchData(open);
 
   const index = useMemo(() => buildIndex(searchData), [
     searchData.airlines.data, searchData.aircrafts.data, searchData.flights.data,
