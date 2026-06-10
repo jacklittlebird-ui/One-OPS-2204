@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Pencil, Trash2, Wrench, Download, Eye, Layers, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportExcel";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 type ServiceCatalogRow = { id: string; name: string; category: string; description: string; related_reports: string; related_documents: string; report_template: string; status: string; };
 
@@ -36,6 +37,7 @@ export default function ServicesCatalogPage() {
     const mc = catFilter === "all" || s.category === catFilter;
     return ms && mc;
   });
+  const pag = usePagination(filtered, { resetKey: `${search}|${catFilter}` });
 
   const stats = useMemo(() => ({
     total: data.length,
@@ -148,7 +150,7 @@ export default function ServicesCatalogPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(s => (
+              {pag.pageRows.map(s => (
                 <TableRow key={s.id}>
                   <TableCell className="font-medium"><Wrench size={14} className="inline mr-1.5 text-muted-foreground" />{s.name}</TableCell>
                   <TableCell><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">{CATEGORY_ICONS[s.category]} {s.category}</span></TableCell>
@@ -167,6 +169,7 @@ export default function ServicesCatalogPage() {
               {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No services found</TableCell></TableRow>}
             </TableBody>
           </Table>
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
 

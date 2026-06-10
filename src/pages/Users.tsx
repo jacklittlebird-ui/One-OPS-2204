@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Users as UsersIcon, Plus, Shield, Trash2, Pencil } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 type AppRole = "admin" | "station_manager" | "station_ops" | "employee" | "clearance" | "contracts" | "operations" | "receivables" | "payables" | "general_accounts" | "accountant" | "viewer";
 
@@ -100,6 +101,8 @@ export default function UsersPage() {
   };
 
   useEffect(() => { fetchData(); }, [user]);
+
+  const usersPag = usePagination(profiles, { resetKey: profiles.length });
 
   const getUserRoles = (userId: string) =>
     roles.filter((r) => r.user_id === userId);
@@ -285,6 +288,7 @@ export default function UsersPage() {
               <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
             </div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -296,7 +300,7 @@ export default function UsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {profiles.map((p) => {
+                {usersPag.pageRows.map((p) => {
                   const userRoles = getUserRoles(p.user_id);
                   return (
                     <TableRow key={p.id}>
@@ -391,6 +395,8 @@ export default function UsersPage() {
                 })}
               </TableBody>
             </Table>
+            <TablePagination {...usersPag} />
+            </>
           )}
         </CardContent>
       </Card>

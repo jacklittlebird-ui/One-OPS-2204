@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Globe, Search, Pencil, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 type CountryRow = {
   id: string;
@@ -30,6 +31,7 @@ export default function CountriesPage() {
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.code.toLowerCase().includes(search.toLowerCase())
   );
+  const pag = usePagination(filtered, { resetKey: search });
 
   const openAdd = () => { setEditItem(null); setForm({ name: "", name_ar: "", code: "", region: "Middle East", status: "Active" }); setDialogOpen(true); };
   const openEdit = (c: CountryRow) => { setEditItem(c); setForm({ name: c.name, name_ar: c.name_ar, code: c.code, region: c.region, status: c.status }); setDialogOpen(true); };
@@ -101,7 +103,7 @@ export default function CountriesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(c => (
+              {pag.pageRows.map(c => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium"><Globe size={14} className="inline mr-1.5 text-muted-foreground" />{c.name}</TableCell>
                   <TableCell>{c.name_ar}</TableCell>
@@ -119,6 +121,7 @@ export default function CountriesPage() {
               {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No countries found</TableCell></TableRow>}
             </TableBody>
           </Table>
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
     </div>
