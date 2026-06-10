@@ -1853,6 +1853,7 @@ export default function SecurityServiceReportsPage() {
                                   dispatchStatus: r.status,
                                   channel: activeChannel,
                                   invoiceStatus: invStatus,
+                                  createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                                 })}
                                 completedStages={derivePipelineCompletedStages({
                                   isLinked: r.status === "Completed",
@@ -1860,6 +1861,7 @@ export default function SecurityServiceReportsPage() {
                                   clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
                                   dispatchStatus: r.status,
                                   invoiceStatus: invStatus,
+                                  createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                                 })}
                                 compact
                               />
