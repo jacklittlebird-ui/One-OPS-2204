@@ -248,6 +248,7 @@ export default function ClearanceFormDialog({ open, onOpenChange, form, setForm,
               reviewStatus: "pending",
               clearanceStatus: form.status,
               dispatchStatus: "Pending",
+              createdVia: (form as any).created_via || "clearance",
             })}
           />
         </div>
