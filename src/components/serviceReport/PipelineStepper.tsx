@@ -1,4 +1,10 @@
 import { ShieldCheck, Building2, ClipboardCheck, Receipt } from "lucide-react";
+import {
+  normalizeReviewStatus,
+  normalizeFlightStatus,
+  REVIEW_STATUSES_AFTER_STATION,
+  REVIEW_STATUSES_AFTER_OPERATIONS,
+} from "@/lib/statusConstants";
 
 // Each pipeline step has its own semantic color token so the four stages are
 // visually distinct in every portal (Clearance, Station, Operations, Receivables).
