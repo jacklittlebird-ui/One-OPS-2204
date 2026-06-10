@@ -52,6 +52,12 @@ interface ChannelContextType {
 
 const ChannelContext = createContext<ChannelContextType | undefined>(undefined);
 
+import { readCachedRoles, writeCachedRoles, clearCachedRoles } from "@/lib/roleCache";
+
+// Re-export for backwards compatibility with any consumer that imported it
+// from this module before the cache was split out.
+export { clearCachedRoles };
+
 export function ChannelProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [userRoles, setUserRoles] = useState<string[]>([]);
@@ -65,21 +71,35 @@ export function ChannelProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    
+
+    // 1. Hydrate instantly from session cache if present — avoids the
+    //    user_roles round-trip on every page navigation/reload.
+    const cached = readCachedRoles(user.id);
+    if (cached) {
+      setUserRoles(cached);
+      const available = rolesToChannels(cached);
+      setActiveChannel(cached.includes("admin") ? "admin" : available[0]);
+      setLoading(false);
+    }
+
+    // 2. Always re-verify against the DB once per session boot. Updates
+    //    silently if roles have changed server-side.
     const fetchRoles = async () => {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-      const roles = data?.map(r => r.role) || [];
-      setUserRoles(roles);
-      
-      const available = rolesToChannels(roles);
-      if (roles.includes("admin")) {
-        setActiveChannel("admin");
-      } else {
-        setActiveChannel(available[0]);
+      const roles = data?.map((r) => r.role) || [];
+      writeCachedRoles(user.id, roles);
+
+      setUserRoles((prev) =>
+        prev.length === roles.length && prev.every((r, i) => r === roles[i]) ? prev : roles
+      );
+
+      if (!cached) {
+        const available = rolesToChannels(roles);
+        setActiveChannel(roles.includes("admin") ? "admin" : available[0]);
+        setLoading(false);
       }
-      setLoading(false);
     };
-    
+
     fetchRoles();
   }, [user]);
 
