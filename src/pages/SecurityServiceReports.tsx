@@ -27,6 +27,7 @@ const SecurityTaskSheetDialog = lazy(() => import("@/components/security/Securit
 import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
+import { resolveDownloadFields } from "@/lib/securityDownloadFields";
 import { parseDeletionRequests } from "@/lib/statusRouting";
 
 
@@ -1148,41 +1149,86 @@ export default function SecurityServiceReportsPage() {
     updateMutation.mutate({ id: row.id, review_status: "Ready for Billing" });
   };
 
-  // Export — refetches the latest data from the DB before writing the file
-  // so the exported rows always match what is currently stored (not the React
-  // Query cache, which has a 30s staleTime).
+  // Export — fetches the latest dispatch_assignments + flight_schedules
+  // directly from the DB so the exported rows always match what is currently
+  // stored. The React Query cache has a 30s staleTime AND the merged
+  // `filtered` rows are derived from a snapshot that may pre-date a recent
+  // save, so we re-read both tables before serializing.
+  // ATA/ATD and every other field are sourced strictly from saved DB data;
+  // dialog props / local UI state are never used as fallbacks.
   const handleExport = async () => {
+    // Refresh React Query first so anything still bound to the cache (table,
+    // KPIs) updates as well.
     try {
       await Promise.all([
         queryClient.refetchQueries({ queryKey: ["dispatch_assignments"] }),
         queryClient.refetchQueries({ queryKey: ["flight_schedules"] }),
       ]);
     } catch (err) {
-      console.warn("[export] refetch failed, exporting current cache", err);
+      console.warn("[export] refetch failed, falling back to direct fetch", err);
     }
-    const ws = XLSX.utils.json_to_sheet(filtered.map(r => ({
-      "Station": r.station,
-      "Airline": r.airline,
-      "Flight No": r.flight_no,
-      "Date": r.flight_date,
-      "Service Type": r.service_type,
-      "Staff Count": r.staff_count,
-      "Staff Names": r.staff_names,
-      "Scheduled Start": r.scheduled_start,
-      "Scheduled End": r.scheduled_end,
-      "Actual Start": r.actual_start,
-      "Actual End": r.actual_end,
-      "Contract Duration (h)": r.contract_duration_hours,
-      "Actual Duration (h)": r.actual_duration_hours,
-      "Overtime (h)": r.overtime_hours,
-      "Base Fee": r.base_fee,
-      "Service Rate": r.service_rate,
-      "Overtime Charge": r.overtime_charge,
-      "Total Charge": r.total_charge,
-      "Status": r.status,
-      "Review Status": r.review_status,
-      "Notes": r.notes,
-    })));
+
+    // Pull authoritative DB rows for the IDs currently in scope.
+    const realIds = filtered.filter(r => !r.isPending && r.id && !r.id.startsWith("pending-")).map(r => r.id);
+    const flightIds = Array.from(new Set(filtered.map(r => r.flight_schedule_id).filter(Boolean) as string[]));
+
+    let freshDispatch: any[] = [];
+    let freshFlights: any[] = [];
+    try {
+      const [d, f] = await Promise.all([
+        realIds.length
+          ? supabase.from("dispatch_assignments").select("*").in("id", realIds).then(r => r.data || [])
+          : Promise.resolve([] as any[]),
+        flightIds.length
+          ? supabase.from("flight_schedules").select("*").in("id", flightIds).then(r => r.data || [])
+          : Promise.resolve([] as any[]),
+      ]);
+      freshDispatch = d;
+      freshFlights = f;
+    } catch (err) {
+      console.warn("[export] direct DB fetch failed, using cached rows", err);
+    }
+    const dispatchById = new Map(freshDispatch.map((r: any) => [r.id, r]));
+    const flightById = new Map(freshFlights.map((r: any) => [r.id, r]));
+
+    const rows = filtered.map((r) => {
+      const dbRow: any = dispatchById.get(r.id) || r;
+      const dbFlight: any = (r.flight_schedule_id && flightById.get(r.flight_schedule_id)) || (r as any).flightMeta || null;
+      const f = resolveDownloadFields(dbRow, dbFlight);
+      return {
+        "Station": f.station,
+        "Airline": f.airline,
+        "Flight No": f.flightNo,
+        "Date": f.date,
+        "Service Type": f.serviceType,
+        "Registration": f.registration,
+        "Route": f.route,
+        "Aircraft Type": f.aircraftType,
+        "SKD Type": f.skdType,
+        "STA": f.sta,
+        "STD": f.std,
+        "ATA": f.ata, // strict: blank when not saved
+        "ATD": f.atd, // strict: blank when not saved
+        "Staff Count": f.staffCount,
+        "Staff Names": f.staffNames,
+        "Scheduled Start": f.scheduledStart,
+        "Scheduled End": f.scheduledEnd,
+        "Actual Start": f.actualStart,
+        "Actual End": f.actualEnd,
+        "Contract Duration (h)": f.contractDurationHours,
+        "Actual Duration (h)": f.actualDurationHours,
+        "Overtime (h)": f.overtimeHours,
+        "Base Fee": f.baseFee,
+        "Service Rate": f.serviceRate,
+        "Overtime Charge": f.overtimeCharge,
+        "Total Charge": f.totalCharge,
+        "Status": f.status,
+        "Review Status": f.reviewStatus,
+        "Remarks": f.remarks,
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Security Service Reports");
     XLSX.writeFile(wb, "Security_Service_Reports.xlsx");
