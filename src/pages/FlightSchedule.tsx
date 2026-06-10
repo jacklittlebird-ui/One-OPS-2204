@@ -163,6 +163,10 @@ export default function FlightSchedulePage() {
     return result;
   }, [data, airlineFilter, statusFilter, typeFilter, search]);
 
+  const { pageRows: pageData, ...pag } = usePagination(filtered, { resetKey: [search, airlineFilter, statusFilter, typeFilter] });
+
+
+
   
   
   const scheduledCount = data.filter(d => d.status === "Scheduled").length;

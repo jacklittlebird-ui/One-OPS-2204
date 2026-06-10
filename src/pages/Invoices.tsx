@@ -1427,9 +1427,32 @@ export default function InvoicesPage() {
 <TablePagination {...pag} />
       </div>
 
+      {/* Generate Monthly Billing Modal */}
+      {showBillingPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
+          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto m-4">
+            <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
+              <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
+                <Zap size={18} className="text-primary" /> Generate Monthly Billing
+              </h2>
+              <button onClick={() => setShowBillingPreview(false)} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Billing Month</label>
+                  <input type="month" value={billingMonth} onChange={e => setBillingMonth(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-full" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Station</label>
+                  <input type="text" value={billingStation} onChange={e => setBillingStation(e.target.value)} placeholder="All or station code" className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-full" />
+                </div>
+              </div>
+
               <p className="text-sm text-muted-foreground">
                 Showing completed dispatches <span className="font-semibold">and approved Service Reports</span> grouped by airline &amp; station for <span className="font-semibold text-foreground">{billingMonth}</span>
               </p>
+
 
               {dispatchGenerationGuard.hasAny && !dispatchGenerationGuard.allComplete && (
                 <div className="bg-warning/10 border border-warning/40 text-warning-foreground rounded-lg p-3 text-sm flex items-start gap-2">
@@ -1681,7 +1704,8 @@ export default function InvoicesPage() {
                     </button>
                   </div>
                 </>
-              )}
+              ))}
+
 
               {monthlyTab === "security" && (
                 monthlySecurityPreview.rows.length === 0 ? (
