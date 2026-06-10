@@ -32,6 +32,18 @@ export function useSupabaseTable<T extends Record<string, any>>(
     "created_at";
   const orderCol = options?.orderBy || defaultOrder;
   const asc = options?.ascending ?? false;
+
+  // Reference / mostly-static tables can be cached much longer to cut DB load.
+  const REFERENCE_TABLES = new Set<TableName>([
+    "airlines", "aircrafts", "delay_codes", "abbreviations", "aircraft_types_ref",
+    "traffic_rights", "bulletins", "manuals_forms", "catering_items", "tube_charges",
+    "airport_tax", "basic_ramp", "vendor_equipment", "hall_vvip",
+    "countries", "airports", "services_catalog", "service_providers",
+    "chart_of_accounts", "airport_charges",
+  ]);
+  const isReference = REFERENCE_TABLES.has(table);
+  const tableStaleTime = isReference ? 10 * 60_000 : 30_000;
+  const tableGcTime = isReference ? 30 * 60_000 : 5 * 60_000;
   const applyStationFilter = !!options?.stationFilter && isStationScoped && !!station;
 
   const query = useQuery({
@@ -71,9 +83,10 @@ export function useSupabaseTable<T extends Record<string, any>>(
     enabled: !!session,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
-    staleTime: 30_000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: tableStaleTime,
+    gcTime: tableGcTime,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
     refetchOnReconnect: true,
   });
 
