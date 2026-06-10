@@ -1,0 +1,19 @@
+{
+  "taken_at": "2026-06-10T00:00:00.000Z",
+  "note": "Baseline captured after index migration on 2026-06-10. Update with `node scripts/perf-snapshot.mjs --baseline` after intentional perf changes.",
+  "rows": [
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.dispatch_assignments.* FROM public.dispatch_assignments WHERE station = $1 ORDER BY flight_date DESC LIMIT", "calls": 8986, "total_ms": 1082572.08, "mean_ms": 120.47, "max_ms": 3088.81 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.flight_schedules.* ... WHERE authority = $1 AND NOT status = ANY($2) ORDER BY arrival_date DESC", "calls": 6318, "total_ms": 396185.01, "mean_ms": 62.71, "max_ms": 2446.55 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.dispatch_assignments.* FROM public.dispatch_assignments ORDER BY flight_date DESC LIMIT", "calls": 1370, "total_ms": 148098.46, "mean_ms": 108.10, "max_ms": 5249.71 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.flight_schedules.* ... WHERE authority = $1 ORDER BY arrival_date DESC", "calls": 2626, "total_ms": 142043.01, "mean_ms": 54.09, "max_ms": 1533.57 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.user_roles.role FROM public.user_roles WHERE user_id = $1", "calls": 10529, "total_ms": 110204.77, "mean_ms": 10.47, "max_ms": 581.97 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.contract_service_rates.* FROM public.contract_service_rates LIMIT", "calls": 6893, "total_ms": 98738.90, "mean_ms": 14.32, "max_ms": 1686.54 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.dispatch_assignments.* FROM public.dispatch_assignments ORDER BY flight_date DESC NULLS LAST LIMIT", "calls": 900, "total_ms": 84461.57, "mean_ms": 93.85, "max_ms": 2064.30 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.flight_schedules.* FROM public.flight_schedules ORDER BY arrival_date DESC NULLS LAST LIMIT", "calls": 1964, "total_ms": 67167.16, "mean_ms": 34.20, "max_ms": 3733.22 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.contract_service_rates.* FROM public.contract_service_rates WHERE contract_id = $1 ORDER BY sort_order ASC LIMIT", "calls": 6104, "total_ms": 59399.38, "mean_ms": 9.73, "max_ms": 1406.05 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.airports.id, public.airports.name, public.airports.iata_code, public.airports.city FROM public.airports ORDER BY iata_code ASC LIMIT", "calls": 6394, "total_ms": 58547.05, "mean_ms": 9.16, "max_ms": 2970.38 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.airlines.id, public.airlines.name, public.airlines.iata_code, public.airlines.code FROM public.airlines ORDER BY name ASC LIMIT", "calls": 6394, "total_ms": 56908.18, "mean_ms": 8.90, "max_ms": 2771.68 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.profiles.station FROM public.profiles WHERE user_id = $1", "calls": 9925, "total_ms": 53411.62, "mean_ms": 5.38, "max_ms": 1056.35 },
+    { "fingerprint": "WITH pgrst_source AS ( SELECT public.flight_schedules.id, public.flight_schedules.status FROM public.flight_schedules WHERE status = $1", "calls": 696, "total_ms": 45089.97, "mean_ms": 64.78, "max_ms": 1093.07 }
+  ]
+}
