@@ -4,6 +4,7 @@ import { Search, Plus, Pencil, Trash2, X, Package, CheckCircle, Clock, AlertCirc
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,6 +54,7 @@ export default function LostFoundPage() {
     if (search) { const s = search.toLowerCase(); r = r.filter(i => i.description?.toLowerCase().includes(s) || i.owner_name?.toLowerCase().includes(s) || i.flight_no?.toLowerCase().includes(s) || i.item_id?.toLowerCase().includes(s)); }
     return r;
   }, [items, search, statusFilter, categoryFilter]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, categoryFilter] });
 
   const openAdd = () => {
     setEditItem(null);
@@ -75,7 +77,7 @@ export default function LostFoundPage() {
   };
 
   const handleExport = () => exportToExcel(
-    filtered.map(i => ({ "Item ID": i.item_id, Date: i.report_date, Flight: i.flight_no, Airline: i.airline, Station: i.station, Terminal: i.terminal, Category: i.category, Description: i.description, Color: i.color, Brand: i.brand, Weight: i.weight, "Found By": i.found_by, Owner: i.owner_name, Contact: i.owner_contact, Storage: i.storage_location, Status: i.status })),
+    pageRows.map(i => ({ "Item ID": i.item_id, Date: i.report_date, Flight: i.flight_no, Airline: i.airline, Station: i.station, Terminal: i.terminal, Category: i.category, Description: i.description, Color: i.color, Brand: i.brand, Weight: i.weight, "Found By": i.found_by, Owner: i.owner_name, Contact: i.owner_contact, Storage: i.storage_location, Status: i.status })),
     "Lost & Found", "LostFound.xlsx"
   );
 
@@ -130,7 +132,7 @@ export default function LostFoundPage() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={11} className="text-center py-16"><Database size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Items</p></td></tr>
-              ) : filtered.map(row => (
+              ) : pageRows.map(row => (
                 <tr key={row.id} className="data-table-row">
                   <td className="px-3 py-2.5 font-mono text-xs font-semibold text-primary">{row.item_id || row.id.slice(0,8)}</td>
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(row.report_date)}</td>
@@ -159,6 +161,9 @@ export default function LostFoundPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="p-4 border-t">
+          <TablePagination {...pag} />
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Receipt, Download, Pencil, Plus, Trash2, Save, X, Plane, Globe2, DollarSign, Banknote, Info } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
@@ -31,6 +32,9 @@ export default function AirportTaxPage() {
 
   const international = data.filter(r => r.section === "International");
   const domestic = data.filter(r => r.section === "Domestic");
+
+  const { pageRows: intlRows, ...intlPag } = usePagination(international, { resetKey: [data] });
+  const { pageRows: domRows, ...domPag } = usePagination(domestic, { resetKey: [data] });
 
   const calcSectionTotal = (rows: Row[], field: "usd_except_ssh" | "usd_ssh" | "egp_all") => {
     return rows
@@ -304,20 +308,24 @@ export default function AirportTaxPage() {
             </TabsList>
 
             <TabsContent value="international">
-              {renderTable(international)}
+              {renderTable(intlRows)}
+              <TablePagination {...intlPag} />
             </TabsContent>
             <TabsContent value="domestic">
-              {renderTable(domestic)}
+              {renderTable(domRows)}
+              <TablePagination {...domPag} />
             </TabsContent>
             <TabsContent value="all" className="space-y-5">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <Globe2 size={14} /> International
               </h3>
-              {renderTable(international)}
+              {renderTable(intlRows)}
+              <TablePagination {...intlPag} />
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <Plane size={14} /> Domestic
               </h3>
-              {renderTable(domestic)}
+              {renderTable(domRows)}
+              <TablePagination {...domPag} />
             </TabsContent>
           </Tabs>
         </>

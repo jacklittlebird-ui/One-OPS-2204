@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, lazy, Suspense } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Search, Plus, Download, Shield, Plane, Building2, Clock, Users,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Pencil, CheckCircle2, XCircle, AlertTriangle,
@@ -31,7 +32,7 @@ import { resolveDownloadFields } from "@/lib/securityDownloadFields";
 import { parseDeletionRequests } from "@/lib/statusRouting";
 
 
-const PAGE_SIZE = 15;
+
 
 const REVIEW_STATUSES = ["Draft", "Pending Review", "Approved", "Ready for Billing"] as const;
 
@@ -182,7 +183,7 @@ export default function SecurityServiceReportsPage() {
   const [serviceFilter, setServiceFilter] = useState(_initParams.get("type") || "All Types");
   const [dateFrom, setDateFrom] = useState(_initParams.get("date_from") || "");
   const [dateTo, setDateTo] = useState(_initParams.get("date_to") || "");
-  const [page, setPage] = useState(1);
+  
   const [recordsView, setRecordsView] = useState<"table" | "calendar">("table");
   const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
 
@@ -707,8 +708,8 @@ export default function SecurityServiceReportsPage() {
     });
   }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  
+  
 
   // KPIs (computed from the merged/filtered list)
   const totalReports = filtered.length;
@@ -1287,7 +1288,7 @@ export default function SecurityServiceReportsPage() {
       {isStationView && (
         <div className="flex items-center gap-2 border-b">
           <button
-            onClick={() => { setStationTab("all"); setPage(1); }}
+            onClick={() => { setStationTab("all");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
               stationTab === "all"
                 ? "text-primary border-primary"
@@ -1297,7 +1298,7 @@ export default function SecurityServiceReportsPage() {
             All Reports
           </button>
           <button
-            onClick={() => { setStationTab("rejected"); setPage(1); }}
+            onClick={() => { setStationTab("rejected");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
               stationTab === "rejected"
                 ? "text-destructive border-destructive"
@@ -1319,7 +1320,7 @@ export default function SecurityServiceReportsPage() {
       {isOperationsView && (
         <div className="flex items-center gap-2 border-b">
           <button
-            onClick={() => { setOpsTab("all"); setPage(1); }}
+            onClick={() => { setOpsTab("all");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
               opsTab === "all"
                 ? "text-primary border-primary"
@@ -1329,7 +1330,7 @@ export default function SecurityServiceReportsPage() {
             All Reports
           </button>
           <button
-            onClick={() => { setOpsTab("modified"); setPage(1); }}
+            onClick={() => { setOpsTab("modified");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
               opsTab === "modified"
                 ? "text-info border-info"
@@ -1345,7 +1346,7 @@ export default function SecurityServiceReportsPage() {
             )}
           </button>
           <button
-            onClick={() => { setOpsTab("clearance-flights"); setPage(1); }}
+            onClick={() => { setOpsTab("clearance-flights");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
               opsTab === "clearance-flights"
                 ? "text-primary border-primary"
@@ -1356,7 +1357,7 @@ export default function SecurityServiceReportsPage() {
             All Clearance Flights
           </button>
           <button
-            onClick={() => { setOpsTab("pending-approval"); setPage(1); }}
+            onClick={() => { setOpsTab("pending-approval");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
               opsTab === "pending-approval"
                 ? "text-destructive border-destructive"
@@ -1442,7 +1443,7 @@ export default function SecurityServiceReportsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPendingFlights.length === 0 ? (
+                  {pagePending.length === 0 ? (
                     <tr>
                       <td colSpan={13} className="text-center py-16">
                         <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
@@ -1450,9 +1451,9 @@ export default function SecurityServiceReportsPage() {
                         <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
                       </td>
                     </tr>
-                  ) : filteredPendingFlights.map((f: any, i: number) => (
+                  ) : pagePending.map((f: any, i: number) => (
                     <tr key={f.id} className="data-table-row">
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagPending.start + i + 1}</td>
                       <td className="px-3 py-2.5 font-semibold text-foreground">{f.authority || "—"}</td>
                       <td className="px-3 py-2.5 text-foreground">{f.airlines?.name || f.handling_agent || "—"}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no || "—"}</td>
@@ -1499,6 +1500,7 @@ export default function SecurityServiceReportsPage() {
                 </tbody>
               </table>
             </div>
+            <TablePagination {...pagPending} />
           </div>
         </div>
       ) : (
@@ -1556,25 +1558,25 @@ export default function SecurityServiceReportsPage() {
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text" placeholder="Search airline, flight, staff…"
-              value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+              value={search} onChange={e => { setSearch(e.target.value);  }}
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={stationFilter} onChange={e => { setStationFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Stations</option>
             {allStations.map(s => <option key={s}>{s}</option>)}
           </select>
-          <select value={serviceFilter} onChange={e => { setServiceFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={serviceFilter} onChange={e => { setServiceFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Types</option>
             {allServiceTypes.map(s => <option key={s}>{s}</option>)}
           </select>
-          <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>
             {REVIEW_STATUSES.map(s => <option key={s}>{s}</option>)}
             <option>Rejected</option>
           </select>
-          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
-          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
+          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
+          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
           {isReceivablesView && (
             <button
               onClick={saveAllSecurityCharges}
@@ -1833,7 +1835,7 @@ export default function SecurityServiceReportsPage() {
                             />
                           </td>
                         )}
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                        <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagMain.start + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
                         <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-foreground">{flightNo || "—"}</td>
@@ -2090,6 +2092,7 @@ export default function SecurityServiceReportsPage() {
                   })}
                 </tbody>
               </table>
+            <TablePagination {...pagMain} />
             </div>
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t">

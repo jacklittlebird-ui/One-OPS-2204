@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -58,7 +59,7 @@ export default function AgingReportsPage() {
   const totalOutstanding = unpaidInvoices.reduce((s, i) => s + Number(i.total || 0), 0);
   const totalOverdue = [...agingBuckets.days30, ...agingBuckets.days60, ...agingBuckets.days90, ...agingBuckets.over90].reduce((s, i) => s + Number(i.total || 0), 0);
 
-  const byAirline = useMemo(() => {
+  const rawByAirline = useMemo(() => {
     const map: Record<string, { operator: string; total: number; count: number; overdue: number }> = {};
     unpaidInvoices.forEach((i) => {
       if (!map[i.operator]) map[i.operator] = { operator: i.operator, total: 0, count: 0, overdue: 0 };
@@ -70,13 +71,17 @@ export default function AgingReportsPage() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [unpaidInvoices, todayMs]);
 
-  const filteredDetail = useMemo(() => {
+  const { pageRows: byAirline, ...airlinePag } = usePagination(rawByAirline, { resetKey: [invoices] });
+
+  const rawFilteredDetail = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return unpaidInvoices;
     return unpaidInvoices.filter((i) =>
       i.invoice_no?.toLowerCase().includes(q) || i.operator?.toLowerCase().includes(q)
     );
   }, [unpaidInvoices, search]);
+
+  const { pageRows: filteredDetail, ...detailPag } = usePagination(rawFilteredDetail, { resetKey: [search] });
 
   const handleExportDetail = () => {
     const rows = filteredDetail.map((i) => {
@@ -191,6 +196,7 @@ export default function AgingReportsPage() {
                   </TableRow>
                 </TableBody>
               </Table>
+              <TablePagination {...airlinePag} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -215,6 +221,7 @@ export default function AgingReportsPage() {
                   )}
                 </TableBody>
               </Table>
+              <TablePagination {...airlinePag} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -256,6 +263,7 @@ export default function AgingReportsPage() {
                   </TableBody>
                 </Table>
               </div>
+              <TablePagination {...detailPag} />
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,3 +1,4 @@
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { useState, useMemo } from "react";
 import { formatDateDMY } from "@/lib/utils";
 import { Search, Plus, Download, Globe, Pencil, Trash2, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database, Eye, Ban, CalendarIcon } from "lucide-react";
@@ -34,7 +35,6 @@ const statusBadge = (s: string) => {
   return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.cls}`}>{cfg.icon}{s}</span>;
 };
 
-const PAGE_SIZE = 15;
 
 export default function OverflySchedulePage() {
   const { data, isLoading, add, update, remove } = useSupabaseTable<OverflyRow>("overfly_schedules");
@@ -44,7 +44,6 @@ export default function OverflySchedulePage() {
   const [operatorFilter, setOperatorFilter] = useState("All");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<OverflyRow | null>(null);
   const [editItem, setEditItem] = useState<OverflyRow | null>(null);
@@ -64,9 +63,8 @@ export default function OverflySchedulePage() {
     if (search) { const s = search.toLowerCase(); r = r.filter(x => x.flight_no.toLowerCase().includes(s) || x.operator.toLowerCase().includes(s) || x.permit_no?.toLowerCase().includes(s)); }
     return r;
   }, [data, statusFilter, operatorFilter, dateFrom, dateTo, search]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [statusFilter, operatorFilter, dateFrom, dateTo, search] });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const approved = data.filter(d => d.status === "Approved").length;
   const pending = data.filter(d => d.status === "Pending").length;
 
@@ -112,13 +110,13 @@ export default function OverflySchedulePage() {
           <h2 className="text-base font-semibold text-foreground mr-auto">Overfly Records</h2>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-52 focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input type="text" placeholder="Search…" value={search} onChange={e => { setSearch(e.target.value);  }} className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-52 focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
-          <select value={operatorFilter} onChange={e => { setOperatorFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={operatorFilter} onChange={e => { setOperatorFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option value="All">All Operators</option>
             {operators.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option><option>Approved</option><option>Pending</option><option>Rejected</option><option>Expired</option><option>Cancelled</option>
           </select>
           <div className="flex items-center gap-1.5">
@@ -130,7 +128,7 @@ export default function OverflySchedulePage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                <Calendar mode="single" selected={dateFrom ? new Date(dateFrom) : undefined} onSelect={d => { setDateFrom(d ? format(d, "yyyy-MM-dd") : ""); setPage(1); }} initialFocus />
+                <Calendar mode="single" selected={dateFrom ? new Date(dateFrom) : undefined} onSelect={d => { setDateFrom(d ? format(d, "yyyy-MM-dd") : "");  }} initialFocus />
               </PopoverContent>
             </Popover>
             <span className="text-muted-foreground text-xs">–</span>
@@ -142,10 +140,10 @@ export default function OverflySchedulePage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                <Calendar mode="single" selected={dateTo ? new Date(dateTo) : undefined} onSelect={d => { setDateTo(d ? format(d, "yyyy-MM-dd") : ""); setPage(1); }} initialFocus />
+                <Calendar mode="single" selected={dateTo ? new Date(dateTo) : undefined} onSelect={d => { setDateTo(d ? format(d, "yyyy-MM-dd") : "");  }} initialFocus />
               </PopoverContent>
             </Popover>
-            {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }} className="text-xs text-destructive hover:underline ml-1">Clear</button>}
+            {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(""); setDateTo("");  }} className="text-xs text-destructive hover:underline ml-1">Clear</button>}
           </div>
         </div>
 
@@ -153,9 +151,9 @@ export default function OverflySchedulePage() {
           <table className="w-full text-sm">
             <thead><tr>{["FLIGHT","OPERATOR","REG","ROUTE","VALID FROM","VALID TO","PERMIT","STATUS","ACTIONS"].map(h => <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>)}</tr></thead>
             <tbody>
-              {pageData.length === 0 ? (
+              {pageRows.length === 0 ? (
                 <tr><td colSpan={9} className="text-center py-16"><Database size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Records</p></td></tr>
-              ) : pageData.map(row => (
+              ) : pageRows.map(row => (
                 <tr key={row.id} className="data-table-row">
                   <td className="px-3 py-2.5 font-mono font-semibold text-foreground">{row.flight_no}</td>
                   <td className="px-3 py-2.5 text-foreground">{row.operator}</td>
@@ -175,16 +173,7 @@ export default function OverflySchedulePage() {
             </tbody>
           </table>
         </div>
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        )}
+        <TablePagination {...pag} />
       </div>
 
       {/* Detail Dialog */}

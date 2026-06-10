@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { useNavigate } from "react-router-dom";
 import {
   Search, Plus, Trash2, Upload, Download, PlaneTakeoff, Clock,
@@ -15,7 +16,7 @@ import {
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 import { MaskedTimeInput } from "@/components/ui/masked-time-input";
 
-const PAGE_SIZE = 25;
+
 
 type FlightRow = {
   id: string; flight_no: string; airline: string; origin: string; destination: string;
@@ -138,7 +139,7 @@ export default function FlightSchedulePage() {
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [typeFilter, setTypeFilter] = useState("All Types");
-  const [page, setPage] = useState(1);
+  
   const [showAdd, setShowAdd] = useState(false);
   const [newRow, setNewRow] = useState<Partial<FlightRow>>(emptyFlight());
   const [editId, setEditId] = useState<string | null>(null);
@@ -162,8 +163,8 @@ export default function FlightSchedulePage() {
     return result;
   }, [data, airlineFilter, statusFilter, typeFilter, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  
+  
   const scheduledCount = data.filter(d => d.status === "Scheduled").length;
   const delayedCount = data.filter(d => d.status === "Delayed").length;
   const paxFlights = data.filter(d => d.flight_type === "Passenger").length;
@@ -198,7 +199,7 @@ export default function FlightSchedulePage() {
         frequency: row["Frequency"] || "Weekly", codeshare: row["Codeshare"] || "",
         handling_agent: row["Handling Agent"] || "",
       }));
-      await bulkInsert(rows); setPage(1);
+      await bulkInsert(rows); 
     };
     reader.readAsBinaryString(file); e.target.value = "";
   }, [bulkInsert]);
@@ -239,17 +240,17 @@ export default function FlightSchedulePage() {
           <h2 className="text-base font-semibold text-foreground mr-auto">Schedule Records</h2>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search flights…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+            <input type="text" placeholder="Search flights…" value={search} onChange={e => { setSearch(e.target.value);  }}
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-52 focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
-          <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Airlines</option>{airlines.map(a => <option key={a}>{a}</option>)}
           </select>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Status</option>{STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
           {flightTypes.length > 1 && (
-            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
               <option value="All Types">All Types</option>{flightTypes.map(t => <option key={t}>{t}</option>)}
             </select>
           )}
@@ -273,7 +274,7 @@ export default function FlightSchedulePage() {
                 </td></tr>
               ) : pageData.map((row, i) => (
                 <tr key={row.id} className="data-table-row">
-                  <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground text-xs">{pag.start + i + 1}</td>
                   <td className="px-3 py-2.5">
                     <div className="font-mono font-semibold text-foreground">{row.flight_no}</div>
                     {row.codeshare && <div className="text-xs text-muted-foreground">CS: {row.codeshare}</div>}
@@ -312,16 +313,7 @@ export default function FlightSchedulePage() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        )}
+        <TablePagination {...pag} />
       </div>
 
       {showAdd && <FlightForm title="New Flight" data={newRow} onChange={setNewRow} onSave={saveNew} onCancel={() => setShowAdd(false)} isSaving={isAdding} />}

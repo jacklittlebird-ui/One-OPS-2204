@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Building2, Plane, Plus, Search, Clock, Users, AlertTriangle,
   CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye, CalendarDays, TableIcon
@@ -90,7 +91,7 @@ const SERVICE_TYPES_HANDLING = ["Arrival", "Departure", "Turnaround", "Maintenan
 const SERVICE_TYPES_SECURITY = ["Arrival Security", "Departure Security", "Maintenance Security", "Turnaround Security"];
 const SERVICE_TYPES = [...SERVICE_TYPES_HANDLING, ...SERVICE_TYPES_SECURITY];
 
-const PAGE_SIZE = 15;
+
 
 const statusColors: Record<string, string> = { ...DISPATCH_STATUS_COLORS };
 
@@ -229,7 +230,7 @@ export default function StationDispatchPage() {
   const [dateTo, setDateTo] = useState(monthEnd);
   const [search, setSearch] = useState("");
   const [airlineFilter, setAirlineFilter] = useState("");
-  const [page, setPage] = useState(1);
+  
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<DispatchRow>>({});
@@ -321,8 +322,8 @@ export default function StationDispatchPage() {
     return r;
   }, [dispatches, stationFilter, dateFrom, dateTo, airlineFilter, search, serviceCategory]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  
+  
 
   // Station flights for the date range
   const stationFlights = useMemo(() => {
@@ -598,7 +599,7 @@ export default function StationDispatchPage() {
                     <tr><td colSpan={13} className="text-center py-16 text-muted-foreground">No dispatches found for this date/station</td></tr>
                   ) : pageData.map((d, i) => (
                     <tr key={d.id} className="data-table-row">
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagDispatches.start + i + 1}</td>
                       <td className="px-3 py-2.5 font-semibold text-foreground">{getDispatchFlightNo(d)}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getDispatchReg(d) || "—"}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{d.airline}</td>
@@ -623,18 +624,8 @@ export default function StationDispatchPage() {
                   ))}
                 </tbody>
               </table>
+            <TablePagination {...pagDispatches} />
             </div>
-            {filtered.length > PAGE_SIZE && (
-              <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-                <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-                <div className="flex items-center gap-2">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-                  <span className="text-foreground font-medium">Page {page}/{totalPages}</span>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-                </div>
-              </div>
-            )}
-          </div>
           )}
         </TabsContent>
 
@@ -647,9 +638,9 @@ export default function StationDispatchPage() {
                   <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                 )}</tr></thead>
                 <tbody>
-                  {stationFlights.length === 0 ? (
+                  {pageFlights.length === 0 ? (
                     <tr><td colSpan={9} className="text-center py-16 text-muted-foreground">No flights at this station for the selected date</td></tr>
-                  ) : stationFlights.map(f => {
+                  ) : pageFlights.map(f => {
                     const assigned = assignedFlightIds.has(f.id);
                     return (
                       <tr key={f.id} className={`data-table-row ${assigned ? "opacity-60" : ""}`}>
@@ -674,6 +665,7 @@ export default function StationDispatchPage() {
                 </tbody>
               </table>
             </div>
+            <TablePagination {...pagFlights} />
           </div>
         </TabsContent>
       </Tabs>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Search, Plus, Trash2, Upload, Download, Building2, Layers, Database,
   MonitorCog, Pencil, X, FileUp, ChevronLeft, ChevronRight
@@ -26,7 +27,6 @@ export default function AirportChargesPage() {
   const [search, setSearch] = useState("");
   const [vendorFilter, setVendorFilter] = useState("All Vendors");
   const [mtowFilter, setMtowFilter] = useState("All MTOW");
-  const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRow, setEditRow] = useState<Partial<AirportChargeRow>>({});
   const [showAdd, setShowAdd] = useState(false);
@@ -57,8 +57,7 @@ export default function AirportChargesPage() {
     return result;
   }, [data, vendorFilter, mtowFilter, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { pageRows: pageData, ...pag } = usePagination(filtered, { resetKey: [search, vendorFilter, mtowFilter] });
 
   const uniqueVendorCount = new Set(data.map(d => d.vendor_name)).size;
   const uniqueMtowCount = new Set(data.map(d => d.mtow)).size;
@@ -103,7 +102,7 @@ export default function AirportChargesPage() {
         air_navigation: Number(row["Air Navigation"] || row.air_navigation || 0),
       }));
       await bulkInsert(imported);
-      setPage(1);
+      
     };
     reader.readAsBinaryString(file);
     e.target.value = "";
@@ -168,15 +167,15 @@ export default function AirportChargesPage() {
               type="text"
               placeholder="Search by Vendor, MTOW, or Charge…"
               value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              onChange={e => setSearch(e.target.value)}
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-64 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <select value={vendorFilter} onChange={e => { setVendorFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Vendors</option>
             {vendors.map(v => <option key={v}>{v}</option>)}
           </select>
-          <select value={mtowFilter} onChange={e => { setMtowFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={mtowFilter} onChange={e => setMtowFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All MTOW</option>
             {mtows.map(m => <option key={m}>{m}</option>)}
           </select>
@@ -262,16 +261,7 @@ export default function AirportChargesPage() {
         </div>
 
         {/* Pagination */}
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        )}
+        <TablePagination {...pag} />
       </div>
     </div>
   );

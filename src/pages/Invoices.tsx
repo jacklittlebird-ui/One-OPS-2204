@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Search, Plus, Download, Upload, FileText, DollarSign,
   Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle,
@@ -226,7 +227,6 @@ export default function InvoicesPage() {
   const [minTotal, setMinTotal] = useState("");
   const [maxTotal, setMaxTotal] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [newInvoice, setNewInvoice] = useState<Partial<InvoiceRow>>(emptyInvoice());
   const [editId, setEditId] = useState<string | null>(null);
@@ -296,8 +296,7 @@ export default function InvoicesPage() {
     return r;
   }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search, categoryTab]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { pageRows: pageData, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, categoryTab, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal] });
 
   // KPI calculations
   const totalRevenue = invoices.reduce((s, i) => s + i.total, 0);
@@ -438,7 +437,7 @@ export default function InvoicesPage() {
         catering: Number(row["Catering"] || 0), other: Number(row["Other"] || 0), vat: Number(row["VAT"] || 0),
         currency: row["Currency"] || "USD", status: row["Status"] || "Draft", notes: row["Notes"] || "",
       }));
-      await bulkInsert(rows); setPage(1);
+      await bulkInsert(rows); 
     };
     reader.readAsBinaryString(file); e.target.value = "";
   }, [bulkInsert]);
@@ -1279,7 +1278,7 @@ export default function InvoicesPage() {
               <button
                 key={t.k}
                 type="button"
-                onClick={() => { setCategoryTab(t.k); setPage(1); }}
+                onClick={() => { setCategoryTab(t.k);  }}
                 className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
                   categoryTab === t.k ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
@@ -1292,7 +1291,7 @@ export default function InvoicesPage() {
             <h2 className="text-base font-semibold text-foreground mr-auto">Invoice Records</h2>
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="text" placeholder="Search invoices…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+              <input type="text" placeholder="Search invoices…" value={search} onChange={e => { setSearch(e.target.value);  }}
                 className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <button onClick={() => setShowFilters(!showFilters)} className={`toolbar-btn-outline relative ${showFilters ? "ring-1 ring-primary" : ""}`}>
@@ -1308,39 +1307,39 @@ export default function InvoicesPage() {
           {showFilters && (
             <div className="flex flex-wrap items-end gap-3 pt-2 border-t">
               <FormField label="Status">
-                <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
+                <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
                   <option>All</option>{(["Draft","Sent","Paid","Overdue","Cancelled"] as InvoiceStatus[]).map(s => <option key={s}>{s}</option>)}
                 </select>
               </FormField>
               <FormField label="Type">
-                <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
+                <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
                   <option>All</option><option>Preliminary</option><option>Final</option>
                 </select>
               </FormField>
               <FormField label="Currency">
-                <select value={currencyFilter} onChange={e => { setCurrencyFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28">
+                <select value={currencyFilter} onChange={e => { setCurrencyFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28">
                   <option>All</option><option>USD</option><option>EUR</option><option>EGP</option>
                 </select>
               </FormField>
               <FormField label="From Date">
-                <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+                <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               </FormField>
               <FormField label="Operator">
-                <select value={operatorFilter} onChange={e => { setOperatorFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-44">
+                <select value={operatorFilter} onChange={e => { setOperatorFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-44">
                   <option>All</option>{operators.map(o => <option key={o}>{o}</option>)}
                 </select>
               </FormField>
               <FormField label="Due From">
-                <input type="date" value={dueFrom} onChange={e => { setDueFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+                <input type="date" value={dueFrom} onChange={e => { setDueFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               </FormField>
               <FormField label="Due To">
-                <input type="date" value={dueTo} onChange={e => { setDueTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+                <input type="date" value={dueTo} onChange={e => { setDueTo(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               </FormField>
               <FormField label="Min Total">
-                <input type="number" value={minTotal} onChange={e => { setMinTotal(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
+                <input type="number" value={minTotal} onChange={e => { setMinTotal(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
               </FormField>
               <FormField label="Max Total">
-                <input type="number" value={maxTotal} onChange={e => { setMaxTotal(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
+                <input type="number" value={maxTotal} onChange={e => { setMaxTotal(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
               </FormField>
               {activeFilterCount > 0 && (
                 <button onClick={clearFilters} className="text-xs text-destructive hover:underline pb-1.5">Clear all</button>
@@ -1425,79 +1424,8 @@ export default function InvoicesPage() {
           </table>
         </div>
 
-        {/* Pagination with summary */}
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-4">
-              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-              {filtered.length !== invoices.length && (
-                <span className="text-xs text-primary">({invoices.length} total)</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        )}
+<TablePagination {...pag} />
       </div>
-
-      {/* Modals */}
-      {showAdd && <InvoiceForm title="New Invoice" data={newInvoice} onChange={setNewInvoice} onSave={saveNew} onCancel={() => setShowAdd(false)} />}
-      {editId && <InvoiceForm title="Edit Invoice" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} />}
-      {printInvoice && (printInvoice._isSecurity
-        ? <SecurityInvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
-        : <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
-      )}
-      {detailInvoice && (() => {
-        const pf = toPrintFormat(detailInvoice as any);
-        return pf._isSecurity
-          ? <SecurityInvoicePrintView invoice={pf} onClose={() => setDetailInvoice(null)} />
-          : (
-            <InvoiceDetailModal
-              invoice={detailInvoice as any}
-              onClose={() => setDetailInvoice(null)}
-              onEdit={(inv) => startEdit(inv as any)}
-              onFinalize={(inv) => handleFinalize(inv as any)}
-              onPrint={(inv) => setPrintInvoice(toPrintFormat(inv as any))}
-            />
-          );
-      })()}
-
-      {/* Billing Preview Modal */}
-      {showBillingPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4">
-            <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
-              <h2 className="font-bold text-foreground text-lg flex items-center gap-2"><Zap size={18} className="text-primary" /> Generate Invoices from Dispatches</h2>
-              <button onClick={() => setShowBillingPreview(false)} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Billing Month</label>
-                  <input type="month" className={inputCls + " w-40"} value={billingMonth} onChange={e => setBillingMonth(e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Station</label>
-                  {(() => {
-                    const set = new Set<string>();
-                    (airports || []).forEach((a: any) => { if (a?.iata_code) set.add(String(a.iata_code).toUpperCase()); });
-                    (dispatches || []).forEach((d: any) => { if (d?.station) set.add(String(d.station).toUpperCase()); });
-                    (serviceReports || []).forEach((r: any) => { if (r?.station) set.add(String(r.station).toUpperCase()); });
-                    (invoices || []).forEach((i: any) => { if (i?.station) set.add(String(i.station).toUpperCase()); });
-                    (flightSchedules || []).forEach((f: any) => { if (f?.authority) set.add(String(f.authority).toUpperCase()); });
-                    const stations = Array.from(set).filter(Boolean).sort();
-                    return (
-                      <select className={selectCls + " w-32"} value={billingStation} onChange={e => setBillingStation(e.target.value)}>
-                        <option value="All">All</option>
-                        {stations.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    );
-                  })()}
-                </div>
-              </div>
 
               <p className="text-sm text-muted-foreground">
                 Showing completed dispatches <span className="font-semibold">and approved Service Reports</span> grouped by airline &amp; station for <span className="font-semibold text-foreground">{billingMonth}</span>
@@ -1753,7 +1681,7 @@ export default function InvoicesPage() {
                     </button>
                   </div>
                 </>
-              ))}
+              )}
 
               {monthlyTab === "security" && (
                 monthlySecurityPreview.rows.length === 0 ? (

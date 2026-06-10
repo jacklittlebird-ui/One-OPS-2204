@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Search, Plus, Download, Upload, FileText, ChevronLeft, ChevronRight,
   Pencil, Trash2, AlertTriangle, CheckCircle, Clock, Calendar, Eye, X, Shield
@@ -32,7 +33,7 @@ const SERVICE_TABS = [
   { key: "Transportation", label: "Transportation", icon: <FileText size={14} /> },
 ];
 
-const SERVICE_SCOPES = ["Ad-Hoc", "Arrival Only", "Departure Only", "Full Service", "Maintenance", "Supervision Only", "Turnaround"];
+// const SERVICE_SCOPES = ["Ad-Hoc", "Arrival Only", "Departure Only", "Full Service", "Maintenance", "Supervision Only", "Turnaround"];
 
 type ServiceRate = {
   id?: string;
@@ -47,7 +48,6 @@ export default function ContractsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [activeTab, setActiveTab] = useState("all");
-  const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [newContract, setNewContract] = useState<Partial<ContractRow>>(emptyContract());
   const [editId, setEditId] = useState<string | null>(null);
@@ -74,8 +74,7 @@ export default function ContractsPage() {
     return r;
   }, [contracts, activeTab, statusFilter, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { pageRows: pageData, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, activeTab] });
   const expiringCount = contracts.filter(c => c.status === "Active" && daysUntilExpiry(c.end_date) <= 90 && daysUntilExpiry(c.end_date) > 0).length;
   const activeValue = contracts.filter(c => c.status === "Active").reduce((s, c) => s + c.annual_value, 0);
 
@@ -131,7 +130,7 @@ export default function ContractsPage() {
         notes: row["Notes"] || "",
       }));
       await bulkInsert(rows);
-      setPage(1);
+      
     };
     reader.readAsBinaryString(file); e.target.value = "";
   }, [bulkInsert]);
@@ -171,7 +170,7 @@ export default function ContractsPage() {
         {SERVICE_TABS.map(tab => (
           <button
             key={tab.key}
-            onClick={() => { setActiveTab(tab.key); setPage(1); }}
+            onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab.key
                 ? "border-primary text-primary"
@@ -214,10 +213,10 @@ export default function ContractsPage() {
           </h2>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search contracts…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+            <input type="text" placeholder="Search contracts…" value={search} onChange={e => setSearch(e.target.value)}
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-52 focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>{STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
           <button onClick={() => openNewContractForm(activeTab)} className="toolbar-btn-primary"><Plus size={14} /> New Contract</button>
@@ -239,7 +238,7 @@ export default function ContractsPage() {
                 const expiringSoon = c.status === "Active" && days <= 90 && days > 0;
                 return (
                   <tr key={c.id} className={`data-table-row ${expiringSoon ? "bg-warning/5" : ""}`}>
-                    <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground text-xs">{pag.page * pag.pageSize + i + 1}</td>
                     <td className="px-3 py-2.5">
                       <button onClick={() => setViewContract(c)} className="font-mono text-xs font-semibold text-primary hover:underline cursor-pointer">{c.contract_no}</button>
                       {expiringSoon && <span className="ml-1 text-warning text-xs font-bold">⚠ {days}d</span>}
@@ -267,32 +266,52 @@ export default function ContractsPage() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        )}
+        <TablePagination {...pag} />
       </div>
 
-      {/* Modals */}
-      {showAdd && <ContractFormWithRates title="New Contract" data={newContract} onChange={setNewContract} onSave={saveNew} onCancel={() => setShowAdd(false)} isSaving={isAdding} serviceRates={newServiceRates} onServiceRatesChange={setNewServiceRates} />}
-      {editId && <ContractForm title="Edit Contract" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} isSaving={isUpdating} />}
-      {viewContract && <ContractDetailModal contract={viewContract} onClose={() => setViewContract(null)} />}
+      {showAdd && (
+        <ContractFormModal
+          title="New Contract"
+          data={newContract}
+          onChange={setNewContract}
+          onCancel={() => setShowAdd(false)}
+          onSave={saveNew}
+          isSaving={isAdding}
+          serviceRates={newServiceRates}
+          onServiceRatesChange={setNewServiceRates}
+        />
+      )}
 
-      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
+      {editId && (
+        <ContractFormModal
+          title="Edit Contract"
+          data={editData}
+          onChange={setEditData}
+          onCancel={() => setEditId(null)}
+          onSave={saveEdit}
+          isSaving={isUpdating}
+          serviceRates={[]}
+          onServiceRatesChange={() => {}}
+        />
+      )}
+
+      {viewContract && (
+        <ContractDetailModal
+          contract={viewContract}
+          isOpen={!!viewContract}
+          onClose={() => setViewContract(null)}
+        />
+      )}
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Contract</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to delete this contract? This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete the contract and all associated rates.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -300,26 +319,12 @@ export default function ContractsPage() {
   );
 }
 
-/* Enhanced Contract Form with Service Type Rates */
-const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
-const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
-
+const inputCls = "w-full px-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary";
+const selectCls = "w-full px-3 py-1.5 text-sm border rounded bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
+const RATE_SERVICE_TYPES = ["Arrival", "Departure", "Turnaround", "Night Stop", "ADHOC", "Overtime", "Staffing"];
 const SERVICE_SCOPES_LIST = ["Ad-Hoc", "Arrival Only", "Departure Only", "Full Service", "Maintenance", "Supervision Only", "Turnaround"];
-const RATE_SERVICE_TYPES = ["ADHOC", "Arrival", "Departure", "Maintenance", "Transportation", "Turnaround"];
 
-function ContractFormWithRates({
-  data, onChange, onSave, onCancel, title, isSaving,
-  serviceRates, onServiceRatesChange,
-}: {
-  data: Partial<ContractRow>;
-  onChange: (d: Partial<ContractRow>) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  title: string;
-  isSaving?: boolean;
-  serviceRates: ServiceRate[];
-  onServiceRatesChange: (r: ServiceRate[]) => void;
-}) {
+const ContractFormModal = ({ data, onChange, onCancel, onSave, isSaving, title, serviceRates, onServiceRatesChange }: any) => {
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
   const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines", { orderBy: "name", ascending: true });
 

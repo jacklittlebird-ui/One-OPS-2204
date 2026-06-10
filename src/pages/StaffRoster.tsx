@@ -4,6 +4,7 @@ import { Search, Plus, Pencil, Trash2, X, Users, CheckCircle, Clock, AlertCircle
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { exportToExcel } from "@/lib/exportExcel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +55,7 @@ export default function StaffRosterPage() {
     if (search) { const s = search.toLowerCase(); r = r.filter(x => x.name.toLowerCase().includes(s) || x.employee_id.toLowerCase().includes(s) || x.department.toLowerCase().includes(s)); }
     return r;
   }, [staff, roleFilter, stationFilter, search]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, roleFilter, stationFilter] });
 
   const isExpiringSoon = (dateStr: string) => { if (!dateStr) return false; const diff = (new Date(dateStr).getTime() - Date.now()) / 86400000; return diff >= 0 && diff <= 90; };
 
@@ -69,7 +71,7 @@ export default function StaffRosterPage() {
   };
 
   const handleExport = () => exportToExcel(
-    filtered.map(s => ({ "Emp ID": s.employee_id, Name: s.name, Role: s.role, Department: s.department, Station: s.station, Shift: s.shift, Status: s.status, Phone: s.phone, Email: s.email, Qualification: s.qualification, "Training Status": s.training_status, "License No": s.license_no, "Cert Expiry": s.cert_expiry, "Join Date": s.join_date })),
+    pageRows.map(s => ({ "Emp ID": s.employee_id, Name: s.name, Role: s.role, Department: s.department, Station: s.station, Shift: s.shift, Status: s.status, Phone: s.phone, Email: s.email, Qualification: s.qualification, "Training Status": s.training_status, "License No": s.license_no, "Cert Expiry": s.cert_expiry, "Join Date": s.join_date })),
     "Staff Roster", "StaffRoster.xlsx"
   );
 
@@ -117,7 +119,7 @@ export default function StaffRosterPage() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={10} className="text-center py-16"><Database size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Staff Found</p></td></tr>
-              ) : filtered.map(row => (
+              ) : pageRows.map(row => (
                 <tr key={row.id} className="data-table-row">
                   <td className="px-3 py-2.5 font-mono text-xs font-semibold text-primary">{row.employee_id}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground">{row.name}</td>
@@ -141,6 +143,9 @@ export default function StaffRosterPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="p-4 border-t">
+          <TablePagination {...pag} />
         </div>
       </div>
 

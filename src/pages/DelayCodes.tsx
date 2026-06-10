@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Search, Plus, Pencil, Trash2, X, Clock, AlertCircle, Database } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 
@@ -25,6 +26,7 @@ export default function DelayCodesPage() {
     if (search) { const s = search.toLowerCase(); r = r.filter(c => c.code.includes(s) || c.description.toLowerCase().includes(s) || c.category.toLowerCase().includes(s)); }
     return r;
   }, [codes, search, filter, impactFilter]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, filter, impactFilter] });
 
   const set = (k: keyof DCRow, v: any) => setEditRow(p => ({ ...p, [k]: v }));
 
@@ -84,7 +86,7 @@ export default function DelayCodesPage() {
                 <tr><td colSpan={7} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={7} className="text-center py-16"><Database size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Delay Codes Found</p></td></tr>
-              ) : filtered.map(c => (
+              ) : pageRows.map(c => (
                 <tr key={c.id} className="data-table-row">
                   {editingId === c.id ? (
                     <>
@@ -119,6 +121,9 @@ export default function DelayCodesPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="p-4 border-t">
+          <TablePagination {...pag} />
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,7 +23,6 @@ import { AdvancedFilters, FilterField } from "@/components/filters/AdvancedFilte
 type AirportRow = { id: string; country_id: string; name: string; iata_code: string; icao_code: string; city: string; terminal_count: number; status: string; created_at: string };
 type CountryRow = { id: string; name: string; code: string; };
 
-const PAGE_SIZE = 20;
 
 export default function AirportsPage() {
   const readOnly = false;
@@ -40,8 +40,7 @@ export default function AirportsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AirportRow | null>(null);
   const [inspectItem, setInspectItem] = useState<AirportRow | null>(null);
-  const [page, setPage] = useState(1);
-  const [form, setForm] = useState({ country_id: "", name: "", iata_code: "", icao_code: "", city: "", terminal_count: 1, status: "Active" });
+    const [form, setForm] = useState({ country_id: "", name: "", iata_code: "", icao_code: "", city: "", terminal_count: 1, status: "Active" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const countryMap = Object.fromEntries((countries || []).map(c => [c.id, c]));
@@ -61,10 +60,9 @@ export default function AirportsPage() {
       return matchSearch && matchCountry && matchStatus && matchIata && matchIcao && matchMin;
     });
   }, [data, search, countryFilter, statusFilter, iataFilter, icaoFilter, minTerminals]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, countryFilter, statusFilter, minTerminals, iataFilter, icaoFilter] });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
+    
   // KPI stats
   const activeCount = data.filter(a => a.status === "Active").length;
   const countriesCount = new Set(data.map(a => a.country_id)).size;
@@ -214,7 +212,7 @@ export default function AirportsPage() {
               setMinTerminals(v.min_terminals ?? "");
               setIataFilter(v.iata ?? "");
               setIcaoFilter(v.icao ?? "");
-              setPage(1);
+              
             }}
           />
         );
@@ -237,7 +235,7 @@ export default function AirportsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pageData.map(a => (
+              {pageRows.map(a => (
                 <TableRow key={a.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setInspectItem(a)}>
                   <TableCell className="font-medium"><Building2 size={14} className="inline mr-1.5 text-muted-foreground" />{a.name}</TableCell>
                   <TableCell><Badge variant="outline" className="font-mono">{a.iata_code}</Badge></TableCell>
@@ -260,16 +258,7 @@ export default function AirportsPage() {
           </Table>
 
           {/* Pagination */}
-          {filtered.length > PAGE_SIZE && (
-            <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft size={14} /></Button>
-                <span className="text-foreground font-medium">Page {page}/{totalPages}</span>
-                <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight size={14} /></Button>
-              </div>
-            </div>
-          )}
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
 
