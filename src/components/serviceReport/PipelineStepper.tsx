@@ -40,28 +40,33 @@ export function derivePipelineStage(opts: {
   /** Receivables progress: "none" = no invoice yet, "issued" = invoice exists but unpaid,
    *  "paid" = invoice fully paid. Receivables is only COMPLETE when "paid". */
   invoiceStatus?: "none" | "issued" | "paid";
+  /** Origin channel that created the record: "clearance" | "station" | "operations".
+   *  When the record was NOT created via clearance, step 1 (Clearance) is never marked
+   *  as completed — the pipeline starts at step 2. */
+  createdVia?: string;
 }): PipelineStage {
   const rs = (opts.reviewStatus || "").toLowerCase();
   void opts.dispatchStatus;
   const cs = (opts.clearanceStatus || "").toLowerCase();
   const ch = (opts.channel || "").toLowerCase();
   const inv = opts.invoiceStatus || "none";
+  const origin = (opts.createdVia || "").toLowerCase();
+  const createdByClearance = origin === "clearance" || origin === ""; // default to clearance when unknown
+  const createdByStation = origin === "station";
 
   // --- Step completion flags (record-view truth) ---
-  let step1Done = cs === "approved" || (opts.isLinked && cs !== "pending" && cs !== "rejected");
-  if (!cs && opts.isLinked) step1Done = true;
+  // Step 1 (Clearance) is ONLY completed when the record originated in the Clearance
+  // module AND the clearance was approved. Records created directly by the Station
+  // portal skip step 1 entirely — it remains unmarked forever.
+  let step1Done = createdByClearance && (cs === "approved" || (opts.isLinked && cs !== "" && cs !== "pending" && cs !== "rejected"));
 
   // Step 2 (Station) is only complete when the station has actually submitted the
-  // task sheet — i.e. the review_status has moved past "draft"/empty. dispatch.status
-  // alone is not reliable: it can be "Completed" (auto) while review_status is still
-  // "Draft" (station hasn't done anything yet).
-  const reviewSubmitted =
-    rs !== "" && rs !== "draft";
+  // task sheet — i.e. the review_status has moved past "draft"/empty.
+  const reviewSubmitted = rs !== "" && rs !== "draft";
   let step2Done = reviewSubmitted;
 
   let step3Done =
     rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing";
-
 
   // Step 4 (receivables) — only complete once the invoice is PAID.
   const step4Done = inv === "paid";
@@ -69,11 +74,11 @@ export function derivePipelineStage(opts: {
   // --- Form-view overrides ---
   if (opts.formView) {
     if (ch === "station") {
-      step1Done = true;
+      step1Done = createdByClearance && step1Done;
       step2Done = false;
       step3Done = false;
     } else if (ch === "operations") {
-      step1Done = true;
+      step1Done = createdByClearance && step1Done;
       step2Done = true;
       step3Done = false;
     }
@@ -87,11 +92,12 @@ export function derivePipelineStage(opts: {
   }
 
   let stage: PipelineStage;
-  if (!step1Done) stage = "clearance";
+  // When created by station, skip clearance entirely: active stage starts at station.
+  if (createdByStation && !step2Done) stage = "station";
+  else if (!step1Done && createdByClearance) stage = "clearance";
   else if (!step2Done) stage = "station";
   else if (!step3Done) stage = "operations";
-  else stage = "receivables"; // active until step4Done; even if paid, last stage stays "receivables"
-  // (consumers use completedStages to render the paid checkmark)
+  else stage = "receivables";
   void step4Done;
 
   if (!opts.formView) {
@@ -104,13 +110,9 @@ export function derivePipelineStage(opts: {
     if (maxStage && order.indexOf(stage) > order.indexOf(maxStage)) {
       stage = maxStage;
     }
-    // Station view: uncompleted (station hasn't submitted) → step 1 active;
-    // completed (review_status past draft) → step 2 active.
     if (ch === "station") {
-      stage = reviewSubmitted ? "station" : "clearance";
+      stage = reviewSubmitted ? "station" : (createdByStation ? "station" : "clearance");
     }
-    // Receivables view: stage 4 only lights up once the invoice is PAID.
-    // Until then, show stage 3 (operations) as the active step.
     if (ch === "receivables" && inv !== "paid" && order.indexOf(stage) >= order.indexOf("receivables")) {
       stage = "operations";
     }
@@ -128,17 +130,21 @@ export function derivePipelineCompletedStages(opts: {
   clearanceStatus?: string;
   dispatchStatus?: string;
   invoiceStatus?: "none" | "issued" | "paid";
+  createdVia?: string;
 }): PipelineStage[] {
   const rs = (opts.reviewStatus || "").toLowerCase();
   void opts.dispatchStatus;
   const cs = (opts.clearanceStatus || "").toLowerCase();
   const inv = opts.invoiceStatus || "none";
+  const origin = (opts.createdVia || "").toLowerCase();
+  const createdByClearance = origin === "clearance" || origin === "";
 
   const done: PipelineStage[] = [];
-  if (cs === "approved" || (opts.isLinked && cs && cs !== "pending" && cs !== "rejected")) {
-    done.push("clearance");
-  } else if (!cs && opts.isLinked) {
-    done.push("clearance");
+  // Step 1 only counts when record originated in the Clearance module.
+  if (createdByClearance) {
+    if (cs === "approved" || (opts.isLinked && cs && cs !== "pending" && cs !== "rejected")) {
+      done.push("clearance");
+    }
   }
   if (rs !== "" && rs !== "draft") done.push("station");
   if (rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing") {
