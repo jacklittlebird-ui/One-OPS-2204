@@ -1555,8 +1555,6 @@ function HandlingServiceReportContent() {
           <TablePagination {...pag} />
         </>
       )}
-        </>
-        )}
       </div>
 
       {showAdd && (

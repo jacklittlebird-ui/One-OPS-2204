@@ -628,7 +628,6 @@ export default function StationDispatchPage() {
             </div>
           )}
         </TabsContent>
-        </TabsContent>
 
         {/* Station Flights (assign from here) */}
         <TabsContent value="flights">

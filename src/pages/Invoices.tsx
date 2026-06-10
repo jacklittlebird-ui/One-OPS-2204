@@ -1681,7 +1681,7 @@ export default function InvoicesPage() {
                     </button>
                   </div>
                 </>
-              ))}
+              )}
 
               {monthlyTab === "security" && (
                 monthlySecurityPreview.rows.length === 0 ? (

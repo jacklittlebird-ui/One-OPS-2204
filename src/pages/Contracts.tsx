@@ -361,10 +361,7 @@ const ContractFormModal = ({ data, onChange, onCancel, onSave, isSaving, title, 
                 onChange={e => {
                   const a = airlines.find(x => x.name === e.target.value);
                   onChange({ ...data, airline: e.target.value, airline_iata: a?.iata_code || "" });
-                }})
-                  const a = airlines.find(x => x.name === e.target.value);
-                  onChange({ ...data, airline: e.target.value, airline_iata: a?.iata_code || "" });
-                }
+                }}
               >
                 <option value="">Select airline</option>
                 {airlines.map(a => <option key={a.id} value={a.name}>{a.name}{a.iata_code ? ` (${a.iata_code})` : ""}</option>)}
