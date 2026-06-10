@@ -598,29 +598,39 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     }
 
     const baseRow = dbRow as DispatchRow;
-    const v = dbSheet;
+    const v = dbSheet || {};
+    // ---- ACTUAL-DATA SOURCING ----
+    // Only render values that are actually persisted in the database. The task
+    // sheet (task_sheet_data) is the user's saved truth; linked flight_schedule
+    // is the secondary system-of-record. Stale dialog props are NEVER used as
+    // fallbacks — they can pre-fill blanks the user explicitly left empty.
+    const pick = (...vals: Array<unknown>): string => {
+      for (const val of vals) {
+        if (val === null || val === undefined) continue;
+        const s = String(val).trim();
+        if (s) return s;
+      }
+      return "";
+    };
+
     // Resolve airline name: prefer linked airlines table, then flight_schedule, then dispatch row.
     const matchedAirline = airlines.find((a: any) =>
       dbFlight?.airline_id && a.id === dbFlight.airline_id,
     );
-    const airlineName =
-      matchedAirline?.name ||
-      baseRow.airline ||
-      dbFlight?.handling_agent ||
-      (row as any)?.airline ||
-      "—";
-    const flightNoVal = dbFlight?.flight_no || baseRow.flight_no || "—";
-    const flightDate = formatDate(baseRow.flight_date || dbFlight?.arrival_date || dbFlight?.departure_date || "");
-    // Prefer values stored in task_sheet_data (authoritative for the report),
-    // then linked flight_schedule, then the dispatch row, then props as last resort.
-    const reg = v.registration || dbFlight?.registration || (baseRow as any).registration || registration || "—";
-    const rt = v.route || dbFlight?.route || (baseRow as any).route || route || "—";
-    const staVal = v.sta || dbFlight?.sta || (baseRow as any).scheduled_start || sta || "—";
-    const stdVal = v.std || dbFlight?.std || (baseRow as any).scheduled_end || std || "—";
-    const ataVal = v.ata || (baseRow as any).actual_start || ata || "—";
-    const atdVal = v.atd || (baseRow as any).actual_end || atd || "—";
-    const svcType = baseRow.service_type || dbFlight?.clearance_type || serviceType || "—";
-    const skdVal = v.flight_type || dbFlight?.skd_type || (baseRow as any).skd_type || skdType || "—";
+    const airlineName = pick(matchedAirline?.name, baseRow.airline, dbFlight?.handling_agent) || "—";
+    const flightNoVal = pick(v.flight_no, dbFlight?.flight_no, baseRow.flight_no) || "—";
+    const flightDate = formatDate(pick(baseRow.flight_date, dbFlight?.arrival_date, dbFlight?.departure_date));
+    const reg = pick(v.registration, dbFlight?.registration, (baseRow as any).registration);
+    const rt = pick(v.route, dbFlight?.route, (baseRow as any).route);
+    const staVal = pick(v.sta, dbFlight?.sta);
+    const stdVal = pick(v.std, dbFlight?.std);
+    // ATA/ATD: ONLY from saved task_sheet_data. If the operator did not enter
+    // an actual time, the field MUST render blank — do not fabricate from
+    // scheduled times, dispatch shift times, or dialog props.
+    const ataVal = pick(v.ata);
+    const atdVal = pick(v.atd);
+    const svcType = pick(baseRow.service_type, dbFlight?.clearance_type) || "—";
+    const skdVal = pick(v.flight_type, dbFlight?.skd_type, (baseRow as any).skd_type) || "—";
 
     const ftChecks = FLIGHT_TYPES.map(ft =>
       `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === skdVal ? "☒" : "☐"} ${ft}</td>`
