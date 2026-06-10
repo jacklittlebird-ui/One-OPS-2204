@@ -1,3 +1,4 @@
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,8 +81,6 @@ export default function AuditLogPage() {
   const [entityFilter, setEntityFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
   const [selected, setSelected] = useState<AuditLogEntry | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -98,35 +97,29 @@ export default function AuditLogPage() {
 
   // Reset to page 1 whenever filters or page size change.
   useEffect(() => {
-    setPage(1);
   }, [filters, pageSize]);
 
   // Server-side paginated page of rows + exact total count for current filters.
   const { data: pageData, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["audit_logs", "page", filters, page, pageSize],
+    queryKey: ["audit_logs", filters],
     queryFn: async () => {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
       let qb: any = supabase
         .from("audit_logs")
-        .select("*", { count: "exact" })
+        .select("*")
         .order("created_at", { ascending: false })
-        .range(from, to);
       qb = applyFilters(qb, filters);
       const { data, error, count } = await qb;
       if (error) throw error;
-      return { rows: (data || []) as AuditLogEntry[], total: count || 0 };
+      return (data || []) as AuditLogEntry[];
     },
     placeholderData: keepPreviousData,
     staleTime: 15_000,
     refetchOnWindowFocus: false,
   });
 
-  const rows = pageData?.rows || [];
-  const total = pageData?.total || 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const fromRow = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const toRow = Math.min(page * pageSize, total);
+  const allLogs = pageData || [];
+  const { pageRows, ...pag } = usePagination(allLogs, { resetKey: [filters] });
+  const total = allLogs.length;
 
   // Stats query — counts only, run once and cached.
   const { data: stats } = useQuery({
@@ -351,7 +344,7 @@ export default function AuditLogPage() {
             <div className="flex justify-center py-12">
               <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
             </div>
-          ) : rows.length === 0 ? (
+          ) : pageRows.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
               <p>No audit log entries found</p>
@@ -372,7 +365,7 @@ export default function AuditLogPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((log) => {
+                  {pageRows.map((log) => {
                     const style = ACTION_STYLES[log.action] || { className: "bg-muted text-muted-foreground" };
                     return (
                       <TableRow key={log.id} className="cursor-pointer" onClick={() => setSelected(log)}>
@@ -401,47 +394,7 @@ export default function AuditLogPage() {
             </div>
           )}
 
-          {/* Pagination footer */}
-          {total > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span>
-                  Showing <span className="font-medium text-foreground">{fromRow.toLocaleString()}–{toRow.toLocaleString()}</span> of{" "}
-                  <span className="font-medium text-foreground">{total.toLocaleString()}</span>
-                </span>
-                <div className="flex items-center gap-2">
-                  <span>Rows per page</span>
-                  <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                    <SelectTrigger className="h-8 w-[80px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAGE_SIZE_OPTIONS.map((n) => (
-                        <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage(1)} disabled={page <= 1 || isFetching}>
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1 || isFetching}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm px-2 min-w-[90px] text-center">
-                  Page <span className="font-medium">{page}</span> of <span className="font-medium">{totalPages}</span>
-                </span>
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages || isFetching}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage(totalPages)} disabled={page >= totalPages || isFetching}>
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
 

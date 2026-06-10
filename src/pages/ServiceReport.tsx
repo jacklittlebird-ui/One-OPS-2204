@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
   DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Receipt,
@@ -24,7 +25,7 @@ import {
 } from "@/components/serviceReport/ReportFormTypes";
 
 
-const PAGE_SIZE = 15;
+
 
 const handlingTypes = Constants.public.Enums.handling_type;
 type HandlingType = typeof handlingTypes[number];
@@ -387,7 +388,7 @@ function HandlingServiceReportContent() {
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
   const [operationsTab, setOperationsTab] = useState<"all" | "modified">("all");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
-  const [page, setPage] = useState(1);
+  
   const [showAdd, setShowAdd] = useState(false);
   const [newReport, setNewReport] = useState<Partial<ReportFormData>>(emptyReport());
   const [editId, setEditId] = useState<string | null>(null);
@@ -817,12 +818,12 @@ function HandlingServiceReportContent() {
       setShowAdd(true);
     }
     const searchParam = params.get("search");
-    if (searchParam) { setSearch(searchParam); setPage(1); }
+    if (searchParam) { setSearch(searchParam);  }
     const reviewIds = params.get("reviewIds");
     if (reviewIds) {
       const ids = reviewIds.split(",").map(s => s.trim()).filter(Boolean);
       setReviewIdsFilter(ids.length > 0 ? ids : null);
-      setPage(1);
+      
     } else {
       setReviewIdsFilter(null);
     }
@@ -952,7 +953,7 @@ function HandlingServiceReportContent() {
     return { rows, totals, byOperator: Array.from(byOperator.values()).sort((a, b) => b.total - a.total) };
   }, [mergedRows, dbInvoices]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const totalFlights = filtered.length;
@@ -1128,7 +1129,7 @@ function HandlingServiceReportContent() {
       {isStationView && (
         <div className="flex items-center gap-2 border-b">
           <button
-            onClick={() => { setStationTab("all"); setPage(1); }}
+            onClick={() => { setStationTab("all");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
               stationTab === "all"
                 ? "text-primary border-primary"
@@ -1138,7 +1139,7 @@ function HandlingServiceReportContent() {
             All Reports
           </button>
           <button
-            onClick={() => { setStationTab("rejected"); setPage(1); }}
+            onClick={() => { setStationTab("rejected");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
               stationTab === "rejected"
                 ? "text-destructive border-destructive"
@@ -1160,7 +1161,7 @@ function HandlingServiceReportContent() {
       {isOperationsView && (
         <div className="flex items-center gap-2 border-b">
           <button
-            onClick={() => { setOperationsTab("all"); setPage(1); }}
+            onClick={() => { setOperationsTab("all");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
               operationsTab === "all"
                 ? "text-primary border-primary"
@@ -1170,7 +1171,7 @@ function HandlingServiceReportContent() {
             All Reports
           </button>
           <button
-            onClick={() => { setOperationsTab("modified"); setPage(1); }}
+            onClick={() => { setOperationsTab("modified");  }}
             className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2 ${
               operationsTab === "modified"
                 ? "text-warning border-warning"
@@ -1233,30 +1234,30 @@ function HandlingServiceReportContent() {
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text" placeholder="Search operator, flight, route…"
-              value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+              value={search} onChange={e => { setSearch(e.target.value);  }}
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Airlines</option>
             {allOperators.map(o => <option key={o}>{o}</option>)}
           </select>
-          <select value={handlingFilter} onChange={e => { setHandlingFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={handlingFilter} onChange={e => { setHandlingFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Types</option>
             {allHandlingTypes.map(h => <option key={h}>{h}</option>)}
           </select>
-          <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={stationFilter} onChange={e => { setStationFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Stations</option>
             {allStations.map(s => <option key={s}>{s}</option>)}
           </select>
-          <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Review</option>
             <option value="pending">Pending</option>
             <option value="modified">Modified</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Status</option>
             <option>Completed</option>
             <option>Pending Completion</option>
@@ -1552,9 +1553,7 @@ function HandlingServiceReportContent() {
           </table>
           </div>
 
-          {filtered.length > 0 && (
-            <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span>
+          <TablePagination {...pag} />
               <div className="flex items-center gap-2">
                 <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
                 <span className="text-foreground font-medium">Page {page} of {totalPages}</span>

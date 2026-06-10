@@ -25,6 +25,7 @@ export default function DelayCodesPage() {
     if (search) { const s = search.toLowerCase(); r = r.filter(c => c.code.includes(s) || c.description.toLowerCase().includes(s) || c.category.toLowerCase().includes(s)); }
     return r;
   }, [codes, search, filter, impactFilter]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, filter, impactFilter] });
 
   const set = (k: keyof DCRow, v: any) => setEditRow(p => ({ ...p, [k]: v }));
 

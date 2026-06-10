@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Search, Plus, Download, Upload, FileText, DollarSign,
   Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle,
@@ -226,7 +227,6 @@ export default function InvoicesPage() {
   const [minTotal, setMinTotal] = useState("");
   const [maxTotal, setMaxTotal] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [newInvoice, setNewInvoice] = useState<Partial<InvoiceRow>>(emptyInvoice());
   const [editId, setEditId] = useState<string | null>(null);
@@ -296,8 +296,7 @@ export default function InvoicesPage() {
     return r;
   }, [invoices, statusFilter, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal, search, categoryTab]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { pageRows: pageData, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, categoryTab, typeFilter, currencyFilter, operatorFilter, dateFrom, dateTo, dueFrom, dueTo, minTotal, maxTotal] });
 
   // KPI calculations
   const totalRevenue = invoices.reduce((s, i) => s + i.total, 0);
@@ -438,7 +437,7 @@ export default function InvoicesPage() {
         catering: Number(row["Catering"] || 0), other: Number(row["Other"] || 0), vat: Number(row["VAT"] || 0),
         currency: row["Currency"] || "USD", status: row["Status"] || "Draft", notes: row["Notes"] || "",
       }));
-      await bulkInsert(rows); setPage(1);
+      await bulkInsert(rows); 
     };
     reader.readAsBinaryString(file); e.target.value = "";
   }, [bulkInsert]);
@@ -1279,7 +1278,7 @@ export default function InvoicesPage() {
               <button
                 key={t.k}
                 type="button"
-                onClick={() => { setCategoryTab(t.k); setPage(1); }}
+                onClick={() => { setCategoryTab(t.k);  }}
                 className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
                   categoryTab === t.k ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
@@ -1292,7 +1291,7 @@ export default function InvoicesPage() {
             <h2 className="text-base font-semibold text-foreground mr-auto">Invoice Records</h2>
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="text" placeholder="Search invoices…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+              <input type="text" placeholder="Search invoices…" value={search} onChange={e => { setSearch(e.target.value);  }}
                 className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-56 focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <button onClick={() => setShowFilters(!showFilters)} className={`toolbar-btn-outline relative ${showFilters ? "ring-1 ring-primary" : ""}`}>
@@ -1308,39 +1307,39 @@ export default function InvoicesPage() {
           {showFilters && (
             <div className="flex flex-wrap items-end gap-3 pt-2 border-t">
               <FormField label="Status">
-                <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
+                <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
                   <option>All</option>{(["Draft","Sent","Paid","Overdue","Cancelled"] as InvoiceStatus[]).map(s => <option key={s}>{s}</option>)}
                 </select>
               </FormField>
               <FormField label="Type">
-                <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
+                <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-32">
                   <option>All</option><option>Preliminary</option><option>Final</option>
                 </select>
               </FormField>
               <FormField label="Currency">
-                <select value={currencyFilter} onChange={e => { setCurrencyFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28">
+                <select value={currencyFilter} onChange={e => { setCurrencyFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28">
                   <option>All</option><option>USD</option><option>EUR</option><option>EGP</option>
                 </select>
               </FormField>
               <FormField label="From Date">
-                <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+                <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               </FormField>
               <FormField label="Operator">
-                <select value={operatorFilter} onChange={e => { setOperatorFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-44">
+                <select value={operatorFilter} onChange={e => { setOperatorFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-44">
                   <option>All</option>{operators.map(o => <option key={o}>{o}</option>)}
                 </select>
               </FormField>
               <FormField label="Due From">
-                <input type="date" value={dueFrom} onChange={e => { setDueFrom(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+                <input type="date" value={dueFrom} onChange={e => { setDueFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               </FormField>
               <FormField label="Due To">
-                <input type="date" value={dueTo} onChange={e => { setDueTo(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
+                <input type="date" value={dueTo} onChange={e => { setDueTo(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" />
               </FormField>
               <FormField label="Min Total">
-                <input type="number" value={minTotal} onChange={e => { setMinTotal(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
+                <input type="number" value={minTotal} onChange={e => { setMinTotal(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
               </FormField>
               <FormField label="Max Total">
-                <input type="number" value={maxTotal} onChange={e => { setMaxTotal(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
+                <input type="number" value={maxTotal} onChange={e => { setMaxTotal(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground w-28" />
               </FormField>
               {activeFilterCount > 0 && (
                 <button onClick={clearFilters} className="text-xs text-destructive hover:underline pb-1.5">Clear all</button>
@@ -1425,22 +1424,7 @@ export default function InvoicesPage() {
           </table>
         </div>
 
-        {/* Pagination with summary */}
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-4">
-              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-              {filtered.length !== invoices.length && (
-                <span className="text-xs text-primary">({invoices.length} total)</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        )}
+<TablePagination {...pag} />
       </div>
 
       {/* Modals */}

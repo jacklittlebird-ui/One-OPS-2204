@@ -15,10 +15,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 import * as XLSX from "xlsx";
 
-const PAGE_SIZE = 25;
 
 const CATEGORIES = ["Passenger", "Military", "Private", "Cargo", "Ambulance"] as const;
 
@@ -47,7 +47,6 @@ export default function AircraftsPage() {
   const [minMtow, setMinMtow] = useState("");
   const [maxMtow, setMaxMtow] = useState("");
   const [minSeats, setMinSeats] = useState("");
-  const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AircraftRow | null>(null);
   const [inspectItem, setInspectItem] = useState<AircraftRow | null>(null);
@@ -77,8 +76,7 @@ export default function AircraftsPage() {
     return result;
   }, [data, typeFilter, categoryFilter, airlineFilter, acTypeFilter, minMtow, maxMtow, minSeats, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, airlineFilter, typeFilter, categoryFilter, acTypeFilter, minMtow, maxMtow, minSeats] });
   const passengerCount = data.filter(d => d.status === "Passenger").length;
   const cargoCount = data.filter(d => d.status === "Cargo").length;
   const airlinesCount = new Set(data.map(d => d.airline)).size;
@@ -186,7 +184,7 @@ export default function AircraftsPage() {
           setSearch(v.search ?? ""); setAirlineFilter(v.airline ?? "all"); setTypeFilter(v.type ?? "all");
           setCategoryFilter(v.category ?? "all"); setAcTypeFilter(v.ac_type ?? "all");
           setMinMtow(v.min_mtow ?? ""); setMaxMtow(v.max_mtow ?? ""); setMinSeats(v.min_seats ?? "");
-          setPage(1);
+          
         }}
       />
 
@@ -210,12 +208,12 @@ export default function AircraftsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pageData.length === 0 ? (
+              {pageRows.length === 0 ? (
                 <TableRow><TableCell colSpan={11} className="text-center py-12">
                   <Database size={40} className="mx-auto text-muted-foreground/40 mb-3" />
                   <p className="font-semibold text-foreground">No Aircraft Found</p>
                 </TableCell></TableRow>
-              ) : pageData.map(row => (
+              ) : pageRows.map(row => (
                 <TableRow key={row.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setInspectItem(row)}>
                   <TableCell className="font-mono font-semibold text-foreground">{row.registration}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{row.type || "—"}</Badge></TableCell>
@@ -242,16 +240,7 @@ export default function AircraftsPage() {
             </TableBody>
           </Table>
 
-          {filtered.length > PAGE_SIZE && (
-            <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft size={14} /></Button>
-                <span className="text-foreground font-medium">Page {page}/{totalPages}</span>
-                <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight size={14} /></Button>
-              </div>
-            </div>
-          )}
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { Link2, DollarSign, Plane, UtensilsCrossed, Fuel, BedDouble, Shield, Crown, Map, ChevronLeft, ChevronRight, Building2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -36,9 +37,7 @@ const tabs: { key: ServiceTab; icon: React.ReactNode; color: string }[] = [
 // ---- Civil Aviation Tab ----
 const CA_PAGE_SIZE = 25;
 function CivilAviationTab() {
-  const [caPage, setCaPage] = useState(1);
-  const totalCaPages = Math.max(1, Math.ceil(civilAviationData.length / CA_PAGE_SIZE));
-  const pageData = civilAviationData.slice((caPage - 1) * CA_PAGE_SIZE, caPage * CA_PAGE_SIZE);
+  const { pageRows: pageData, ...pag } = usePagination(civilAviationData, { resetKey: [] });
   const [showServices, setShowServices] = useState(false);
 
   const grouped = civilAviationServices.reduce((acc, s) => {
@@ -92,13 +91,7 @@ function CivilAviationTab() {
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>Showing {(caPage - 1) * CA_PAGE_SIZE + 1}–{Math.min(caPage * CA_PAGE_SIZE, civilAviationData.length)} of {civilAviationData.length}</span>
-        <div className="flex items-center gap-2">
-          <button disabled={caPage <= 1} onClick={() => setCaPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-          <span className="text-foreground font-medium">Page {caPage}/{totalCaPages}</span>
-          <button disabled={caPage >= totalCaPages} onClick={() => setCaPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-        </div>
+      <TablePagination {...pag} />
       </div>
 
       {/* Additional Civil Aviation Services */}

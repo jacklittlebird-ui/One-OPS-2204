@@ -16,10 +16,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TablePagination, usePagination } from \"@/components/ui/table-pagination\";
 import { AdvancedFilters, FilterField } from "@/components/filters/AdvancedFilters";
 import * as XLSX from "xlsx";
 
-const PAGE_SIZE = 25;
 
 type AirlineRow = { id: string; code: string; name: string; country: string; contact_person: string; email: string; phone: string; status: string; credit_terms: string; billing_currency: string; iata_code: string; icao_code: string; alliance: string };
 
@@ -41,8 +41,7 @@ export default function AirlinesPage() {
   const [allianceFilter, setAllianceFilter] = useState("all");
   const [currencyFilter, setCurrencyFilter] = useState("all");
   const [creditFilter, setCreditFilter] = useState("all");
-  const [page, setPage] = useState(1);
-  const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<AirlineRow | null>(null);
   const [inspectItem, setInspectItem] = useState<AirlineRow | null>(null);
   const [form, setForm] = useState({ code: "", name: "", country: "", contact_person: "", email: "", phone: "", status: "Active", credit_terms: "Net 30", billing_currency: "USD", iata_code: "", icao_code: "", alliance: "" });
@@ -66,10 +65,9 @@ export default function AirlinesPage() {
     }
     return result;
   }, [data, statusFilter, countryFilter, allianceFilter, currencyFilter, creditFilter, search]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, countryFilter, allianceFilter, currencyFilter, creditFilter] });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const activeCount = data.filter(d => d.status === "Active").length;
+      const activeCount = data.filter(d => d.status === "Active").length;
   const countriesCount = new Set(data.map(d => d.country)).size;
 
   const openAdd = () => { setEditItem(null); setForm({ code: "", name: "", country: "", contact_person: "", email: "", phone: "", status: "Active", credit_terms: "Net 30", billing_currency: "USD", iata_code: "", icao_code: "", alliance: "" }); setDialogOpen(true); };
@@ -162,7 +160,7 @@ export default function AirlinesPage() {
         onChange={(v) => {
           setSearch(v.search ?? ""); setCountryFilter(v.country ?? "all"); setStatusFilter(v.status ?? "all");
           setAllianceFilter(v.alliance ?? "all"); setCurrencyFilter(v.currency ?? "all"); setCreditFilter(v.credit ?? "all");
-          setPage(1);
+          
         }}
       />
 
@@ -185,12 +183,12 @@ export default function AirlinesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pageData.length === 0 ? (
+              {pageRows.length === 0 ? (
                 <TableRow><TableCell colSpan={10} className="text-center py-12">
                   <Database size={40} className="mx-auto text-muted-foreground/40 mb-3" />
                   <p className="font-semibold text-foreground">No Airlines Found</p>
                 </TableCell></TableRow>
-              ) : pageData.map(row => (
+              ) : pageRows.map(row => (
                 <TableRow key={row.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setInspectItem(row)}>
                   <TableCell className="font-mono font-semibold text-foreground">{row.code}</TableCell>
                   <TableCell className="font-semibold text-foreground">{row.name}</TableCell>
@@ -216,16 +214,7 @@ export default function AirlinesPage() {
             </TableBody>
           </Table>
 
-          {filtered.length > PAGE_SIZE && (
-            <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft size={14} /></Button>
-                <span className="text-foreground font-medium">Page {page}/{totalPages}</span>
-                <Button variant="outline" size="icon" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight size={14} /></Button>
-              </div>
-            </div>
-          )}
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
 

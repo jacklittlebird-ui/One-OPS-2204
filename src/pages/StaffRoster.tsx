@@ -54,6 +54,7 @@ export default function StaffRosterPage() {
     if (search) { const s = search.toLowerCase(); r = r.filter(x => x.name.toLowerCase().includes(s) || x.employee_id.toLowerCase().includes(s) || x.department.toLowerCase().includes(s)); }
     return r;
   }, [staff, roleFilter, stationFilter, search]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, roleFilter, stationFilter] });
 
   const isExpiringSoon = (dateStr: string) => { if (!dateStr) return false; const diff = (new Date(dateStr).getTime() - Date.now()) / 86400000; return diff >= 0 && diff <= 90; };
 

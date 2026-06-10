@@ -1,3 +1,4 @@
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,6 +112,8 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
     });
   }, [scopedFlights, search, statusFilter, typeFilter, airlineMap]);
 
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, typeFilter] });
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -171,6 +174,7 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
       {/* Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -196,7 +200,7 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
                     <p className="text-xs">Try adjusting your filters.</p>
                   </td>
                 </tr>
-              ) : filtered.map(f => {
+              ) : pageRows.map(f => {
                 const airline = f.airline_id ? airlineMap.get(f.airline_id) : null;
                 return (
                   <tr key={f.id} className="border-t hover:bg-muted/30 transition-colors">
@@ -227,6 +231,9 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
               })}
             </tbody>
           </table>
+        </div>
+        <TablePagination {...pag} />
+
         </div>
       </Card>
     </div>

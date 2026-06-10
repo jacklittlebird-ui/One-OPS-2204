@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from "react";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Search, Plus, Download, Upload, FileText, ChevronLeft, ChevronRight,
   Pencil, Trash2, AlertTriangle, CheckCircle, Clock, Calendar, Eye, X, Shield
@@ -47,7 +49,6 @@ export default function ContractsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [activeTab, setActiveTab] = useState("all");
-  const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [newContract, setNewContract] = useState<Partial<ContractRow>>(emptyContract());
   const [editId, setEditId] = useState<string | null>(null);
@@ -74,8 +75,7 @@ export default function ContractsPage() {
     return r;
   }, [contracts, activeTab, statusFilter, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { pageRows: pageData, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, activeTab] });
   const expiringCount = contracts.filter(c => c.status === "Active" && daysUntilExpiry(c.end_date) <= 90 && daysUntilExpiry(c.end_date) > 0).length;
   const activeValue = contracts.filter(c => c.status === "Active").reduce((s, c) => s + c.annual_value, 0);
 
@@ -131,7 +131,7 @@ export default function ContractsPage() {
         notes: row["Notes"] || "",
       }));
       await bulkInsert(rows);
-      setPage(1);
+      
     };
     reader.readAsBinaryString(file); e.target.value = "";
   }, [bulkInsert]);
@@ -171,7 +171,7 @@ export default function ContractsPage() {
         {SERVICE_TABS.map(tab => (
           <button
             key={tab.key}
-            onClick={() => { setActiveTab(tab.key); setPage(1); }}
+            onClick={() => { setActiveTab(tab.key);  }}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab.key
                 ? "border-primary text-primary"
@@ -214,10 +214,10 @@ export default function ContractsPage() {
           </h2>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search contracts…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+            <input type="text" placeholder="Search contracts…" value={search} onChange={e => { setSearch(e.target.value);  }}
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-52 focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>{STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
           <button onClick={() => openNewContractForm(activeTab)} className="toolbar-btn-primary"><Plus size={14} /> New Contract</button>
@@ -267,9 +267,7 @@ export default function ContractsPage() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
+        <TablePagination {...pag} /> of {filtered.length}</span>
             <div className="flex items-center gap-2">
               <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
               <span className="text-foreground font-medium">Page {page} of {totalPages}</span>

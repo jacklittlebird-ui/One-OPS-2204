@@ -1,3 +1,4 @@
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -96,6 +97,7 @@ function StatsTable({
   activeKey?: string | null;
 }) {
   const sorted = [...rows].sort((a, b) => b.count - a.count);
+  const { pageRows, ...pag } = usePagination(sorted, { resetKey: [sorted.length] });
   const total = sorted.reduce((s, r) => s + r.count, 0);
   const chartData = sorted.slice(0, 12).map(r => ({ name: r.key, count: r.count }));
 
@@ -196,7 +198,7 @@ function StatsTable({
                 </tr>
               </thead>
               <tbody>
-                {sorted.map(r => (
+                {pageRows.map(r => (
                   <tr
                     key={r.key}
                     className={`border-t border-border hover:bg-muted/30 ${activeKey === r.key ? "bg-accent/10" : ""}`}
@@ -238,7 +240,8 @@ function StatsTable({
               </tbody>
             </table>
           </div>
-        </div>
+          <TablePagination {...pag} />
+          </div>
       )}
     </Card>
   );
@@ -372,6 +375,7 @@ export default function OperationsReportsPage() {
   ) => {
     const headers = ["Item", "Count", "Share %", ...extraCols.map(c => c.label)];
     const sorted = [...rows].sort((a, b) => b.count - a.count);
+  const { pageRows, ...pag } = usePagination(sorted, { resetKey: [sorted.length] });
     const slice = chartOnly ? sorted.slice(0, 12) : sorted;
     const total = sorted.reduce((s, r) => s + r.count, 0);
     const body = slice.map(r => [
@@ -398,6 +402,7 @@ export default function OperationsReportsPage() {
 
   const buildSheet = (rows: StatRow[], extraCols: { key: string; label: string }[] = []) => {
     const sorted = [...rows].sort((a, b) => b.count - a.count);
+  const { pageRows, ...pag } = usePagination(sorted, { resetKey: [sorted.length] });
     const total = sorted.reduce((s, r) => s + r.count, 0);
     const aoa: any[][] = [
       ["Color", "Item", "Count", "Share %", ...extraCols.map(c => c.label)],
@@ -574,6 +579,7 @@ export default function OperationsReportsPage() {
 
       const addBreakdown = (title: string, rows: StatRow[], extraCols: { key: string; label: string }[] = []) => {
         const sorted = [...rows].sort((a, b) => b.count - a.count);
+  const { pageRows, ...pag } = usePagination(sorted, { resetKey: [sorted.length] });
         const total = sorted.reduce((s, r) => s + r.count, 0);
         const head = [["", "Item", "Count", "Share %", ...extraCols.map(c => c.label)]];
         const body = sorted.map(r => [

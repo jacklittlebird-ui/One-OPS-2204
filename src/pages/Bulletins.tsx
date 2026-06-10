@@ -35,6 +35,7 @@ export default function BulletinsPage() {
     if (search) { const s = search.toLowerCase(); r = r.filter(b => b.title?.toLowerCase().includes(s) || b.bulletin_id?.toLowerCase().includes(s)); }
     return r;
   }, [data, search, typeFilter, statusFilter]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, typeFilter, statusFilter] });
 
   const openAdd = () => {
     setEditItem(null);

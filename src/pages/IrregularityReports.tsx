@@ -1,3 +1,4 @@
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { useState, useMemo } from "react";
 import { AlertTriangle, Search, Filter, X, Download, Trash2, Pencil } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -60,7 +61,6 @@ const emptyReport = (): Partial<IrregularityRow> => ({
   description: "", reported_by: "", assigned_to: "", resolution: "",
 });
 
-const PAGE_SIZE = 15;
 
 export default function IrregularityReportsPage() {
   const { data: reports, isLoading, add, update, remove, isAdding } = useSupabaseTable<IrregularityRow>("irregularity_reports", { stationFilter: true });
@@ -70,7 +70,6 @@ export default function IrregularityReportsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [newReport, setNewReport] = useState<Partial<IrregularityRow>>(emptyReport());
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     let r = reports;
@@ -86,9 +85,8 @@ export default function IrregularityReportsPage() {
     }
     return r;
   }, [reports, statusFilter, search]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [statusFilter, search] });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const saveNew = async () => {
     if (!newReport.flight_no) return;
@@ -136,13 +134,13 @@ export default function IrregularityReportsPage() {
       <div className="space-y-3">
         <div className="relative max-w-md">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input type="text" placeholder="Search incidents..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+          <input type="text" placeholder="Search incidents..." value={search} onChange={e => { setSearch(e.target.value);  }}
             className="pl-8 pr-3 py-2 text-sm border rounded-lg bg-card text-foreground placeholder:text-muted-foreground w-full focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
         {showFilters && (
           <div className="flex gap-2">
             {["All", ...IR_STATUSES].map(s => (
-              <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
+              <button key={s} onClick={() => { setStatusFilter(s);  }}
                 className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}>
                 {s}
               </button>
@@ -163,12 +161,12 @@ export default function IrregularityReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {pageData.length === 0 ? (
+              {pageRows.length === 0 ? (
                 <tr><td colSpan={9} className="text-center py-16">
                   <AlertTriangle size={40} className="mx-auto text-muted-foreground/30 mb-3" />
                   <p className="font-semibold text-foreground">No incidents found</p>
                 </td></tr>
-              ) : pageData.map(r => (
+              ) : pageRows.map(r => (
                 <tr key={r.id} className="data-table-row">
                   <td className="px-4 py-3 font-mono text-xs font-semibold text-foreground">{r.report_id}</td>
                   <td className="px-4 py-3 font-semibold text-foreground">{r.flight_no}</td>
@@ -195,16 +193,7 @@ export default function IrregularityReportsPage() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          <div className="p-3 border-t flex items-center justify-between text-sm text-muted-foreground">
-            <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40">←</button>
-              <span className="text-foreground font-medium">Page {page}/{totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40">→</button>
-            </div>
-          </div>
-        )}
+        <TablePagination {...pag} />
       </div>
 
       {/* Add Incident Modal */}

@@ -53,6 +53,7 @@ export default function LostFoundPage() {
     if (search) { const s = search.toLowerCase(); r = r.filter(i => i.description?.toLowerCase().includes(s) || i.owner_name?.toLowerCase().includes(s) || i.flight_no?.toLowerCase().includes(s) || i.item_id?.toLowerCase().includes(s)); }
     return r;
   }, [items, search, statusFilter, categoryFilter]);
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, categoryFilter] });
 
   const openAdd = () => {
     setEditItem(null);

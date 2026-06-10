@@ -1,3 +1,4 @@
+import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -164,6 +165,7 @@ export default function NotificationsPage() {
     if (filterRead === "read" && !n.is_read) return false;
     return true;
   });
+  const { pageRows, ...pag } = usePagination(filteredNotifications, { resetKey: [filterCategory, filterRead] });
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -254,7 +256,7 @@ export default function NotificationsPage() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {filteredNotifications.map((n) => {
+              {pageRows.map((n) => {
                 const catConfig = CATEGORY_CONFIG[n.category] || CATEGORY_CONFIG.system;
                 return (
                   <Card key={n.id} className={`transition-colors ${!n.is_read ? "border-primary/30 bg-primary/5" : ""}`}>
@@ -287,6 +289,7 @@ export default function NotificationsPage() {
                   </Card>
                 );
               })}
+              <TablePagination {...pag} />
             </div>
           )}
         </TabsContent>
