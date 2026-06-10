@@ -18,7 +18,13 @@ export function usePagination<T>(rows: T[], options?: { pageSize?: number; reset
   const [page, setPage] = useState(0);
 
   // Reset to first page whenever the underlying filter/category changes.
-  useEffect(() => { setPage(0); }, [options?.resetKey, pageSize, rows.length]);
+  // Serialize resetKey so a fresh array literal each render doesn't keep
+  // resetting the page (which would break the Next/Prev buttons).
+  const resetKeySerialized = useMemo(() => {
+    try { return JSON.stringify(options?.resetKey ?? null); }
+    catch { return String(options?.resetKey); }
+  }, [options?.resetKey]);
+  useEffect(() => { setPage(0); }, [resetKeySerialized, pageSize]);
 
   const total = rows.length;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
