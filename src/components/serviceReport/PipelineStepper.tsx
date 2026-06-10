@@ -51,9 +51,11 @@ export function derivePipelineStage(opts: {
    *  as completed — the pipeline starts at step 2. */
   createdVia?: string;
 }): PipelineStage {
-  const rs = (opts.reviewStatus || "").toLowerCase();
+  const rsCanonical = normalizeReviewStatus(opts.reviewStatus);
+  const rs = rsCanonical.toLowerCase();
   void opts.dispatchStatus;
-  const cs = (opts.clearanceStatus || "").toLowerCase();
+  const csCanonical = normalizeFlightStatus(opts.clearanceStatus);
+  const cs = csCanonical.toLowerCase();
   const ch = (opts.channel || "").toLowerCase();
   const inv = opts.invoiceStatus || "none";
   const origin = (opts.createdVia || "").toLowerCase();
@@ -64,15 +66,14 @@ export function derivePipelineStage(opts: {
   // Step 1 (Clearance) is ONLY completed when the record originated in the Clearance
   // module AND the clearance was approved. Records created directly by the Station
   // portal skip step 1 entirely — it remains unmarked forever.
-  let step1Done = createdByClearance && (cs === "approved" || (opts.isLinked && cs !== "" && cs !== "pending" && cs !== "rejected"));
+  let step1Done = createdByClearance && (csCanonical === "Approved" || (opts.isLinked && cs !== "" && cs !== "pending" && cs !== "rejected"));
 
-  // Step 2 (Station) is only complete when the station has actually submitted the
-  // task sheet — i.e. the review_status has moved past "draft"/empty.
-  const reviewSubmitted = rs !== "" && rs !== "draft";
+  // Step 2 (Station) is complete when review_status has advanced past Draft.
+  const reviewSubmitted = !!rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any);
   let step2Done = reviewSubmitted;
 
-  let step3Done =
-    rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing";
+  // Step 3 (Operations) is complete when operations has approved (or marked Ready for Billing).
+  let step3Done = REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any);
 
   // Step 4 (receivables) — only complete once the invoice is PAID.
   const step4Done = inv === "paid";
@@ -90,12 +91,13 @@ export function derivePipelineStage(opts: {
     }
   }
 
-  if (!opts.formView && rs === "rejected") {
+  if (!opts.formView && rsCanonical === "Rejected") {
     return "station";
   }
-  if (!opts.formView && rs === "modified") {
+  if (!opts.formView && rsCanonical === "Modified") {
     return "operations";
   }
+
 
   let stage: PipelineStage;
   // When created by station, skip clearance entirely: active stage starts at station.
