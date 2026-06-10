@@ -140,24 +140,22 @@ export function derivePipelineCompletedStages(opts: {
   invoiceStatus?: "none" | "issued" | "paid";
   createdVia?: string;
 }): PipelineStage[] {
-  const rs = (opts.reviewStatus || "").toLowerCase();
+  const rsCanonical = normalizeReviewStatus(opts.reviewStatus);
   void opts.dispatchStatus;
-  const cs = (opts.clearanceStatus || "").toLowerCase();
+  const csCanonical = normalizeFlightStatus(opts.clearanceStatus);
+  const cs = csCanonical.toLowerCase();
   const inv = opts.invoiceStatus || "none";
   const origin = (opts.createdVia || "").toLowerCase();
   const createdByClearance = origin === "clearance" || origin === "";
 
   const done: PipelineStage[] = [];
-  // Step 1 only counts when record originated in the Clearance module.
   if (createdByClearance) {
-    if (cs === "approved" || (opts.isLinked && cs && cs !== "pending" && cs !== "rejected")) {
+    if (csCanonical === "Approved" || (opts.isLinked && cs && cs !== "pending" && cs !== "rejected")) {
       done.push("clearance");
     }
   }
-  if (rs !== "" && rs !== "draft") done.push("station");
-  if (rs === "approved" || rs === "ready_for_billing" || rs === "ready for billing") {
-    done.push("operations");
-  }
+  if (rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any)) done.push("station");
+  if (REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any)) done.push("operations");
   if (inv === "paid") done.push("receivables");
   return done;
 }
