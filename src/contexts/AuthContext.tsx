@@ -71,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    try { await flushAuditLogs(); } catch {/* ignore */}
+    clearCachedRoles();
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
