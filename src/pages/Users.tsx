@@ -102,6 +102,8 @@ export default function UsersPage() {
 
   useEffect(() => { fetchData(); }, [user]);
 
+  const usersPag = usePagination(profiles, { resetKey: profiles.length });
+
   const getUserRoles = (userId: string) =>
     roles.filter((r) => r.user_id === userId);
 
@@ -286,6 +288,7 @@ export default function UsersPage() {
               <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
             </div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -393,6 +396,7 @@ export default function UsersPage() {
               </TableBody>
             </Table>
             <TablePagination {...usersPag} />
+            </>
           )}
         </CardContent>
       </Card>
