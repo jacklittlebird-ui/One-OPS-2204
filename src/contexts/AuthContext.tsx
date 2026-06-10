@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 import { logAudit, flushAuditLogs } from "@/lib/auditLogger";
-import { clearCachedRoles } from "@/contexts/ChannelContext";
+import { clearCachedRoles } from "@/lib/roleCache";
 
 interface AuthContextType {
   session: Session | null;

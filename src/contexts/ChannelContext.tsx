@@ -52,39 +52,11 @@ interface ChannelContextType {
 
 const ChannelContext = createContext<ChannelContextType | undefined>(undefined);
 
-// Session-storage cache key for user roles. Avoids hitting `user_roles`
-// on every page reload within the same browser session.
-const ROLES_CACHE_PREFIX = "linkaero:user_roles:v1:";
+import { readCachedRoles, writeCachedRoles, clearCachedRoles } from "@/lib/roleCache";
 
-function readCachedRoles(userId: string): string[] | null {
-  try {
-    const raw = sessionStorage.getItem(ROLES_CACHE_PREFIX + userId);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return null;
-    return parsed.filter((r) => typeof r === "string");
-  } catch {
-    return null;
-  }
-}
-
-function writeCachedRoles(userId: string, roles: string[]) {
-  try {
-    sessionStorage.setItem(ROLES_CACHE_PREFIX + userId, JSON.stringify(roles));
-  } catch {/* ignore quota errors */}
-}
-
-export function clearCachedRoles(userId?: string) {
-  try {
-    if (userId) {
-      sessionStorage.removeItem(ROLES_CACHE_PREFIX + userId);
-    } else {
-      for (const k of Object.keys(sessionStorage)) {
-        if (k.startsWith(ROLES_CACHE_PREFIX)) sessionStorage.removeItem(k);
-      }
-    }
-  } catch {/* ignore */}
-}
+// Re-export for backwards compatibility with any consumer that imported it
+// from this module before the cache was split out.
+export { clearCachedRoles };
 
 export function ChannelProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
