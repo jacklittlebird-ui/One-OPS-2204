@@ -359,6 +359,10 @@ export default function StationDispatchPage() {
     });
   }, [flights, stationFilter, dateFrom, dateTo, airlineFilter, airlineMap, serviceCategory]);
 
+  const { pageRows: pageData, ...pagDispatches } = usePagination(filtered, { resetKey: [stationFilter, airlineFilter, dateFrom, dateTo, search] });
+  const { pageRows: pageFlights, ...pagFlights } = usePagination(stationFlights, { resetKey: [stationFilter, airlineFilter, dateFrom, dateTo, serviceCategory] });
+
+
   const assignedFlightIds = useMemo(() => new Set(dispatches.filter(d => d.flight_schedule_id).map(d => d.flight_schedule_id)), [dispatches]);
 
   // Open form for a flight
@@ -549,25 +553,25 @@ export default function StationDispatchPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); setPage(1); }} className={selectCls + " w-40"}>
+        <select value={stationFilter} onChange={e => { setStationFilter(e.target.value); }} className={selectCls + " w-40"}>
           {!isStationScoped && <option value="">All Stations</option>}
           {stationsScoped.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
         </select>
-        <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); setPage(1); }} className={selectCls + " w-44"}>
+        <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value); }} className={selectCls + " w-44"}>
           <option value="">All Airlines</option>
           {[...airlines].sort((a, b) => a.name.localeCompare(b.name)).map(a => <option key={a.id} value={a.name}>{a.iata_code ? `${a.iata_code} — ` : ""}{a.name}</option>)}
         </select>
         <div className="flex items-center gap-1.5">
           <label className="text-xs text-muted-foreground font-medium">From</label>
-          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className={inputCls + " w-36"} />
+          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); }} className={inputCls + " w-36"} />
         </div>
         <div className="flex items-center gap-1.5">
           <label className="text-xs text-muted-foreground font-medium">To</label>
-          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className={inputCls + " w-36"} />
+          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); }} className={inputCls + " w-36"} />
         </div>
         <div className="relative">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input type="text" placeholder="Search…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+          <input type="text" placeholder="Search…" value={search} onChange={e => { setSearch(e.target.value); }}
             className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-48 focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
         <div className="flex border rounded-lg overflow-hidden">

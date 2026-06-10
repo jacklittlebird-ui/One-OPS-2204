@@ -95,9 +95,10 @@ export default function AuditLogPage() {
     [debouncedSearch, actionFilter, entityFilter, dateFrom, dateTo]
   );
 
-  // Reset to page 1 whenever filters or page size change.
+  // Reset to page 1 whenever filters change.
   useEffect(() => {
-  }, [filters, pageSize]);
+  }, [filters]);
+
 
   // Server-side paginated page of rows + exact total count for current filters.
   const { data: pageData, isLoading, isFetching, refetch } = useQuery({

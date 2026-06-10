@@ -740,6 +740,11 @@ export default function SecurityServiceReportsPage() {
     return rows;
   }, [pendingApprovalFlights, pendingStationFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
 
+  const { pageRows: pagePending, ...pagPending } = usePagination(filteredPendingFlights, { resetKey: [pendingSearch, pendingStationFilter, pendingDateFrom, pendingDateTo] });
+  const { pageRows: pageData, ...pagMain } = usePagination(filtered, { resetKey: [filtered.length] });
+
+
+
   const todayStr = new Date().toISOString().slice(0, 10);
   const pendingTotal = filteredPendingFlights.length;
   const pendingToday = filteredPendingFlights.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") === todayStr).length;
@@ -2094,30 +2099,7 @@ export default function SecurityServiceReportsPage() {
               </table>
             <TablePagination {...pagMain} />
             </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <span className="text-xs text-muted-foreground">
-                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1 rounded hover:bg-muted disabled:opacity-30">
-                    <ChevronLeft size={16} />
-                  </button>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
-                    if (p > totalPages) return null;
-                    return (
-                      <button key={p} onClick={() => setPage(p)} className={`w-7 h-7 rounded text-xs font-semibold ${p === page ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"}`}>
-                        {p}
-                      </button>
-                    );
-                  })}
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1 rounded hover:bg-muted disabled:opacity-30">
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
+
           </>
         )}
       </div>
