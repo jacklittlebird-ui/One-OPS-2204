@@ -954,7 +954,7 @@ function HandlingServiceReportContent() {
   }, [mergedRows, dbInvoices]);
 
   
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  
 
   const totalFlights = filtered.length;
   const totalPax = filtered.reduce((s, r) => s + r.paxInAdultI + r.paxInInfI + r.paxInAdultD + r.paxInInfD, 0);
@@ -1359,7 +1359,7 @@ function HandlingServiceReportContent() {
                 </tr>
               ) : pageData.map((r, i) => (
                 <tr key={r.id || `fs-${r.flightScheduleId}-${i}`} className={`data-table-row ${!r.isLinked ? "bg-muted/30" : ""}`}>
-                  <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground text-xs">{pag.start + i + 1}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground whitespace-nowrap">{r.operator}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flightNo}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{r.registration || "—"}</td>

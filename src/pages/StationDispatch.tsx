@@ -323,7 +323,7 @@ export default function StationDispatchPage() {
   }, [dispatches, stationFilter, dateFrom, dateTo, airlineFilter, search, serviceCategory]);
 
   
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  
 
   // Station flights for the date range
   const stationFlights = useMemo(() => {
@@ -599,7 +599,7 @@ export default function StationDispatchPage() {
                     <tr><td colSpan={13} className="text-center py-16 text-muted-foreground">No dispatches found for this date/station</td></tr>
                   ) : pageData.map((d, i) => (
                     <tr key={d.id} className="data-table-row">
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagDispatches.start + i + 1}</td>
                       <td className="px-3 py-2.5 font-semibold text-foreground">{getDispatchFlightNo(d)}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getDispatchReg(d) || "—"}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{d.airline}</td>

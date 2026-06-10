@@ -709,7 +709,7 @@ export default function SecurityServiceReportsPage() {
   }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
 
   
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  
 
   // KPIs (computed from the merged/filtered list)
   const totalReports = filtered.length;
@@ -1835,7 +1835,7 @@ export default function SecurityServiceReportsPage() {
                             />
                           </td>
                         )}
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                        <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagMain.start + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
                         <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-foreground">{flightNo || "—"}</td>
