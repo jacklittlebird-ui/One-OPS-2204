@@ -416,6 +416,7 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
             std: formData.scheduled_end || "",
             requested_date: flightDate,
             remarks: `Added from Station Dispatch – ${svcType} – pending Operations approval`,
+            created_via: "station",
           })
           .select("id")
           .single();
