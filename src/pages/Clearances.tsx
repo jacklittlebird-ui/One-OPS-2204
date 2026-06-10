@@ -320,6 +320,7 @@ export default function ClearancesPage() {
       if (!p.arrival_date) p.arrival_date = null;
       if (!p.period_from) p.period_from = null;
       if (!p.period_to) p.period_to = null;
+      if (!p.created_via) p.created_via = "clearance";
       return p;
     };
 

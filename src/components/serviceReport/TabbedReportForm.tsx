@@ -560,6 +560,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               channel: activeChannel,
               invoiceStatus: formInvoiceStatus,
               formView: true,
+              createdVia: (data as any).createdVia || (data as any).created_via,
             })}
             invoiceStatus={formInvoiceStatus}
             showPendingHint

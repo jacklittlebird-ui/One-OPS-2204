@@ -1090,6 +1090,7 @@ export type Database = {
           contract_duration_hours: number
           contract_id: string | null
           created_at: string
+          created_via: string | null
           dispatched_by: string
           extra_manpower_count: number
           flight_date: string
@@ -1132,6 +1133,7 @@ export type Database = {
           contract_duration_hours?: number
           contract_id?: string | null
           created_at?: string
+          created_via?: string | null
           dispatched_by?: string
           extra_manpower_count?: number
           flight_date?: string
@@ -1174,6 +1176,7 @@ export type Database = {
           contract_duration_hours?: number
           contract_id?: string | null
           created_at?: string
+          created_via?: string | null
           dispatched_by?: string
           extra_manpower_count?: number
           flight_date?: string
@@ -1240,6 +1243,7 @@ export type Database = {
           clearance_type: string
           config: number | null
           created_at: string
+          created_via: string | null
           departure_date: string | null
           departure_flight: string | null
           flight_no: string
@@ -1278,6 +1282,7 @@ export type Database = {
           clearance_type?: string
           config?: number | null
           created_at?: string
+          created_via?: string | null
           departure_date?: string | null
           departure_flight?: string | null
           flight_no?: string
@@ -1316,6 +1321,7 @@ export type Database = {
           clearance_type?: string
           config?: number | null
           created_at?: string
+          created_via?: string | null
           departure_date?: string | null
           departure_flight?: string | null
           flight_no?: string

@@ -416,6 +416,7 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
             std: formData.scheduled_end || "",
             requested_date: flightDate,
             remarks: `Added from Station Dispatch – ${svcType} – pending Operations approval`,
+            created_via: "station",
           })
           .select("id")
           .single();
@@ -427,7 +428,7 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
         scheduleId = newSchedule.id;
         toast({ title: "Sent to Operations", description: "New service report awaiting Operations approval." });
       }
-      await add({ ...formData, flight_schedule_id: scheduleId } as any);
+      await add({ ...formData, flight_schedule_id: scheduleId, created_via: "station" } as any);
     }
     setShowForm(false);
     setEditId(null);
