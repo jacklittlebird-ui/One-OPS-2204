@@ -231,6 +231,7 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
         no_of_flights: f.number_of_flights || null,
         ref_no: f.ref_number || null,
         notes: f.notes || null,
+        created_via: "clearance",
       };
       });
 
