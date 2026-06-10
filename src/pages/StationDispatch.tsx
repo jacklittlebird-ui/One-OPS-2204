@@ -359,6 +359,10 @@ export default function StationDispatchPage() {
     });
   }, [flights, stationFilter, dateFrom, dateTo, airlineFilter, airlineMap, serviceCategory]);
 
+  const { pageRows: pageData, ...pagDispatches } = usePagination(filtered, { resetKey: [stationFilter, airlineFilter, dateFrom, dateTo, search] });
+  const { pageRows: pageFlights, ...pagFlights } = usePagination(stationFlights, { resetKey: [stationFilter, airlineFilter, dateFrom, dateTo, serviceCategory] });
+
+
   const assignedFlightIds = useMemo(() => new Set(dispatches.filter(d => d.flight_schedule_id).map(d => d.flight_schedule_id)), [dispatches]);
 
   // Open form for a flight
