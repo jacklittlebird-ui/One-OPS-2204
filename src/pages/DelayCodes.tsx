@@ -86,7 +86,7 @@ export default function DelayCodesPage() {
                 <tr><td colSpan={7} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={7} className="text-center py-16"><Database size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Delay Codes Found</p></td></tr>
-              ) : filtered.map(c => (
+              ) : pageRows.map(c => (
                 <tr key={c.id} className="data-table-row">
                   {editingId === c.id ? (
                     <>

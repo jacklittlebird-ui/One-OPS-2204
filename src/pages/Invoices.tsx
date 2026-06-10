@@ -1427,62 +1427,6 @@ export default function InvoicesPage() {
 <TablePagination {...pag} />
       </div>
 
-      {/* Modals */}
-      {showAdd && <InvoiceForm title="New Invoice" data={newInvoice} onChange={setNewInvoice} onSave={saveNew} onCancel={() => setShowAdd(false)} />}
-      {editId && <InvoiceForm title="Edit Invoice" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} />}
-      {printInvoice && (printInvoice._isSecurity
-        ? <SecurityInvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
-        : <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
-      )}
-      {detailInvoice && (() => {
-        const pf = toPrintFormat(detailInvoice as any);
-        return pf._isSecurity
-          ? <SecurityInvoicePrintView invoice={pf} onClose={() => setDetailInvoice(null)} />
-          : (
-            <InvoiceDetailModal
-              invoice={detailInvoice as any}
-              onClose={() => setDetailInvoice(null)}
-              onEdit={(inv) => startEdit(inv as any)}
-              onFinalize={(inv) => handleFinalize(inv as any)}
-              onPrint={(inv) => setPrintInvoice(toPrintFormat(inv as any))}
-            />
-          );
-      })()}
-
-      {/* Billing Preview Modal */}
-      {showBillingPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
-          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4">
-            <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl z-10">
-              <h2 className="font-bold text-foreground text-lg flex items-center gap-2"><Zap size={18} className="text-primary" /> Generate Invoices from Dispatches</h2>
-              <button onClick={() => setShowBillingPreview(false)} className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Billing Month</label>
-                  <input type="month" className={inputCls + " w-40"} value={billingMonth} onChange={e => setBillingMonth(e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Station</label>
-                  {(() => {
-                    const set = new Set<string>();
-                    (airports || []).forEach((a: any) => { if (a?.iata_code) set.add(String(a.iata_code).toUpperCase()); });
-                    (dispatches || []).forEach((d: any) => { if (d?.station) set.add(String(d.station).toUpperCase()); });
-                    (serviceReports || []).forEach((r: any) => { if (r?.station) set.add(String(r.station).toUpperCase()); });
-                    (invoices || []).forEach((i: any) => { if (i?.station) set.add(String(i.station).toUpperCase()); });
-                    (flightSchedules || []).forEach((f: any) => { if (f?.authority) set.add(String(f.authority).toUpperCase()); });
-                    const stations = Array.from(set).filter(Boolean).sort();
-                    return (
-                      <select className={selectCls + " w-32"} value={billingStation} onChange={e => setBillingStation(e.target.value)}>
-                        <option value="All">All</option>
-                        {stations.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    );
-                  })()}
-                </div>
-              </div>
-
               <p className="text-sm text-muted-foreground">
                 Showing completed dispatches <span className="font-semibold">and approved Service Reports</span> grouped by airline &amp; station for <span className="font-semibold text-foreground">{billingMonth}</span>
               </p>

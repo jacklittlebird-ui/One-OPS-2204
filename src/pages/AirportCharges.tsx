@@ -167,15 +167,15 @@ export default function AirportChargesPage() {
               type="text"
               placeholder="Search by Vendor, MTOW, or Charge…"
               value={search}
-              onChange={e => { setSearch(e.target.value);  }}
+              onChange={e => { setSearch(e.target.value);  }
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-64 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <select value={vendorFilter} onChange={e => { setVendorFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={vendorFilter} onChange={e => { setVendorFilter(e.target.value);  } className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Vendors</option>
             {vendors.map(v => <option key={v}>{v}</option>)}
           </select>
-          <select value={mtowFilter} onChange={e => { setMtowFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={mtowFilter} onChange={e => { setMtowFilter(e.target.value);  } className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All MTOW</option>
             {mtows.map(m => <option key={m}>{m}</option>)}
           </select>

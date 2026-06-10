@@ -58,7 +58,7 @@ export default function BulletinsPage() {
   };
 
   const handleExport = () => exportToExcel(
-    filtered.map(b => ({ ID: b.bulletin_id, Title: b.title, Type: b.type, Category: b.category_code, Issued: b.issued_date, Effective: b.effective_date, Expiry: b.expiry_date, "Issued By": b.issued_by, Priority: b.priority, Status: b.status, Recipients: b.recipients })),
+    pageRows.map(b => ({ ID: b.bulletin_id, Title: b.title, Type: b.type, Category: b.category_code, Issued: b.issued_date, Effective: b.effective_date, Expiry: b.expiry_date, "Issued By": b.issued_by, Priority: b.priority, Status: b.status, Recipients: b.recipients })),
     "Bulletins", "Bulletins.xlsx"
   );
 
@@ -103,7 +103,7 @@ export default function BulletinsPage() {
                 <tr><td colSpan={12} className="text-center py-16 text-muted-foreground">Loading…</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={12} className="text-center py-16 text-muted-foreground">No bulletins found</td></tr>
-              ) : filtered.map(b => (
+              ) : pageRows.map(b => (
                 <tr key={b.id} className="data-table-row">
                   <td className="px-3 py-2.5 font-mono text-xs font-semibold text-primary">{b.bulletin_id}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground max-w-[200px] truncate">{b.title}</td>

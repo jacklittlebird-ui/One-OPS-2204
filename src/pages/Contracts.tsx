@@ -171,7 +171,7 @@ export default function ContractsPage() {
         {SERVICE_TABS.map(tab => (
           <button
             key={tab.key}
-            onClick={() => { setActiveTab(tab.key);  }}
+            onClick={() => { setActiveTab(tab.key);  }
             className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab.key
                 ? "border-primary text-primary"
@@ -214,10 +214,10 @@ export default function ContractsPage() {
           </h2>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search contracts…" value={search} onChange={e => { setSearch(e.target.value);  }}
+            <input type="text" placeholder="Search contracts…" value={search} onChange={e => { setSearch(e.target.value);  }
               className="pl-8 pr-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground w-52 focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  } className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>{STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
           <button onClick={() => openNewContractForm(activeTab)} className="toolbar-btn-primary"><Plus size={14} /> New Contract</button>
@@ -267,57 +267,7 @@ export default function ContractsPage() {
           </table>
         </div>
 
-        <TablePagination {...pag} /> of {filtered.length}</span>
-            <div className="flex items-center gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronLeft size={14} /></button>
-              <span className="text-foreground font-medium">Page {page} of {totalPages}</span>
-              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded border hover:bg-muted disabled:opacity-40"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Modals */}
-      {showAdd && <ContractFormWithRates title="New Contract" data={newContract} onChange={setNewContract} onSave={saveNew} onCancel={() => setShowAdd(false)} isSaving={isAdding} serviceRates={newServiceRates} onServiceRatesChange={setNewServiceRates} />}
-      {editId && <ContractForm title="Edit Contract" data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditId(null)} isSaving={isUpdating} />}
-      {viewContract && <ContractDetailModal contract={viewContract} onClose={() => setViewContract(null)} />}
-
-      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Contract</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to delete this contract? This action cannot be undone.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
-
-/* Enhanced Contract Form with Service Type Rates */
-const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
-const selectCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
-
-const SERVICE_SCOPES_LIST = ["Ad-Hoc", "Arrival Only", "Departure Only", "Full Service", "Maintenance", "Supervision Only", "Turnaround"];
-const RATE_SERVICE_TYPES = ["ADHOC", "Arrival", "Departure", "Maintenance", "Transportation", "Turnaround"];
-
-function ContractFormWithRates({
-  data, onChange, onSave, onCancel, title, isSaving,
-  serviceRates, onServiceRatesChange,
-}: {
-  data: Partial<ContractRow>;
-  onChange: (d: Partial<ContractRow>) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  title: string;
-  isSaving?: boolean;
-  serviceRates: ServiceRate[];
-  onServiceRatesChange: (r: ServiceRate[]) => void;
-}) {
+        <TablePagination {...pag} /> {
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
   const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines", { orderBy: "name", ascending: true });
 
@@ -354,7 +304,7 @@ function ContractFormWithRates({
                 onChange={e => {
                   const a = airlines.find(x => x.name === e.target.value);
                   onChange({ ...data, airline: e.target.value, airline_iata: a?.iata_code || "" });
-                }}
+                }
               >
                 <option value="">Select airline</option>
                 {airlines.map(a => <option key={a.id} value={a.name}>{a.name}{a.iata_code ? ` (${a.iata_code})` : ""}</option>)}
