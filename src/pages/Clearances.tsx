@@ -31,6 +31,7 @@ import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 import { parseDeletionRequests } from "@/lib/statusRouting";
 import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 // ─── Calendar View Component ───
 function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdit }: {
@@ -243,6 +244,12 @@ export default function ClearancesPage() {
     if (!ta) return 1;
     if (!tb) return -1;
     return ta.localeCompare(tb);
+  });
+
+  // Client-side pagination for the table view.
+  const pag = usePagination(filtered, {
+    pageSize: 25,
+    resetKey: `${serviceCategory}|${statusTab}|${search}|${statusFilter}|${typeFilter}|${stationFilter}|${registrationFilter}|${airlineFilter}|${aircraftTypeFilter}|${originFilter}|${destinationFilter}|${purposeFilter}|${minPax}|${dateFrom}|${dateTo}`,
   });
 
   // Stats are scoped to the active service category (Security or Handling)
@@ -573,7 +580,7 @@ export default function ClearancesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map(c => {
+                    {pag.pageRows.map(c => {
                       const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.Pending;
                       const statusIcon = c.status === "Pending" ? <Clock size={12} /> : c.status === "Approved" ? <CheckCircle2 size={12} /> : c.status === "Rejected" ? <XCircle size={12} /> : <AlertTriangle size={12} />;
                       const deletionEntries = parseDeletionRequests(c.remarks);
@@ -720,6 +727,7 @@ export default function ClearancesPage() {
                     {filtered.length === 0 && <TableRow><TableCell colSpan={16} className="text-center py-8 text-muted-foreground">No flight schedules found</TableCell></TableRow>}
                   </TableBody>
                 </Table>
+                <TablePagination {...pag} />
               </CardContent>
             </Card>
           ) : (

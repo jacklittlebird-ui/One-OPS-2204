@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Users as UsersIcon, Plus, Shield, Trash2, Pencil } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 type AppRole = "admin" | "station_manager" | "station_ops" | "employee" | "clearance" | "contracts" | "operations" | "receivables" | "payables" | "general_accounts" | "accountant" | "viewer";
 
@@ -296,7 +297,7 @@ export default function UsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {profiles.map((p) => {
+                {usersPag.pageRows.map((p) => {
                   const userRoles = getUserRoles(p.user_id);
                   return (
                     <TableRow key={p.id}>
@@ -391,6 +392,7 @@ export default function UsersPage() {
                 })}
               </TableBody>
             </Table>
+            <TablePagination {...usersPag} />
           )}
         </CardContent>
       </Card>

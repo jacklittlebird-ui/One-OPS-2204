@@ -16,6 +16,7 @@ import { exportToExcel } from "@/lib/exportExcel";
 import { exportToPdf } from "@/lib/exportPdf";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 import { logAudit } from "@/lib/auditLogger";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 type VendorInvoiceRow = {
   id: string; invoice_no: string; vendor_name: string; vendor_id: string | null;
@@ -65,6 +66,7 @@ export default function VendorInvoicesPage() {
     const mmax = maxT === null || (v.total || 0) <= maxT;
     return ms && mst && mv && mc && mdf && mdt && muf && mut && mmin && mmax;
   });
+  const pag = usePagination(filtered, { resetKey: `${search}|${statusFilter}|${vendorFilter}|${currencyFilter}|${dateFrom}|${dateTo}|${dueFrom}|${dueTo}|${minTotal}|${maxTotal}` });
 
   const stats = useMemo(() => {
     const total = data.length;
@@ -255,7 +257,7 @@ export default function VendorInvoicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(v => {
+              {pag.pageRows.map(v => {
                 const days = daysUntilDue(v.due_date);
                 const isOverdue = v.status !== "Paid" && days < 0;
                 const isDueSoon = v.status !== "Paid" && days >= 0 && days <= 7;
@@ -285,6 +287,7 @@ export default function VendorInvoicesPage() {
               {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No vendor invoices</TableCell></TableRow>}
             </TableBody>
           </Table>
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
 

@@ -14,6 +14,7 @@ import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 import { logAudit } from "@/lib/auditLogger";
 import { exportToExcel } from "@/lib/exportExcel";
 import { exportToPdf } from "@/lib/exportPdf";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 type JournalEntry = { id: string; entry_no: string; entry_date: string; description: string; reference: string; reference_type: string; status: string; total_debit: number; total_credit: number; created_by: string; };
 type JournalLine = { id: string; entry_id: string; account_id: string; debit: number; credit: number; description: string; sort_order: number; };
@@ -67,6 +68,7 @@ export default function JournalEntriesPage() {
     const mma = minA === null || (e.total_debit || 0) >= minA;
     return ms && mst && mrt && mcb && mdf && mdt && mma;
   });
+  const pag = usePagination(filtered, { resetKey: `${search}|${statusFilter}|${refTypeFilter}|${createdByFilter}|${dateFrom}|${dateTo}|${minAmount}` });
 
   const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
   const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
@@ -268,7 +270,7 @@ export default function JournalEntriesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(e => (
+              {pag.pageRows.map(e => (
                 <TableRow key={e.id}>
                   <TableCell className="font-medium font-mono"><BookOpen size={14} className="inline mr-1.5 text-muted-foreground" />{e.entry_no}</TableCell>
                   <TableCell>{e.entry_date}</TableCell>
@@ -288,6 +290,7 @@ export default function JournalEntriesPage() {
               {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No journal entries</TableCell></TableRow>}
             </TableBody>
           </Table>
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
     </div>

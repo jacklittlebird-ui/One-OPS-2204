@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Pencil, Trash2, Award, TrendingUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 type IncentiveRow = {
   id: string; airline_id: string; incentive_type: string; period: string;
@@ -49,6 +50,7 @@ export default function AirlineIncentivesPage() {
     const airline = airlineMap[i.airline_id];
     return (airline?.name || "").toLowerCase().includes(search.toLowerCase()) || i.description.toLowerCase().includes(search.toLowerCase());
   });
+  const pag = usePagination(filtered, { resetKey: search });
 
   const stats = {
     total: data.length,
@@ -154,7 +156,7 @@ export default function AirlineIncentivesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(i => (
+              {pag.pageRows.map(i => (
                 <TableRow key={i.id}>
                   <TableCell className="font-medium">{airlineMap[i.airline_id]?.name || "—"} <span className="text-muted-foreground text-xs">({airlineMap[i.airline_id]?.code})</span></TableCell>
                   <TableCell><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[i.incentive_type] || ""}`}>{i.incentive_type}</span></TableCell>
@@ -175,6 +177,7 @@ export default function AirlineIncentivesPage() {
               {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No incentives configured</TableCell></TableRow>}
             </TableBody>
           </Table>
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
     </div>

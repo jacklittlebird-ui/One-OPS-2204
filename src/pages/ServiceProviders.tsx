@@ -18,6 +18,7 @@ import {
   Plane, Star, Eye, ArrowUpDown
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 import { exportToExcel } from "@/lib/exportExcel";
 
 type ProviderRow = {
@@ -110,6 +111,7 @@ export default function ServiceProvidersPage() {
     });
     return result;
   }, [data, search, catFilter, statusFilter, sortKey, sortAsc]);
+  const pag = usePagination(filtered, { resetKey: `${search}|${catFilter}|${statusFilter}|${sortKey}|${sortAsc}` });
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -350,7 +352,7 @@ export default function ServiceProvidersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(p => {
+                {pag.pageRows.map(p => {
                   const cfg = categoryConfig[p.service_category];
                   return (
                     <TableRow key={p.id} className="group hover:bg-muted/50 cursor-pointer" onClick={() => setDetailItem(p)}>
@@ -419,11 +421,7 @@ export default function ServiceProvidersPage() {
               </TableBody>
             </Table>
           </div>
-          {filtered.length > 0 && (
-            <div className="px-4 py-2 border-t text-xs text-muted-foreground">
-              Showing {filtered.length} of {data.length} providers
-            </div>
-          )}
+          <TablePagination {...pag} />
         </CardContent>
       </Card>
 
