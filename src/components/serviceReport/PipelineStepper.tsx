@@ -142,7 +142,7 @@ export function derivePipelineCompletedStages(opts: {
   createdVia?: string;
 }): PipelineStage[] {
   const rsCanonical = normalizeReviewStatus(opts.reviewStatus);
-  void opts.dispatchStatus;
+  const dispatchCompleted = (opts.dispatchStatus || "").toLowerCase() === "completed";
   const csCanonical = normalizeFlightStatus(opts.clearanceStatus);
   const cs = csCanonical.toLowerCase();
   const inv = opts.invoiceStatus || "none";
@@ -155,7 +155,7 @@ export function derivePipelineCompletedStages(opts: {
       done.push("clearance");
     }
   }
-  if (rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any)) done.push("station");
+  if ((rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any)) || dispatchCompleted) done.push("station");
   if (REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any)) done.push("operations");
   if (inv === "paid") done.push("receivables");
   return done;
