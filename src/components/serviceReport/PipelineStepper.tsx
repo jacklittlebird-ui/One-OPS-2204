@@ -68,9 +68,10 @@ export function derivePipelineStage(opts: {
   // portal skip step 1 entirely — it remains unmarked forever.
   let step1Done = createdByClearance && (csCanonical === "Approved" || (opts.isLinked && cs !== "" && cs !== "pending" && cs !== "rejected"));
 
-  // Step 2 (Station) is complete when review_status has advanced past Draft.
+  // Step 2 (Station) is complete when the station task sheet has been saved
+  // (dispatch.status === "Completed") OR review_status has advanced past Draft.
   const reviewSubmitted = !!rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any);
-  let step2Done = reviewSubmitted;
+  let step2Done = reviewSubmitted || dispatchCompleted;
 
   // Step 3 (Operations) is complete when operations has approved (or marked Ready for Billing).
   let step3Done = REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any);
