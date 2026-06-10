@@ -90,7 +90,6 @@ const SERVICE_TYPES_SECURITY = ["Arrival Security", "Departure Security", "Maint
 
 const PAGE_SIZE = 15;
 
-import { DISPATCH_STATUS_COLORS } from "@/lib/statusConstants";
 const statusColors: Record<string, string> = { ...DISPATCH_STATUS_COLORS };
 
 const inputCls = "text-sm border rounded px-2 py-1.5 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
