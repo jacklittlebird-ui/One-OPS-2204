@@ -10,6 +10,7 @@ import { formatDateDMY } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useAirportsRef, useContractServiceRatesRef } from "@/data/referenceData";
 import { useInvoices } from "@/data/finance";
 import { useFlightHistory } from "@/data/flights";
 import { useDispatchHistory } from "@/data/dispatch";
