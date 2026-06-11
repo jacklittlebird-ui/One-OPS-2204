@@ -482,6 +482,9 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
           <button onClick={() => setViewMode("table")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><TableIcon size={13} /> Table</button>
           <button onClick={() => setViewMode("calendar")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><CalendarDays size={13} /> Calendar</button>
         </div>
+        {canViewHistory && (
+          <DataScopeToggle mode={scope} onChange={setScope} activeLabel="Last 180d" historyLabel="All History" />
+        )}
         <button onClick={openNewManual} className="toolbar-btn-primary ml-auto"><Plus size={14} /> New Service Report</button>
       </div>
 
