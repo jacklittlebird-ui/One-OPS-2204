@@ -727,6 +727,8 @@ export default function SecurityServiceReportsPage() {
   const filteredPendingFlights = useMemo(() => {
     let rows = [...pendingApprovalFlights];
     if (pendingStationFilter !== "All Stations") rows = rows.filter((f: any) => f.authority === pendingStationFilter);
+    if (pendingTypeFilter !== "All Types") rows = rows.filter((f: any) => f.clearance_type === pendingTypeFilter);
+    if (pendingStatusFilter !== "All Statuses") rows = rows.filter((f: any) => f.status === pendingStatusFilter);
     if (pendingDateFrom) rows = rows.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") >= pendingDateFrom);
     if (pendingDateTo) rows = rows.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") <= pendingDateTo);
     if (pendingSearch) {
@@ -740,7 +742,7 @@ export default function SecurityServiceReportsPage() {
       );
     }
     return rows;
-  }, [pendingApprovalFlights, pendingStationFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
+  }, [pendingApprovalFlights, pendingStationFilter, pendingTypeFilter, pendingStatusFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
 
   const { pageRows: pagePending, ...pagPending } = usePagination(filteredPendingFlights, { resetKey: [pendingSearch, pendingStationFilter, pendingDateFrom, pendingDateTo] });
   const { pageRows: pageData, ...pagMain } = usePagination(filtered, { resetKey: [filtered.length] });
