@@ -10,6 +10,10 @@ import { formatDateDMY } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useInvoices } from "@/data/finance";
+import { useFlightHistory } from "@/data/flights";
+import { useDispatchHistory } from "@/data/dispatch";
+import { useServiceReportHistory } from "@/data/serviceReports";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -146,10 +150,10 @@ export default function InvoicesPage() {
   const navigate = useNavigate();
   const { activeChannel } = useChannel();
   const readOnly = activeChannel === "payables";
-  const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices", { stationFilter: true });
-  const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true, dateWindowDays: null });
+  const { data: invoices, isLoading, add, update, remove, bulkInsert } = useInvoices<InvoiceRow>();
+  const { data: dispatches } = useDispatchHistory();
   const { data: contracts } = useSupabaseTable<any>("contracts");
-  const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules", { stationFilter: true, dateWindowDays: null });
+  const { data: flightSchedules } = useFlightHistory();
   const { data: contractRates } = useSupabaseTable<any>("contract_service_rates");
   const { data: airports } = useSupabaseTable<any>("airports");
 
@@ -247,7 +251,7 @@ export default function InvoicesPage() {
   const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
   const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: serviceReports } = useSupabaseTable<any>("service_reports", { dateWindowDays: null });
+  const { data: serviceReports } = useServiceReportHistory();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);

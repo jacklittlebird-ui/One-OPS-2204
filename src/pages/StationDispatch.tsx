@@ -5,6 +5,8 @@ import {
   CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye, CalendarDays, TableIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useFlights } from "@/data/flights";
+import { useDispatchBoard } from "@/data/dispatch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -211,8 +213,8 @@ function DispatchCalendarView({ dispatches, month, onMonthChange, onEdit }: {
 }
 
 export default function StationDispatchPage() {
-  const { data: flights, isLoading: flightsLoading } = useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
-  const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
+  const { data: flights, isLoading: flightsLoading } = useFlights<FlightRow>();
+  const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useDispatchBoard<DispatchRow>();
   const { station: userStation, isStationScoped } = useUserStation();
   const stationsScoped = useMemo(
     () => (isStationScoped && userStation ? STATIONS.filter(s => s.code === userStation) : STATIONS),

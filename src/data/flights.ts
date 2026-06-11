@@ -15,10 +15,10 @@ import { useChannel } from "@/contexts/ChannelContext";
 import { resolvePolicy, canUseHistoryScope, type QueryPolicy } from "@/data/policy";
 
 /** Active flights — server-side date window applied (default 180d). */
-export function useFlights(policy?: QueryPolicy) {
+export function useFlights<T extends Record<string, any> = any>(policy?: QueryPolicy) {
   const { userRoles } = useChannel();
   const resolved = resolvePolicy({ scope: "active", ...policy }, userRoles);
-  return useSupabaseTable<any>("flight_schedules", resolved);
+  return useSupabaseTable<T>("flight_schedules", resolved);
 }
 
 /**
@@ -26,10 +26,10 @@ export function useFlights(policy?: QueryPolicy) {
  * For roles without history access this transparently downgrades to active
  * (same as useFlights). UI should hide / disable history affordances for them.
  */
-export function useFlightHistory(policy?: Omit<QueryPolicy, "scope">) {
+export function useFlightHistory<T extends Record<string, any> = any>(policy?: Omit<QueryPolicy, "scope">) {
   const { userRoles } = useChannel();
   const resolved = resolvePolicy({ scope: "history", ...policy }, userRoles);
-  return useSupabaseTable<any>("flight_schedules", resolved);
+  return useSupabaseTable<T>("flight_schedules", resolved);
 }
 
 /** Whether the current user is allowed to view full flight history. */
