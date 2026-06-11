@@ -63,7 +63,24 @@ import SecurityStatusPage from "./pages/SecurityStatus";
 import OperationsReportsPage from "./pages/OperationsReports";
 
 
-const queryClient = new QueryClient();
+// Global React Query defaults aligned with the architecture blueprint:
+// - React Query is the smart cache; avoid window/mount refetch storms.
+// - 60s default staleTime dedupes burst fetches across components.
+// - Per-table hooks override these (see useSupabaseTable).
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 10 * 60_000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: true,
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
+    },
+    mutations: { retry: 0 },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
