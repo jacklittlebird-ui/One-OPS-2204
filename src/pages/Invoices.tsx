@@ -247,7 +247,7 @@ export default function InvoicesPage() {
   const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
   const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: serviceReports } = useSupabaseTable<any>("service_reports");
+  const { data: serviceReports } = useSupabaseTable<any>("service_reports", { dateWindowDays: null });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
