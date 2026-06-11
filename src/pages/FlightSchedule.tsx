@@ -267,6 +267,9 @@ export default function FlightSchedulePage() {
               <option value="All Types">All Types</option>{flightTypes.map(t => <option key={t}>{t}</option>)}
             </select>
           )}
+          {canViewHistory && (
+            <DataScopeToggle mode={scope} onChange={setScope} activeLabel="Last 180d" historyLabel="All History" />
+          )}
           <button onClick={() => { setNewRow(emptyFlight()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> Add Flight</button>
           <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload</button>
           <button onClick={() => setUploadOpen(true)} className="toolbar-btn-outline"><Upload size={14} /> Import Schedule</button>
