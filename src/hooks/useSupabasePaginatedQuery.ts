@@ -97,6 +97,7 @@ export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T
     page,
     select,
     filterKey,
+    countMode,
   ];
 
   const query = useQuery({
@@ -110,11 +111,13 @@ export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T
     queryFn: async () => {
       const from = page * pageSize;
       const to = from + pageSize - 1;
+      const selectOpts: any = countMode === "none" ? undefined : { count: countMode };
       let q: any = supabase
         .from(table as any)
-        .select(select, { count: "exact" })
+        .select(select, selectOpts)
         .order(orderCol, { ascending, nullsFirst: false })
         .range(from, to);
+
       if (applyStation) q = q.eq(stationCol, station as string);
       if (filters) q = filters(q);
       const { data, error, count } = await q;
