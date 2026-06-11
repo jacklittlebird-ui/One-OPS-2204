@@ -52,7 +52,7 @@ interface ChannelContextType {
 
 const ChannelContext = createContext<ChannelContextType | undefined>(undefined);
 
-import { readCachedRoles, writeCachedRoles, clearCachedRoles } from "@/lib/roleCache";
+import { readCachedRoles, writeCachedRoles, clearCachedRoles, isCachedRolesFresh } from "@/lib/roleCache";
 
 // Re-export for backwards compatibility with any consumer that imported it
 // from this module before the cache was split out.
@@ -82,8 +82,14 @@ export function ChannelProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
 
-    // 2. Always re-verify against the DB once per session boot. Updates
-    //    silently if roles have changed server-side.
+    // 2. Skip the DB re-verify when the cache was written recently. This
+    //    cuts thousands of repeated user_roles round-trips across portal
+    //    navigation within the same browsing session.
+    if (cached && isCachedRolesFresh(user.id)) {
+      return;
+    }
+
+    // 3. Otherwise re-verify against the DB once and refresh cache.
     const fetchRoles = async () => {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
       const roles = data?.map((r) => r.role) || [];
