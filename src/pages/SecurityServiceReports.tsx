@@ -195,6 +195,8 @@ export default function SecurityServiceReportsPage() {
   /* Pending Approval tab filters */
   const [pendingSearch, setPendingSearch] = useState("");
   const [pendingStationFilter, setPendingStationFilter] = useState("All Stations");
+  const [pendingTypeFilter, setPendingTypeFilter] = useState("All Types");
+  const [pendingStatusFilter, setPendingStatusFilter] = useState("All Statuses");
   const [pendingDateFrom, setPendingDateFrom] = useState("");
   const [pendingDateTo, setPendingDateTo] = useState("");
   
