@@ -293,11 +293,13 @@ function getScheduleFlightNo(row: { flight_no?: string | null; arrival_flight?: 
 }
 
 // ─── Service Report Calendar View ───
-function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit }: {
+function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit, invoiceStatusByFlight, channel }: {
   reports: any[];
   month: Date;
   onMonthChange: (d: Date) => void;
   onEdit: (r: any) => void;
+  invoiceStatusByFlight?: Map<string, "none" | "issued" | "paid">;
+  channel?: string;
 }) {
   const year = month.getFullYear();
   const mo = month.getMonth();
@@ -337,22 +339,42 @@ function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit }: {
           <div key={d} className="bg-muted/50 text-center text-xs font-semibold text-muted-foreground py-2">{d}</div>
         ))}
         {cells.map((day, i) => {
-          if (day === null) return <div key={`e${i}`} className="bg-card min-h-[90px]" />;
+          if (day === null) return <div key={`e${i}`} className="bg-card min-h-[110px]" />;
           const dateStr = `${year}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
           const dayReports = byDate[dateStr] || [];
           const isToday = dateStr === today;
           return (
-            <div key={dateStr} className={`bg-card min-h-[90px] p-1 ${isToday ? "ring-2 ring-primary ring-inset" : ""}`}>
+            <div key={dateStr} className={`bg-card min-h-[110px] p-1 ${isToday ? "ring-2 ring-primary ring-inset" : ""}`}>
               <div className={`text-xs font-medium mb-0.5 ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>{day}</div>
-              <div className="space-y-0.5 max-h-[70px] overflow-y-auto">
-                {dayReports.slice(0,4).map((r: any, j: number) => (
-                  <button key={r.id || j} onClick={() => r.isLinked && onEdit(r)}
-                    className={`w-full text-left px-1 py-0.5 rounded text-[10px] leading-tight truncate border ${sc(r)} hover:opacity-80 transition-opacity`}
-                    title={`${r.flightNo} – ${r.operator}`}>
-                    <span className="font-mono font-semibold">{r.flightNo}</span>
-                    <span className="ml-1 opacity-70">{r.operator?.slice(0,8)}</span>
-                  </button>
-                ))}
+              <div className="space-y-1 max-h-[140px] overflow-y-auto">
+                {dayReports.slice(0,4).map((r: any, j: number) => {
+                  const invStatus = invoiceStatusByFlight?.get(normalizeFlightKey(String(r.flightNo || ""))) || "none";
+                  const pipelineOpts = {
+                    isLinked: !!r.isLinked,
+                    reviewStatus: r.reviewStatus,
+                    clearanceStatus: r.clearanceStatus,
+                    dispatchStatus: r.isLinked ? "Completed" : "Pending",
+                    invoiceStatus: invStatus,
+                    createdVia: r.createdVia,
+                  };
+                  return (
+                    <div key={r.id || j} className="space-y-0.5">
+                      <button onClick={() => r.isLinked && onEdit(r)}
+                        className={`w-full text-left px-1 py-0.5 rounded text-[10px] leading-tight truncate border ${sc(r)} hover:opacity-80 transition-opacity`}
+                        title={`${r.flightNo} – ${r.operator}`}>
+                        <span className="font-mono font-semibold">{r.flightNo}</span>
+                        <span className="ml-1 opacity-70">{r.operator?.slice(0,8)}</span>
+                      </button>
+                      <div className="flex justify-center scale-[0.72] origin-top -my-1">
+                        <PipelineStepper
+                          currentStage={derivePipelineStage({ ...pipelineOpts, channel })}
+                          completedStages={derivePipelineCompletedStages(pipelineOpts)}
+                          compact
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
                 {dayReports.length > 4 && <div className="text-[10px] text-muted-foreground text-center">+{dayReports.length-4} more</div>}
               </div>
             </div>
@@ -1338,7 +1360,7 @@ function HandlingServiceReportContent() {
         </div>
 
         {viewMode === "calendar" ? (
-          <ServiceReportCalendarView reports={filtered} month={calMonth} onMonthChange={setCalMonth} onEdit={startEdit} />
+          <ServiceReportCalendarView reports={filtered} month={calMonth} onMonthChange={setCalMonth} onEdit={startEdit} invoiceStatusByFlight={invoiceStatusByFlight} channel={activeChannel} />
         ) : (
         <>
           <div className="overflow-x-auto">
