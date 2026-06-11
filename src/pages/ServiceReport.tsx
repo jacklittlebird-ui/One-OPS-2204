@@ -293,6 +293,13 @@ function getScheduleFlightNo(row: { flight_no?: string | null; arrival_flight?: 
 }
 
 // ─── Service Report Calendar View ───
+const PIPELINE_STAGE_META: Record<string, { label: string; color: string; bg: string; text: string; border: string }> = {
+  clearance:   { label: "Clearance",   color: "hsl(var(--info))",    bg: "bg-info/15",    text: "text-info",    border: "border-l-info" },
+  station:     { label: "Station",     color: "hsl(var(--violet))",  bg: "bg-violet/15",  text: "text-violet",  border: "border-l-violet" },
+  operations:  { label: "Operations",  color: "hsl(var(--warning))", bg: "bg-warning/15", text: "text-warning", border: "border-l-warning" },
+  receivables: { label: "Receivables", color: "hsl(var(--success))", bg: "bg-success/15", text: "text-success", border: "border-l-success" },
+};
+
 function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit, invoiceStatusByFlight, channel }: {
   reports: any[];
   month: Date;
@@ -306,18 +313,54 @@ function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit, invo
   const firstDay = new Date(year, mo, 1).getDay();
   const daysInMonth = new Date(year, mo + 1, 0).getDate();
   const today = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [stageFilter, setStageFilter] = useState<string>("all");
+
+  const enriched = useMemo(() => {
+    return reports.map(r => {
+      const invStatus = (invoiceStatusByFlight?.get(normalizeFlightKey(String(r.flightNo || ""))) || "none") as "none" | "issued" | "paid";
+      const pipelineOpts = {
+        isLinked: !!r.isLinked,
+        reviewStatus: r.reviewStatus,
+        clearanceStatus: r.clearanceStatus,
+        dispatchStatus: r.isLinked ? "Completed" : "Pending",
+        invoiceStatus: invStatus,
+        createdVia: r.createdVia,
+      };
+      const stage = derivePipelineStage({ ...pipelineOpts, channel });
+      const completed = derivePipelineCompletedStages(pipelineOpts);
+      return { ...r, _stage: stage, _completed: completed, _invStatus: invStatus };
+    });
+  }, [reports, invoiceStatusByFlight, channel]);
+
+  const filtered = useMemo(
+    () => stageFilter === "all" ? enriched : enriched.filter(r => r._stage === stageFilter),
+    [enriched, stageFilter]
+  );
 
   const byDate = useMemo(() => {
     const map: Record<string, any[]> = {};
-    reports.forEach(r => {
+    filtered.forEach(r => {
       const d = r.arrivalDate || r.departureDate || "";
       if (d) { if (!map[d]) map[d] = []; map[d].push(r); }
     });
+    Object.values(map).forEach(list => list.sort((a, b) => (a.sta || a.std || "").localeCompare(b.sta || b.std || "")));
     return map;
-  }, [reports]);
+  }, [filtered]);
+
+  const monthStats = useMemo(() => {
+    const inMonth = enriched.filter(r => {
+      const d = r.arrivalDate || r.departureDate || "";
+      return d.startsWith(`${year}-${String(mo+1).padStart(2,"0")}`);
+    });
+    const stages = { clearance: 0, station: 0, operations: 0, receivables: 0 } as Record<string, number>;
+    inMonth.forEach(r => { stages[r._stage] = (stages[r._stage] || 0) + 1; });
+    return { total: inMonth.length, linked: inMonth.filter(r => r.isLinked).length, pending: inMonth.filter(r => !r.isLinked).length, stages };
+  }, [enriched, year, mo]);
 
   const prev = () => onMonthChange(new Date(year, mo - 1, 1));
   const next = () => onMonthChange(new Date(year, mo + 1, 1));
+  const goToday = () => onMonthChange(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const monthLabel = month.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   const cells: (number | null)[] = [];
@@ -325,65 +368,166 @@ function ServiceReportCalendarView({ reports, month, onMonthChange, onEdit, invo
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
   while (cells.length % 7 !== 0) cells.push(null);
 
-  const sc = (r: any) => r.isLinked ? "bg-success/20 text-success border-success/30" : "bg-muted/60 text-muted-foreground border-muted";
+  const selectedReports = selectedDate ? (byDate[selectedDate] || []) : [];
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={prev} className="p-1.5 rounded hover:bg-muted"><ChevronLeft size={16} /></button>
-        <h3 className="text-sm font-semibold">{monthLabel}</h3>
-        <button onClick={next} className="p-1.5 rounded hover:bg-muted"><ChevronRight size={16} /></button>
+    <div className="p-4 space-y-4">
+      {/* Top toolbar: nav + KPIs */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button onClick={prev} className="p-1.5 rounded-md border hover:bg-muted transition-colors" aria-label="Previous month"><ChevronLeft size={16} /></button>
+          <h3 className="text-base font-bold text-foreground min-w-[140px] text-center">{monthLabel}</h3>
+          <button onClick={next} className="p-1.5 rounded-md border hover:bg-muted transition-colors" aria-label="Next month"><ChevronRight size={16} /></button>
+          <button onClick={goToday} className="ml-1 px-2.5 py-1 text-xs font-semibold rounded-md border hover:bg-muted transition-colors">Today</button>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border">
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</span>
+            <span className="text-sm font-bold text-foreground">{monthStats.total}</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-success/10 border border-success/20">
+            <CheckCircle2 size={12} className="text-success" />
+            <span className="text-sm font-bold text-success">{monthStats.linked}</span>
+            <span className="text-[10px] text-success/80">linked</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning/10 border border-warning/20">
+            <Clock size={12} className="text-warning" />
+            <span className="text-sm font-bold text-warning">{monthStats.pending}</span>
+            <span className="text-[10px] text-warning/80">pending</span>
+          </div>
+        </div>
       </div>
-      <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
-        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
-          <div key={d} className="bg-muted/50 text-center text-xs font-semibold text-muted-foreground py-2">{d}</div>
+
+      {/* Stage legend / filter chips */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <button
+          onClick={() => setStageFilter("all")}
+          className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors ${stageFilter === "all" ? "bg-foreground text-background border-foreground" : "bg-card hover:bg-muted"}`}
+        >
+          All Stages
+        </button>
+        {(["clearance","station","operations","receivables"] as const).map(k => {
+          const meta = PIPELINE_STAGE_META[k];
+          const active = stageFilter === k;
+          return (
+            <button
+              key={k}
+              onClick={() => setStageFilter(active ? "all" : k)}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors inline-flex items-center gap-1.5 ${active ? meta.bg + " " + meta.text : "bg-card hover:bg-muted text-foreground"}`}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: meta.color }} />
+              {meta.label}
+              <span className="opacity-70">{monthStats.stages[k] || 0}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden border">
+        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d, idx) => (
+          <div key={d} className={`bg-muted/60 text-center text-[11px] font-bold uppercase tracking-wide py-2 ${idx === 0 || idx === 6 ? "text-primary/70" : "text-muted-foreground"}`}>{d}</div>
         ))}
         {cells.map((day, i) => {
-          if (day === null) return <div key={`e${i}`} className="bg-card min-h-[110px]" />;
+          if (day === null) return <div key={`e${i}`} className="bg-muted/20 min-h-[120px]" />;
           const dateStr = `${year}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
           const dayReports = byDate[dateStr] || [];
           const isToday = dateStr === today;
+          const isSelected = dateStr === selectedDate;
+          const dow = (firstDay + day - 1) % 7;
+          const isWeekend = dow === 0 || dow === 6;
           return (
-            <div key={dateStr} className={`bg-card min-h-[110px] p-1 ${isToday ? "ring-2 ring-primary ring-inset" : ""}`}>
-              <div className={`text-xs font-medium mb-0.5 ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>{day}</div>
-              <div className="space-y-1 max-h-[140px] overflow-y-auto">
-                {dayReports.slice(0,4).map((r: any, j: number) => {
-                  const invStatus = invoiceStatusByFlight?.get(normalizeFlightKey(String(r.flightNo || ""))) || "none";
-                  const pipelineOpts = {
-                    isLinked: !!r.isLinked,
-                    reviewStatus: r.reviewStatus,
-                    clearanceStatus: r.clearanceStatus,
-                    dispatchStatus: r.isLinked ? "Completed" : "Pending",
-                    invoiceStatus: invStatus,
-                    createdVia: r.createdVia,
-                  };
+            <button
+              key={dateStr}
+              onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+              className={`text-left bg-card min-h-[120px] p-1.5 flex flex-col gap-1 transition-all hover:bg-muted/40
+                ${isWeekend ? "bg-muted/10" : ""}
+                ${isToday ? "ring-2 ring-primary ring-inset z-10" : ""}
+                ${isSelected ? "ring-2 ring-foreground ring-inset z-10" : ""}
+              `}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-bold inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded
+                  ${isToday ? "bg-primary text-primary-foreground" : "text-foreground"}`}>{day}</span>
+                {dayReports.length > 0 && (
+                  <span className="text-[10px] font-semibold text-muted-foreground bg-muted/70 px-1.5 rounded-full">{dayReports.length}</span>
+                )}
+              </div>
+              <div className="space-y-1 flex-1">
+                {dayReports.slice(0, 3).map((r: any, j: number) => {
+                  const meta = PIPELINE_STAGE_META[r._stage] || PIPELINE_STAGE_META.clearance;
                   return (
-                    <div key={r.id || j} className="space-y-0.5">
-                      <button onClick={() => r.isLinked && onEdit(r)}
-                        className={`w-full text-left px-1 py-0.5 rounded text-[10px] leading-tight truncate border ${sc(r)} hover:opacity-80 transition-opacity`}
-                        title={`${r.flightNo} – ${r.operator}`}>
-                        <span className="font-mono font-semibold">{r.flightNo}</span>
-                        <span className="ml-1 opacity-70">{r.operator?.slice(0,8)}</span>
-                      </button>
-                      <div className="flex justify-center scale-[0.72] origin-top -my-1">
-                        <PipelineStepper
-                          currentStage={derivePipelineStage({ ...pipelineOpts, channel })}
-                          completedStages={derivePipelineCompletedStages(pipelineOpts)}
-                          compact
-                        />
+                    <div
+                      key={r.id || j}
+                      onClick={(e) => { e.stopPropagation(); r.isLinked && onEdit(r); }}
+                      className={`rounded-sm border-l-2 ${meta.border} ${meta.bg} px-1.5 py-1 hover:opacity-80 transition-opacity cursor-pointer`}
+                      title={`${r.flightNo} · ${r.operator || ""} · ${meta.label}`}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-[10px] font-bold text-foreground truncate">{r.flightNo}</span>
+                        {!r.isLinked && <Clock size={9} className="text-muted-foreground shrink-0" />}
+                      </div>
+                      <div className="text-[9px] text-muted-foreground truncate">
+                        {r.sta || r.std || ""} {r.operator ? "· " + r.operator.slice(0, 10) : ""}
                       </div>
                     </div>
                   );
                 })}
-                {dayReports.length > 4 && <div className="text-[10px] text-muted-foreground text-center">+{dayReports.length-4} more</div>}
+                {dayReports.length > 3 && (
+                  <div className="text-[10px] font-semibold text-primary text-center pt-0.5">+{dayReports.length - 3} more</div>
+                )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {/* Selected-day details panel */}
+      {selectedDate && (
+        <div className="border rounded-lg bg-card overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-muted/40 border-b">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={14} className="text-primary" />
+              <span className="text-sm font-bold text-foreground">
+                {new Date(selectedDate).toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+              </span>
+              <span className="text-xs text-muted-foreground">({selectedReports.length} flight{selectedReports.length === 1 ? "" : "s"})</span>
+            </div>
+            <button onClick={() => setSelectedDate(null)} className="p-1 rounded hover:bg-muted" aria-label="Close"><X size={14} /></button>
+          </div>
+          {selectedReports.length === 0 ? (
+            <div className="p-6 text-center text-sm text-muted-foreground">No flights on this date.</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 p-3">
+              {selectedReports.map((r: any) => {
+                const meta = PIPELINE_STAGE_META[r._stage] || PIPELINE_STAGE_META.clearance;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => r.isLinked && onEdit(r)}
+                    className={`text-left bg-card border-l-4 ${meta.border} border-y border-r rounded-md p-2.5 hover:shadow-md hover:border-y-primary/40 hover:border-r-primary/40 transition-all`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="font-mono text-sm font-bold text-foreground">{r.flightNo}</span>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${meta.bg} ${meta.text}`}>{meta.label}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-1.5 truncate">{r.operator || "—"} · {r.station || r.route || ""}</div>
+                    <div className="flex items-center gap-3 text-[11px] font-mono text-foreground mb-2">
+                      {r.sta && <span>STA <span className="text-primary">{r.sta}</span></span>}
+                      {r.std && <span>STD <span className="text-primary">{r.std}</span></span>}
+                    </div>
+                    <PipelineStepper currentStage={r._stage} completedStages={r._completed} compact />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
 
 function HandlingServiceReportContent() {
   const navigate = useNavigate();
