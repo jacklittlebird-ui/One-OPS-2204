@@ -18,7 +18,23 @@ type TableName =
 
 export function useSupabaseTable<T extends Record<string, any>>(
   table: TableName,
-  options?: { orderBy?: string; ascending?: boolean; stationFilter?: boolean }
+  options?: {
+    orderBy?: string;
+    ascending?: boolean;
+    stationFilter?: boolean;
+    /**
+     * Restrict the query to rows whose operational date is within the last N days.
+     * Server-side filter — drops payload dramatically on hot tables. Pass `null`
+     * to opt out. Defaults: 180d for flight_schedules / dispatch_assignments,
+     * 365d for service_reports. All other tables default to no window.
+     *
+     * Date column used:
+     *   flight_schedules     → arrival_date
+     *   dispatch_assignments → flight_date
+     *   service_reports      → arrival_date
+     */
+    dateWindowDays?: number | null;
+  }
 ) {
   const queryClient = useQueryClient();
   const { session } = useAuth();
@@ -65,8 +81,27 @@ export function useSupabaseTable<T extends Record<string, any>>(
                     : 10 * 60_000;
   const applyStationFilter = !!options?.stationFilter && isStationScoped && !!station;
 
+  // Date-window defaults (Tier 1 optimization: stop loading entire tables).
+  // Override per-call with options.dateWindowDays — pass null to disable.
+  const dateCol =
+    table === "flight_schedules" ? "arrival_date" :
+    table === "service_reports" ? "arrival_date" :
+    table === "dispatch_assignments" ? "flight_date" :
+    null;
+  const defaultDateWindow =
+    table === "flight_schedules" ? 180 :
+    table === "dispatch_assignments" ? 180 :
+    table === "service_reports" ? 365 :
+    null;
+  const dateWindowDays =
+    options?.dateWindowDays === undefined ? defaultDateWindow : options.dateWindowDays;
+  const dateFloor =
+    dateCol && dateWindowDays && dateWindowDays > 0
+      ? new Date(Date.now() - dateWindowDays * 86_400_000).toISOString().slice(0, 10)
+      : null;
+
   const query = useQuery({
-    queryKey: [table, session?.user?.id, applyStationFilter ? station : null],
+    queryKey: [table, session?.user?.id, applyStationFilter ? station : null, dateFloor],
     queryFn: async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       if (!currentSession) {
@@ -90,6 +125,9 @@ export function useSupabaseTable<T extends Record<string, any>>(
           } else {
             q = (q as any).eq("station", station as string);
           }
+        }
+        if (dateFloor && dateCol) {
+          q = (q as any).gte(dateCol, dateFloor);
         }
         const { data, error } = await q;
         if (error) throw error;

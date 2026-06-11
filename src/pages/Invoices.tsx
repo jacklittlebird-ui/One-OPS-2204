@@ -147,9 +147,9 @@ export default function InvoicesPage() {
   const { activeChannel } = useChannel();
   const readOnly = activeChannel === "payables";
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useSupabaseTable<InvoiceRow>("invoices", { stationFilter: true });
-  const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
+  const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments", { stationFilter: true, dateWindowDays: null });
   const { data: contracts } = useSupabaseTable<any>("contracts");
-  const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules", { stationFilter: true });
+  const { data: flightSchedules } = useSupabaseTable<any>("flight_schedules", { stationFilter: true, dateWindowDays: null });
   const { data: contractRates } = useSupabaseTable<any>("contract_service_rates");
   const { data: airports } = useSupabaseTable<any>("airports");
 
@@ -247,7 +247,7 @@ export default function InvoicesPage() {
   const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
   const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: serviceReports } = useSupabaseTable<any>("service_reports");
+  const { data: serviceReports } = useSupabaseTable<any>("service_reports", { dateWindowDays: null });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
