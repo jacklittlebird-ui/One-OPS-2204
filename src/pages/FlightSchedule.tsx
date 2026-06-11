@@ -146,9 +146,14 @@ export default function FlightSchedulePage() {
   const canViewHistory = useCanViewFlightHistory();
   // Domain hook — Flights domain via the policy engine. Mutations still come
   // from the underlying useSupabaseTable until the domain layer wraps them.
-  const { data, isLoading } = useFlights({ scope });
+  // List view uses the narrow projection (15 cols instead of 37). Detail/edit
+  // pulls the full row via useEnsureFlight() on click — hover prefetches it.
+  const { data, isLoading } = useFlightList<FlightRow>({ scope });
+  const prefetchFlight = usePrefetchFlight();
+  const ensureFlight = useEnsureFlight();
   const { add, update, remove, bulkInsert, isAdding, isUpdating } =
     useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
+
   const [search, setSearch] = useState("");
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [statusFilter, setStatusFilter] = useState("All Status");
