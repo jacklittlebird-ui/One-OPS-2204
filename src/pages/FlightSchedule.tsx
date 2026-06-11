@@ -198,7 +198,18 @@ export default function FlightSchedulePage() {
     await add(newRow as any);
     setShowAdd(false); setNewRow(emptyFlight());
   };
-  const startEdit = (row: FlightRow) => { setEditId(row.id); setEditData({ ...row }); };
+  // The list query ships a narrow projection. Before opening the edit modal
+  // we ensure the FULL row is in cache (instant if it was prefetched on hover,
+  // otherwise a single .eq("id", ...) round-trip).
+  const startEdit = async (row: FlightRow) => {
+    setEditId(row.id);
+    setEditData({ ...row }); // optimistic — render what we already have
+    try {
+      const full = await ensureFlight(row.id);
+      if (full) setEditData({ ...(full as any) });
+    } catch { /* leave optimistic data in place */ }
+  };
+
   const saveEdit = async () => {
     if (!editId) return;
     const { id, ...rest } = editData;
