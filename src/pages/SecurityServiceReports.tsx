@@ -1430,11 +1430,19 @@ export default function SecurityServiceReportsPage() {
                 <option>All Stations</option>
                 {allStations.map(s => <option key={s}>{s}</option>)}
               </select>
+              <select value={pendingTypeFilter} onChange={e => setPendingTypeFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+                <option>All Types</option>
+                {[...new Set(pendingApprovalFlights.map((f: any) => f.clearance_type).filter(Boolean))].sort().map((t: string) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <select value={pendingStatusFilter} onChange={e => setPendingStatusFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+                <option>All Statuses</option>
+                {[...new Set(pendingApprovalFlights.map((f: any) => f.status).filter(Boolean))].sort().map((s: string) => <option key={s} value={s}>{s}</option>)}
+              </select>
               <input type="date" value={pendingDateFrom} onChange={e => setPendingDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
               <input type="date" value={pendingDateTo} onChange={e => setPendingDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
-              {(pendingSearch || pendingStationFilter !== "All Stations" || pendingDateFrom || pendingDateTo) && (
+              {(pendingSearch || pendingStationFilter !== "All Stations" || pendingTypeFilter !== "All Types" || pendingStatusFilter !== "All Statuses" || pendingDateFrom || pendingDateTo) && (
                 <button
-                  onClick={() => { setPendingSearch(""); setPendingStationFilter("All Stations"); setPendingDateFrom(""); setPendingDateTo(""); }}
+                  onClick={() => { setPendingSearch(""); setPendingStationFilter("All Stations"); setPendingTypeFilter("All Types"); setPendingStatusFilter("All Statuses"); setPendingDateFrom(""); setPendingDateTo(""); }}
                   className="toolbar-btn-outline text-xs"
                 >
                   <X size={12} /> Clear
