@@ -365,9 +365,21 @@ export default function SecurityServiceReportsPage() {
       }
     }
 
+    // Optimistically remove this flight from every cached pending-approval list
+    // so the row vanishes from the tab immediately, without waiting for refetch.
+    queryClient.setQueriesData({ queryKey: ["flight_schedules", "station-dispatch-pending"] }, (old: any) => {
+      if (!Array.isArray(old)) return old;
+      return old.filter((f: any) => f?.id !== flightId);
+    });
+
+    // Refresh every downstream surface that consumes this flight / dispatch / invoice data
+    // so the pipeline shows step 3 complete and the row appears in all reports.
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-    toast({ title: "Approved", description: "Flight approved by Operations — pipeline advanced to Receivables." });
+    queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+    queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    queryClient.invalidateQueries({ queryKey: ["invoices_for_security_pipeline"] });
+    toast({ title: "Approved", description: "Flight approved by Operations — removed from Pending Approval and advanced to Receivables." });
   };
 
   const rejectPendingFlight = async (flightId: string) => {
