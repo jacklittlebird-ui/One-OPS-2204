@@ -1360,7 +1360,7 @@ function HandlingServiceReportContent() {
         </div>
 
         {viewMode === "calendar" ? (
-          <ServiceReportCalendarView reports={filtered} month={calMonth} onMonthChange={setCalMonth} onEdit={startEdit} />
+          <ServiceReportCalendarView reports={filtered} month={calMonth} onMonthChange={setCalMonth} onEdit={startEdit} invoiceStatusByFlight={invoiceStatusByFlight} channel={activeChannel} />
         ) : (
         <>
           <div className="overflow-x-auto">
