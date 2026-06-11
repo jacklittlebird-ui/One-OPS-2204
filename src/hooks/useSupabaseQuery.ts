@@ -23,10 +23,19 @@ export function useSupabaseTable<T extends Record<string, any>>(
     ascending?: boolean;
     stationFilter?: boolean;
     /**
+     * Dual-mode data scope (preferred over raw `dateWindowDays`):
+     *   "active"  → recent operational window (default for flight-centric tables)
+     *   "history" → full history, no date filter (audits, finance, cross-year reports)
+     * Pass via UI toggle so users explicitly choose to widen the scope.
+     */
+    mode?: "active" | "history";
+    /**
      * Restrict the query to rows whose operational date is within the last N days.
      * Server-side filter — drops payload dramatically on hot tables. Pass `null`
-     * to opt out. Defaults: 180d for flight_schedules / dispatch_assignments,
-     * 365d for service_reports. All other tables default to no window.
+     * to opt out. Defaults (when mode is "active" or unset):
+     *   180d for flight_schedules / dispatch_assignments
+     *   365d for service_reports
+     * Other tables: no window. `mode: "history"` forces null regardless.
      *
      * Date column used:
      *   flight_schedules     → arrival_date
@@ -93,8 +102,10 @@ export function useSupabaseTable<T extends Record<string, any>>(
     table === "dispatch_assignments" ? 180 :
     table === "service_reports" ? 365 :
     null;
+  // mode: "history" forces null (full history). Explicit dateWindowDays still wins.
+  const modeWindow = options?.mode === "history" ? null : defaultDateWindow;
   const dateWindowDays =
-    options?.dateWindowDays === undefined ? defaultDateWindow : options.dateWindowDays;
+    options?.dateWindowDays === undefined ? modeWindow : options.dateWindowDays;
   const dateFloor =
     dateCol && dateWindowDays && dateWindowDays > 0
       ? new Date(Date.now() - dateWindowDays * 86_400_000).toISOString().slice(0, 10)
