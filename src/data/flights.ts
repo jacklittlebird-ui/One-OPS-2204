@@ -69,7 +69,9 @@ export interface FlightListRow {
   arrival_date: string | null;
   departure_date: string | null;
   status: string | null;
+  handling_agent: string | null;
 }
+
 
 /**
  * List-projection hook — same scope rules as useFlights() but only ships
