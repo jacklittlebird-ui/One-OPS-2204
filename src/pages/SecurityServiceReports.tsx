@@ -1698,6 +1698,31 @@ export default function SecurityServiceReportsPage() {
                               <span>STD <span className="text-primary">{d.std || "—"}</span></span>
                             </div>
                             <div className="text-[11px] text-muted-foreground mt-1 truncate">{d.route || "—"}</div>
+                            {(() => {
+                              const chargesPersisted =
+                                ((r as any).total_security_charges || 0) > 0 &&
+                                ((r.review_status || "").toLowerCase().includes("billing"));
+                              const baseInvStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(d.flightNo || r.flight_no || ""))) || "none";
+                              const invStatus: "none" | "issued" | "paid" =
+                                baseInvStatus === "paid" || chargesSavedIds.has(r.id) || chargesPersisted ? "paid" : baseInvStatus;
+                              const pipelineOpts = {
+                                isLinked: r.status === "Completed",
+                                reviewStatus: r.review_status,
+                                clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+                                dispatchStatus: r.status,
+                                invoiceStatus: invStatus,
+                                createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
+                              };
+                              return (
+                                <div className="mt-2 pt-2 border-t flex justify-center">
+                                  <PipelineStepper
+                                    currentStage={derivePipelineStage({ ...pipelineOpts, channel: activeChannel })}
+                                    completedStages={derivePipelineCompletedStages(pipelineOpts)}
+                                    compact
+                                  />
+                                </div>
+                              );
+                            })()}
                           </button>
                         );
                       })}
