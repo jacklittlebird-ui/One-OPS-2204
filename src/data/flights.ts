@@ -10,9 +10,15 @@
 // All hooks share the same React Query cache via useSupabaseTable, so invalidations
 // stay consistent across the app.
 
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { resolvePolicy, canUseHistoryScope, type QueryPolicy } from "@/data/policy";
+import { queryKeys } from "@/cache/queryKeys";
+
 
 /** Active flights — server-side date window applied (default 180d). */
 export function useFlights<T extends Record<string, any> = any>(policy?: QueryPolicy) {
