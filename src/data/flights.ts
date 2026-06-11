@@ -51,7 +51,8 @@ export function useCanViewFlightHistory(): boolean {
  * Detail dialogs should call useFlights() (full row) when opened.
  */
 export const FLIGHT_LIST_COLUMNS =
-  "id,flight_no,airline_id,authority,clearance_type,skd_type,aircraft_type,registration,route,sta,std,arrival_date,departure_date,status";
+  "id,flight_no,airline_id,authority,clearance_type,skd_type,aircraft_type,registration,route,sta,std,arrival_date,departure_date,status,handling_agent";
+
 
 export interface FlightListRow {
   id: string;
