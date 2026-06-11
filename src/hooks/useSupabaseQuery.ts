@@ -43,7 +43,16 @@ export function useSupabaseTable<T extends Record<string, any>>(
      *   service_reports      → arrival_date
      */
     dateWindowDays?: number | null;
+    /**
+     * PostgREST column projection. Defaults to "*".
+     * Pass a narrow column list for list views — `flight_schedules` has 37
+     * columns and most screens render 8–12. Narrow projections cut payload,
+     * JSON parsing, and React Query memory. The cache key includes this
+     * string, so list and detail queries never collide.
+     */
+    select?: string;
   }
+
 ) {
   const queryClient = useQueryClient();
   const { session } = useAuth();
