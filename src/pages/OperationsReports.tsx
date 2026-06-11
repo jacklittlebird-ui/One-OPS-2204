@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useServiceReports } from "@/data/serviceReports";
+import { useDispatchBoard } from "@/data/dispatch";
 import { Shield, Plane, FileBarChart2, Download, ExternalLink, Loader2, Inbox, Printer, FileSpreadsheet, FileText } from "lucide-react";
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useNavigate } from "react-router-dom";
@@ -249,10 +250,8 @@ function StatsTable({
 
 export default function OperationsReportsPage() {
   const navigate = useNavigate();
-  const { data: serviceReports = [], isLoading: loadingHandling } =
-    useSupabaseTable<any>("service_reports", { stationFilter: true });
-  const { data: dispatches = [], isLoading: loadingSecurity } =
-    useSupabaseTable<any>("dispatch_assignments", { stationFilter: true });
+  const { data: serviceReports = [], isLoading: loadingHandling } = useServiceReports();
+  const { data: dispatches = [], isLoading: loadingSecurity } = useDispatchBoard();
   const isLoading = loadingHandling || loadingSecurity;
 
   const [typeFilter, setTypeFilter] = useState<string>("all");
