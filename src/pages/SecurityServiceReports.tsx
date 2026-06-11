@@ -744,7 +744,7 @@ export default function SecurityServiceReportsPage() {
     return rows;
   }, [pendingApprovalFlights, pendingStationFilter, pendingTypeFilter, pendingStatusFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
 
-  const { pageRows: pagePending, ...pagPending } = usePagination(filteredPendingFlights, { resetKey: [pendingSearch, pendingStationFilter, pendingDateFrom, pendingDateTo] });
+  const { pageRows: pagePending, ...pagPending } = usePagination(filteredPendingFlights, { resetKey: [pendingSearch, pendingStationFilter, pendingTypeFilter, pendingStatusFilter, pendingDateFrom, pendingDateTo] });
   const { pageRows: pageData, ...pagMain } = usePagination(filtered, { resetKey: [filtered.length] });
 
 
