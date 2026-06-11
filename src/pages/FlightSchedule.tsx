@@ -7,6 +7,8 @@ import {
   AlertCircle, Calendar, Link2, FileBarChart2, Eye
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useFlights, useCanViewFlightHistory } from "@/data/flights";
+import { DataScopeToggle } from "@/components/DataScopeToggle";
 import * as XLSX from "xlsx";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
