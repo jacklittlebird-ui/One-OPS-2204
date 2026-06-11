@@ -14,7 +14,7 @@ const storage: Storage | null =
 
 export function readCachedRoles(userId: string): string[] | null {
   try {
-    const raw = sessionStorage.getItem(ROLES_CACHE_PREFIX + userId);
+    const raw = storage?.getItem(ROLES_CACHE_PREFIX + userId);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return null;
@@ -26,7 +26,7 @@ export function readCachedRoles(userId: string): string[] | null {
 
 export function isCachedRolesFresh(userId: string): boolean {
   try {
-    const ts = Number(sessionStorage.getItem(ROLES_CACHE_PREFIX + userId + ROLES_TS_SUFFIX) || 0);
+    const ts = Number(storage?.getItem(ROLES_CACHE_PREFIX + userId + ROLES_TS_SUFFIX) || 0);
     return ts > 0 && Date.now() - ts < ROLES_FRESH_MS;
   } catch {
     return false;
@@ -35,19 +35,20 @@ export function isCachedRolesFresh(userId: string): boolean {
 
 export function writeCachedRoles(userId: string, roles: string[]) {
   try {
-    sessionStorage.setItem(ROLES_CACHE_PREFIX + userId, JSON.stringify(roles));
-    sessionStorage.setItem(ROLES_CACHE_PREFIX + userId + ROLES_TS_SUFFIX, String(Date.now()));
+    storage?.setItem(ROLES_CACHE_PREFIX + userId, JSON.stringify(roles));
+    storage?.setItem(ROLES_CACHE_PREFIX + userId + ROLES_TS_SUFFIX, String(Date.now()));
   } catch { /* ignore quota errors */ }
 }
 
 export function clearCachedRoles(userId?: string) {
   try {
+    if (!storage) return;
     if (userId) {
-      sessionStorage.removeItem(ROLES_CACHE_PREFIX + userId);
-      sessionStorage.removeItem(ROLES_CACHE_PREFIX + userId + ROLES_TS_SUFFIX);
+      storage.removeItem(ROLES_CACHE_PREFIX + userId);
+      storage.removeItem(ROLES_CACHE_PREFIX + userId + ROLES_TS_SUFFIX);
     } else {
-      for (const k of Object.keys(sessionStorage)) {
-        if (k.startsWith(ROLES_CACHE_PREFIX)) sessionStorage.removeItem(k);
+      for (const k of Object.keys(storage)) {
+        if (k.startsWith(ROLES_CACHE_PREFIX)) storage.removeItem(k);
       }
     }
   } catch { /* ignore */ }
