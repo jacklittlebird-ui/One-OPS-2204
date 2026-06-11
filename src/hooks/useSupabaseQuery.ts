@@ -18,7 +18,23 @@ type TableName =
 
 export function useSupabaseTable<T extends Record<string, any>>(
   table: TableName,
-  options?: { orderBy?: string; ascending?: boolean; stationFilter?: boolean }
+  options?: {
+    orderBy?: string;
+    ascending?: boolean;
+    stationFilter?: boolean;
+    /**
+     * Restrict the query to rows whose operational date is within the last N days.
+     * Server-side filter — drops payload dramatically on hot tables. Pass `null`
+     * to opt out. Defaults: 180d for flight_schedules / dispatch_assignments,
+     * 365d for service_reports. All other tables default to no window.
+     *
+     * Date column used:
+     *   flight_schedules     → arrival_date
+     *   dispatch_assignments → flight_date
+     *   service_reports      → arrival_date
+     */
+    dateWindowDays?: number | null;
+  }
 ) {
   const queryClient = useQueryClient();
   const { session } = useAuth();
