@@ -311,7 +311,13 @@ export default function FlightSchedulePage() {
                   <p className="font-semibold text-foreground">No Flights Found</p>
                 </td></tr>
               ) : pageData.map((row, i) => (
-                <tr key={row.id} className="data-table-row">
+                <tr
+                  key={row.id}
+                  className="data-table-row"
+                  onMouseEnter={() => prefetchFlight(row.id)}
+                  onFocus={() => prefetchFlight(row.id)}
+                >
+
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{pag.start + i + 1}</td>
                   <td className="px-3 py-2.5">
                     <div className="font-mono font-semibold text-foreground">{row.flight_no}</div>
