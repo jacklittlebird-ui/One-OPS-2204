@@ -43,7 +43,15 @@ export interface PaginatedQueryOptions<T> {
   select?: string;
   /** Disable until truthy */
   enabled?: boolean;
-}
+  /**
+   * Row-count strategy. PostgREST options:
+   *   - "planned"  (default) → near-free; uses Postgres planner stats. Total is approximate.
+   *   - "estimated"          → planned for big tables, exact for small ones.
+   *   - "exact"              → accurate but runs a full filtered COUNT(*) every page (SLOW).
+   *   - "none"               → no total; pageCount becomes unknown.
+   */
+  countMode?: "planned" | "estimated" | "exact" | "none";
+
 
 export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T>) {
   const {
