@@ -51,7 +51,7 @@ export interface PaginatedQueryOptions<T> {
    *   - "none"               → no total; pageCount becomes unknown.
    */
   countMode?: "planned" | "estimated" | "exact" | "none";
-
+}
 
 export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T>) {
   const {
@@ -65,7 +65,9 @@ export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T
     filters,
     select = "*",
     enabled = true,
+    countMode = "planned",
   } = opts;
+
 
   const { session } = useAuth();
   const { station, isStationScoped } = useUserStation();
