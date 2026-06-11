@@ -43,6 +43,14 @@ export interface PaginatedQueryOptions<T> {
   select?: string;
   /** Disable until truthy */
   enabled?: boolean;
+  /**
+   * Row-count strategy. PostgREST options:
+   *   - "planned"  (default) → near-free; uses Postgres planner stats. Total is approximate.
+   *   - "estimated"          → planned for big tables, exact for small ones.
+   *   - "exact"              → accurate but runs a full filtered COUNT(*) every page (SLOW).
+   *   - "none"               → no total; pageCount becomes unknown.
+   */
+  countMode?: "planned" | "estimated" | "exact" | "none";
 }
 
 export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T>) {
@@ -57,7 +65,9 @@ export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T
     filters,
     select = "*",
     enabled = true,
+    countMode = "planned",
   } = opts;
+
 
   const { session } = useAuth();
   const { station, isStationScoped } = useUserStation();
@@ -87,6 +97,7 @@ export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T
     page,
     select,
     filterKey,
+    countMode,
   ];
 
   const query = useQuery({
@@ -100,11 +111,13 @@ export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T
     queryFn: async () => {
       const from = page * pageSize;
       const to = from + pageSize - 1;
+      const selectOpts: any = countMode === "none" ? undefined : { count: countMode };
       let q: any = supabase
         .from(table as any)
-        .select(select, { count: "exact" })
+        .select(select, selectOpts)
         .order(orderCol, { ascending, nullsFirst: false })
         .range(from, to);
+
       if (applyStation) q = q.eq(stationCol, station as string);
       if (filters) q = filters(q);
       const { data, error, count } = await q;

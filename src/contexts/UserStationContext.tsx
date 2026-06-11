@@ -2,6 +2,11 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import { useChannel } from "./ChannelContext";
+import {
+  readCachedProfile,
+  isCachedProfileFresh,
+  writeCachedProfile,
+} from "@/lib/profileCache";
 
 interface UserStationContextType {
   station: string | null;       // e.g. "HBE", "CAI" — null = no restriction (admin or not set)
@@ -23,16 +28,32 @@ export function UserStationProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
+
+    // 1) Hydrate instantly from localStorage if present.
+    const cached = readCachedProfile(user.id);
+    if (cached) {
+      setStation(cached.station ?? null);
+      setLoading(false);
+    }
+
+    // 2) If cache is fresh, skip the network round-trip entirely.
+    //    profiles.station is virtually static per user; it was the #6 slowest
+    //    query at ~12k calls. A 45-min TTL eliminates the chatter.
+    if (cached && isCachedProfileFresh(user.id)) return;
+
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("station")
+        .select("station, full_name")
         .eq("user_id", user.id)
         .maybeSingle();
-      setStation(data?.station || null);
+      const nextStation = data?.station ?? null;
+      setStation(nextStation);
       setLoading(false);
+      writeCachedProfile(user.id, { station: nextStation, full_name: data?.full_name ?? null });
     })();
   }, [user]);
+
 
   // Admins and central review/finance channels (operations, receivables, payables,
   // general_accounts, contracts) see flights across all stations. Only station/clearance
