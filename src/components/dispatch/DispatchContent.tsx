@@ -4,6 +4,9 @@ import {
   CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye, CalendarDays, TableIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useFlights } from "@/data/flights";
+import { useDispatchBoard, useCanViewDispatchHistory } from "@/data/dispatch";
+import { DataScopeToggle } from "@/components/DataScopeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
