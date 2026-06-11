@@ -21,6 +21,12 @@ export interface QueryPolicy {
   customDays?: number;
   /** Apply station scoping at the data layer. Defaults to true. */
   stationScoped?: boolean;
+  /**
+   * Column projection (PostgREST syntax). Used by list-projection hooks like
+   * `useFlightList` to cut payload — heavy tables have 30–68 columns and most
+   * screens render under a dozen. Omit (or pass undefined) for full rows.
+   */
+  select?: string;
 }
 
 // Roles allowed to switch to "history" / full-dataset scope.
@@ -47,7 +53,7 @@ export function canUseHistoryScope(roles: string[]): boolean {
 export function resolvePolicy(
   policy: QueryPolicy | undefined,
   roles: string[],
-): { mode: QueryScope; dateWindowDays: number | null | undefined; stationFilter: boolean } {
+): { mode: QueryScope; dateWindowDays: number | null | undefined; stationFilter: boolean; select?: string } {
   const requested: QueryScope = policy?.scope ?? "active";
   const allowed = requested === "history" ? canUseHistoryScope(roles) : true;
   const scope: QueryScope = allowed ? requested : "active";
@@ -71,5 +77,7 @@ export function resolvePolicy(
     mode: scope,
     dateWindowDays,
     stationFilter: policy?.stationScoped ?? true,
+    select: policy?.select,
   };
 }
+

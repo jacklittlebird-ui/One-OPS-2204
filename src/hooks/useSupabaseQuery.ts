@@ -43,7 +43,16 @@ export function useSupabaseTable<T extends Record<string, any>>(
      *   service_reports      → arrival_date
      */
     dateWindowDays?: number | null;
+    /**
+     * PostgREST column projection. Defaults to "*".
+     * Pass a narrow column list for list views — `flight_schedules` has 37
+     * columns and most screens render 8–12. Narrow projections cut payload,
+     * JSON parsing, and React Query memory. The cache key includes this
+     * string, so list and detail queries never collide.
+     */
+    select?: string;
   }
+
 ) {
   const queryClient = useQueryClient();
   const { session } = useAuth();
@@ -111,8 +120,10 @@ export function useSupabaseTable<T extends Record<string, any>>(
       ? new Date(Date.now() - dateWindowDays * 86_400_000).toISOString().slice(0, 10)
       : null;
 
+  const selectCols = options?.select || "*";
+
   const query = useQuery({
-    queryKey: [table, session?.user?.id, applyStationFilter ? station : null, dateFloor],
+    queryKey: [table, session?.user?.id, applyStationFilter ? station : null, dateFloor, selectCols],
     queryFn: async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       if (!currentSession) {
@@ -126,7 +137,7 @@ export function useSupabaseTable<T extends Record<string, any>>(
       while (hasMore) {
         let q = supabase
           .from(table)
-          .select("*")
+          .select(selectCols)
           .order(orderCol, { ascending: asc, nullsFirst: false })
           .range(from, from + PAGE_SIZE - 1);
         if (applyStationFilter) {
@@ -157,6 +168,7 @@ export function useSupabaseTable<T extends Record<string, any>>(
     refetchOnMount: false,
     refetchOnReconnect: true,
   });
+
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: [table] });
