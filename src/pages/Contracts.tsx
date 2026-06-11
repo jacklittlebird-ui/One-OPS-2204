@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useAirlinesRef } from "@/data/referenceData";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,

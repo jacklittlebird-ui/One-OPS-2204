@@ -5,6 +5,7 @@ import {
   BedDouble, Fuel, Plus, Trash2, Building2, CalendarIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useDelayCodesRef } from "@/data/referenceData";
 import { useQuery } from "@tanstack/react-query";
 import { Constants } from "@/integrations/supabase/types";
 import {
