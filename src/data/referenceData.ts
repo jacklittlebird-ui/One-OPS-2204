@@ -61,19 +61,19 @@ function useRefTable<T = any>(
 }
 
 export const useAirlinesRef = () =>
-  useRefTable<{ id: string; name: string; iata: string | null; icao: string | null }>(
+  useRefTable<{ id: string; name: string; iata_code: string | null; icao_code: string | null; code: string | null; status: string | null }>(
     refKeys.airlines,
     "airlines",
-    "id,name,iata,icao",
+    "id,code,name,iata_code,icao_code,status,billing_currency,credit_terms",
     "name",
   );
 
 export const useAirportsRef = () =>
-  useRefTable<{ id: string; name: string; iata: string | null; icao: string | null; country: string | null }>(
+  useRefTable<{ id: string; name: string; iata_code: string | null; icao_code: string | null; city: string | null; country_id: string | null; status: string | null }>(
     refKeys.airports,
     "airports",
-    "id,name,iata,icao,country",
-    "iata",
+    "id,name,iata_code,icao_code,city,country_id,status",
+    "iata_code",
   );
 
 export const useContractServiceRatesRef = () =>
