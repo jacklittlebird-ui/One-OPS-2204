@@ -83,9 +83,76 @@ export function useFlightList<T extends Record<string, any> = FlightListRow>(
   return useSupabaseTable<T>("flight_schedules", resolved);
 }
 
+/**
+ * Single-row fetcher — used by detail dialogs after a list row is clicked.
+ * Pair with `usePrefetchFlight` on hover for an instant-open feel.
+ */
+async function fetchFlightById(id: string) {
+  const { data, error } = await supabase
+    .from("flight_schedules")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export function useFlightById(id: string | null | undefined) {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: id ? queryKeys.flights.byId(id) : ["flights", "byId", "__noop__"],
+    queryFn: () => fetchFlightById(id as string),
+    enabled: !!session && !!id,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+}
+
+/**
+ * Imperative prefetch — wire to `onMouseEnter` / `onFocus` on list rows so the
+ * detail row lands in the cache before the user clicks. Combined with
+ * `useFlightById` the modal opens with zero perceived latency.
+ */
+export function usePrefetchFlight() {
+  const qc = useQueryClient();
+  return useCallback(
+    (id: string) => {
+      if (!id) return;
+      qc.prefetchQuery({
+        queryKey: queryKeys.flights.byId(id),
+        queryFn: () => fetchFlightById(id),
+        staleTime: 60_000,
+      });
+    },
+    [qc],
+  );
+}
+
+/**
+ * Ensures the full flight row is in cache and returns it. Use on Edit/Open
+ * clicks to guarantee the modal sees every column (the list projection
+ * intentionally omits some). Resolves from cache instantly when the row was
+ * prefetched on hover.
+ */
+export function useEnsureFlight() {
+  const qc = useQueryClient();
+  return useCallback(
+    (id: string) =>
+      qc.ensureQueryData({
+        queryKey: queryKeys.flights.byId(id),
+        queryFn: () => fetchFlightById(id),
+        staleTime: 60_000,
+      }),
+    [qc],
+  );
+}
+
 // Realtime placeholder — wired in Tier 3 (ops live board only).
 export function useFlightRealtime(): void {
   // Intentionally a no-op for now. The live ops board will register a
   // Supabase realtime channel here and invalidate the flights cache.
 }
+
 
