@@ -10,6 +10,7 @@ import { formatDateDMY } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useAirportsRef, useContractServiceRatesRef } from "@/data/referenceData";
 import { useInvoices } from "@/data/finance";
 import { useFlightHistory } from "@/data/flights";
 import { useDispatchHistory } from "@/data/dispatch";
@@ -154,8 +155,8 @@ export default function InvoicesPage() {
   const { data: dispatches } = useDispatchHistory();
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const { data: flightSchedules } = useFlightHistory();
-  const { data: contractRates } = useSupabaseTable<any>("contract_service_rates");
-  const { data: airports } = useSupabaseTable<any>("airports");
+  const { data: contractRates } = useContractServiceRatesRef();
+  const { data: airports } = useAirportsRef();
 
   // Map: first flight_no in flight_ref -> registration
   const regByFlightNo = useMemo(() => {

@@ -6,6 +6,7 @@ import {
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useFlights } from "@/data/flights";
 import { useDispatchBoard, useCanViewDispatchHistory } from "@/data/dispatch";
+import { useAirlinesRef, useContractServiceRatesRef } from "@/data/referenceData";
 import { DataScopeToggle } from "@/components/DataScopeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -204,8 +205,9 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
   const { add, update, remove, isAdding, isUpdating } =
     useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<ContractRow>("contracts");
-  const { data: serviceRates } = useSupabaseTable<ServiceRateRow>("contract_service_rates");
-  const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines");
+  const { data: serviceRates } = useContractServiceRatesRef() as { data: ServiceRateRow[] | undefined };
+  const { data: airlines } = useAirlinesRef();
+
 
   const [stationFilter, setStationFilter] = useState("");
   const now = new Date();

@@ -7,6 +7,7 @@ import {
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useFlights } from "@/data/flights";
 import { useDispatchBoard } from "@/data/dispatch";
+import { useAirlinesRef, useContractServiceRatesRef } from "@/data/referenceData";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -221,8 +222,8 @@ export default function StationDispatchPage() {
     [isStationScoped, userStation]
   );
   const { data: contracts } = useSupabaseTable<ContractRow>("contracts");
-  const { data: serviceRates } = useSupabaseTable<ServiceRateRow>("contract_service_rates");
-  const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines");
+  const { data: serviceRates } = useContractServiceRatesRef() as { data: ServiceRateRow[] | undefined };
+  const { data: airlines } = useAirlinesRef();
 
   const [stationFilter, setStationFilter] = useState("");
   const now = new Date();

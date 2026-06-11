@@ -1,5 +1,5 @@
 import { FileText, X, Shield } from "lucide-react";
-import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useAirlinesRef, useAirportsRef } from "@/data/referenceData";
 import type { ContractRow, ContractStatus } from "./ContractTypes";
 import { CONTRACT_TYPES, PAYMENT_TERMS, BILLING_FREQUENCIES, CURRENCIES, STATUSES, SERVICE_CATEGORIES } from "./ContractTypes";
 
@@ -26,8 +26,8 @@ type Props = {
 
 export function ContractForm({ data, onChange, onSave, onCancel, title, isSaving }: Props) {
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
-  const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines", { orderBy: "name", ascending: true });
-  const { data: airports } = useSupabaseTable<{ id: string; name: string; iata_code: string; city: string; status: string }>("airports", { orderBy: "iata_code", ascending: true });
+  const { data: airlines } = useAirlinesRef();
+  const { data: airports } = useAirportsRef();
 
   const selectedStations = (data.stations || "")
     .split(",")

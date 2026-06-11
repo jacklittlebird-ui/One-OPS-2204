@@ -4,6 +4,7 @@ import { formatDateDMY } from "@/lib/utils";
 import { Search, Plus, Download, Globe, Pencil, Trash2, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, XCircle, Database, Eye, Ban, CalendarIcon } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useAirlinesRef } from "@/data/referenceData";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ const statusBadge = (s: string) => {
 
 export default function OverflySchedulePage() {
   const { data, isLoading, add, update, remove } = useSupabaseTable<OverflyRow>("overfly_schedules");
-  const { data: airlines } = useSupabaseTable<AirlineRow>("airlines");
+  const { data: airlines } = useAirlinesRef() as { data: AirlineRow[] | undefined };
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [operatorFilter, setOperatorFilter] = useState("All");

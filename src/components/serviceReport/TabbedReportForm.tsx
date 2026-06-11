@@ -5,6 +5,7 @@ import {
   BedDouble, Fuel, Plus, Trash2, Building2, CalendarIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useDelayCodesRef } from "@/data/referenceData";
 import { useQuery } from "@tanstack/react-query";
 import { Constants } from "@/integrations/supabase/types";
 import {
@@ -289,7 +290,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
   const [reviewComment, setReviewComment] = useState<string>(data.reviewComment || "");
 
   type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
-  const { data: delayCodes } = useSupabaseTable<DelayCodeRow>("delay_codes", { orderBy: "code", ascending: true });
+  const { data: delayCodes } = useDelayCodesRef() as { data: DelayCodeRow[] | undefined };
   const { data: airportCharges } = useSupabaseTable<AirportChargeRow>("airport_charges", { orderBy: "created_at", ascending: true });
 
   // Look up invoice status for this flight so the Receivables pipeline step
