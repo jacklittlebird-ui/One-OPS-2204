@@ -192,8 +192,14 @@ interface DispatchContentProps {
 }
 
 export default function DispatchContent({ serviceCategory }: DispatchContentProps) {
-  const { data: flights, isLoading: flightsLoading } = useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
-  const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
+  const [scope, setScope] = useState<"active" | "history">("active");
+  const canViewHistory = useCanViewDispatchHistory();
+  // Domain layer (Flights + Dispatch) via the policy engine.
+  const { data: flights, isLoading: flightsLoading } = useFlights({ scope });
+  const { data: dispatches, isLoading: dispLoading } = useDispatchBoard({ scope });
+  // Mutations still go through the underlying table hook until the domain layer wraps them.
+  const { add, update, remove, isAdding, isUpdating } =
+    useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<ContractRow>("contracts");
   const { data: serviceRates } = useSupabaseTable<ServiceRateRow>("contract_service_rates");
   const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines");
