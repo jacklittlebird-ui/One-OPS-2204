@@ -7,7 +7,13 @@ import {
   AlertCircle, Calendar, Link2, FileBarChart2, Eye
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
-import { useFlights, useCanViewFlightHistory } from "@/data/flights";
+import {
+  useFlightList,
+  useCanViewFlightHistory,
+  usePrefetchFlight,
+  useEnsureFlight,
+} from "@/data/flights";
+
 import { DataScopeToggle } from "@/components/DataScopeToggle";
 import * as XLSX from "xlsx";
 import {
@@ -140,9 +146,14 @@ export default function FlightSchedulePage() {
   const canViewHistory = useCanViewFlightHistory();
   // Domain hook — Flights domain via the policy engine. Mutations still come
   // from the underlying useSupabaseTable until the domain layer wraps them.
-  const { data, isLoading } = useFlights({ scope });
+  // List view uses the narrow projection (15 cols instead of 37). Detail/edit
+  // pulls the full row via useEnsureFlight() on click — hover prefetches it.
+  const { data, isLoading } = useFlightList<FlightRow>({ scope });
+  const prefetchFlight = usePrefetchFlight();
+  const ensureFlight = useEnsureFlight();
   const { add, update, remove, bulkInsert, isAdding, isUpdating } =
     useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
+
   const [search, setSearch] = useState("");
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -187,7 +198,18 @@ export default function FlightSchedulePage() {
     await add(newRow as any);
     setShowAdd(false); setNewRow(emptyFlight());
   };
-  const startEdit = (row: FlightRow) => { setEditId(row.id); setEditData({ ...row }); };
+  // The list query ships a narrow projection. Before opening the edit modal
+  // we ensure the FULL row is in cache (instant if it was prefetched on hover,
+  // otherwise a single .eq("id", ...) round-trip).
+  const startEdit = async (row: FlightRow) => {
+    setEditId(row.id);
+    setEditData({ ...row }); // optimistic — render what we already have
+    try {
+      const full = await ensureFlight(row.id);
+      if (full) setEditData({ ...(full as any) });
+    } catch { /* leave optimistic data in place */ }
+  };
+
   const saveEdit = async () => {
     if (!editId) return;
     const { id, ...rest } = editData;
@@ -289,7 +311,13 @@ export default function FlightSchedulePage() {
                   <p className="font-semibold text-foreground">No Flights Found</p>
                 </td></tr>
               ) : pageData.map((row, i) => (
-                <tr key={row.id} className="data-table-row">
+                <tr
+                  key={row.id}
+                  className="data-table-row"
+                  onMouseEnter={() => prefetchFlight(row.id)}
+                  onFocus={() => prefetchFlight(row.id)}
+                >
+
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{pag.start + i + 1}</td>
                   <td className="px-3 py-2.5">
                     <div className="font-mono font-semibold text-foreground">{row.flight_no}</div>

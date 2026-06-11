@@ -10,9 +10,15 @@
 // All hooks share the same React Query cache via useSupabaseTable, so invalidations
 // stay consistent across the app.
 
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { resolvePolicy, canUseHistoryScope, type QueryPolicy } from "@/data/policy";
+import { queryKeys } from "@/cache/queryKeys";
+
 
 /** Active flights — server-side date window applied (default 180d). */
 export function useFlights<T extends Record<string, any> = any>(policy?: QueryPolicy) {
@@ -45,7 +51,8 @@ export function useCanViewFlightHistory(): boolean {
  * Detail dialogs should call useFlights() (full row) when opened.
  */
 export const FLIGHT_LIST_COLUMNS =
-  "id,flight_no,airline_id,authority,clearance_type,skd_type,aircraft_type,registration,route,sta,std,arrival_date,departure_date,status";
+  "id,flight_no,airline_id,authority,clearance_type,skd_type,aircraft_type,registration,route,sta,std,arrival_date,departure_date,status,handling_agent";
+
 
 export interface FlightListRow {
   id: string;
@@ -62,7 +69,9 @@ export interface FlightListRow {
   arrival_date: string | null;
   departure_date: string | null;
   status: string | null;
+  handling_agent: string | null;
 }
+
 
 /**
  * List-projection hook — same scope rules as useFlights() but only ships
@@ -77,9 +86,76 @@ export function useFlightList<T extends Record<string, any> = FlightListRow>(
   return useSupabaseTable<T>("flight_schedules", resolved);
 }
 
+/**
+ * Single-row fetcher — used by detail dialogs after a list row is clicked.
+ * Pair with `usePrefetchFlight` on hover for an instant-open feel.
+ */
+async function fetchFlightById(id: string) {
+  const { data, error } = await supabase
+    .from("flight_schedules")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export function useFlightById(id: string | null | undefined) {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: id ? queryKeys.flights.byId(id) : ["flights", "byId", "__noop__"],
+    queryFn: () => fetchFlightById(id as string),
+    enabled: !!session && !!id,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+}
+
+/**
+ * Imperative prefetch — wire to `onMouseEnter` / `onFocus` on list rows so the
+ * detail row lands in the cache before the user clicks. Combined with
+ * `useFlightById` the modal opens with zero perceived latency.
+ */
+export function usePrefetchFlight() {
+  const qc = useQueryClient();
+  return useCallback(
+    (id: string) => {
+      if (!id) return;
+      qc.prefetchQuery({
+        queryKey: queryKeys.flights.byId(id),
+        queryFn: () => fetchFlightById(id),
+        staleTime: 60_000,
+      });
+    },
+    [qc],
+  );
+}
+
+/**
+ * Ensures the full flight row is in cache and returns it. Use on Edit/Open
+ * clicks to guarantee the modal sees every column (the list projection
+ * intentionally omits some). Resolves from cache instantly when the row was
+ * prefetched on hover.
+ */
+export function useEnsureFlight() {
+  const qc = useQueryClient();
+  return useCallback(
+    (id: string) =>
+      qc.ensureQueryData({
+        queryKey: queryKeys.flights.byId(id),
+        queryFn: () => fetchFlightById(id),
+        staleTime: 60_000,
+      }),
+    [qc],
+  );
+}
+
 // Realtime placeholder — wired in Tier 3 (ops live board only).
 export function useFlightRealtime(): void {
   // Intentionally a no-op for now. The live ops board will register a
   // Supabase realtime channel here and invalidate the flights cache.
 }
+
 
