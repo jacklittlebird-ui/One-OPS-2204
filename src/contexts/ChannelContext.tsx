@@ -52,7 +52,7 @@ interface ChannelContextType {
 
 const ChannelContext = createContext<ChannelContextType | undefined>(undefined);
 
-import { readCachedRoles, writeCachedRoles, clearCachedRoles } from "@/lib/roleCache";
+import { readCachedRoles, writeCachedRoles, clearCachedRoles, isCachedRolesFresh } from "@/lib/roleCache";
 
 // Re-export for backwards compatibility with any consumer that imported it
 // from this module before the cache was split out.
