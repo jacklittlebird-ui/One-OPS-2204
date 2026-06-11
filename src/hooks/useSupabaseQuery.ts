@@ -102,8 +102,10 @@ export function useSupabaseTable<T extends Record<string, any>>(
     table === "dispatch_assignments" ? 180 :
     table === "service_reports" ? 365 :
     null;
+  // mode: "history" forces null (full history). Explicit dateWindowDays still wins.
+  const modeWindow = options?.mode === "history" ? null : defaultDateWindow;
   const dateWindowDays =
-    options?.dateWindowDays === undefined ? defaultDateWindow : options.dateWindowDays;
+    options?.dateWindowDays === undefined ? modeWindow : options.dateWindowDays;
   const dateFloor =
     dateCol && dateWindowDays && dateWindowDays > 0
       ? new Date(Date.now() - dateWindowDays * 86_400_000).toISOString().slice(0, 10)
