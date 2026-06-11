@@ -1,5 +1,6 @@
 import { Fragment, useState, useMemo } from "react";
-import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useClearanceFlights } from "@/data/clearances";
+import { useDispatchBoard } from "@/data/dispatch";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -121,8 +122,8 @@ function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdi
 }
 
 export default function ClearancesPage() {
-  const { data, isLoading, refetch, add, update, remove } = useSupabaseTable<ClearanceRow>("flight_schedules", { stationFilter: true });
-  const { data: dispatches } = useSupabaseTable<any>("dispatch_assignments");
+  const { data, isLoading, refetch, add, update, remove } = useClearanceFlights<ClearanceRow>();
+  const { data: dispatches } = useDispatchBoard();
   const { data: airlines } = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("id,name,code"); return data || []; } });
   const { data: airportsList } = useQuery({ queryKey: ["airports-iata"], queryFn: async () => { const { data } = await supabase.from("airports").select("iata_code,name").order("iata_code"); return data || []; } });
 

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { TablePagination, usePagination } from "@/components/ui/table-pagination";
-import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useAgingInvoices } from "@/data/finance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ const BUCKET_COLORS = {
 };
 
 export default function AgingReportsPage() {
-  const { data: invoices = [], isLoading } = useSupabaseTable<InvoiceRow>("invoices", { orderBy: "date", ascending: false });
+  const { data: invoices = [], isLoading } = useAgingInvoices<InvoiceRow>();
   const [search, setSearch] = useState("");
 
   const todayMs = useMemo(() => Date.now(), []);
