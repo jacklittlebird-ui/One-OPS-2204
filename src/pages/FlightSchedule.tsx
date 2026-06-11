@@ -7,6 +7,8 @@ import {
   AlertCircle, Calendar, Link2, FileBarChart2, Eye
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useFlights, useCanViewFlightHistory } from "@/data/flights";
+import { DataScopeToggle } from "@/components/DataScopeToggle";
 import * as XLSX from "xlsx";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -134,11 +136,18 @@ function FlightForm({ data, onChange, onSave, onCancel, title, isSaving }: {
 
 export default function FlightSchedulePage() {
   const navigate = useNavigate();
-  const { data, isLoading, add, update, remove, bulkInsert, isAdding, isUpdating } = useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
+  const [scope, setScope] = useState<"active" | "history">("active");
+  const canViewHistory = useCanViewFlightHistory();
+  // Domain hook — Flights domain via the policy engine. Mutations still come
+  // from the underlying useSupabaseTable until the domain layer wraps them.
+  const { data, isLoading } = useFlights({ scope });
+  const { add, update, remove, bulkInsert, isAdding, isUpdating } =
+    useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
   const [search, setSearch] = useState("");
   const [airlineFilter, setAirlineFilter] = useState("All Airlines");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [typeFilter, setTypeFilter] = useState("All Types");
+  
   
   const [showAdd, setShowAdd] = useState(false);
   const [newRow, setNewRow] = useState<Partial<FlightRow>>(emptyFlight());
@@ -257,6 +266,9 @@ export default function FlightSchedulePage() {
             <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
               <option value="All Types">All Types</option>{flightTypes.map(t => <option key={t}>{t}</option>)}
             </select>
+          )}
+          {canViewHistory && (
+            <DataScopeToggle mode={scope} onChange={setScope} activeLabel="Last 180d" historyLabel="All History" />
           )}
           <button onClick={() => { setNewRow(emptyFlight()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> Add Flight</button>
           <button onClick={() => fileInputRef.current?.click()} className="toolbar-btn-success"><Upload size={14} /> Upload</button>

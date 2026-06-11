@@ -4,6 +4,9 @@ import {
   CheckCircle, X, Trash2, ChevronLeft, ChevronRight, Eye, CalendarDays, TableIcon
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useFlights } from "@/data/flights";
+import { useDispatchBoard, useCanViewDispatchHistory } from "@/data/dispatch";
+import { DataScopeToggle } from "@/components/DataScopeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -192,8 +195,14 @@ interface DispatchContentProps {
 }
 
 export default function DispatchContent({ serviceCategory }: DispatchContentProps) {
-  const { data: flights, isLoading: flightsLoading } = useSupabaseTable<FlightRow>("flight_schedules", { stationFilter: true });
-  const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
+  const [scope, setScope] = useState<"active" | "history">("active");
+  const canViewHistory = useCanViewDispatchHistory();
+  // Domain layer (Flights + Dispatch) via the policy engine.
+  const { data: flights, isLoading: flightsLoading } = useFlights({ scope });
+  const { data: dispatches, isLoading: dispLoading } = useDispatchBoard({ scope });
+  // Mutations still go through the underlying table hook until the domain layer wraps them.
+  const { add, update, remove, isAdding, isUpdating } =
+    useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<ContractRow>("contracts");
   const { data: serviceRates } = useSupabaseTable<ServiceRateRow>("contract_service_rates");
   const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines");
@@ -473,6 +482,9 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
           <button onClick={() => setViewMode("table")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><TableIcon size={13} /> Table</button>
           <button onClick={() => setViewMode("calendar")} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}><CalendarDays size={13} /> Calendar</button>
         </div>
+        {canViewHistory && (
+          <DataScopeToggle mode={scope} onChange={setScope} activeLabel="Last 180d" historyLabel="All History" />
+        )}
         <button onClick={openNewManual} className="toolbar-btn-primary ml-auto"><Plus size={14} /> New Service Report</button>
       </div>
 
