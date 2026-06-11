@@ -154,8 +154,8 @@ export default function InvoicesPage() {
   const { data: dispatches } = useDispatchHistory();
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const { data: flightSchedules } = useFlightHistory();
-  const { data: contractRates } = useSupabaseTable<any>("contract_service_rates");
-  const { data: airports } = useSupabaseTable<any>("airports");
+  const { data: contractRates } = useContractServiceRatesRef();
+  const { data: airports } = useAirportsRef();
 
   // Map: first flight_no in flight_ref -> registration
   const regByFlightNo = useMemo(() => {

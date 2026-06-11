@@ -289,7 +289,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
   const [reviewComment, setReviewComment] = useState<string>(data.reviewComment || "");
 
   type DelayCodeRow = { id: string; code: string; description: string; category: string; responsible: string; impact_level: string; avg_minutes: number; active: boolean };
-  const { data: delayCodes } = useSupabaseTable<DelayCodeRow>("delay_codes", { orderBy: "code", ascending: true });
+  const { data: delayCodes } = useDelayCodesRef() as { data: DelayCodeRow[] | undefined };
   const { data: airportCharges } = useSupabaseTable<AirportChargeRow>("airport_charges", { orderBy: "created_at", ascending: true });
 
   // Look up invoice status for this flight so the Receivables pipeline step

@@ -38,7 +38,7 @@ const statusBadge = (s: string) => {
 
 export default function OverflySchedulePage() {
   const { data, isLoading, add, update, remove } = useSupabaseTable<OverflyRow>("overfly_schedules");
-  const { data: airlines } = useSupabaseTable<AirlineRow>("airlines");
+  const { data: airlines } = useAirlinesRef() as { data: AirlineRow[] | undefined };
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [operatorFilter, setOperatorFilter] = useState("All");

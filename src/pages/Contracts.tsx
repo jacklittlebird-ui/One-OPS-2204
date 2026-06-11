@@ -326,7 +326,7 @@ const SERVICE_SCOPES_LIST = ["Ad-Hoc", "Arrival Only", "Departure Only", "Full S
 
 const ContractFormModal = ({ data, onChange, onCancel, onSave, isSaving, title, serviceRates, onServiceRatesChange }: any) => {
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
-  const { data: airlines } = useSupabaseTable<{ id: string; name: string; iata_code: string }>("airlines", { orderBy: "name", ascending: true });
+  const { data: airlines } = useAirlinesRef();
 
   const addRate = () => {
     onServiceRatesChange([...serviceRates, { service_type: "", rate: 0, staff_count: 0, duration_hours: 0 }]);
