@@ -42,8 +42,8 @@ export function useSupabaseTable<T extends Record<string, any>>(
     "chart_of_accounts", "airport_charges",
   ]);
   const isReference = REFERENCE_TABLES.has(table);
-  const tableStaleTime = isReference ? 10 * 60_000 : 30_000;
-  const tableGcTime = isReference ? 30 * 60_000 : 5 * 60_000;
+  const tableStaleTime = isReference ? 10 * 60_000 : 2 * 60_000;
+  const tableGcTime = isReference ? 30 * 60_000 : 10 * 60_000;
   const applyStationFilter = !!options?.stationFilter && isStationScoped && !!station;
 
   const query = useQuery({
