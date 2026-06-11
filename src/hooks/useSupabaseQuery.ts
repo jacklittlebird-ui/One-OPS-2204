@@ -33,7 +33,11 @@ export function useSupabaseTable<T extends Record<string, any>>(
   const orderCol = options?.orderBy || defaultOrder;
   const asc = options?.ascending ?? false;
 
-  // Reference / mostly-static tables can be cached much longer to cut DB load.
+  // Per-domain cache tiers (from the architecture blueprint):
+  //   reference (static)   → 10m stale / 30m gc
+  //   semi-static          → 5m / 20m   (assignments, reports, contracts, invoices)
+  //   live ops             → 90s / 10m  (flight_schedules, dispatch_assignments live status)
+  //   default              → 2m / 10m
   const REFERENCE_TABLES = new Set<TableName>([
     "airlines", "aircrafts", "delay_codes", "abbreviations", "aircraft_types_ref",
     "traffic_rights", "bulletins", "manuals_forms", "catering_items", "tube_charges",
@@ -41,9 +45,24 @@ export function useSupabaseTable<T extends Record<string, any>>(
     "countries", "airports", "services_catalog", "service_providers",
     "chart_of_accounts", "airport_charges",
   ]);
+  const SEMI_STATIC_TABLES = new Set<TableName>([
+    "service_reports", "contracts", "contract_service_rates", "invoices",
+    "vendor_invoices", "airline_incentives", "airline_airport_services",
+    "journal_entries", "journal_entry_lines", "staff_roster",
+  ]);
+  const LIVE_OPS_TABLES = new Set<TableName>([
+    "flight_schedules", "dispatch_assignments",
+  ]);
   const isReference = REFERENCE_TABLES.has(table);
-  const tableStaleTime = isReference ? 10 * 60_000 : 2 * 60_000;
-  const tableGcTime = isReference ? 30 * 60_000 : 10 * 60_000;
+  const isSemiStatic = SEMI_STATIC_TABLES.has(table);
+  const isLiveOps = LIVE_OPS_TABLES.has(table);
+  const tableStaleTime = isReference ? 10 * 60_000
+                       : isSemiStatic ? 5 * 60_000
+                       : isLiveOps ? 90_000
+                       : 2 * 60_000;
+  const tableGcTime = isReference ? 30 * 60_000
+                    : isSemiStatic ? 20 * 60_000
+                    : 10 * 60_000;
   const applyStationFilter = !!options?.stationFilter && isStationScoped && !!station;
 
   const query = useQuery({
