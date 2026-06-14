@@ -1493,7 +1493,7 @@ export default function SecurityServiceReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/30">
-                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ROUTE", "REMARKS", "PIPELINE", "ACTIONS"].map(h => (
+                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "A/C", "SKD TYPE", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ATA", "ATD", "ROUTE", "SHIFT", "STAFF", "OBSERVERS", "REMARKS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -1501,27 +1501,48 @@ export default function SecurityServiceReportsPage() {
                 <tbody>
                   {pagePending.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="text-center py-16">
+                      <td colSpan={20} className="text-center py-16">
                         <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
                         <p className="font-semibold text-foreground">No flights pending approval</p>
                         <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
                       </td>
                     </tr>
-                  ) : pagePending.map((f: any, i: number) => (
+                  ) : pagePending.map((f: any, i: number) => {
+                    const d = resolveSecurityRowDisplay(f.dispatch, f as any, null);
+                    const ts = (f.dispatch?.task_sheet_data || {}) as Record<string, any>;
+                    const observers = [
+                      ts.cargo_observer_1, ts.cargo_observer_2,
+                      ts.hold_baggage_observer_1, ts.hold_baggage_observer_2,
+                      ts.gate_door_observer_1, ts.gate_door_observer_2,
+                      ts.aircraft_door_observer_1, ts.aircraft_door_observer_2,
+                      ts.aircraft_ramp_observer_1, ts.aircraft_ramp_observer_2,
+                    ].filter(Boolean).join(", ");
+                    const shift = [d.scheduledStart, d.scheduledEnd].filter(Boolean).join("–");
+                    const remarks = d.remarks || f.remarks || "";
+                    return (
                     <tr key={f.id} className="data-table-row">
                       <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagPending.start + i + 1}</td>
-                      <td className="px-3 py-2.5 font-semibold text-foreground">{f.authority || "—"}</td>
-                      <td className="px-3 py-2.5 text-foreground">{f.airlines?.name || f.handling_agent || "—"}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-foreground">{f.flight_no || "—"}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.registration || "—"}</td>
+                      <td className="px-3 py-2.5 font-semibold text-foreground">{d.station || f.authority || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground">{d.airline || f.airlines?.name || f.handling_agent || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-foreground">{d.flightNo || f.flight_no || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.registration || f.registration || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.aircraftType || f.aircraft_type || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground text-xs">{d.skdType || f.skd_type || "—"}</td>
                       <td className="px-3 py-2.5">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeBadgeClass(f.clearance_type)}`}>{f.clearance_type || "—"}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeBadgeClass(f.clearance_type)}`}>{d.serviceType || f.clearance_type || "—"}</span>
                       </td>
-                      <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{f.arrival_date || f.departure_date || f.flight_date || "—"}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.sta || "—"}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{f.std || "—"}</td>
-                      <td className="px-3 py-2.5 text-foreground text-xs">{f.route || "—"}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={f.remarks || ""}>{f.remarks || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{d.arrivalDate || f.arrival_date || f.departure_date || f.flight_date || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.sta || f.sta || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.std || f.std || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.ata || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.atd || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground text-xs">{d.route || f.route || "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{shift || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground text-xs max-w-[180px] truncate" title={d.staffNames}>
+                        {d.staffCount ? `${d.staffCount} • ` : ""}{d.staffNames || "—"}
+                      </td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[200px] truncate" title={observers}>{observers || "—"}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs max-w-[240px] truncate" title={remarks}>{remarks || "—"}</td>
                       <td className="px-3 py-2.5">
                         <PipelineStepper
                           currentStage="operations"
@@ -1552,7 +1573,8 @@ export default function SecurityServiceReportsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
