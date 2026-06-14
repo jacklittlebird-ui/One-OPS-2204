@@ -189,6 +189,7 @@ export default function SecurityServiceReportsPage() {
 
   const [editRow, setEditRow] = useState<DispatchRow | null>(null);
   const [isNewReport, setIsNewReport] = useState(false);
+  const [pendingApprovalFlightId, setPendingApprovalFlightId] = useState<string | null>(null);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
 
