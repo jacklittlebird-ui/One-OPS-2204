@@ -85,6 +85,7 @@ interface DispatchRow {
   created_at: string;
   updated_at: string;
   task_sheet_data?: any;
+  flightMeta?: any;
 }
 
 function timeDiffMinutes(start: string, end: string): number {
@@ -450,13 +451,15 @@ export default function SecurityServiceReportsPage() {
 
   const openEditPending = (f: any) => {
     setPendingApprovalFlightId(f.id);
-    // Try to locate an existing dispatch_assignments row for this flight
-    const existing = (dispatches as any[]).find(
+    // Use the enriched latest dispatch from the Pending Approval query first.
+    // The general dispatches cache can be stale or date-windowed differently,
+    // which made the View form miss task-sheet amendments that the table had.
+    const existing = f.dispatch || (dispatches as any[]).find(
       (d: any) => d.flight_schedule_id === f.id
     );
     if (existing) {
       setIsNewReport(false);
-      setEditRow(existing as DispatchRow);
+      setEditRow({ ...(existing as DispatchRow), flightMeta: f } as DispatchRow);
       return;
     }
     // Otherwise create a blank Task Sheet pre-populated from the pending flight
@@ -496,6 +499,7 @@ export default function SecurityServiceReportsPage() {
       irregularity_id: null,
       created_at: "",
       updated_at: "",
+      flightMeta: f,
     };
     setIsNewReport(true);
     setEditRow(blankRow);
@@ -601,7 +605,7 @@ export default function SecurityServiceReportsPage() {
   // Build lookup for flight schedule details (flight no, registration, route, sta, std, dates, aircraft type)
   const flightDetailsById = useMemo(() => {
     const map = new Map<string, { flight_no: string; registration: string; route: string; sta: string; std: string; ata: string; atd: string; skd_type: string; clearance_type: string; arrival_date: string; departure_date: string; aircraft_type: string }>();
-    securityFlights.forEach((f: any) => map.set(f.id, {
+    const addFlight = (f: any) => map.set(f.id, {
       flight_no: f.flight_no || "",
       registration: f.registration || "",
       route: f.route || "",
@@ -614,9 +618,11 @@ export default function SecurityServiceReportsPage() {
       arrival_date: f.arrival_date || "",
       departure_date: f.departure_date || "",
       aircraft_type: f.aircraft_type || "",
-    }));
+    });
+    securityFlights.forEach(addFlight);
+    pendingApprovalFlights.forEach(addFlight);
     return map;
-  }, [securityFlights]);
+  }, [securityFlights, pendingApprovalFlights]);
 
   // Filters
   const { data: dbAirports = [] } = useQuery({

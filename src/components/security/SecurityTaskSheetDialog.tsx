@@ -361,7 +361,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     const saved = row.task_sheet_data as Record<string, any> | null;
     if (saved && typeof saved === "object") {
       const restored = { ...emptyTaskSheet(), ...saved } as TaskSheetData;
-      if (!restored.flight_type && skdType) restored.flight_type = skdType;
+      // Clearance SKD amendments are authoritative everywhere, including this
+      // read-only Operations Pending Approval view. Do not let old task-sheet
+      // flight_type/skd_type values keep showing Military after Clearance moved
+      // the flight back to Schedule.
+      if (skdType) restored.flight_type = skdType;
       if (!restored.sta && sta) restored.sta = sta;
       if (!restored.std && std) restored.std = std;
       if (!restored.ata && ata) restored.ata = ata;
