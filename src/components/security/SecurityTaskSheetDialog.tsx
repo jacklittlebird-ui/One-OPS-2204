@@ -215,6 +215,7 @@ interface Props {
    *  Operations Pending Approval tab's View button. */
   pendingApprovalMode?: boolean;
   onPendingApprove?: () => void | Promise<void>;
+  onPendingReject?: (comment: string) => void | Promise<void>;
 }
 
 const FLIGHT_TYPES = SKD_TYPES;
@@ -259,7 +260,7 @@ function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.Rea
   );
 }
 
-export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, arrivalDate, departureDate, isNew, pendingApprovalMode, onPendingApprove }: Props) {
+export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, arrivalDate, departureDate, isNew, pendingApprovalMode, onPendingApprove, onPendingReject }: Props) {
   const { activeChannel } = useChannel();
   const queryClient = useQueryClient();
   const isOperationsView = activeChannel === "operations";
@@ -1251,8 +1252,36 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           </div>
           {pendingApprovalMode ? (
             <div className="flex flex-1 items-center gap-2 justify-end min-w-0">
-              <span className="text-xs text-muted-foreground mr-2 italic">Read-only — Save & Close will approve this flight.</span>
+              <input
+                type="text"
+                value={reviewComment}
+                onChange={e => setReviewComment(e.target.value)}
+                placeholder="Rejection comment (required for rejection)"
+                className="flex-1 min-w-0 text-sm border rounded px-2.5 h-9 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
               <Button variant="outline" size="sm" onClick={onClose} disabled={reviewSubmitting} className="shrink-0">Cancel</Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={reviewSubmitting}
+                className="shrink-0 whitespace-nowrap"
+                onClick={async () => {
+                  if (!onPendingReject) { onClose(); return; }
+                  if (!reviewComment.trim()) {
+                    toast({ title: "Comment required", description: "Please add a reason before rejecting.", variant: "destructive" });
+                    return;
+                  }
+                  setReviewSubmitting(true);
+                  try {
+                    await Promise.resolve(onPendingReject(reviewComment));
+                  } finally {
+                    setReviewSubmitting(false);
+                  }
+                  onClose();
+                }}
+              >
+                <XCircle size={14} className="mr-1" /> Reject & Return to Station
+              </Button>
               <Button
                 size="sm"
                 disabled={reviewSubmitting}

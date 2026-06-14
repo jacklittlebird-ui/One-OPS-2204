@@ -387,13 +387,16 @@ export default function SecurityServiceReportsPage() {
     toast({ title: "Approved", description: "Flight approved by Operations — removed from Pending Approval and advanced to Receivables." });
   };
 
-  const rejectPendingFlight = async (flightId: string) => {
+  const rejectPendingFlight = async (flightId: string, reason?: string) => {
     // Operations rejection should only surface in the Station "Rejected Service Reports" tab.
     // We intentionally do NOT flip flight_schedules.status to "Rejected" — that would also
     // make it appear in the Clearance "Rejected" tab, which we don't want here.
-    const reason = window.prompt("Rejection reason (shown to Station on the Rejected Service Reports tab):", "");
-    if (reason === null) return; // user cancelled
-    const trimmed = reason.trim();
+    let trimmed = reason;
+    if (trimmed === undefined) {
+      const promptResult = window.prompt("Rejection reason (shown to Station on the Rejected Service Reports tab):", "");
+      if (promptResult === null) return; // user cancelled
+      trimmed = promptResult.trim();
+    }
     const { error } = await supabase
       .from("dispatch_assignments")
       .update({
@@ -2221,6 +2224,7 @@ export default function SecurityServiceReportsPage() {
             isNew={isNewReport}
             pendingApprovalMode={!!pendingApprovalFlightId}
             onPendingApprove={pendingApprovalFlightId ? () => approvePendingFlight(pendingApprovalFlightId) : undefined}
+            onPendingReject={pendingApprovalFlightId ? (comment: string) => rejectPendingFlight(pendingApprovalFlightId, comment) : undefined}
             registration={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.registration : undefined}
             route={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.route : undefined}
             sta={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.sta : undefined}
