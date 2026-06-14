@@ -118,7 +118,7 @@ export function resolveSecurityRowDisplay(
     actualEnd: pick(r.actual_end, ts.atd, ts.shift_end),
     staffNames: pick(r.staff_names, ts.staff_names),
     staffCount: typeof r.staff_count === "number" && r.staff_count > 0 ? r.staff_count : 0,
-    flightType: pick(ts.flight_type, ts.skd_type, fd.skd_type, meta.skd_type),
+    flightType: pick(fd.skd_type, meta.skd_type, ts.flight_type, ts.skd_type),
     remarks: pick(ts.remarks, meta.remarks),
   };
 }
