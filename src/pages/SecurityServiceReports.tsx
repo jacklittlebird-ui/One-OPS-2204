@@ -414,6 +414,7 @@ export default function SecurityServiceReportsPage() {
 
 
   const openEditPending = (f: any) => {
+    setPendingApprovalFlightId(f.id);
     // Try to locate an existing dispatch_assignments row for this flight
     const existing = (dispatches as any[]).find(
       (d: any) => d.flight_schedule_id === f.id
