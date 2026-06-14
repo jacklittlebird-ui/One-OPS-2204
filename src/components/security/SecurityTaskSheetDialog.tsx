@@ -259,11 +259,11 @@ function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.Rea
   );
 }
 
-export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, arrivalDate, departureDate, isNew }: Props) {
+export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, arrivalDate, departureDate, isNew, pendingApprovalMode, onPendingApprove }: Props) {
   const { activeChannel } = useChannel();
   const queryClient = useQueryClient();
   const isOperationsView = activeChannel === "operations";
-  const reviewMode = isOperationsView && !isNew;
+  const reviewMode = (isOperationsView && !isNew) || !!pendingApprovalMode;
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
