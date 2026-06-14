@@ -1249,7 +1249,29 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               <Download size={14} className="mr-1" /> Download PDF
             </Button>
           </div>
-          {reviewMode ? (
+          {pendingApprovalMode ? (
+            <div className="flex flex-1 items-center gap-2 justify-end min-w-0">
+              <span className="text-xs text-muted-foreground mr-2 italic">Read-only — Save & Close will approve this flight.</span>
+              <Button variant="outline" size="sm" onClick={onClose} disabled={reviewSubmitting} className="shrink-0">Cancel</Button>
+              <Button
+                size="sm"
+                disabled={reviewSubmitting}
+                className="bg-success hover:bg-success/90 text-success-foreground shrink-0"
+                onClick={async () => {
+                  if (!onPendingApprove) { onClose(); return; }
+                  setReviewSubmitting(true);
+                  try {
+                    await Promise.resolve(onPendingApprove());
+                  } finally {
+                    setReviewSubmitting(false);
+                  }
+                  onClose();
+                }}
+              >
+                <CheckCircle2 size={14} className="mr-1" /> Approve & Close
+              </Button>
+            </div>
+          ) : reviewMode ? (
             <div className="flex flex-1 items-center gap-2 justify-end min-w-0">
               <input
                 type="text"
