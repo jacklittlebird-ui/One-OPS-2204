@@ -189,6 +189,7 @@ export default function SecurityServiceReportsPage() {
 
   const [editRow, setEditRow] = useState<DispatchRow | null>(null);
   const [isNewReport, setIsNewReport] = useState(false);
+  const [pendingApprovalFlightId, setPendingApprovalFlightId] = useState<string | null>(null);
   const [reviewRow, setReviewRow] = useState<DispatchRow | null>(null);
   const [reviewComment, setReviewComment] = useState("");
 
@@ -413,6 +414,7 @@ export default function SecurityServiceReportsPage() {
 
 
   const openEditPending = (f: any) => {
+    setPendingApprovalFlightId(f.id);
     // Try to locate an existing dispatch_assignments row for this flight
     const existing = (dispatches as any[]).find(
       (d: any) => d.flight_schedule_id === f.id
@@ -2214,9 +2216,11 @@ export default function SecurityServiceReportsPage() {
         <Suspense fallback={null}>
           <SecurityTaskSheetDialog
             row={editRow}
-            onClose={() => { setEditRow(null); setIsNewReport(false); }}
+            onClose={() => { setEditRow(null); setIsNewReport(false); setPendingApprovalFlightId(null); }}
             onSave={saveTaskSheet}
             isNew={isNewReport}
+            pendingApprovalMode={!!pendingApprovalFlightId}
+            onPendingApprove={pendingApprovalFlightId ? () => approvePendingFlight(pendingApprovalFlightId) : undefined}
             registration={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.registration : undefined}
             route={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.route : undefined}
             sta={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.sta : undefined}

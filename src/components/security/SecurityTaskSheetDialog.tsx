@@ -210,6 +210,11 @@ interface Props {
   arrivalDate?: string;
   departureDate?: string;
   isNew?: boolean;
+  /** When true, the form is rendered strictly read-only and Save / Save & Close
+   *  act as an "Approve" action by calling onPendingApprove. Used by the
+   *  Operations Pending Approval tab's View button. */
+  pendingApprovalMode?: boolean;
+  onPendingApprove?: () => void | Promise<void>;
 }
 
 const FLIGHT_TYPES = SKD_TYPES;
@@ -254,11 +259,11 @@ function Chip({ icon, label, value, accent = "bg-white/15" }: { icon?: React.Rea
   );
 }
 
-export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, arrivalDate, departureDate, isNew }: Props) {
+export default function SecurityTaskSheetDialog({ row, onClose, onSave, registration, route, sta, std, ata, atd, skdType, serviceType, arrivalDate, departureDate, isNew, pendingApprovalMode, onPendingApprove }: Props) {
   const { activeChannel } = useChannel();
   const queryClient = useQueryClient();
   const isOperationsView = activeChannel === "operations";
-  const reviewMode = isOperationsView && !isNew;
+  const reviewMode = (isOperationsView && !isNew) || !!pendingApprovalMode;
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1244,7 +1249,29 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               <Download size={14} className="mr-1" /> Download PDF
             </Button>
           </div>
-          {reviewMode ? (
+          {pendingApprovalMode ? (
+            <div className="flex flex-1 items-center gap-2 justify-end min-w-0">
+              <span className="text-xs text-muted-foreground mr-2 italic">Read-only — Save & Close will approve this flight.</span>
+              <Button variant="outline" size="sm" onClick={onClose} disabled={reviewSubmitting} className="shrink-0">Cancel</Button>
+              <Button
+                size="sm"
+                disabled={reviewSubmitting}
+                className="bg-success hover:bg-success/90 text-success-foreground shrink-0"
+                onClick={async () => {
+                  if (!onPendingApprove) { onClose(); return; }
+                  setReviewSubmitting(true);
+                  try {
+                    await Promise.resolve(onPendingApprove());
+                  } finally {
+                    setReviewSubmitting(false);
+                  }
+                  onClose();
+                }}
+              >
+                <CheckCircle2 size={14} className="mr-1" /> Approve & Close
+              </Button>
+            </div>
+          ) : reviewMode ? (
             <div className="flex flex-1 items-center gap-2 justify-end min-w-0">
               <input
                 type="text"
