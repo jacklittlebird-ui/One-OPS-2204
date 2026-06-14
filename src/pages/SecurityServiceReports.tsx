@@ -2216,9 +2216,11 @@ export default function SecurityServiceReportsPage() {
         <Suspense fallback={null}>
           <SecurityTaskSheetDialog
             row={editRow}
-            onClose={() => { setEditRow(null); setIsNewReport(false); }}
+            onClose={() => { setEditRow(null); setIsNewReport(false); setPendingApprovalFlightId(null); }}
             onSave={saveTaskSheet}
             isNew={isNewReport}
+            pendingApprovalMode={!!pendingApprovalFlightId}
+            onPendingApprove={pendingApprovalFlightId ? () => approvePendingFlight(pendingApprovalFlightId) : undefined}
             registration={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.registration : undefined}
             route={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.route : undefined}
             sta={editRow?.flight_schedule_id ? flightDetailsById.get(editRow.flight_schedule_id)?.sta : undefined}
