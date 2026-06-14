@@ -605,7 +605,7 @@ export default function SecurityServiceReportsPage() {
   // Build lookup for flight schedule details (flight no, registration, route, sta, std, dates, aircraft type)
   const flightDetailsById = useMemo(() => {
     const map = new Map<string, { flight_no: string; registration: string; route: string; sta: string; std: string; ata: string; atd: string; skd_type: string; clearance_type: string; arrival_date: string; departure_date: string; aircraft_type: string }>();
-    securityFlights.forEach((f: any) => map.set(f.id, {
+    const addFlight = (f: any) => map.set(f.id, {
       flight_no: f.flight_no || "",
       registration: f.registration || "",
       route: f.route || "",
@@ -618,9 +618,11 @@ export default function SecurityServiceReportsPage() {
       arrival_date: f.arrival_date || "",
       departure_date: f.departure_date || "",
       aircraft_type: f.aircraft_type || "",
-    }));
+    });
+    securityFlights.forEach(addFlight);
+    pendingApprovalFlights.forEach(addFlight);
     return map;
-  }, [securityFlights]);
+  }, [securityFlights, pendingApprovalFlights]);
 
   // Filters
   const { data: dbAirports = [] } = useQuery({
