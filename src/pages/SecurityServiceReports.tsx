@@ -303,11 +303,29 @@ export default function SecurityServiceReportsPage() {
       if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
       if (error) throw error;
-      return (data || []).filter((f: any) => {
+      const flights = (data || []).filter((f: any) => {
         const purpose = f.purpose || "";
         const remarks = f.remarks || "";
         return purpose === "Station Dispatch" || purpose === "Security Service" || remarks.includes("Added from Station Dispatch") || remarks.includes("Added from Security Service") || remarks.includes("Added from Service Report");
-      }) as any[];
+      });
+      if (flights.length === 0) return [] as any[];
+
+      // Enrich each pending flight with its latest dispatch_assignments row so
+      // the Operations view can show every field the station captured on the
+      // task sheet (SKD type, aircraft type, ATA/ATD, staff names, remarks).
+      const ids = flights.map((f: any) => f.id);
+      const { data: dispatches } = await supabase
+        .from("dispatch_assignments")
+        .select("*")
+        .in("flight_schedule_id", ids);
+      const byFs = new Map<string, any>();
+      (dispatches || []).forEach((d: any) => {
+        const prev = byFs.get(d.flight_schedule_id);
+        if (!prev || new Date(d.updated_at || d.created_at || 0) > new Date(prev.updated_at || prev.created_at || 0)) {
+          byFs.set(d.flight_schedule_id, d);
+        }
+      });
+      return flights.map((f: any) => ({ ...f, dispatch: byFs.get(f.id) || null })) as any[];
     },
     enabled: !!session && isOperationsView,
   });
