@@ -450,13 +450,15 @@ export default function SecurityServiceReportsPage() {
 
   const openEditPending = (f: any) => {
     setPendingApprovalFlightId(f.id);
-    // Try to locate an existing dispatch_assignments row for this flight
-    const existing = (dispatches as any[]).find(
+    // Use the enriched latest dispatch from the Pending Approval query first.
+    // The general dispatches cache can be stale or date-windowed differently,
+    // which made the View form miss task-sheet amendments that the table had.
+    const existing = f.dispatch || (dispatches as any[]).find(
       (d: any) => d.flight_schedule_id === f.id
     );
     if (existing) {
       setIsNewReport(false);
-      setEditRow(existing as DispatchRow);
+      setEditRow({ ...(existing as DispatchRow), flightMeta: f } as DispatchRow);
       return;
     }
     // Otherwise create a blank Task Sheet pre-populated from the pending flight
@@ -496,6 +498,7 @@ export default function SecurityServiceReportsPage() {
       irregularity_id: null,
       created_at: "",
       updated_at: "",
+      flightMeta: f,
     };
     setIsNewReport(true);
     setEditRow(blankRow);
