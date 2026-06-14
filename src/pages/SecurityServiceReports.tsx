@@ -295,15 +295,22 @@ export default function SecurityServiceReportsPage() {
   const { data: pendingApprovalFlights = [] } = useQuery({
     queryKey: ["flight_schedules", "station-dispatch-pending", isStationScoped ? userStation : null],
     queryFn: async () => {
-      let q = supabase
-        .from("flight_schedules")
-        .select("*, airlines:airline_id(name, iata_code)")
-        .eq("status", "Pending")
-        .order("arrival_date", { ascending: true });
-      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
-      const { data, error } = await q;
-      if (error) throw error;
-      const flights = (data || []).filter((f: any) => {
+      const allPending: any[] = [];
+      const PAGE_SIZE = 1000;
+      for (let from = 0; ; from += PAGE_SIZE) {
+        let q = supabase
+          .from("flight_schedules")
+          .select("*, airlines:airline_id(name, iata_code)")
+          .eq("status", "Pending")
+          .order("arrival_date", { ascending: true })
+          .range(from, from + PAGE_SIZE - 1);
+        if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
+        const { data, error } = await q;
+        if (error) throw error;
+        allPending.push(...(data || []));
+        if (!data || data.length < PAGE_SIZE) break;
+      }
+      const flights = allPending.filter((f: any) => {
         const purpose = f.purpose || "";
         const remarks = f.remarks || "";
         return purpose === "Station Dispatch" || purpose === "Security Service" || remarks.includes("Added from Station Dispatch") || remarks.includes("Added from Security Service") || remarks.includes("Added from Service Report");
