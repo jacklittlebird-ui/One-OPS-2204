@@ -85,6 +85,7 @@ interface DispatchRow {
   created_at: string;
   updated_at: string;
   task_sheet_data?: any;
+  flightMeta?: any;
 }
 
 function timeDiffMinutes(start: string, end: string): number {
