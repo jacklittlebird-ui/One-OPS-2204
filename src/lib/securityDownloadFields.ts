@@ -72,7 +72,7 @@ export function resolveDownloadFields(
     registration:   pick(ts.registration, f.registration, d.registration),
     route:          pick(ts.route, f.route, d.route),
     aircraftType:   pick(ts.aircraft_type, f.aircraft_type),
-    skdType:        pick(ts.flight_type, ts.skd_type, f.skd_type, d.skd_type),
+    skdType:        pick(f.skd_type, d.skd_type, ts.flight_type, ts.skd_type),
     sta:            pick(ts.sta, f.sta),
     std:            pick(ts.std, f.std),
     // ATA/ATD: strict task_sheet_data only. If the operator did not enter an
