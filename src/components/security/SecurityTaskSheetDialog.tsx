@@ -210,6 +210,11 @@ interface Props {
   arrivalDate?: string;
   departureDate?: string;
   isNew?: boolean;
+  /** When true, the form is rendered strictly read-only and Save / Save & Close
+   *  act as an "Approve" action by calling onPendingApprove. Used by the
+   *  Operations Pending Approval tab's View button. */
+  pendingApprovalMode?: boolean;
+  onPendingApprove?: () => void | Promise<void>;
 }
 
 const FLIGHT_TYPES = SKD_TYPES;
