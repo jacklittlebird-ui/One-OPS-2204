@@ -203,13 +203,15 @@ export default function SecurityServiceReportsPage() {
 
   // Fetch dispatch assignments (completed ones = service reports)
   const { data: dispatches = [], isLoading } = useQuery({
-    queryKey: ["dispatch_assignments", "service-reports", session?.user?.id, isStationScoped ? userStation : null],
+    queryKey: ["dispatch_assignments", "service-reports", session?.user?.id, isStationScoped ? userStation : null, dateFrom || null, dateTo || null],
     queryFn: async () => {
       let q = supabase
         .from("dispatch_assignments")
         .select("*")
         .order("flight_date", { ascending: false });
       if (isStationScoped && userStation) q = (q as any).eq("station", userStation);
+      if (dateFrom) q = (q as any).gte("flight_date", dateFrom);
+      if (dateTo) q = (q as any).lte("flight_date", dateTo);
       const { data, error } = await q;
       if (error) throw error;
       return data as DispatchRow[];
@@ -264,7 +266,7 @@ export default function SecurityServiceReportsPage() {
   // every station's flights), so skip the clearance_type filter.
   const includeAllFlights = (isStationScoped && !!userStation) || isOperationsView;
   const { data: securityFlights = [] } = useQuery({
-    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView],
+    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, dateFrom || null, dateTo || null],
     queryFn: async () => {
       let q = supabase
         .from("flight_schedules")
@@ -279,6 +281,8 @@ export default function SecurityServiceReportsPage() {
       // pending security work. Stations were seeing "ghost" rows for flights
       // Clearance had already cancelled/rejected/returned.
       q = (q as any).not("status", "in", "(Cancelled,Rejected)");
+      if (dateFrom) q = (q as any).gte("arrival_date", dateFrom);
+      if (dateTo) q = (q as any).lte("arrival_date", dateTo);
       const { data, error } = await q;
       if (error) throw error;
       return data as any[];
