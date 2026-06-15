@@ -13,6 +13,7 @@ import { useUserStation } from "@/contexts/UserStationContext";
 import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 import { formatDateDMY } from "@/lib/utils";
+import { getMasterFields } from "@/lib/flightMaster";
 
 /** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
