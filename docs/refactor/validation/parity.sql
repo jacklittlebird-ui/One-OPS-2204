@@ -24,9 +24,9 @@ WHERE coalesce(s.aircraft_type,'') <> coalesce(fs.aircraft_type,'')
    OR coalesce(s.registration,'')  <> coalesce(fs.registration,'')
    OR coalesce(s.route,'')         <> coalesce(fs.route,'');
 
--- 4) Finalized invoices must resolve to a flight_schedules row through their service_reports
+-- 4) Finalized invoices must resolve to a flight_schedules row through their flight_ref
 SELECT count(*) AS finalized_invoices_without_master
 FROM public.invoices i
-LEFT JOIN public.service_reports s ON s.id = ANY(coalesce(i.service_report_ids, '{}'::uuid[]))
-LEFT JOIN public.flight_schedules fs ON fs.id = s.flight_schedule_id
+LEFT JOIN public.flight_schedules fs
+  ON upper(trim(fs.flight_no)) = upper(trim(coalesce(i.flight_ref,'')))
 WHERE coalesce(i.status,'') ILIKE 'finalized' AND fs.id IS NULL;
