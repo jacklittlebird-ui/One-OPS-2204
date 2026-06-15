@@ -1083,7 +1083,6 @@ export type Database = {
           actual_duration_hours: number
           actual_end: string
           actual_start: string
-          airline: string
           base_fee: number
           charges_breakdown: Json
           charges_currency: string
@@ -1094,7 +1093,6 @@ export type Database = {
           dispatched_by: string
           extra_manpower_count: number
           flight_date: string
-          flight_no: string
           flight_schedule_id: string | null
           id: string
           irregularity_id: string | null
@@ -1111,11 +1109,9 @@ export type Database = {
           scheduled_end: string
           scheduled_start: string
           service_rate: number
-          service_type: string
           short_notice: boolean
           staff_count: number
           staff_names: string
-          station: string
           status: string
           task_sheet_data: Json | null
           total_charge: number
@@ -1126,7 +1122,6 @@ export type Database = {
           actual_duration_hours?: number
           actual_end?: string
           actual_start?: string
-          airline?: string
           base_fee?: number
           charges_breakdown?: Json
           charges_currency?: string
@@ -1137,7 +1132,6 @@ export type Database = {
           dispatched_by?: string
           extra_manpower_count?: number
           flight_date?: string
-          flight_no?: string
           flight_schedule_id?: string | null
           id?: string
           irregularity_id?: string | null
@@ -1154,11 +1148,9 @@ export type Database = {
           scheduled_end?: string
           scheduled_start?: string
           service_rate?: number
-          service_type?: string
           short_notice?: boolean
           staff_count?: number
           staff_names?: string
-          station?: string
           status?: string
           task_sheet_data?: Json | null
           total_charge?: number
@@ -1169,7 +1161,6 @@ export type Database = {
           actual_duration_hours?: number
           actual_end?: string
           actual_start?: string
-          airline?: string
           base_fee?: number
           charges_breakdown?: Json
           charges_currency?: string
@@ -1180,7 +1171,6 @@ export type Database = {
           dispatched_by?: string
           extra_manpower_count?: number
           flight_date?: string
-          flight_no?: string
           flight_schedule_id?: string | null
           id?: string
           irregularity_id?: string | null
@@ -1197,11 +1187,9 @@ export type Database = {
           scheduled_end?: string
           scheduled_start?: string
           service_rate?: number
-          service_type?: string
           short_notice?: boolean
           staff_count?: number
           staff_names?: string
-          station?: string
           status?: string
           task_sheet_data?: Json | null
           total_charge?: number
@@ -2763,6 +2751,138 @@ export type Database = {
         Relationships: []
       }
       snapshot_dispatch_assignments_pre_phase3: {
+        Row: {
+          actual_duration_hours: number | null
+          actual_end: string | null
+          actual_start: string | null
+          airline: string | null
+          base_fee: number | null
+          charges_breakdown: Json | null
+          charges_currency: string | null
+          contract_duration_hours: number | null
+          contract_id: string | null
+          created_at: string | null
+          created_via: string | null
+          dispatched_by: string | null
+          extra_manpower_count: number | null
+          flight_date: string | null
+          flight_no: string | null
+          flight_schedule_id: string | null
+          id: string | null
+          irregularity_id: string | null
+          notes: string | null
+          overtime_charge: number | null
+          overtime_hours: number | null
+          overtime_rate: number | null
+          ramp_vehicle_trips: number | null
+          return_to_ramp_with_load: boolean | null
+          review_comment: string | null
+          review_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          service_rate: number | null
+          service_type: string | null
+          short_notice: boolean | null
+          staff_count: number | null
+          staff_names: string | null
+          station: string | null
+          status: string | null
+          task_sheet_data: Json | null
+          total_charge: number | null
+          total_security_charges: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_duration_hours?: number | null
+          actual_end?: string | null
+          actual_start?: string | null
+          airline?: string | null
+          base_fee?: number | null
+          charges_breakdown?: Json | null
+          charges_currency?: string | null
+          contract_duration_hours?: number | null
+          contract_id?: string | null
+          created_at?: string | null
+          created_via?: string | null
+          dispatched_by?: string | null
+          extra_manpower_count?: number | null
+          flight_date?: string | null
+          flight_no?: string | null
+          flight_schedule_id?: string | null
+          id?: string | null
+          irregularity_id?: string | null
+          notes?: string | null
+          overtime_charge?: number | null
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          ramp_vehicle_trips?: number | null
+          return_to_ramp_with_load?: boolean | null
+          review_comment?: string | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          service_rate?: number | null
+          service_type?: string | null
+          short_notice?: boolean | null
+          staff_count?: number | null
+          staff_names?: string | null
+          station?: string | null
+          status?: string | null
+          task_sheet_data?: Json | null
+          total_charge?: number | null
+          total_security_charges?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_duration_hours?: number | null
+          actual_end?: string | null
+          actual_start?: string | null
+          airline?: string | null
+          base_fee?: number | null
+          charges_breakdown?: Json | null
+          charges_currency?: string | null
+          contract_duration_hours?: number | null
+          contract_id?: string | null
+          created_at?: string | null
+          created_via?: string | null
+          dispatched_by?: string | null
+          extra_manpower_count?: number | null
+          flight_date?: string | null
+          flight_no?: string | null
+          flight_schedule_id?: string | null
+          id?: string | null
+          irregularity_id?: string | null
+          notes?: string | null
+          overtime_charge?: number | null
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          ramp_vehicle_trips?: number | null
+          return_to_ramp_with_load?: boolean | null
+          review_comment?: string | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          service_rate?: number | null
+          service_type?: string | null
+          short_notice?: boolean | null
+          staff_count?: number | null
+          staff_names?: string | null
+          station?: string | null
+          status?: string | null
+          task_sheet_data?: Json | null
+          total_charge?: number | null
+          total_security_charges?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      snapshot_dispatch_assignments_pre_phase3b_step1: {
         Row: {
           actual_duration_hours: number | null
           actual_end: string | null
