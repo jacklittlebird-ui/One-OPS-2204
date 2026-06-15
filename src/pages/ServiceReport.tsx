@@ -13,6 +13,7 @@ import { expandFlightRef, normalizeFlightKey } from "@/lib/flightRefMatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { generateAllCharges } from "@/data/airportChargesData";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useServiceReportsFS } from "@/data/serviceReports";
 import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
 import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
