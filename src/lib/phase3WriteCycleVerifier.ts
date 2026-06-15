@@ -158,7 +158,7 @@ export async function verifyAfterSave(args: VerifyArgs): Promise<WriteCycleResul
     try {
       const { data } = await supabase
         .from("dispatch_assignments")
-        .select("id, task_sheet_data, flight_schedule_id, flight_no, station, service_type")
+        .select("id, task_sheet_data, flight_schedule_id")
         .eq("id", snapshot.dispatch_id)
         .maybeSingle();
       mirror = (data as any) || null;
