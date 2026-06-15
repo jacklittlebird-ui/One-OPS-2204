@@ -14,7 +14,7 @@ import { useAirportsRef, useContractServiceRatesRef } from "@/data/referenceData
 import { useInvoices } from "@/data/finance";
 import { useFlightHistory } from "@/data/flights";
 import { useDispatchBoardFS } from "@/data/dispatch";
-import { useServiceReportHistory } from "@/data/serviceReports";
+import { useServiceReportsFS } from "@/data/serviceReports";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
