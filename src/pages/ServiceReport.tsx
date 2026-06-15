@@ -860,8 +860,8 @@ function HandlingServiceReportContent() {
     mutationFn: async (data: Partial<ReportFormData>) => {
       const delays = data.delays || [];
       let dbData: any = formToDb(data);
-      // Phase 3A.5: overwrite mirror columns from flight_schedules SSoT
-      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId);
+      // Phase 3B Step 2.2 — strip FS-mirror keys; insert shim for NOT NULL flight_no
+      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId, "service_reports", "insert");
       const { data: inserted, error } = await supabase.from("service_reports").insert(dbData as any).select().single();
       if (error) throw error;
       if (delays.length > 0) {
