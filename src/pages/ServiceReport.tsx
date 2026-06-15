@@ -900,8 +900,8 @@ function HandlingServiceReportContent() {
       const { id } = data;
       const delays = data.delays || [];
       let dbData: any = formToDb(data);
-      // Phase 3A.5: overwrite mirror columns from flight_schedules SSoT
-      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId);
+      // Phase 3B Step 2.2 — strip FS-mirror keys; UPDATE leaves existing values untouched
+      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId, "service_reports", "update");
       // Station re-saving a rejected report → flip to "modified" so Operations can re-review
       if (isStationView && data.reviewStatus === "rejected") {
         dbData.review_status = "modified";
