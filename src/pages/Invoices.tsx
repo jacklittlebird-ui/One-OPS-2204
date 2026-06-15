@@ -252,7 +252,8 @@ export default function InvoicesPage() {
   const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
   const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: serviceReports } = useServiceReportsFS({ scope: "history" });
+  // Batch 3: narrow invoice-purpose projection (~17 cols vs full 82-col view).
+  const { data: serviceReports } = useServiceReportsForInvoicing({ scope: "history" });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
