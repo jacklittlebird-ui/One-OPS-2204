@@ -29,4 +29,4 @@ SELECT count(*) AS finalized_invoices_without_master
 FROM public.invoices i
 LEFT JOIN public.flight_schedules fs
   ON upper(trim(fs.flight_no)) = upper(trim(coalesce(i.flight_ref,'')))
-WHERE coalesce(i.status,'') ILIKE 'finalized' AND fs.id IS NULL;
+WHERE coalesce(i.status::text,'') ILIKE 'finalized' AND fs.id IS NULL;
