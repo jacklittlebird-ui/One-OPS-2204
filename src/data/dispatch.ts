@@ -128,3 +128,103 @@ export function useEnsureDispatch() {
 export function useDispatchRealtime(): void {
   // No-op until Tier 3 (live ops board) wires up the realtime channel.
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// SSoT Phase B — normalized projection backed by v_dispatch_with_flight.
+// All master fields (flight_number, registration, route, aircraft_type, sta,
+// std, arrival_date, skd_type, clearance_type) are resolved from
+// flight_schedules inside the view. Use this for any NEW UI that should never
+// read mirrored columns directly. Existing helpers above keep working so the
+// rollout stays backward compatible.
+// ───────────────────────────────────────────────────────────────────────────
+
+export interface NormalizedFlightMaster {
+  flight_schedule_id: string | null;
+  flight_number: string | null;
+  registration: string | null;
+  route: string | null;
+  aircraft_type: string | null;
+  sta: string | null;
+  std: string | null;
+  arrival_date: string | null;
+  skd_type: string | null;
+  clearance_type: string | null;
+}
+
+export interface NormalizedDispatchRow {
+  id: string;
+  flight_date: string | null;
+  station: string | null;
+  airline: string | null;
+  service_type: string | null;
+  scheduled_start: string | null;
+  scheduled_end: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+  staff_count: number | null;
+  status: string | null;
+  review_status: string | null;
+  total_charge: number | null;
+  charges_currency: string | null;
+  flight: NormalizedFlightMaster;
+}
+
+function normalizeDispatchViewRow(v: any): NormalizedDispatchRow {
+  // The view exposes both the dispatch mirror (`flight_no`, etc.) AND the
+  // master fields (`fs_flight_no`, etc.). Master wins; mirror is a fallback
+  // ONLY for legacy rows that have no flight_schedule_id yet. Marked for
+  // removal in Phase 3 once backfill is verified.
+  return {
+    id: v.id,
+    flight_date: v.flight_date ?? null,
+    station: v.station ?? null,
+    airline: v.airline ?? null,
+    service_type: v.service_type ?? null,
+    scheduled_start: v.scheduled_start ?? null,
+    scheduled_end: v.scheduled_end ?? null,
+    actual_start: v.actual_start ?? null,
+    actual_end: v.actual_end ?? null,
+    staff_count: v.staff_count ?? null,
+    status: v.status ?? null,
+    review_status: v.review_status ?? null,
+    total_charge: v.total_charge ?? null,
+    charges_currency: v.charges_currency ?? null,
+    flight: {
+      flight_schedule_id: v.flight_schedule_id ?? null,
+      flight_number:  v.fs_flight_no      ?? v.flight_no      ?? null,
+      registration:   v.fs_registration   ?? v.registration   ?? null,
+      route:          v.fs_route          ?? v.route          ?? null,
+      aircraft_type:  v.fs_aircraft_type  ?? v.aircraft_type  ?? null,
+      sta:            v.fs_sta            ?? v.sta            ?? null,
+      std:            v.fs_std            ?? v.std            ?? null,
+      arrival_date:   v.fs_arrival_date   ?? v.arrival_date   ?? null,
+      skd_type:       v.fs_skd_type       ?? v.skd_type       ?? null,
+      clearance_type: v.fs_clearance_type ?? v.clearance_type ?? null,
+    },
+  };
+}
+
+export function useDispatchListWithFlight(opts?: {
+  station?: string | null;
+  dateFrom?: string | null;
+  dateTo?: string | null;
+}) {
+  const { session } = useAuth();
+  const station = opts?.station ?? null;
+  const dateFrom = opts?.dateFrom ?? null;
+  const dateTo = opts?.dateTo ?? null;
+  return useQuery({
+    queryKey: ["v_dispatch_with_flight", "list", station, dateFrom, dateTo],
+    queryFn: async (): Promise<NormalizedDispatchRow[]> => {
+      let q: any = supabase.from("v_dispatch_with_flight" as any).select("*");
+      if (station) q = q.eq("station", station);
+      if (dateFrom) q = q.gte("flight_date", dateFrom);
+      if (dateTo) q = q.lte("flight_date", dateTo);
+      const { data, error } = await q.order("flight_date", { ascending: false });
+      if (error) throw error;
+      return (data || []).map(normalizeDispatchViewRow);
+    },
+    enabled: !!session,
+    staleTime: 30_000,
+  });
+}

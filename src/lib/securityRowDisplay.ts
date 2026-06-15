@@ -84,23 +84,24 @@ export function resolveSecurityRowDisplay(
   const serviceType = pick(r.service_type, fd.clearance_type, meta.clearance_type, ts.service_type);
   const isDepartureOnly = serviceType.toLowerCase().includes("departure") && !serviceType.toLowerCase().includes("arrival");
   const arrivalDate = isDepartureOnly
-    ? pick(r.flight_date, r.departure_date, fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date)
-    : pick(fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date, r.flight_date);
+    ? pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date)
+    : pick(fd.arrival_date, meta.arrival_date, r.flight_date, ts.arrival_date, ts.shift_start_date);
   const departureDate = isDepartureOnly
-    ? pick(r.departure_date, fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, r.flight_date, fd.arrival_date, meta.arrival_date, ts.arrival_date)
-    : pick(fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, r.departure_date, r.flight_date);
+    ? pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date)
+    : pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date);
 
+  // SSoT Phase B: flight_schedules (fd) is the AUTHORITATIVE source for every
+  // master field. task_sheet_data (ts) is a frozen snapshot taken when the
+  // station first saved the sheet — using it ahead of fd masks later
+  // Clearance amendments. Order is therefore: fd → meta → ts → row.
   return {
-    flightNo: pick(ts.flight_no, fd.flight_no, meta.flight_no, r.flight_no),
+    flightNo: pick(fd.flight_no, meta.flight_no, ts.flight_no, r.flight_no),
     station: pick(r.station, meta.authority, ts.station),
     airline: pick(r.airline, meta.airline, ts.airline),
     serviceType,
-    registration: pick(ts.registration, fd.registration, meta.registration),
-    route: pick(ts.route, fd.route, meta.route),
-    aircraftType: pick(ts.aircraft_type, fd.aircraft_type, meta.aircraft_type),
-    // Clearance/flight_schedules is the authoritative source for SKD type.
-    // Any amendment in the Clearance portal must override stale task_sheet_data
-    // values that may have been captured when the task sheet was first saved.
+    registration: pick(fd.registration, meta.registration, ts.registration),
+    route: pick(fd.route, meta.route, ts.route),
+    aircraftType: pick(fd.aircraft_type, meta.aircraft_type, ts.aircraft_type),
     skdType: pick(fd.skd_type, meta.skd_type, ts.flight_type, ts.skd_type),
     arrivalDate,
     departureDate,
@@ -108,8 +109,8 @@ export function resolveSecurityRowDisplay(
     // shift times (scheduled_start/scheduled_end) or actual times — those are
     // guard shift / actual movement times and would fabricate a fake STD when
     // the flight has no scheduled departure (e.g. arrival-only flights).
-    sta: pick(ts.sta, fd.sta, meta.sta),
-    std: pick(ts.std, fd.std, meta.std),
+    sta: pick(fd.sta, meta.sta, ts.sta),
+    std: pick(fd.std, meta.std, ts.std),
     ata: pick(ts.ata, r.actual_start),
     atd: pick(ts.atd, r.actual_end),
     scheduledStart: pick(r.scheduled_start, ts.shift_start, ts.sta),
