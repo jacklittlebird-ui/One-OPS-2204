@@ -52,8 +52,13 @@ export function useDispatchBoardFS<T extends Record<string, any> = any>(
       return (data || []) as T[];
     },
     enabled: !!session,
-    staleTime: 30_000,
+    // Batch 2: 60s TTL aligns with global default; dedupes cross-page reads
+    // (StationDispatch, DispatchContent, Invoices, OperationsReports share keys).
+    staleTime: 60_000,
     gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 }
 
