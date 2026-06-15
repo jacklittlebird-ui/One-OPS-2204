@@ -26,9 +26,19 @@ export default function OperationsDashboard() {
     queryFn: async () => { const { data } = await supabase.from("flight_schedules").select("id,flight_no,aircraft_type,registration,route,sta,std,status,clearance_type,arrival_date").order("arrival_date", { ascending: false, nullsFirst: false }); return (data || []) as FlightRow[]; },
   });
 
+  // Phase 3A: read via v_service_report_with_flight view so every flight-master
+  // field (flight_no, station, arrival_date, departure_date, aircraft_type) is
+  // sourced from flight_schedules via JOIN — never from the legacy mirror cols.
   const { data: reports = [] } = useQuery({
-    queryKey: ["service_reports_dash"],
-    queryFn: async () => { const { data } = await supabase.from("service_reports").select("id,operator,flight_no,handling_type,arrival_date,departure_date,total_cost,pax_in_adult_i,pax_in_adult_d,pax_in_inf_i,pax_in_inf_d,pax_transit,station,day_night").order("arrival_date", { ascending: false, nullsFirst: false }).limit(200); return (data || []) as ServiceReportRow[]; },
+    queryKey: ["service_reports_dash_v"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("v_service_report_with_flight")
+        .select("id,operator,flight_no,handling_type,arrival_date,departure_date,total_cost,pax_in_adult_i,pax_in_adult_d,pax_in_inf_i,pax_in_inf_d,pax_transit,station,day_night")
+        .order("arrival_date", { ascending: false, nullsFirst: false })
+        .limit(200);
+      return (data || []) as ServiceReportRow[];
+    },
   });
 
   const { data: staff = [] } = useQuery({
