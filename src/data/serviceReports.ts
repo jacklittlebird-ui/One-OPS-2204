@@ -16,6 +16,47 @@ import { useAuth } from "@/contexts/AuthContext";
 import { resolvePolicy, canUseHistoryScope, type QueryPolicy } from "@/data/policy";
 import { queryKeys } from "@/cache/queryKeys";
 
+/**
+ * Phase 3B Step 2.1 — Read-only hook backed by `v_service_report_with_flight`.
+ * Flight identity fields (`flight_no`, `station`, `aircraft_type`,
+ * `registration`, `route`) are sourced from `flight_schedules` via the view;
+ * billing/operational fields (incl. `handling_type`) remain authoritative on
+ * `service_reports`. Use this for any READ path. Mutations must continue to
+ * target the `service_reports` base table.
+ *
+ *   scope:   "active"  → last 180 days (default)
+ *            "history" → no date window (invoice joins, audits)
+ *   station: optional FS-derived station filter (uses view's `station` column)
+ */
+export function useServiceReportsFS<T extends Record<string, any> = any>(opts?: {
+  scope?: "active" | "history";
+  station?: string | null;
+}) {
+  const { session } = useAuth();
+  const scope = opts?.scope ?? "active";
+  const station = opts?.station ?? null;
+  return useQuery({
+    queryKey: ["v_service_report_with_flight", "list", scope, station],
+    queryFn: async (): Promise<T[]> => {
+      let q: any = (supabase as any).from("v_service_report_with_flight").select("*");
+      if (scope === "active") {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 180);
+        q = q.gte("arrival_date", cutoff.toISOString().slice(0, 10));
+      }
+      if (station) q = q.eq("station", station);
+      const { data, error } = await q
+        .order("arrival_date", { ascending: false, nullsFirst: false })
+        .order("sta", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return (data || []) as T[];
+    },
+    enabled: !!session,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
+}
+
 export function useServiceReports<T extends Record<string, any> = any>(policy?: QueryPolicy) {
   const { userRoles } = useChannel();
   const resolved = resolvePolicy({ scope: "active", ...policy }, userRoles);
