@@ -28,6 +28,7 @@ const SecurityTaskSheetDialog = lazy(() => import("@/components/security/Securit
 import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
+import { snapshotBeforeSave, verifyAfterSave } from "@/lib/phase3WriteCycleVerifier";
 import { resolveDownloadFields } from "@/lib/securityDownloadFields";
 import { parseDeletionRequests } from "@/lib/statusRouting";
 
