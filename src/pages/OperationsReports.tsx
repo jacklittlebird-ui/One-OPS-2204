@@ -250,7 +250,7 @@ function StatsTable({
 
 export default function OperationsReportsPage() {
   const navigate = useNavigate();
-  const { data: serviceReports = [], isLoading: loadingHandling } = useServiceReports();
+  const { data: serviceReports = [], isLoading: loadingHandling } = useServiceReportsFS({ scope: "history" });
   const { data: dispatches = [], isLoading: loadingSecurity } = useDispatchBoardFS({ scope: "history" });
   const isLoading = loadingHandling || loadingSecurity;
 
