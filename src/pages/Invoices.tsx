@@ -14,7 +14,7 @@ import { useAirportsRef, useContractServiceRatesRef } from "@/data/referenceData
 import { useInvoices } from "@/data/finance";
 import { useFlightHistory } from "@/data/flights";
 import { useDispatchBoardFS } from "@/data/dispatch";
-import { useServiceReportsFS } from "@/data/serviceReports";
+import { useServiceReportsForInvoicing } from "@/data/serviceReports";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -252,7 +252,8 @@ export default function InvoicesPage() {
   const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
   const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: serviceReports } = useServiceReportsFS({ scope: "history" });
+  // Batch 3: narrow invoice-purpose projection (~17 cols vs full 82-col view).
+  const { data: serviceReports } = useServiceReportsForInvoicing({ scope: "history" });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);

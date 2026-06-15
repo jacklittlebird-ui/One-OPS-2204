@@ -144,6 +144,113 @@ export function useServiceReportList<T extends Record<string, any> = ServiceRepo
   });
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Batch 3 — Invoice projection layer.
+//
+// The /invoices page consumes service-report data ONLY for billing-preview
+// math + the operator autocomplete. The full FS view ships 82 columns;
+// invoicing needs 17. This wrapper acts as the "v_invoice_summary"-style
+// projection promised in the Batch 3 spec WITHOUT a DB migration — keeping
+// the "no schema changes, no view removal" constraints intact.
+//
+// Excluded heavy/unused columns: pax_*, foreign_pax_*, infant_*,
+// fire_cart_qty, follow_me_qty, jetway_qty, met_folder_qty,
+// file_flt_plan_qty, print_ops_flt_plan_qty, parking_*_hours,
+// estimated_*_bill, review_comment, reviewed_by/at, all fs_* duplicates,
+// ata/atd/td/co/ob/to, ground_time, day_night, mtow, project_tags,
+// performed_by, check_in_system, confirmation_no, flight_status,
+// aircraft_type, sta, std, departure_date (not used in /invoices preview).
+// ───────────────────────────────────────────────────────────────────────────
+
+export const SERVICE_REPORT_INVOICE_COLUMNS = [
+  "id",
+  "flight_schedule_id",
+  "flight_no",
+  "station",
+  "arrival_date",
+  "operator",
+  "handling_type",
+  "registration",
+  "route",
+  "review_status",
+  "currency",
+  "total_cost",
+  "civil_aviation_fee",
+  "handling_fee",
+  "airport_charge",
+  "landing_charge",
+  "parking_charge",
+  "housing_charge",
+  "fuel_charge",
+  "catering_charge",
+  "hotac_charge",
+].join(",");
+
+export interface ServiceReportInvoiceRow {
+  id: string;
+  flight_schedule_id: string | null;
+  flight_no: string | null;
+  station: string | null;
+  arrival_date: string | null;
+  operator: string | null;
+  handling_type: string | null;
+  registration: string | null;
+  route: string | null;
+  review_status: string | null;
+  currency: string | null;
+  total_cost: number | null;
+  civil_aviation_fee: number | null;
+  handling_fee: number | null;
+  airport_charge: number | null;
+  landing_charge: number | null;
+  parking_charge: number | null;
+  housing_charge: number | null;
+  fuel_charge: number | null;
+  catering_charge: number | null;
+  hotac_charge: number | null;
+}
+
+/**
+ * Lightweight invoice-purpose service-report list. Backed by
+ * v_service_report_with_flight with an explicit narrow projection.
+ * Use on /invoices for list/preview math. Use `useServiceReportById` for
+ * full detail loads (invoice detail modal).
+ */
+export function useServiceReportsForInvoicing(opts?: {
+  scope?: "active" | "history";
+  station?: string | null;
+}) {
+  const { session } = useAuth();
+  const scope = opts?.scope ?? "history";
+  const station = opts?.station ?? null;
+  return useQuery({
+    queryKey: ["v_service_report_with_flight", "invoice-narrow", scope, station],
+    queryFn: async (): Promise<ServiceReportInvoiceRow[]> => {
+      let q: any = (supabase as any)
+        .from("v_service_report_with_flight")
+        .select(SERVICE_REPORT_INVOICE_COLUMNS);
+      if (scope === "active") {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 180);
+        q = q.gte("arrival_date", cutoff.toISOString().slice(0, 10));
+      }
+      if (station) q = q.eq("station", station);
+      const { data, error } = await q.order("arrival_date", {
+        ascending: false,
+        nullsFirst: false,
+      });
+      if (error) throw error;
+      return (data || []) as ServiceReportInvoiceRow[];
+    },
+    enabled: !!session,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
+  });
+}
+
 async function fetchServiceReportById(id: string) {
   const { data, error } = await supabase
     .from("service_reports")
