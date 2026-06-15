@@ -1391,7 +1391,21 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </Button>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {lastWriteCycle && (
+                <div
+                  className={`text-[11px] px-2 py-1 rounded border font-medium ${
+                    lastWriteCycle.status === "PASS"
+                      ? "bg-success/10 text-success border-success/30"
+                      : lastWriteCycle.status === "FAIL"
+                      ? "bg-destructive/10 text-destructive border-destructive/30"
+                      : "bg-muted text-muted-foreground border-border"
+                  }`}
+                  title={`fs=${lastWriteCycle.flight_schedule_id ?? "n/a"} • ${new Date(lastWriteCycle.at).toLocaleTimeString()}`}
+                >
+                  Last Save Verified: {lastWriteCycle.status} · Source: flight_schedules
+                </div>
+              )}
               <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
               {!isReceivablesView && (
                 <Button variant="secondary" onClick={() => handleSave(false)} disabled={saving} className="shadow-sm">
