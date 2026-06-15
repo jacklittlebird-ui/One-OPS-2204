@@ -28,18 +28,26 @@ export function useDispatchBoard<T extends Record<string, any> = any>(policy?: Q
  * Same flat shape as `useDispatchBoard().data`, but the four mirror fields
  * (`flight_no`, `station`, `airline`, `service_type`) are FS-driven via the
  * view's COALESCE(fs.X, d.X). Use this for pages that only READ dispatch
- * data (Invoices, OperationsReports, StationDispatch list, DispatchContent,
- * Clearances). Mutations remain on `useDispatchBoard` against the base table.
+ * data. Mutations remain on `useDispatchBoard` against the base table.
+ *
+ *   scope: "active"  → last 180 days (default; matches base-table policy)
+ *          "history" → full history, no date window (audit / invoices)
  */
-export function useDispatchBoardFS<T extends Record<string, any> = any>() {
+export function useDispatchBoardFS<T extends Record<string, any> = any>(
+  opts?: { scope?: "active" | "history" }
+) {
   const { session } = useAuth();
+  const scope = opts?.scope ?? "active";
   return useQuery({
-    queryKey: ["v_dispatch_with_flight", "board", "active"],
+    queryKey: ["v_dispatch_with_flight", "board", scope],
     queryFn: async (): Promise<T[]> => {
-      const { data, error } = await (supabase as any)
-        .from("v_dispatch_with_flight")
-        .select("*")
-        .order("flight_date", { ascending: false, nullsFirst: false });
+      let q: any = (supabase as any).from("v_dispatch_with_flight").select("*");
+      if (scope === "active") {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 180);
+        q = q.gte("flight_date", cutoff.toISOString().slice(0, 10));
+      }
+      const { data, error } = await q.order("flight_date", { ascending: false, nullsFirst: false });
       if (error) throw error;
       return (data || []) as T[];
     },
