@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useServiceReports } from "@/data/serviceReports";
+import { useServiceReportsFS } from "@/data/serviceReports";
 import { useDispatchBoardFS } from "@/data/dispatch";
 import { Shield, Plane, FileBarChart2, Download, ExternalLink, Loader2, Inbox, Printer, FileSpreadsheet, FileText } from "lucide-react";
 import { getTypeBadgeClass } from "@/lib/typeColors";
