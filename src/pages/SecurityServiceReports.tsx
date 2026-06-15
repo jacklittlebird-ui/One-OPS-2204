@@ -1063,10 +1063,15 @@ export default function SecurityServiceReportsPage() {
       if (isCompletingClearanceFlight) {
         // Reuse the existing clearance flight schedule — just create the dispatch
         // record linked to it. Step 2 (Station) is now complete.
-        const linkedFlightNo = (row as any).flight_schedule_id
-          ? flightDetailsById.get((row as any).flight_schedule_id)?.flight_no
-          : undefined;
-        const dispatchInsert = { ...payload, flight_no: linkedFlightNo || payload.flight_no, flight_schedule_id: (row as any).flight_schedule_id };
+        // Phase 6.5: strip legacy mirror keys (flight_no/station/airline/service_type/aircraft_type)
+        // before INSERT — display values resolve via v_dispatch_with_flight at read time.
+        const dispatchInsertRaw = { ...payload, flight_schedule_id: (row as any).flight_schedule_id };
+        const dispatchInsert = await resolveFlightMasterForWrite(
+          dispatchInsertRaw,
+          (row as any).flight_schedule_id,
+          "dispatch_assignments",
+          "insert",
+        );
         const { data: insRow1, error: dispatchErr } = await supabase
           .from("dispatch_assignments")
           .insert(dispatchInsert as any)
@@ -1133,7 +1138,14 @@ export default function SecurityServiceReportsPage() {
         if (flightErr) throw flightErr;
 
         // 3. Insert dispatch with link to the flight_schedule
-        const dispatchInsert = { ...payload, flight_schedule_id: createdFlight?.id || null };
+        // Phase 6.5: strip legacy mirror keys before INSERT.
+        const dispatchInsertRaw = { ...payload, flight_schedule_id: createdFlight?.id || null };
+        const dispatchInsert = await resolveFlightMasterForWrite(
+          dispatchInsertRaw,
+          createdFlight?.id || null,
+          "dispatch_assignments",
+          "insert",
+        );
         const { data: insRow2, error: dispatchErr } = await supabase
           .from("dispatch_assignments")
           .insert(dispatchInsert as any)
@@ -1148,9 +1160,16 @@ export default function SecurityServiceReportsPage() {
         // linked flight_schedule. If the Service Type changed, reset the schedule
         // to Pending so the flight returns to Operations → Pending Approval.
         // 1. Update the dispatch
+        // Phase 6.5: strip legacy mirror keys before UPDATE.
+        const dispatchUpdate = await resolveFlightMasterForWrite(
+          payload,
+          linkedFsId,
+          "dispatch_assignments",
+          "update",
+        );
         const { error: dispatchErr } = await supabase
           .from("dispatch_assignments")
-          .update(payload as any)
+          .update(dispatchUpdate as any)
           .eq("id", row.id);
         if (dispatchErr) throw dispatchErr;
 

@@ -445,17 +445,35 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     return anyPaid ? "paid" : "issued";
   }, [dialogInvoiceRows]);
 
+  // Phase 6.5: source service type from FS clearance_type when available.
+  // The legacy editableRow.service_type column is being dropped in Phase 7;
+  // FS (flight_schedules.clearance_type, surfaced via flightMeta on linked
+  // dispatches and v_dispatch_with_flight) is the single source of truth.
+  const effectiveServiceType = useMemo(() => {
+    const fsClearance =
+      (currentRow as any)?.flightMeta?.clearance_type ??
+      (currentRow as any)?.fs_clearance_type ??
+      null;
+    return (
+      fsClearance ||
+      editableRow?.service_type ||
+      serviceType ||
+      currentRow?.service_type ||
+      ""
+    );
+  }, [currentRow, editableRow?.service_type, serviceType]);
+
   // Map service_type → flight_type used in contract rate rows.
   // Contract rates use SECURITY_FLIGHT_TYPES: Arrival Security,
   // Departure Security, Maintenance Security, Turnaround.
   const flightTypeForCharges = useMemo(() => {
-    const st = (editableRow?.service_type || serviceType || currentRow?.service_type || "").toLowerCase();
+    const st = effectiveServiceType.toLowerCase();
     if (st.includes("turnaround")) return "Turnaround";
     if (st.includes("maintenance")) return "Maintenance Security";
     if (st.includes("departure")) return "Departure Security";
     if (st.includes("arrival")) return "Arrival Security";
     return sheet.flight_type || "Turnaround";
-  }, [editableRow?.service_type, serviceType, currentRow?.service_type, sheet.flight_type]);
+  }, [effectiveServiceType, sheet.flight_type]);
 
   const isAdhocFlight = useMemo(() => {
     const s = (skdType || (currentRow as any)?.skd_type || sheet.flight_type || "").toString().trim().toUpperCase();
@@ -469,23 +487,24 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     [effectiveSkd],
   );
 
-  // Auto-correct service_type when restriction changes
+  // Auto-correct service_type when restriction changes (FS-sourced check).
   useEffect(() => {
     if (!editableRow) return;
-    if (allowedServiceTypes.length > 0 && !allowedServiceTypes.includes(editableRow.service_type)) {
+    if (allowedServiceTypes.length > 0 && !allowedServiceTypes.includes(effectiveServiceType)) {
       updateRow("service_type", allowedServiceTypes[0]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowedServiceTypes.join("|")]);
 
-  // Auto-set SKD (flight_type) to "Maintenance" when service_type is Maintenance Security
+  // Auto-set SKD (flight_type) to "Maintenance" when effective service type is
+  // Maintenance Security. Sourced from FS clearance_type (Phase 6.5).
   useEffect(() => {
     if (!editableRow) return;
-    if (editableRow.service_type === "Maintenance Security" && sheet.flight_type !== "Maintenance") {
+    if (effectiveServiceType === "Maintenance Security" && sheet.flight_type !== "Maintenance") {
       setSheet(prev => ({ ...prev, flight_type: "Maintenance" }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editableRow?.service_type]);
+  }, [effectiveServiceType]);
 
   const computedCharges = useMemo(() => {
     if (!contractRates.length || !currentRow) return null;
