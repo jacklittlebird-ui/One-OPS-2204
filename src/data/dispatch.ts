@@ -264,6 +264,11 @@ export function useDispatchListWithFlight(opts?: {
       return (data || []).map(normalizeDispatchViewRow);
     },
     enabled: !!session,
-    staleTime: 30_000,
+    // Batch 2: 60s TTL; matches the rest of the FS-view hook tier.
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 }
