@@ -28,6 +28,7 @@ const SecurityTaskSheetDialog = lazy(() => import("@/components/security/Securit
 import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
+import { snapshotBeforeSave, verifyAfterSave } from "@/lib/phase3WriteCycleVerifier";
 import { resolveDownloadFields } from "@/lib/securityDownloadFields";
 import { parseDeletionRequests } from "@/lib/statusRouting";
 
@@ -971,6 +972,28 @@ export default function SecurityServiceReportsPage() {
         (originalClearanceType || "").trim().toLowerCase();
     const normalizedDates = normalizeSecurityDates(row as any, taskSheet || {});
 
+    // ── Phase 3 write-cycle verifier (DEV/DIAGNOSTIC) ──────────────────────
+    // Snapshot the authoritative flight_schedules row BEFORE the save so we
+    // can deterministically prove persistence + cross-portal consistency
+    // after the write returns. Never throws into the save flow.
+    const __wcv_fsId = (row as any).flight_schedule_id || null;
+    const __wcv_dispatchId = !effectiveIsNew ? (row.id as string) : null;
+    const __wcv_snapshot = await snapshotBeforeSave(__wcv_fsId, __wcv_dispatchId).catch(
+      () => ({ flight_schedule_id: __wcv_fsId, dispatch_id: __wcv_dispatchId, beforeFs: null }),
+    );
+    const __wcv_expected = {
+      route: taskSheet.route,
+      registration: taskSheet.registration,
+      aircraft_type: taskSheet.aircraft_type,
+      sta: taskSheet.sta,
+      std: taskSheet.std,
+      arrival_date: normalizedDates.arrivalDate || undefined,
+      departure_date: normalizedDates.departureDate || undefined,
+      skd_type: taskSheet.flight_type,
+      clearance_type: row.service_type,
+      flight_no: row.flight_no,
+    } as const;
+
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
       notes: taskSheet.remarks || row.notes,
@@ -1177,6 +1200,25 @@ export default function SecurityServiceReportsPage() {
         queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
       ]);
+
+      // Phase 3 write-cycle verifier — runs after caches invalidate so the
+      // re-fetch hits the database, not a stale cache. Result is logged and
+      // pushed to the verifier store; the dialog reads it for the badge.
+      const __wcv_fsIdAfter =
+        (insertedDispatch as any)?.flight_schedule_id || __wcv_snapshot.flight_schedule_id;
+      const __wcv_dispatchIdAfter =
+        (insertedDispatch as any)?.id || __wcv_snapshot.dispatch_id;
+      if (__wcv_fsIdAfter) {
+        verifyAfterSave({
+          snapshot: {
+            flight_schedule_id: __wcv_fsIdAfter,
+            dispatch_id: __wcv_dispatchIdAfter,
+            beforeFs: __wcv_snapshot.beforeFs,
+          },
+          expected: __wcv_expected,
+          airline_id: null,
+        }).catch((err) => console.warn("[WRITE_CYCLE_VALIDATION] verifier error:", err));
+      }
       if (closeAfter) {
         setEditRow(null);
         setIsNewReport(false);
