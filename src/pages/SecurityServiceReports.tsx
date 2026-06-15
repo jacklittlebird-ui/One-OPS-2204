@@ -1160,9 +1160,16 @@ export default function SecurityServiceReportsPage() {
         // linked flight_schedule. If the Service Type changed, reset the schedule
         // to Pending so the flight returns to Operations → Pending Approval.
         // 1. Update the dispatch
+        // Phase 6.5: strip legacy mirror keys before UPDATE.
+        const dispatchUpdate = await resolveFlightMasterForWrite(
+          payload,
+          linkedFsId,
+          "dispatch_assignments",
+          "update",
+        );
         const { error: dispatchErr } = await supabase
           .from("dispatch_assignments")
-          .update(payload as any)
+          .update(dispatchUpdate as any)
           .eq("id", row.id);
         if (dispatchErr) throw dispatchErr;
 
