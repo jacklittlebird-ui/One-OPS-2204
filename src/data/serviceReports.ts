@@ -16,6 +16,47 @@ import { useAuth } from "@/contexts/AuthContext";
 import { resolvePolicy, canUseHistoryScope, type QueryPolicy } from "@/data/policy";
 import { queryKeys } from "@/cache/queryKeys";
 
+/**
+ * Phase 3B Step 2.1 — Read-only hook backed by `v_service_report_with_flight`.
+ * Flight identity fields (`flight_no`, `station`, `aircraft_type`,
+ * `registration`, `route`) are sourced from `flight_schedules` via the view;
+ * billing/operational fields (incl. `handling_type`) remain authoritative on
+ * `service_reports`. Use this for any READ path. Mutations must continue to
+ * target the `service_reports` base table.
+ *
+ *   scope:   "active"  → last 180 days (default)
+ *            "history" → no date window (invoice joins, audits)
+ *   station: optional FS-derived station filter (uses view's `station` column)
+ */
+export function useServiceReportsFS<T extends Record<string, any> = any>(opts?: {
+  scope?: "active" | "history";
+  station?: string | null;
+}) {
+  const { session } = useAuth();
+  const scope = opts?.scope ?? "active";
+  const station = opts?.station ?? null;
+  return useQuery({
+    queryKey: ["v_service_report_with_flight", "list", scope, station],
+    queryFn: async (): Promise<T[]> => {
+      let q: any = (supabase as any).from("v_service_report_with_flight").select("*");
+      if (scope === "active") {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 180);
+        q = q.gte("arrival_date", cutoff.toISOString().slice(0, 10));
+      }
+      if (station) q = q.eq("station", station);
+      const { data, error } = await q
+        .order("arrival_date", { ascending: false, nullsFirst: false })
+        .order("sta", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return (data || []) as T[];
+    },
+    enabled: !!session,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
+}
+
 export function useServiceReports<T extends Record<string, any> = any>(policy?: QueryPolicy) {
   const { userRoles } = useChannel();
   const resolved = resolvePolicy({ scope: "active", ...policy }, userRoles);
@@ -35,18 +76,19 @@ export function useCanViewServiceReportHistory(): boolean {
 
 /**
  * Narrow column projection for service-report LIST views.
- * `service_reports` has 68 columns; tables render ~15.
- * Excludes large freeform/jsonb fields (remarks, billing_data, etc.)
- * — detail dialogs should call useServiceReportById().
+ * Phase 3B Step 2.1: backed by `v_service_report_with_flight` so flight
+ * identity fields (`flight_no`, `station`, `aircraft_type`, `registration`,
+ * `route`) are FS-driven. `handling_type` remains from `service_reports`.
+ * Excludes large freeform/jsonb fields — detail dialogs should call
+ * useServiceReportById().
  */
 export const SERVICE_REPORT_LIST_COLUMNS =
-  "id,report_no,flight_no,airline,station,handling_type,aircraft_type,registration,route,arrival_date,departure_date,sta,std,status,review_status,total_charge,charges_currency";
+  "id,operator,handling_type,flight_no,station,aircraft_type,registration,route,arrival_date,departure_date,sta,std,review_status,total_cost,currency,flight_schedule_id";
 
 export interface ServiceReportListRow {
   id: string;
-  report_no: string | null;
+  operator: string | null;
   flight_no: string | null;
-  airline: string | null;
   station: string | null;
   handling_type: string | null;
   aircraft_type: string | null;
@@ -56,21 +98,41 @@ export interface ServiceReportListRow {
   departure_date: string | null;
   sta: string | null;
   std: string | null;
-  status: string | null;
   review_status: string | null;
-  total_charge: number | null;
-  charges_currency: string | null;
+  total_cost: number | null;
+  currency: string | null;
+  flight_schedule_id: string | null;
 }
 
-export function useServiceReportList<T extends Record<string, any> = ServiceReportListRow>(
-  policy?: QueryPolicy,
-) {
-  const { userRoles } = useChannel();
-  const resolved = resolvePolicy(
-    { scope: "active", select: SERVICE_REPORT_LIST_COLUMNS, ...policy },
-    userRoles,
-  );
-  return useSupabaseTable<T>("service_reports", resolved);
+export function useServiceReportList<T extends Record<string, any> = ServiceReportListRow>(opts?: {
+  scope?: "active" | "history";
+  station?: string | null;
+}) {
+  const { session } = useAuth();
+  const scope = opts?.scope ?? "active";
+  const station = opts?.station ?? null;
+  return useQuery({
+    queryKey: ["v_service_report_with_flight", "list-narrow", scope, station],
+    queryFn: async (): Promise<T[]> => {
+      let q: any = (supabase as any)
+        .from("v_service_report_with_flight")
+        .select(SERVICE_REPORT_LIST_COLUMNS);
+      if (scope === "active") {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 180);
+        q = q.gte("arrival_date", cutoff.toISOString().slice(0, 10));
+      }
+      if (station) q = q.eq("station", station);
+      const { data, error } = await q
+        .order("arrival_date", { ascending: false, nullsFirst: false })
+        .order("sta", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return (data || []) as T[];
+    },
+    enabled: !!session,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
 }
 
 async function fetchServiceReportById(id: string) {

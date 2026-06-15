@@ -13,6 +13,7 @@ import { expandFlightRef, normalizeFlightKey } from "@/lib/flightRefMatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { generateAllCharges } from "@/data/airportChargesData";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
+import { useServiceReportsFS } from "@/data/serviceReports";
 import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
 import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
@@ -566,19 +567,11 @@ function HandlingServiceReportContent() {
 
   const { station: userStation, isStationScoped } = useUserStation();
 
-  const { data: dbReports = [], isLoading: isLoadingReports } = useQuery({
-    queryKey: ["service_reports", isStationScoped ? userStation : null],
-    queryFn: async () => {
-      let q = supabase
-        .from("service_reports")
-        .select("*")
-        .order("arrival_date", { ascending: false, nullsFirst: false })
-        .order("sta", { ascending: true, nullsFirst: false });
-      if (isStationScoped && userStation) q = (q as any).eq("station", userStation);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
-    },
+  // Phase 3B Step 2.1 — Reads go through v_service_report_with_flight so
+  // flight identity fields are FS-driven. Mutations still target service_reports.
+  const { data: dbReports = [], isLoading: isLoadingReports } = useServiceReportsFS({
+    scope: "active",
+    station: isStationScoped ? userStation : null,
   });
 
   const { data: dbDelays = [], isLoading: isLoadingDelays } = useQuery({
@@ -895,7 +888,7 @@ function HandlingServiceReportContent() {
       return inserted;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
       toast({ title: "Saved", description: "Service report added." });
@@ -933,7 +926,7 @@ function HandlingServiceReportContent() {
       await saveLineItems(id, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       toast({ title: "Updated", description: "Service report updated." });
     },
@@ -948,7 +941,7 @@ function HandlingServiceReportContent() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       toast({ title: "Deleted", description: "Report removed." });
     },
@@ -1279,7 +1272,7 @@ function HandlingServiceReportContent() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+              queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
               queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
               queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
               queryClient.invalidateQueries({ queryKey: ["invoices_for_receivables_panel"] });
@@ -1482,7 +1475,7 @@ function HandlingServiceReportContent() {
                   }
                 } finally {
                   setBulkApproving(false);
-                  queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                  queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
                 }
                 if (firstError) {
                   toast({ title: `Partial approval (${approved}/${ids.length})`, description: firstError, variant: "destructive" });
@@ -1705,7 +1698,7 @@ function HandlingServiceReportContent() {
                                     await supabase.from("service_reports").delete().eq("id", r.id);
                                   }
                                   await supabase.from("flight_schedules").delete().eq("id", r.flightScheduleId!);
-                                  queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                                  queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
                                   queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
                                   toast({ title: "Deleted", description: "Flight and report removed." });
                                 } catch (e: any) {
@@ -1759,7 +1752,7 @@ function HandlingServiceReportContent() {
               reviewed_at: new Date().toISOString(),
             } as any).eq("id", editId);
             if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+            queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
             toast({ title: "✅ Report Approved", description: comment || "Moved to Receivables." });
             setEditId(null);
           }}
@@ -1772,7 +1765,7 @@ function HandlingServiceReportContent() {
               reviewed_at: new Date().toISOString(),
             } as any).eq("id", editId);
             if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+            queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
             toast({ title: "❌ Report Rejected", description: "Sent back to Station with comments." });
             setEditId(null);
           }}

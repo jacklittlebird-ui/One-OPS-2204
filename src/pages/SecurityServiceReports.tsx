@@ -418,6 +418,7 @@ export default function SecurityServiceReportsPage() {
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
     queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+    queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
     queryClient.invalidateQueries({ queryKey: ["invoices"] });
     queryClient.invalidateQueries({ queryKey: ["invoices_for_security_pipeline"] });
     toast({ title: "Approved", description: "Flight approved by Operations — removed from Pending Approval and advanced to Receivables." });
