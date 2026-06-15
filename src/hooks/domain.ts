@@ -11,6 +11,7 @@
 
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useSupabasePaginatedQuery, type PaginatedQueryOptions } from "@/hooks/useSupabasePaginatedQuery";
+import { LIST_PAGE_SIZE } from "@/lib/pagination";
 
 /** Flight schedules — station-scoped by default (authority column). */
 export function useFlights() {
@@ -23,7 +24,7 @@ export function useFlightsPaginated(opts: Partial<PaginatedQueryOptions<any>> = 
     table: "flight_schedules",
     stationFilter: true,
     orderBy: "arrival_date",
-    pageSize: 50,
+    pageSize: LIST_PAGE_SIZE,
     ...opts,
   });
 }
@@ -38,7 +39,7 @@ export function useDispatchAssignmentsPaginated(opts: Partial<PaginatedQueryOpti
     table: "dispatch_assignments",
     stationFilter: true,
     orderBy: "flight_date",
-    pageSize: 50,
+    pageSize: LIST_PAGE_SIZE,
     ...opts,
   });
 }
@@ -53,7 +54,7 @@ export function useServiceReportsPaginated(opts: Partial<PaginatedQueryOptions<a
     table: "service_reports",
     stationFilter: true,
     orderBy: "arrival_date",
-    pageSize: 50,
+    pageSize: LIST_PAGE_SIZE,
     ...opts,
   });
 }
