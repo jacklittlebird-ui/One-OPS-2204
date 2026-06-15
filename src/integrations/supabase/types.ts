@@ -2471,7 +2471,6 @@ export type Database = {
       }
       service_reports: {
         Row: {
-          aircraft_type: string
           airport_charge: number
           arrival_date: string | null
           ata: string | null
@@ -2492,7 +2491,6 @@ export type Database = {
           estimated_local_bill: number
           file_flt_plan_qty: number
           fire_cart_qty: number
-          flight_no: string
           flight_schedule_id: string | null
           flight_status: string
           follow_me_qty: number
@@ -2525,14 +2523,11 @@ export type Database = {
           performed_by: string | null
           print_ops_flt_plan_qty: number
           project_tags: string | null
-          registration: string
           review_comment: string | null
           review_status: string
           reviewed_at: string | null
           reviewed_by: string | null
-          route: string
           sta: string | null
-          station: string
           std: string | null
           td: string | null
           to: string | null
@@ -2542,7 +2537,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          aircraft_type?: string
           airport_charge?: number
           arrival_date?: string | null
           ata?: string | null
@@ -2563,7 +2557,6 @@ export type Database = {
           estimated_local_bill?: number
           file_flt_plan_qty?: number
           fire_cart_qty?: number
-          flight_no: string
           flight_schedule_id?: string | null
           flight_status?: string
           follow_me_qty?: number
@@ -2596,14 +2589,11 @@ export type Database = {
           performed_by?: string | null
           print_ops_flt_plan_qty?: number
           project_tags?: string | null
-          registration?: string
           review_comment?: string | null
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
-          route?: string
           sta?: string | null
-          station?: string
           std?: string | null
           td?: string | null
           to?: string | null
@@ -2613,7 +2603,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          aircraft_type?: string
           airport_charge?: number
           arrival_date?: string | null
           ata?: string | null
@@ -2634,7 +2623,6 @@ export type Database = {
           estimated_local_bill?: number
           file_flt_plan_qty?: number
           fire_cart_qty?: number
-          flight_no?: string
           flight_schedule_id?: string | null
           flight_status?: string
           follow_me_qty?: number
@@ -2667,14 +2655,11 @@ export type Database = {
           performed_by?: string | null
           print_ops_flt_plan_qty?: number
           project_tags?: string | null
-          registration?: string
           review_comment?: string | null
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
-          route?: string
           sta?: string | null
-          station?: string
           std?: string | null
           td?: string | null
           to?: string | null
@@ -3135,6 +3120,222 @@ export type Database = {
         Relationships: []
       }
       snapshot_service_reports_pre_phase3: {
+        Row: {
+          aircraft_type: string | null
+          airport_charge: number | null
+          arrival_date: string | null
+          ata: string | null
+          atd: string | null
+          catering_charge: number | null
+          check_in_system: string | null
+          civil_aviation_fee: number | null
+          co: string | null
+          confirmation_no: string | null
+          created_at: string | null
+          crew_count: number | null
+          currency: Database["public"]["Enums"]["currency_type"] | null
+          day_night: string | null
+          departure_date: string | null
+          egyptian_pax_in: number | null
+          egyptian_pax_out: number | null
+          estimated_foreign_bill: number | null
+          estimated_local_bill: number | null
+          file_flt_plan_qty: number | null
+          fire_cart_qty: number | null
+          flight_no: string | null
+          flight_schedule_id: string | null
+          flight_status: string | null
+          follow_me_qty: number | null
+          foreign_pax_in: number | null
+          foreign_pax_out: number | null
+          fuel_charge: number | null
+          ground_time: string | null
+          handling_fee: number | null
+          handling_type: Database["public"]["Enums"]["handling_type"] | null
+          hotac_charge: number | null
+          housing_charge: number | null
+          housing_days: number | null
+          id: string | null
+          infant_in: number | null
+          infant_out: number | null
+          jetway_qty: number | null
+          landing_charge: number | null
+          met_folder_qty: number | null
+          mtow: string | null
+          ob: string | null
+          operator: string | null
+          parking_charge: number | null
+          parking_day_hours: number | null
+          parking_night_hours: number | null
+          pax_in_adult_d: number | null
+          pax_in_adult_i: number | null
+          pax_in_inf_d: number | null
+          pax_in_inf_i: number | null
+          pax_transit: number | null
+          performed_by: string | null
+          print_ops_flt_plan_qty: number | null
+          project_tags: string | null
+          registration: string | null
+          review_comment: string | null
+          review_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          route: string | null
+          sta: string | null
+          station: string | null
+          std: string | null
+          td: string | null
+          to: string | null
+          total_cost: number | null
+          total_departing_pax: number | null
+          total_parking_hours: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          aircraft_type?: string | null
+          airport_charge?: number | null
+          arrival_date?: string | null
+          ata?: string | null
+          atd?: string | null
+          catering_charge?: number | null
+          check_in_system?: string | null
+          civil_aviation_fee?: number | null
+          co?: string | null
+          confirmation_no?: string | null
+          created_at?: string | null
+          crew_count?: number | null
+          currency?: Database["public"]["Enums"]["currency_type"] | null
+          day_night?: string | null
+          departure_date?: string | null
+          egyptian_pax_in?: number | null
+          egyptian_pax_out?: number | null
+          estimated_foreign_bill?: number | null
+          estimated_local_bill?: number | null
+          file_flt_plan_qty?: number | null
+          fire_cart_qty?: number | null
+          flight_no?: string | null
+          flight_schedule_id?: string | null
+          flight_status?: string | null
+          follow_me_qty?: number | null
+          foreign_pax_in?: number | null
+          foreign_pax_out?: number | null
+          fuel_charge?: number | null
+          ground_time?: string | null
+          handling_fee?: number | null
+          handling_type?: Database["public"]["Enums"]["handling_type"] | null
+          hotac_charge?: number | null
+          housing_charge?: number | null
+          housing_days?: number | null
+          id?: string | null
+          infant_in?: number | null
+          infant_out?: number | null
+          jetway_qty?: number | null
+          landing_charge?: number | null
+          met_folder_qty?: number | null
+          mtow?: string | null
+          ob?: string | null
+          operator?: string | null
+          parking_charge?: number | null
+          parking_day_hours?: number | null
+          parking_night_hours?: number | null
+          pax_in_adult_d?: number | null
+          pax_in_adult_i?: number | null
+          pax_in_inf_d?: number | null
+          pax_in_inf_i?: number | null
+          pax_transit?: number | null
+          performed_by?: string | null
+          print_ops_flt_plan_qty?: number | null
+          project_tags?: string | null
+          registration?: string | null
+          review_comment?: string | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          route?: string | null
+          sta?: string | null
+          station?: string | null
+          std?: string | null
+          td?: string | null
+          to?: string | null
+          total_cost?: number | null
+          total_departing_pax?: number | null
+          total_parking_hours?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          aircraft_type?: string | null
+          airport_charge?: number | null
+          arrival_date?: string | null
+          ata?: string | null
+          atd?: string | null
+          catering_charge?: number | null
+          check_in_system?: string | null
+          civil_aviation_fee?: number | null
+          co?: string | null
+          confirmation_no?: string | null
+          created_at?: string | null
+          crew_count?: number | null
+          currency?: Database["public"]["Enums"]["currency_type"] | null
+          day_night?: string | null
+          departure_date?: string | null
+          egyptian_pax_in?: number | null
+          egyptian_pax_out?: number | null
+          estimated_foreign_bill?: number | null
+          estimated_local_bill?: number | null
+          file_flt_plan_qty?: number | null
+          fire_cart_qty?: number | null
+          flight_no?: string | null
+          flight_schedule_id?: string | null
+          flight_status?: string | null
+          follow_me_qty?: number | null
+          foreign_pax_in?: number | null
+          foreign_pax_out?: number | null
+          fuel_charge?: number | null
+          ground_time?: string | null
+          handling_fee?: number | null
+          handling_type?: Database["public"]["Enums"]["handling_type"] | null
+          hotac_charge?: number | null
+          housing_charge?: number | null
+          housing_days?: number | null
+          id?: string | null
+          infant_in?: number | null
+          infant_out?: number | null
+          jetway_qty?: number | null
+          landing_charge?: number | null
+          met_folder_qty?: number | null
+          mtow?: string | null
+          ob?: string | null
+          operator?: string | null
+          parking_charge?: number | null
+          parking_day_hours?: number | null
+          parking_night_hours?: number | null
+          pax_in_adult_d?: number | null
+          pax_in_adult_i?: number | null
+          pax_in_inf_d?: number | null
+          pax_in_inf_i?: number | null
+          pax_transit?: number | null
+          performed_by?: string | null
+          print_ops_flt_plan_qty?: number | null
+          project_tags?: string | null
+          registration?: string | null
+          review_comment?: string | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          route?: string | null
+          sta?: string | null
+          station?: string | null
+          std?: string | null
+          td?: string | null
+          to?: string | null
+          total_cost?: number | null
+          total_departing_pax?: number | null
+          total_parking_hours?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      snapshot_service_reports_pre_phase3b_step2_3: {
         Row: {
           aircraft_type: string | null
           airport_charge: number | null
