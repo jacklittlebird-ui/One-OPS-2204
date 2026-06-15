@@ -1063,10 +1063,15 @@ export default function SecurityServiceReportsPage() {
       if (isCompletingClearanceFlight) {
         // Reuse the existing clearance flight schedule — just create the dispatch
         // record linked to it. Step 2 (Station) is now complete.
-        const linkedFlightNo = (row as any).flight_schedule_id
-          ? flightDetailsById.get((row as any).flight_schedule_id)?.flight_no
-          : undefined;
-        const dispatchInsert = { ...payload, flight_no: linkedFlightNo || payload.flight_no, flight_schedule_id: (row as any).flight_schedule_id };
+        // Phase 6.5: strip legacy mirror keys (flight_no/station/airline/service_type/aircraft_type)
+        // before INSERT — display values resolve via v_dispatch_with_flight at read time.
+        const dispatchInsertRaw = { ...payload, flight_schedule_id: (row as any).flight_schedule_id };
+        const dispatchInsert = await resolveFlightMasterForWrite(
+          dispatchInsertRaw,
+          (row as any).flight_schedule_id,
+          "dispatch_assignments",
+          "insert",
+        );
         const { data: insRow1, error: dispatchErr } = await supabase
           .from("dispatch_assignments")
           .insert(dispatchInsert as any)
