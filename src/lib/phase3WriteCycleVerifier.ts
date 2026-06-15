@@ -167,15 +167,17 @@ export async function verifyAfterSave(args: VerifyArgs): Promise<WriteCycleResul
     }
   }
 
-  // Cross-portal: invoice resolver smoke test. If any invoice for this airline
-  // references the flight_no, it must resolve through flight_schedules.
+  // Cross-portal: invoice resolver smoke test. Any invoice whose flight_ref
+  // equals this flight_no must still resolve to a flight_schedules row.
+  // (Invoices live on airline_iata, not airline_id, so we don't filter by
+  // airline here — the relevant signal is whether the resolver still works.)
+  void airline_id;
   try {
     const fn = norm(afterFs?.flight_no);
-    if (airline_id && fn) {
+    if (fn) {
       const { data: invs } = await supabase
         .from("invoices")
-        .select("id, flight_ref, airline_id, status")
-        .eq("airline_id", airline_id)
+        .select("id, flight_ref, status")
         .ilike("flight_ref", fn)
         .limit(5);
       if (invs && invs.length > 0) {
@@ -189,7 +191,7 @@ export async function verifyAfterSave(args: VerifyArgs): Promise<WriteCycleResul
           notes.push(`Invoice resolver failed: flight_no '${fn}' not found in flight_schedules.`);
         }
       } else {
-        invoiceResolverOk = true; // no invoices touching this flight → vacuously OK
+        invoiceResolverOk = true; // no invoices touch this flight → vacuously OK
       }
     } else {
       invoiceResolverOk = true;
