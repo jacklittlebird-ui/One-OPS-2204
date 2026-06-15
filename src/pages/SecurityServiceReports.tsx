@@ -972,6 +972,28 @@ export default function SecurityServiceReportsPage() {
         (originalClearanceType || "").trim().toLowerCase();
     const normalizedDates = normalizeSecurityDates(row as any, taskSheet || {});
 
+    // ── Phase 3 write-cycle verifier (DEV/DIAGNOSTIC) ──────────────────────
+    // Snapshot the authoritative flight_schedules row BEFORE the save so we
+    // can deterministically prove persistence + cross-portal consistency
+    // after the write returns. Never throws into the save flow.
+    const __wcv_fsId = (row as any).flight_schedule_id || null;
+    const __wcv_dispatchId = !effectiveIsNew ? (row.id as string) : null;
+    const __wcv_snapshot = await snapshotBeforeSave(__wcv_fsId, __wcv_dispatchId).catch(
+      () => ({ flight_schedule_id: __wcv_fsId, dispatch_id: __wcv_dispatchId, beforeFs: null }),
+    );
+    const __wcv_expected = {
+      route: taskSheet.route,
+      registration: taskSheet.registration,
+      aircraft_type: taskSheet.aircraft_type,
+      sta: taskSheet.sta,
+      std: taskSheet.std,
+      arrival_date: normalizedDates.arrivalDate || undefined,
+      departure_date: normalizedDates.departureDate || undefined,
+      skd_type: taskSheet.flight_type,
+      clearance_type: row.service_type,
+      flight_no: row.flight_no,
+    } as const;
+
     const payload: Record<string, any> = {
       task_sheet_data: taskSheet,
       notes: taskSheet.remarks || row.notes,
