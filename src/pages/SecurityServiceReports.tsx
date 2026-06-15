@@ -57,11 +57,11 @@ interface DispatchRow {
   id: string;
   flight_schedule_id: string | null;
   contract_id: string | null;
-  station: string;
-  airline: string;
-  flight_no: string;
+  station?: string | null;
+  airline?: string | null;
+  flight_no?: string | null;
   flight_date: string;
-  service_type: string;
+  service_type?: string | null;
   staff_names: string;
   staff_count: number;
   scheduled_start: string;
@@ -205,17 +205,19 @@ export default function SecurityServiceReportsPage() {
   const [pendingDateTo, setPendingDateTo] = useState("");
   
 
-  // Fetch dispatch assignments (completed ones = service reports)
+  // Phase 3B Step 1: dispatch_assignments no longer holds mirror columns
+  // (station/airline/flight_no/service_type). Read through the FS-driven
+  // view so display fields resolve from flight_schedules + airlines.
   const { data: dispatches = [], isLoading } = useQuery({
-    queryKey: ["dispatch_assignments", "service-reports", session?.user?.id, isStationScoped ? userStation : null, dateFrom || null, dateTo || null],
+    queryKey: ["v_dispatch_with_flight", "service-reports", session?.user?.id, isStationScoped ? userStation : null, dateFrom || null, dateTo || null],
     queryFn: async () => {
-      let q = supabase
-        .from("dispatch_assignments")
+      let q: any = (supabase as any)
+        .from("v_dispatch_with_flight")
         .select("*")
         .order("flight_date", { ascending: false });
-      if (isStationScoped && userStation) q = (q as any).eq("station", userStation);
-      if (dateFrom) q = (q as any).gte("flight_date", dateFrom);
-      if (dateTo) q = (q as any).lte("flight_date", dateTo);
+      if (isStationScoped && userStation) q = q.eq("station", userStation);
+      if (dateFrom) q = q.gte("flight_date", dateFrom);
+      if (dateTo) q = q.lte("flight_date", dateTo);
       const { data, error } = await q;
       if (error) throw error;
       return data as DispatchRow[];
