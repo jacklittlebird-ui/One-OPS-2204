@@ -566,19 +566,11 @@ function HandlingServiceReportContent() {
 
   const { station: userStation, isStationScoped } = useUserStation();
 
-  const { data: dbReports = [], isLoading: isLoadingReports } = useQuery({
-    queryKey: ["service_reports", isStationScoped ? userStation : null],
-    queryFn: async () => {
-      let q = supabase
-        .from("service_reports")
-        .select("*")
-        .order("arrival_date", { ascending: false, nullsFirst: false })
-        .order("sta", { ascending: true, nullsFirst: false });
-      if (isStationScoped && userStation) q = (q as any).eq("station", userStation);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
-    },
+  // Phase 3B Step 2.1 — Reads go through v_service_report_with_flight so
+  // flight identity fields are FS-driven. Mutations still target service_reports.
+  const { data: dbReports = [], isLoading: isLoadingReports } = useServiceReportsFS({
+    scope: "active",
+    station: isStationScoped ? userStation : null,
   });
 
   const { data: dbDelays = [], isLoading: isLoadingDelays } = useQuery({
