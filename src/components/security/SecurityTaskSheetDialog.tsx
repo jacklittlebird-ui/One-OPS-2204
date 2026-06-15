@@ -1160,7 +1160,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           </Section>
 
           {/* Security Supervisor */}
-          <Section title={`${currentRow.airline.toUpperCase()} — Security Supervisor on Duty`} icon={<UserCheck size={14} />} accent="text-primary" iconBg="bg-primary/10">
+          <Section title={`${String((currentRow as any)?.airline || (currentRow as any)?.airline_name || "").toUpperCase()} — Security Supervisor on Duty`} icon={<UserCheck size={14} />} accent="text-primary" iconBg="bg-primary/10">
             <input
               className={inputCls}
               value={sheet.security_supervisor}
