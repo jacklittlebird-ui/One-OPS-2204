@@ -52,8 +52,13 @@ export function useServiceReportsFS<T extends Record<string, any> = any>(opts?: 
       return (data || []) as T[];
     },
     enabled: !!session,
-    staleTime: 30_000,
+    // Batch 2: 60s TTL aligns with global default; dedupes cross-page reads
+    // (Invoices + OperationsReports share this exact key).
+    staleTime: 60_000,
     gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 }
 
@@ -130,8 +135,12 @@ export function useServiceReportList<T extends Record<string, any> = ServiceRepo
       return (data || []) as T[];
     },
     enabled: !!session,
-    staleTime: 30_000,
+    // Batch 2: 60s TTL, no remount/focus refetch — see useServiceReportsFS notes.
+    staleTime: 60_000,
     gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 }
 

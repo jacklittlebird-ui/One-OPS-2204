@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ChannelProvider } from "@/contexts/ChannelContext";
 import { UserStationProvider } from "@/contexts/UserStationContext";
+import { useQueryTelemetry } from "@/lib/queryTelemetry";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 import AirlinesPage from "./pages/Airlines";
@@ -91,6 +92,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+  useQueryTelemetry(queryClient);
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
   return (
