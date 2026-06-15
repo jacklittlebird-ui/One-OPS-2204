@@ -1224,6 +1224,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dispatch_assignments_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["flight_schedule_id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "v_dispatch_with_flight"
+            referencedColumns: ["fs_id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
+            referencedColumns: ["fs_id"]
+          },
+          {
             foreignKeyName: "dispatch_assignments_irregularity_id_fkey"
             columns: ["irregularity_id"]
             isOneToOne: false
@@ -1764,6 +1785,42 @@ export type Database = {
         }
         Relationships: []
       }
+      migration_audit_log: {
+        Row: {
+          action: string
+          column_name: string | null
+          entity_name: string
+          id: string
+          migrated_at: string
+          migrated_by: string | null
+          new_value: Json | null
+          old_value: Json | null
+          record_id: string | null
+        }
+        Insert: {
+          action: string
+          column_name?: string | null
+          entity_name: string
+          id?: string
+          migrated_at?: string
+          migrated_by?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          record_id?: string | null
+        }
+        Update: {
+          action?: string
+          column_name?: string | null
+          entity_name?: string
+          id?: string
+          migrated_at?: string
+          migrated_by?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          record_id?: string | null
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           contract_alerts: boolean
@@ -2237,7 +2294,21 @@ export type Database = {
             foreignKeyName: "service_report_catering_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["service_report_id"]
+          },
+          {
+            foreignKeyName: "service_report_catering_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
             referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_report_catering_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
             referencedColumns: ["id"]
           },
         ]
@@ -2272,7 +2343,21 @@ export type Database = {
             foreignKeyName: "service_report_delays_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["service_report_id"]
+          },
+          {
+            foreignKeyName: "service_report_delays_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
             referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_report_delays_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
             referencedColumns: ["id"]
           },
         ]
@@ -2316,7 +2401,21 @@ export type Database = {
             foreignKeyName: "service_report_fuel_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["service_report_id"]
+          },
+          {
+            foreignKeyName: "service_report_fuel_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
             referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_report_fuel_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
             referencedColumns: ["id"]
           },
         ]
@@ -2363,7 +2462,21 @@ export type Database = {
             foreignKeyName: "service_report_hotac_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["service_report_id"]
+          },
+          {
+            foreignKeyName: "service_report_hotac_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
             referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_report_hotac_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
             referencedColumns: ["id"]
           },
         ]
@@ -2392,6 +2505,7 @@ export type Database = {
           file_flt_plan_qty: number
           fire_cart_qty: number
           flight_no: string
+          flight_schedule_id: string | null
           flight_status: string
           follow_me_qty: number
           foreign_pax_in: number
@@ -2462,6 +2576,7 @@ export type Database = {
           file_flt_plan_qty?: number
           fire_cart_qty?: number
           flight_no: string
+          flight_schedule_id?: string | null
           flight_status?: string
           follow_me_qty?: number
           foreign_pax_in?: number
@@ -2532,6 +2647,7 @@ export type Database = {
           file_flt_plan_qty?: number
           fire_cart_qty?: number
           flight_no?: string
+          flight_schedule_id?: string | null
           flight_status?: string
           follow_me_qty?: number
           foreign_pax_in?: number
@@ -2579,7 +2695,36 @@ export type Database = {
           total_parking_hours?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_reports_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "flight_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reports_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["flight_schedule_id"]
+          },
+          {
+            foreignKeyName: "service_reports_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "v_dispatch_with_flight"
+            referencedColumns: ["fs_id"]
+          },
+          {
+            foreignKeyName: "service_reports_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
+            referencedColumns: ["fs_id"]
+          },
+        ]
       }
       services_catalog: {
         Row: {
@@ -2852,7 +2997,21 @@ export type Database = {
             foreignKeyName: "vendor_invoices_service_report_id_fkey"
             columns: ["service_report_id"]
             isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["service_report_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
             referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
             referencedColumns: ["id"]
           },
           {
@@ -2866,7 +3025,283 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      security_pending_approval_view: {
+        Row: {
+          aircraft_type: string | null
+          airline_id: string | null
+          arrival_date: string | null
+          authority: string | null
+          clearance_purpose: string | null
+          clearance_remarks: string | null
+          clearance_type: string | null
+          departure_date: string | null
+          dispatch_actual_end: string | null
+          dispatch_actual_start: string | null
+          dispatch_id: string | null
+          dispatch_notes: string | null
+          dispatch_review_status: string | null
+          dispatch_scheduled_end: string | null
+          dispatch_scheduled_start: string | null
+          dispatch_status: string | null
+          dispatch_task_sheet_data: Json | null
+          flight_no: string | null
+          flight_schedule_id: string | null
+          flight_status: Database["public"]["Enums"]["clearance_status"] | null
+          registration: string | null
+          route: string | null
+          service_report_id: string | null
+          skd_type: string | null
+          sr_handling_type: Database["public"]["Enums"]["handling_type"] | null
+          sr_review_status: string | null
+          sr_reviewed_at: string | null
+          sr_reviewed_by: string | null
+          sta: string | null
+          std: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_schedules_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_dispatch_with_flight: {
+        Row: {
+          actual_duration_hours: number | null
+          actual_end: string | null
+          actual_start: string | null
+          airline: string | null
+          base_fee: number | null
+          charges_breakdown: Json | null
+          charges_currency: string | null
+          contract_duration_hours: number | null
+          contract_id: string | null
+          created_at: string | null
+          created_via: string | null
+          dispatched_by: string | null
+          extra_manpower_count: number | null
+          flight_date: string | null
+          flight_no: string | null
+          flight_schedule_id: string | null
+          fs_aircraft_type: string | null
+          fs_airline_id: string | null
+          fs_arrival_date: string | null
+          fs_authority: string | null
+          fs_clearance_type: string | null
+          fs_departure_date: string | null
+          fs_flight_no: string | null
+          fs_id: string | null
+          fs_registration: string | null
+          fs_route: string | null
+          fs_skd_type: string | null
+          fs_sta: string | null
+          fs_status: Database["public"]["Enums"]["clearance_status"] | null
+          fs_std: string | null
+          id: string | null
+          irregularity_id: string | null
+          notes: string | null
+          overtime_charge: number | null
+          overtime_hours: number | null
+          overtime_rate: number | null
+          ramp_vehicle_trips: number | null
+          return_to_ramp_with_load: boolean | null
+          review_comment: string | null
+          review_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          service_rate: number | null
+          service_type: string | null
+          short_notice: boolean | null
+          staff_count: number | null
+          staff_names: string | null
+          station: string | null
+          status: string | null
+          task_sheet_data: Json | null
+          total_charge: number | null
+          total_security_charges: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_assignments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "flight_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["flight_schedule_id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "v_dispatch_with_flight"
+            referencedColumns: ["fs_id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
+            referencedColumns: ["fs_id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_irregularity_id_fkey"
+            columns: ["irregularity_id"]
+            isOneToOne: false
+            referencedRelation: "irregularity_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_schedules_airline_id_fkey"
+            columns: ["fs_airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_service_report_with_flight: {
+        Row: {
+          aircraft_type: string | null
+          airport_charge: number | null
+          arrival_date: string | null
+          ata: string | null
+          atd: string | null
+          catering_charge: number | null
+          check_in_system: string | null
+          civil_aviation_fee: number | null
+          co: string | null
+          confirmation_no: string | null
+          created_at: string | null
+          crew_count: number | null
+          currency: Database["public"]["Enums"]["currency_type"] | null
+          day_night: string | null
+          departure_date: string | null
+          egyptian_pax_in: number | null
+          egyptian_pax_out: number | null
+          estimated_foreign_bill: number | null
+          estimated_local_bill: number | null
+          file_flt_plan_qty: number | null
+          fire_cart_qty: number | null
+          flight_no: string | null
+          flight_schedule_id: string | null
+          flight_status: string | null
+          follow_me_qty: number | null
+          foreign_pax_in: number | null
+          foreign_pax_out: number | null
+          fs_aircraft_type: string | null
+          fs_airline_id: string | null
+          fs_arrival_date: string | null
+          fs_authority: string | null
+          fs_clearance_type: string | null
+          fs_departure_date: string | null
+          fs_flight_no: string | null
+          fs_id: string | null
+          fs_registration: string | null
+          fs_route: string | null
+          fs_skd_type: string | null
+          fs_sta: string | null
+          fs_status: Database["public"]["Enums"]["clearance_status"] | null
+          fs_std: string | null
+          fuel_charge: number | null
+          ground_time: string | null
+          handling_fee: number | null
+          handling_type: Database["public"]["Enums"]["handling_type"] | null
+          hotac_charge: number | null
+          housing_charge: number | null
+          housing_days: number | null
+          id: string | null
+          infant_in: number | null
+          infant_out: number | null
+          jetway_qty: number | null
+          landing_charge: number | null
+          met_folder_qty: number | null
+          mtow: string | null
+          ob: string | null
+          operator: string | null
+          parking_charge: number | null
+          parking_day_hours: number | null
+          parking_night_hours: number | null
+          pax_in_adult_d: number | null
+          pax_in_adult_i: number | null
+          pax_in_inf_d: number | null
+          pax_in_inf_i: number | null
+          pax_transit: number | null
+          performed_by: string | null
+          print_ops_flt_plan_qty: number | null
+          project_tags: string | null
+          registration: string | null
+          review_comment: string | null
+          review_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          route: string | null
+          sta: string | null
+          station: string | null
+          std: string | null
+          td: string | null
+          to: string | null
+          total_cost: number | null
+          total_departing_pax: number | null
+          total_parking_hours: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_schedules_airline_id_fkey"
+            columns: ["fs_airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reports_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "flight_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reports_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "security_pending_approval_view"
+            referencedColumns: ["flight_schedule_id"]
+          },
+          {
+            foreignKeyName: "service_reports_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "v_dispatch_with_flight"
+            referencedColumns: ["fs_id"]
+          },
+          {
+            foreignKeyName: "service_reports_flight_schedule_id_fkey"
+            columns: ["flight_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "v_service_report_with_flight"
+            referencedColumns: ["fs_id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_finance_access: { Args: { _user_id: string }; Returns: boolean }
@@ -2879,6 +3314,54 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      update_flight_master_from_station: {
+        Args: { _id: string; _patch: Json }
+        Returns: {
+          aircraft_type: string
+          airline_id: string | null
+          arrival_date: string | null
+          arrival_flight: string | null
+          authority: string
+          cargo_kg: number
+          clearance_type: string
+          config: number | null
+          created_at: string
+          created_via: string | null
+          departure_date: string | null
+          departure_flight: string | null
+          flight_no: string
+          handling: string | null
+          handling_agent: string
+          id: string
+          no_of_flights: number | null
+          notes: string | null
+          passengers: number
+          period_from: string | null
+          period_to: string | null
+          permit_no: string
+          purpose: string
+          ref_no: string | null
+          registration: string
+          remarks: string
+          requested_date: string | null
+          route: string
+          royalty: boolean | null
+          skd_type: string | null
+          sta: string | null
+          status: Database["public"]["Enums"]["clearance_status"]
+          std: string | null
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+          week_days: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "flight_schedules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       account_type: "Asset" | "Liability" | "Equity" | "Revenue" | "Expense"
