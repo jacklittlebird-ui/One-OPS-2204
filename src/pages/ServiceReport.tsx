@@ -888,7 +888,7 @@ function HandlingServiceReportContent() {
       return inserted;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
       toast({ title: "Saved", description: "Service report added." });
@@ -926,7 +926,7 @@ function HandlingServiceReportContent() {
       await saveLineItems(id, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       toast({ title: "Updated", description: "Service report updated." });
     },
@@ -941,7 +941,7 @@ function HandlingServiceReportContent() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       toast({ title: "Deleted", description: "Report removed." });
     },
@@ -1272,7 +1272,7 @@ function HandlingServiceReportContent() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+              queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
               queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
               queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
               queryClient.invalidateQueries({ queryKey: ["invoices_for_receivables_panel"] });
@@ -1475,7 +1475,7 @@ function HandlingServiceReportContent() {
                   }
                 } finally {
                   setBulkApproving(false);
-                  queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                  queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
                 }
                 if (firstError) {
                   toast({ title: `Partial approval (${approved}/${ids.length})`, description: firstError, variant: "destructive" });
@@ -1698,7 +1698,7 @@ function HandlingServiceReportContent() {
                                     await supabase.from("service_reports").delete().eq("id", r.id);
                                   }
                                   await supabase.from("flight_schedules").delete().eq("id", r.flightScheduleId!);
-                                  queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+                                  queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
                                   queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
                                   toast({ title: "Deleted", description: "Flight and report removed." });
                                 } catch (e: any) {
@@ -1752,7 +1752,7 @@ function HandlingServiceReportContent() {
               reviewed_at: new Date().toISOString(),
             } as any).eq("id", editId);
             if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+            queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
             toast({ title: "✅ Report Approved", description: comment || "Moved to Receivables." });
             setEditId(null);
           }}
@@ -1765,7 +1765,7 @@ function HandlingServiceReportContent() {
               reviewed_at: new Date().toISOString(),
             } as any).eq("id", editId);
             if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-            queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+            queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
             toast({ title: "❌ Report Rejected", description: "Sent back to Station with comments." });
             setEditId(null);
           }}
