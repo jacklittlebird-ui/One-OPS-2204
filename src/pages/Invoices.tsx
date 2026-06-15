@@ -252,7 +252,7 @@ export default function InvoicesPage() {
   const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
   const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: serviceReports } = useServiceReportHistory();
+  const { data: serviceReports } = useServiceReportsFS({ scope: "history" });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
