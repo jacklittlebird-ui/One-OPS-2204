@@ -14,6 +14,11 @@ import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/li
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 import { formatDateDMY } from "@/lib/utils";
 import { getMasterFields } from "@/lib/flightMaster";
+import {
+  subscribeWriteCycle,
+  getLastWriteCycleResult,
+  type WriteCycleResult,
+} from "@/lib/phase3WriteCycleVerifier";
 
 /** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
