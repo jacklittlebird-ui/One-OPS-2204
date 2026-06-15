@@ -284,6 +284,16 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const [returnToRamp, setReturnToRamp] = useState<boolean>(false);
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Phase 3 write-cycle verifier — subscribe so the footer badge updates as
+  // soon as the post-save re-fetch completes. DEV/DIAGNOSTIC only.
+  const [lastWriteCycle, setLastWriteCycle] = useState<WriteCycleResult | null>(
+    () => getLastWriteCycleResult(),
+  );
+  useEffect(() => {
+    const unsub = subscribeWriteCycle(setLastWriteCycle);
+    return () => { unsub(); };
+  }, []);
+
   const { data: airlines = [] } = useQuery({
     queryKey: ["airlines-for-task-sheet"],
     queryFn: async () => {
