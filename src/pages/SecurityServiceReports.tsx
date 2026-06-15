@@ -1138,7 +1138,14 @@ export default function SecurityServiceReportsPage() {
         if (flightErr) throw flightErr;
 
         // 3. Insert dispatch with link to the flight_schedule
-        const dispatchInsert = { ...payload, flight_schedule_id: createdFlight?.id || null };
+        // Phase 6.5: strip legacy mirror keys before INSERT.
+        const dispatchInsertRaw = { ...payload, flight_schedule_id: createdFlight?.id || null };
+        const dispatchInsert = await resolveFlightMasterForWrite(
+          dispatchInsertRaw,
+          createdFlight?.id || null,
+          "dispatch_assignments",
+          "insert",
+        );
         const { data: insRow2, error: dispatchErr } = await supabase
           .from("dispatch_assignments")
           .insert(dispatchInsert as any)
