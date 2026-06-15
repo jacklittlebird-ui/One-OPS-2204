@@ -163,15 +163,13 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
 }
 
 function formToDb(data: Partial<ReportFormData>) {
+  // Phase 3B Step 2.2 — FS-mirror fields (flight_no, station, aircraft_type,
+  // registration, route) are intentionally NOT sent. The resolver strips
+  // them defensively; reads resolve via v_service_report_with_flight.
   return {
     operator: data.operator || "",
     handling_type: data.handlingType || "Turn Around",
-    station: data.station || "Cairo",
-    aircraft_type: data.aircraftType || "",
-    registration: data.registration || "",
-    flight_no: data.flightNo || "",
     mtow: data.mtow || "",
-    route: data.route || "",
     arrival_date: data.arrivalDate || null,
     departure_date: data.departureDate || null,
     day_night: autoDayNight(data.td || "", data.arrivalDate || ""),
