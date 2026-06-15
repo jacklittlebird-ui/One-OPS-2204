@@ -8,6 +8,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveFlightMasterForWrite } from "@/lib/resolveFlightMasterForWrite";
 import { expandFlightRef, normalizeFlightKey } from "@/lib/flightRefMatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { generateAllCharges } from "@/data/airportChargesData";
@@ -867,7 +868,9 @@ function HandlingServiceReportContent() {
   const addMutation = useMutation({
     mutationFn: async (data: Partial<ReportFormData>) => {
       const delays = data.delays || [];
-      const dbData = formToDb(data);
+      let dbData: any = formToDb(data);
+      // Phase 3A.5: overwrite mirror columns from flight_schedules SSoT
+      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId);
       const { data: inserted, error } = await supabase.from("service_reports").insert(dbData as any).select().single();
       if (error) throw error;
       if (delays.length > 0) {
@@ -905,7 +908,9 @@ function HandlingServiceReportContent() {
     mutationFn: async (data: Partial<ReportFormData> & { id: string }) => {
       const { id } = data;
       const delays = data.delays || [];
-      const dbData: any = formToDb(data);
+      let dbData: any = formToDb(data);
+      // Phase 3A.5: overwrite mirror columns from flight_schedules SSoT
+      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId);
       // Station re-saving a rejected report → flip to "modified" so Operations can re-review
       if (isStationView && data.reviewStatus === "rejected") {
         dbData.review_status = "modified";
