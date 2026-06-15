@@ -70,15 +70,15 @@ export function resolveDownloadFields(
   return {
     station:        pick(d.station, f.authority),
     airline:        pick(d.airline, f.handling_agent),
-    flightNo:       pick(ts.flight_no, f.flight_no, d.flight_no),
+    flightNo:       pick(f.flight_no, ts.flight_no, d.flight_no),
     date:           pick(d.flight_date, f.arrival_date, f.departure_date),
-    serviceType:    pick(d.service_type, f.clearance_type),
-    registration:   pick(ts.registration, f.registration, d.registration),
-    route:          pick(ts.route, f.route, d.route),
-    aircraftType:   pick(ts.aircraft_type, f.aircraft_type),
+    serviceType:    pick(f.clearance_type, d.service_type),
+    registration:   pick(f.registration, ts.registration, d.registration),
+    route:          pick(f.route, ts.route, d.route),
+    aircraftType:   pick(f.aircraft_type, ts.aircraft_type),
     skdType:        pick(f.skd_type, d.skd_type, ts.flight_type, ts.skd_type),
-    sta:            pick(ts.sta, f.sta),
-    std:            pick(ts.std, f.std),
+    sta:            pick(f.sta, ts.sta),
+    std:            pick(f.std, ts.std),
     // ATA/ATD: strict task_sheet_data only. If the operator did not enter an
     // actual time, the download MUST render blank — do not fabricate from
     // scheduled times, dispatch shift times, or dialog props.
