@@ -152,7 +152,7 @@ export default function InvoicesPage() {
   const { activeChannel } = useChannel();
   const readOnly = activeChannel === "payables";
   const { data: invoices, isLoading, add, update, remove, bulkInsert } = useInvoices<InvoiceRow>();
-  const { data: dispatches } = useDispatchHistory();
+  const { data: dispatches } = useDispatchBoardFS({ scope: "history" });
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const { data: flightSchedules } = useFlightHistory();
   const { data: contractRates } = useContractServiceRatesRef();
