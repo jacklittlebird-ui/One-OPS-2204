@@ -1576,6 +1576,16 @@ export default function InvoicesPage() {
                   <input type="month" className={inputCls} value={monthlyAirlineMonth} onChange={e => setMonthlyAirlineMonth(e.target.value)} />
                 </div>
               </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => refreshInvoiceSummary()}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  title="Recompute precomputed monthly totals"
+                >
+                  <RefreshCw size={12} /> Refresh totals
+                </button>
+              </div>
 
               {monthlyTab === "handling" && (
               monthlyAirlinePreview.reports.length === 0 ? (
