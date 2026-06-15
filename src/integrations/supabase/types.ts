@@ -3814,6 +3814,26 @@ export type Database = {
       }
     }
     Views: {
+      mv_invoice_monthly_summary: {
+        Row: {
+          airport_charge: number | null
+          catering_charge: number | null
+          civil_aviation_fee: number | null
+          flight_count: number | null
+          fuel_charge: number | null
+          handling_fee: number | null
+          handling_type: string | null
+          hotac_charge: number | null
+          housing_charge: number | null
+          landing_charge: number | null
+          month: string | null
+          operator: string | null
+          parking_charge: number | null
+          station: string | null
+          total_cost: number | null
+        }
+        Relationships: []
+      }
       security_pending_approval_view: {
         Row: {
           aircraft_type: string | null
@@ -4103,6 +4123,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      refresh_invoice_monthly_summary: { Args: never; Returns: undefined }
       update_flight_master_from_station: {
         Args: { _id: string; _patch: Json }
         Returns: {

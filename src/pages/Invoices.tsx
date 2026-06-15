@@ -15,6 +15,13 @@ import { useInvoices } from "@/data/finance";
 import { useFlightHistory } from "@/data/flights";
 import { useDispatchBoardFS } from "@/data/dispatch";
 import { useServiceReportsForInvoicing } from "@/data/serviceReports";
+import {
+  useInvoiceMonthlySummary,
+  useInvoiceMonthlyOperators,
+  useRefreshInvoiceMonthlySummary,
+  rollupMonthlySummary,
+  breakdownMonthlySummary,
+} from "@/data/invoiceSummary";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -659,6 +666,17 @@ export default function InvoicesPage() {
     return { civil, handling, airport, other, total: lineTotal };
   };
 
+  // Batch 4: monthly totals + (station × type) breakdown now come from the
+  // precomputed `mv_invoice_monthly_summary` materialized view. Zero
+  // .reduce() / groupBy on the client — the DB has already aggregated.
+  // The `reports` array remains a pure .filter() (no aggregation) because
+  // invoice generation still needs per-flight detail rows.
+  const { data: mvRows = [] } = useInvoiceMonthlySummary({
+    operator: monthlyAirlineOperator,
+    month: monthlyAirlineMonth,
+  });
+  const refreshInvoiceSummary = useRefreshInvoiceMonthlySummary();
+
   const monthlyAirlinePreview = useMemo(() => {
     const reports = (serviceReports || []).filter((r: any) => {
       const rs = (r.review_status || "").toLowerCase().trim();
@@ -666,32 +684,29 @@ export default function InvoicesPage() {
         r.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
         (r.arrival_date || "").startsWith(monthlyAirlineMonth);
     });
-    const totals = reports.reduce((acc: any, r: any) => {
-      const m = rollupReport(r);
-      acc.civil += m.civil;
-      acc.handling += m.handling;
-      acc.airport += m.airport;
-      acc.other += m.other;
-      acc.total += m.total;
-      return acc;
-    }, { civil: 0, handling: 0, airport: 0, other: 0, total: 0 });
-    const byStationType: Record<string, { station: string; type: string; flights: number; total: number }> = {};
-    reports.forEach((r: any) => {
-      const key = `${r.station}__${r.handling_type}`;
-      if (!byStationType[key]) byStationType[key] = { station: r.station, type: r.handling_type, flights: 0, total: 0 };
-      byStationType[key].flights++;
-      byStationType[key].total += rollupReport(r).total;
-    });
-    return { reports, totals, breakdown: Object.values(byStationType) };
-  }, [serviceReports, monthlyAirlineOperator, monthlyAirlineMonth]);
+    const t = rollupMonthlySummary(mvRows);
+    const totals = {
+      civil: t.civil,
+      handling: t.handling,
+      airport: t.airport,
+      other: t.other,
+      total: t.total,
+    };
+    const breakdown = breakdownMonthlySummary(mvRows);
+    return { reports, totals, breakdown };
+  }, [serviceReports, mvRows, monthlyAirlineOperator, monthlyAirlineMonth]);
 
-  const allOperators = useMemo(
-    () => Array.from(new Set([
-      ...(serviceReports || []).map((r: any) => r.operator),
-      ...(dispatches || []).map((d: any) => d.airline),
-    ].filter(Boolean))).sort() as string[],
-    [serviceReports, dispatches]
-  );
+  // Operator dropdown: MV-distinct operators (precomputed) + dispatch airlines.
+  // Plain Set union — not aggregation.
+  const { data: mvOperators = [] } = useInvoiceMonthlyOperators();
+  const allOperators = useMemo(() => {
+    const set = new Set<string>(mvOperators);
+    for (const d of dispatches || []) {
+      if (d?.airline) set.add(d.airline);
+    }
+    return [...set].sort();
+  }, [mvOperators, dispatches]);
+
 
   // Validation: flag service reports with missing fields or unusual values
   // BEFORE generating the monthly invoice. Helps users catch data issues early.
@@ -1560,6 +1575,16 @@ export default function InvoicesPage() {
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Billing Month</label>
                   <input type="month" className={inputCls} value={monthlyAirlineMonth} onChange={e => setMonthlyAirlineMonth(e.target.value)} />
                 </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => refreshInvoiceSummary()}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  title="Recompute precomputed monthly totals"
+                >
+                  <RefreshCw size={12} /> Refresh totals
+                </button>
               </div>
 
               {monthlyTab === "handling" && (
