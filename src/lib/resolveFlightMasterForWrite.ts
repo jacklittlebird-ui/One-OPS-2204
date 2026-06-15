@@ -13,7 +13,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-const MIRROR_KEYS = [
+// Columns that exist on flight_schedules AND must be overwritten from SSoT.
+// `mtow` is intentionally excluded — it is not on flight_schedules; it is
+// derived from the aircraft registry on the form side and remains UI-supplied.
+const FS_OVERRIDE_KEYS = [
   "flight_no",
   "station",
   "aircraft_type",
@@ -23,10 +26,9 @@ const MIRROR_KEYS = [
   "departure_date",
   "sta",
   "std",
-  "mtow",
 ] as const;
 
-type MirrorKey = (typeof MIRROR_KEYS)[number];
+type FSOverrideKey = (typeof FS_OVERRIDE_KEYS)[number];
 
 function nonEmpty(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
@@ -49,7 +51,7 @@ export async function resolveFlightMasterForWrite<T extends Record<string, any>>
   const { data: fs, error } = await supabase
     .from("flight_schedules")
     .select(
-      "flight_no, authority, aircraft_type, registration, route, arrival_date, departure_date, sta, std, mtow"
+      "flight_no, authority, aircraft_type, registration, route, arrival_date, departure_date, sta, std"
     )
     .eq("id", flightScheduleId)
     .maybeSingle();
@@ -64,35 +66,28 @@ export async function resolveFlightMasterForWrite<T extends Record<string, any>>
 
   // FS uses `authority` as the station/airport authority field; mirror tables
   // expose it as `station`. Map explicitly.
-  const fsMapped: Record<MirrorKey, unknown> = {
-    flight_no: fs.flight_no,
+  const fsMapped: Record<FSOverrideKey, unknown> = {
+    flight_no: (fs as any).flight_no,
     station: (fs as any).authority,
-    aircraft_type: fs.aircraft_type,
-    registration: fs.registration,
-    route: fs.route,
-    arrival_date: fs.arrival_date,
-    departure_date: fs.departure_date,
-    sta: fs.sta,
-    std: fs.std,
-    mtow: fs.mtow,
+    aircraft_type: (fs as any).aircraft_type,
+    registration: (fs as any).registration,
+    route: (fs as any).route,
+    arrival_date: (fs as any).arrival_date,
+    departure_date: (fs as any).departure_date,
+    sta: (fs as any).sta,
+    std: (fs as any).std,
   };
 
   const out: Record<string, any> = { ...dbData };
-  for (const k of MIRROR_KEYS) {
+  for (const k of FS_OVERRIDE_KEYS) {
     const fsVal = fsMapped[k];
     if (nonEmpty(fsVal)) {
-      // FS wins for non-empty values.
-      out[k] = fsVal;
-    } else if (!nonEmpty(out[k])) {
-      // Both blank: leave UI fallback (may already be "" — preserves NOT NULL).
-      out[k] = out[k] ?? "";
+      out[k] = fsVal; // FS wins for non-empty values
+    } else if (out[k] === undefined || out[k] === null) {
+      out[k] = ""; // satisfy NOT NULL when both FS and UI are blank
     }
-  }
-
-  // Belt-and-braces: ensure no required mirror is undefined.
-  for (const k of MIRROR_KEYS) {
-    if (out[k] === undefined || out[k] === null) out[k] = "";
   }
 
   return out as T;
 }
+
