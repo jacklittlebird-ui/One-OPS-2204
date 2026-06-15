@@ -163,15 +163,13 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
 }
 
 function formToDb(data: Partial<ReportFormData>) {
+  // Phase 3B Step 2.2 — FS-mirror fields (flight_no, station, aircraft_type,
+  // registration, route) are intentionally NOT sent. The resolver strips
+  // them defensively; reads resolve via v_service_report_with_flight.
   return {
     operator: data.operator || "",
     handling_type: data.handlingType || "Turn Around",
-    station: data.station || "Cairo",
-    aircraft_type: data.aircraftType || "",
-    registration: data.registration || "",
-    flight_no: data.flightNo || "",
     mtow: data.mtow || "",
-    route: data.route || "",
     arrival_date: data.arrivalDate || null,
     departure_date: data.departureDate || null,
     day_night: autoDayNight(data.td || "", data.arrivalDate || ""),
@@ -862,8 +860,8 @@ function HandlingServiceReportContent() {
     mutationFn: async (data: Partial<ReportFormData>) => {
       const delays = data.delays || [];
       let dbData: any = formToDb(data);
-      // Phase 3A.5: overwrite mirror columns from flight_schedules SSoT
-      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId);
+      // Phase 3B Step 2.2 — strip FS-mirror keys; insert shim for NOT NULL flight_no
+      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId, "service_reports", "insert");
       const { data: inserted, error } = await supabase.from("service_reports").insert(dbData as any).select().single();
       if (error) throw error;
       if (delays.length > 0) {
@@ -902,8 +900,8 @@ function HandlingServiceReportContent() {
       const { id } = data;
       const delays = data.delays || [];
       let dbData: any = formToDb(data);
-      // Phase 3A.5: overwrite mirror columns from flight_schedules SSoT
-      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId);
+      // Phase 3B Step 2.2 — strip FS-mirror keys; UPDATE leaves existing values untouched
+      dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId, "service_reports", "update");
       // Station re-saving a rejected report → flip to "modified" so Operations can re-review
       if (isStationView && data.reviewStatus === "rejected") {
         dbData.review_status = "modified";
