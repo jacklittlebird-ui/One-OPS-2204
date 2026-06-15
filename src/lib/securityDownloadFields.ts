@@ -4,13 +4,17 @@
  *
  * Sourcing rules (saved DB only — UI dialog props are NEVER fallbacks):
  *   ATA / ATD           : task_sheet_data ONLY. Blank stays blank.
- *   STA / STD           : task_sheet_data → flight_schedules.
- *   Flight metadata     : task_sheet_data → flight_schedules → dispatch row.
+ *   STA / STD           : flight_schedules → task_sheet_data (SSoT Phase C).
+ *   Flight metadata     : flight_schedules → task_sheet_data → dispatch row.
  *   Operational fields  : dispatch_assignments columns (authoritative).
  *
- * Keeping this logic in one file guarantees that the downloaded PDF and the
- * exported Excel both render the same value for the same record.
+ * SSoT Phase C: flight_schedules is the AUTHORITATIVE source for every
+ * master flight field. task_sheet_data is a frozen snapshot taken when the
+ * station first saved the sheet — any later Clearance amendment MUST win in
+ * the downloaded PDF and exported Excel, or the printed document silently
+ * disagrees with the on-screen row.
  */
+
 
 export interface DownloadFields {
   station: string;
