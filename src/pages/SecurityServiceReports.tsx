@@ -1200,6 +1200,25 @@ export default function SecurityServiceReportsPage() {
         queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
       ]);
+
+      // Phase 3 write-cycle verifier — runs after caches invalidate so the
+      // re-fetch hits the database, not a stale cache. Result is logged and
+      // pushed to the verifier store; the dialog reads it for the badge.
+      const __wcv_fsIdAfter =
+        (insertedDispatch as any)?.flight_schedule_id || __wcv_snapshot.flight_schedule_id;
+      const __wcv_dispatchIdAfter =
+        (insertedDispatch as any)?.id || __wcv_snapshot.dispatch_id;
+      if (__wcv_fsIdAfter) {
+        verifyAfterSave({
+          snapshot: {
+            flight_schedule_id: __wcv_fsIdAfter,
+            dispatch_id: __wcv_dispatchIdAfter,
+            beforeFs: __wcv_snapshot.beforeFs,
+          },
+          expected: __wcv_expected,
+          airline_id: null,
+        }).catch((err) => console.warn("[WRITE_CYCLE_VALIDATION] verifier error:", err));
+      }
       if (closeAfter) {
         setEditRow(null);
         setIsNewReport(false);
