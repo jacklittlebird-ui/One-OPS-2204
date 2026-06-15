@@ -76,10 +76,7 @@ export async function resolveFlightMasterForWrite<T extends Record<string, any>>
   }
 
   // service_reports — fully decoupled from FS at write time.
-  const out = stripKeys(dbData, SR_FORBIDDEN_KEYS) as Record<string, any>;
-  if (op === "insert") {
-    // NOT NULL + no default on base table; compat shim until column drop.
-    if (out.flight_no === undefined || out.flight_no === null) out.flight_no = "";
-  }
-  return out as T;
+  // Phase 3B Step 2.3: FS-mirror columns dropped from base table; just strip.
+  void op;
+  return stripKeys(dbData, SR_FORBIDDEN_KEYS) as T;
 }

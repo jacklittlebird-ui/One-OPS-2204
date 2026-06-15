@@ -89,10 +89,10 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
     setLoadingReports(true);
     (async () => {
       const { data } = await supabase
-        .from("service_reports")
+        .from("v_service_report_with_flight")
         .select("id,flight_no,registration,arrival_date,route,station,currency,civil_aviation_fee,handling_fee,landing_charge,parking_charge,housing_charge,airport_charge,catering_charge,hotac_charge,fuel_charge,total_cost")
         .in("flight_no", flightNos);
-      setReports((data as ReportLite[]) || []);
+      setReports(((data as unknown) as ReportLite[]) || []);
       setLoadingReports(false);
     })();
   }, [inv.flight_ref]);

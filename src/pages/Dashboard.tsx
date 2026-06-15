@@ -170,7 +170,7 @@ function StationDashboard() {
   const { data: reports = [] } = useQuery({
     queryKey: ["dash_reports"],
     queryFn: async () => {
-      const { data } = await supabase.from("service_reports")
+      const { data } = await supabase.from("v_service_report_with_flight")
         .select("id,flight_no,operator,station,review_status,total_cost,arrival_date,created_at,handling_type,total_departing_pax")
         .order("created_at", { ascending: false });
       return data || [];
@@ -333,7 +333,7 @@ function OperationsChannelDashboard() {
   const { data: reports = [] } = useQuery({
     queryKey: ["dash_ops_reports"],
     queryFn: async () => {
-      const { data } = await supabase.from("service_reports")
+      const { data } = await supabase.from("v_service_report_with_flight")
         .select("id,flight_no,operator,station,review_status,arrival_date,total_cost,created_at,reviewed_at")
         .order("created_at", { ascending: false });
       return data || [];
