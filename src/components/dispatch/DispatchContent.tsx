@@ -258,16 +258,22 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
     const secTypes = SERVICE_TYPES_SECURITY.map(s => s.toLowerCase());
     let r = [...dispatches];
     r = r.filter(d => {
-      const isSec = secTypes.includes(d.service_type.toLowerCase()) || SECURITY_CLEARANCE_TYPES.includes(d.service_type);
+      const st = (d.service_type || "").toString();
+      const isSec = secTypes.includes(st.toLowerCase()) || SECURITY_CLEARANCE_TYPES.includes(st);
       return serviceCategory === "security" ? isSec : !isSec;
     });
-    if (stationFilter) r = r.filter(d => d.station === stationFilter);
+    if (stationFilter) r = r.filter(d => (d.station || "") === stationFilter);
     if (dateFrom) r = r.filter(d => d.flight_date >= dateFrom);
     if (dateTo) r = r.filter(d => d.flight_date <= dateTo);
-    if (airlineFilter) r = r.filter(d => d.airline.toLowerCase() === airlineFilter.toLowerCase());
+    if (airlineFilter) r = r.filter(d => (d.airline || "").toLowerCase() === airlineFilter.toLowerCase());
     if (search) {
       const s = search.toLowerCase();
-      r = r.filter(d => d.flight_no.toLowerCase().includes(s) || getDispatchFlightNo(d).toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
+      r = r.filter(d =>
+        (d.flight_no || "").toLowerCase().includes(s) ||
+        getDispatchFlightNo(d).toLowerCase().includes(s) ||
+        (d.airline || "").toLowerCase().includes(s) ||
+        (d.staff_names || "").toLowerCase().includes(s)
+      );
     }
     return r;
   }, [dispatches, stationFilter, dateFrom, dateTo, airlineFilter, search, serviceCategory]);
