@@ -463,7 +463,24 @@ export default function SecurityServiceReportsPage() {
     );
     if (existing) {
       setIsNewReport(false);
-      setEditRow({ ...(existing as DispatchRow), flightMeta: f } as DispatchRow);
+      // Phase 7: dispatch_assignments no longer stores mirror columns.
+      // Hydrate display-only fields from the FS row so the dialog shows
+      // airline / station / flight_no / service_type / registration / route.
+      const airlineName = f.airlines?.name || f.handling_agent || "";
+      setEditRow({
+        ...(existing as DispatchRow),
+        airline: (existing as any).airline || airlineName,
+        station: (existing as any).station || f.authority || "",
+        flight_no: (existing as any).flight_no || f.flight_no || "",
+        service_type: (existing as any).service_type || f.clearance_type || "",
+        registration: (existing as any).registration || f.registration || "",
+        route: (existing as any).route || f.route || "",
+        aircraft_type: (existing as any).aircraft_type || f.aircraft_type || "",
+        sta: (existing as any).sta || f.sta || "",
+        std: (existing as any).std || f.std || "",
+        skd_type: (existing as any).skd_type || f.skd_type || "",
+        flightMeta: f,
+      } as DispatchRow);
       return;
     }
     // Otherwise create a blank Task Sheet pre-populated from the pending flight
