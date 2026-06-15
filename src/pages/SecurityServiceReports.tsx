@@ -386,13 +386,12 @@ export default function SecurityServiceReportsPage() {
         .maybeSingle();
       if (fs) {
         const f: any = fs;
+        // Phase 3B.0.6: dispatch_assignments writes are FS-linked only.
+        // Mirror columns (station/airline/flight_no/service_type) are
+        // resolved at read time via v_dispatch_with_flight.
         await supabase.from("dispatch_assignments").insert({
           flight_schedule_id: flightId,
-          station: f.authority || "",
-          airline: f.airlines?.name || f.handling_agent || "",
-          flight_no: f.flight_no || "",
           flight_date: f.arrival_date || f.departure_date || new Date().toISOString().slice(0, 10),
-          service_type: f.clearance_type || "Arrival Security",
           scheduled_start: f.sta || f.std || "",
           scheduled_end: f.std || f.sta || "",
           status: "Completed",
@@ -542,10 +541,15 @@ export default function SecurityServiceReportsPage() {
   const createMutation = useMutation({
     mutationFn: async (data: Partial<DispatchRow>) => {
       const { id, created_at, updated_at, ...rest } = data as any;
-      // Phase 3B: route dispatch INSERT through SSoT resolver so mirror columns
-      // (flight_no, station, aircraft_type, registration, route, sta, std) are
-      // overwritten from flight_schedules when a flight_schedule_id is present.
-      const hardened = await resolveFlightMasterForWrite(rest, rest?.flight_schedule_id);
+      // Phase 3B.0.6: dispatch INSERT goes through resolver in
+      // "dispatch_assignments" mode, which STRIPS legacy mirror keys
+      // (flight_no, station, airline, service_type, aircraft_type) from the
+      // payload. Display values are derived from v_dispatch_with_flight.
+      const hardened = await resolveFlightMasterForWrite(
+        rest,
+        rest?.flight_schedule_id,
+        "dispatch_assignments",
+      );
       const { error } = await supabase.from("dispatch_assignments").insert(hardened);
       if (error) throw error;
     },

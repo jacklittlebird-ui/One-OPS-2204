@@ -433,7 +433,11 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
         scheduleId = newSchedule.id;
         toast({ title: "Sent to Operations", description: "New service report awaiting Operations approval." });
       }
-      await add({ ...formData, flight_schedule_id: scheduleId, created_via: "station" } as any);
+      // Phase 3B.0.6: strip legacy mirror keys from the dispatch insert
+      // payload — they are derived from flight_schedules via the view on
+      // read. UI keeps them in formData for display/UX only.
+      const { station: _s, airline: _a, flight_no: _f, service_type: _st, aircraft_type: _at, ...dispatchPayload } = formData as any;
+      await add({ ...dispatchPayload, flight_schedule_id: scheduleId, created_via: "station" } as any);
     }
     setShowForm(false);
     setEditId(null);

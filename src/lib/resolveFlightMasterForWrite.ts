@@ -1,22 +1,24 @@
-// Phase 3A.5 — INSERT/UPDATE hardener for service_reports + dispatch_assignments.
+// Phase 3A.5 / 3B.0.6 — Target-aware INSERT/UPDATE hardener.
 //
-// Goal: guarantee mirror columns (flight_no, station, aircraft_type, registration,
-// route, arrival_date, departure_date, sta, std, mtow) are ALWAYS populated and
-// ALWAYS sourced from flight_schedules (SSoT) at write time — never from raw UI
-// payload state. This keeps the NOT NULL constraints satisfied without any
-// schema change while making the legacy mirrors a pure write-through projection
-// of the master row.
+// service_reports (legacy mirror columns still present + NOT NULL):
+//   The resolver fetches the canonical flight_schedules row and overwrites
+//   the mirror keys (flight_no, station, aircraft_type, registration, route,
+//   arrival_date, departure_date, sta, std) on the outgoing dbData so the
+//   NOT NULL constraints stay satisfied without any schema change.
 //
-// Strategy: if `flightScheduleId` is provided, fetch the canonical FS row and
-// override the mirror keys on the outgoing dbData. If FS is missing, fall back
-// to whatever the form supplied (legacy ad-hoc reports without a master link).
+// dispatch_assignments (Phase 3B.0.6 — write-side decoupled):
+//   The four mirror columns (flight_no, station, airline, service_type) are
+//   FS-driven via v_dispatch_with_flight on the read side and are about to be
+//   dropped in Phase 3B Step 1. The resolver MUST NOT inject them into the
+//   payload. We also defensively STRIP them if a caller passes them in, so
+//   no stale UI state can contaminate the insert.
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Columns that exist on flight_schedules AND must be overwritten from SSoT.
-// `mtow` is intentionally excluded — it is not on flight_schedules; it is
-// derived from the aircraft registry on the form side and remains UI-supplied.
-const FS_OVERRIDE_KEYS = [
+export type ResolverTarget = "service_reports" | "dispatch_assignments";
+
+// Mirror keys overwritten from FS for service_reports.
+const SR_OVERRIDE_KEYS = [
   "flight_no",
   "station",
   "aircraft_type",
@@ -28,24 +30,48 @@ const FS_OVERRIDE_KEYS = [
   "std",
 ] as const;
 
-type FSOverrideKey = (typeof FS_OVERRIDE_KEYS)[number];
+// Mirror keys that must NEVER reach a dispatch_assignments INSERT/UPDATE.
+const DA_FORBIDDEN_KEYS = [
+  "flight_no",
+  "station",
+  "airline",
+  "service_type",
+  "aircraft_type",
+] as const;
 
 function nonEmpty(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
+function stripDispatchMirrors<T extends Record<string, any>>(dbData: T): T {
+  const out: Record<string, any> = { ...dbData };
+  for (const k of DA_FORBIDDEN_KEYS) delete out[k];
+  return out as T;
+}
+
 /**
- * Returns a new dbData object with mirror fields overwritten from the
- * authoritative flight_schedules row. Existing UI values are kept only as
- * fallback when the FS row has the column blank.
+ * Returns a payload safe to INSERT/UPDATE on the chosen target.
  *
- * Safe to call with `flightScheduleId = undefined` — it then returns dbData
- * unchanged (legacy / unlinked report path).
+ *   target = "service_reports"   (default — legacy compatibility)
+ *     → fetches FS and overwrites mirror columns from the master row.
+ *
+ *   target = "dispatch_assignments"
+ *     → does NOT touch FS, simply STRIPS the legacy mirror keys so the
+ *       payload contains only operational + flight_schedule_id columns.
+ *
+ * Safe to call with `flightScheduleId = undefined` for service_reports — it
+ * then returns dbData unchanged (legacy / unlinked report path).
  */
 export async function resolveFlightMasterForWrite<T extends Record<string, any>>(
   dbData: T,
   flightScheduleId: string | null | undefined,
+  target: ResolverTarget = "service_reports",
 ): Promise<T> {
+  if (target === "dispatch_assignments") {
+    // Phase 3B.0.6: dispatch writes are flight_schedule_id-only.
+    return stripDispatchMirrors(dbData);
+  }
+
   if (!flightScheduleId) return dbData;
 
   const { data: fs, error } = await supabase
@@ -66,7 +92,7 @@ export async function resolveFlightMasterForWrite<T extends Record<string, any>>
 
   // FS uses `authority` as the station/airport authority field; mirror tables
   // expose it as `station`. Map explicitly.
-  const fsMapped: Record<FSOverrideKey, unknown> = {
+  const fsMapped: Record<(typeof SR_OVERRIDE_KEYS)[number], unknown> = {
     flight_no: (fs as any).flight_no,
     station: (fs as any).authority,
     aircraft_type: (fs as any).aircraft_type,
@@ -79,7 +105,7 @@ export async function resolveFlightMasterForWrite<T extends Record<string, any>>
   };
 
   const out: Record<string, any> = { ...dbData };
-  for (const k of FS_OVERRIDE_KEYS) {
+  for (const k of SR_OVERRIDE_KEYS) {
     const fsVal = fsMapped[k];
     if (nonEmpty(fsVal)) {
       out[k] = fsVal; // FS wins for non-empty values
@@ -90,4 +116,3 @@ export async function resolveFlightMasterForWrite<T extends Record<string, any>>
 
   return out as T;
 }
-
