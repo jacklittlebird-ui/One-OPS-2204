@@ -84,11 +84,11 @@ export function resolveSecurityRowDisplay(
   const serviceType = pick(r.service_type, fd.clearance_type, meta.clearance_type, ts.service_type);
   const isDepartureOnly = serviceType.toLowerCase().includes("departure") && !serviceType.toLowerCase().includes("arrival");
   const arrivalDate = isDepartureOnly
-    ? pick(r.flight_date, r.departure_date, fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date)
-    : pick(fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date, r.flight_date);
+    ? pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date)
+    : pick(fd.arrival_date, meta.arrival_date, r.flight_date, ts.arrival_date, ts.shift_start_date);
   const departureDate = isDepartureOnly
-    ? pick(r.departure_date, fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, r.flight_date, fd.arrival_date, meta.arrival_date, ts.arrival_date)
-    : pick(fd.departure_date, meta.departure_date, ts.departure_date, ts.shift_end_date, r.departure_date, r.flight_date);
+    ? pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date)
+    : pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date);
 
   // SSoT Phase B: flight_schedules (fd) is the AUTHORITATIVE source for every
   // master field. task_sheet_data (ts) is a frozen snapshot taken when the
