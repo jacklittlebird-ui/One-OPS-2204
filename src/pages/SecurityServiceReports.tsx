@@ -12,6 +12,7 @@ import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveFlightMasterForWrite } from "@/lib/resolveFlightMasterForWrite";
 import { expandFlightRef, normalizeFlightKey } from "@/lib/flightRefMatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -541,7 +542,11 @@ export default function SecurityServiceReportsPage() {
   const createMutation = useMutation({
     mutationFn: async (data: Partial<DispatchRow>) => {
       const { id, created_at, updated_at, ...rest } = data as any;
-      const { error } = await supabase.from("dispatch_assignments").insert(rest);
+      // Phase 3B: route dispatch INSERT through SSoT resolver so mirror columns
+      // (flight_no, station, aircraft_type, registration, route, sta, std) are
+      // overwritten from flight_schedules when a flight_schedule_id is present.
+      const hardened = await resolveFlightMasterForWrite(rest, rest?.flight_schedule_id);
+      const { error } = await supabase.from("dispatch_assignments").insert(hardened);
       if (error) throw error;
     },
     onSuccess: () => {
