@@ -71,9 +71,13 @@ export function useDispatchList<T extends Record<string, any> = DispatchListRow>
 }
 
 async function fetchDispatchById(id: string) {
+  // SSoT Phase A: also pull the joined flight_schedules row so callers
+  // can read master fields via getMasterFields() instead of the
+  // deprecated mirrored columns on dispatch_assignments. Triggers and
+  // mirror columns remain active until the refactor is fully verified.
   const { data, error } = await supabase
     .from("dispatch_assignments")
-    .select("*")
+    .select("*, flight_schedules:flight_schedule_id(*)")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;

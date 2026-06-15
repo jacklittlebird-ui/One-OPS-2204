@@ -13,6 +13,7 @@ import { useUserStation } from "@/contexts/UserStationContext";
 import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/lib/securityChargeCalculator";
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 import { formatDateDMY } from "@/lib/utils";
+import { getMasterFields } from "@/lib/flightMaster";
 
 /** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
@@ -359,28 +360,40 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setShortNotice((row as any).short_notice || false);
     setReturnToRamp((row as any).return_to_ramp_with_load || false);
     const saved = row.task_sheet_data as Record<string, any> | null;
+    // SSoT Phase A: master flight fields always come from the joined
+    // flight_schedules row when present. Props passed by the parent are
+    // used as a second fallback, and task_sheet_data mirror values are
+    // the last resort (legacy rows without flight_schedule_id).
+    const master = getMasterFields(row, (row as any).flight_schedules);
+    const m = {
+      registration: master.registration ?? registration ?? "",
+      route:        master.route        ?? route        ?? "",
+      sta:          master.sta          ?? sta          ?? "",
+      std:          master.std          ?? std          ?? "",
+      skd_type:     master.skd_type     ?? skdType      ?? "",
+    };
     if (saved && typeof saved === "object") {
       const restored = { ...emptyTaskSheet(), ...saved } as TaskSheetData;
       // Clearance SKD amendments are authoritative everywhere, including this
       // read-only Operations Pending Approval view. Do not let old task-sheet
       // flight_type/skd_type values keep showing Military after Clearance moved
       // the flight back to Schedule.
-      if (skdType) restored.flight_type = skdType;
-      if (!restored.sta && sta) restored.sta = sta;
-      if (!restored.std && std) restored.std = std;
+      if (m.skd_type) restored.flight_type = m.skd_type;
+      // Master/clearance values always win for sta/std (they're owned upstream).
+      if (m.sta) restored.sta = m.sta;
+      if (m.std) restored.std = m.std;
       if (!restored.ata && ata) restored.ata = ata;
       if (!restored.atd && atd) restored.atd = atd;
-      // Use linked flight schedule as fallback only — never overwrite a value
-      // already present in task_sheet_data (that is the latest user-edited value).
-      if (!restored.registration && registration) restored.registration = registration;
-      if (!restored.route && route) restored.route = route;
+      // Registration & route: master wins when present; otherwise keep edited value.
+      if (m.registration) restored.registration = m.registration;
+      if (m.route) restored.route = m.route;
       setSheet(restored);
     } else {
       setSheet({
         ...emptyTaskSheet(),
-        flight_type: skdType || "",
-        sta: sta || "", std: std || "", ata: ata || "", atd: atd || "",
-        registration: registration || "", route: route || "",
+        flight_type: m.skd_type || "",
+        sta: m.sta || "", std: m.std || "", ata: ata || "", atd: atd || "",
+        registration: m.registration || "", route: m.route || "",
         remarks: row.notes || "",
       });
     }
