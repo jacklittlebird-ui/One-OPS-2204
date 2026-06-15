@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useFlights } from "@/data/flights";
-import { useDispatchBoard } from "@/data/dispatch";
+import { useDispatchBoard, useDispatchBoardFS } from "@/data/dispatch";
 import { useAirlinesRef, useContractServiceRatesRef } from "@/data/referenceData";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -215,7 +215,9 @@ function DispatchCalendarView({ dispatches, month, onMonthChange, onEdit }: {
 
 export default function StationDispatchPage() {
   const { data: flights, isLoading: flightsLoading } = useFlights<FlightRow>();
-  const { data: dispatches, isLoading: dispLoading, add, update, remove, isAdding, isUpdating } = useDispatchBoard<DispatchRow>();
+  // Phase 3B.0.5: reads come from FS-driven view; mutations stay on base table.
+  const { data: dispatches, isLoading: dispLoading } = useDispatchBoardFS<DispatchRow>({ scope: "active" });
+  const { add, update, remove, isAdding, isUpdating } = useDispatchBoard<DispatchRow>();
   const { station: userStation, isStationScoped } = useUserStation();
   const stationsScoped = useMemo(
     () => (isStationScoped && userStation ? STATIONS.filter(s => s.code === userStation) : STATIONS),

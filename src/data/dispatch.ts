@@ -23,6 +23,40 @@ export function useDispatchBoard<T extends Record<string, any> = any>(policy?: Q
   return useSupabaseTable<T>("dispatch_assignments", resolved);
 }
 
+/**
+ * Phase 3B.0.5 — Read-only board hook backed by `v_dispatch_with_flight`.
+ * Same flat shape as `useDispatchBoard().data`, but the four mirror fields
+ * (`flight_no`, `station`, `airline`, `service_type`) are FS-driven via the
+ * view's COALESCE(fs.X, d.X). Use this for pages that only READ dispatch
+ * data. Mutations remain on `useDispatchBoard` against the base table.
+ *
+ *   scope: "active"  → last 180 days (default; matches base-table policy)
+ *          "history" → full history, no date window (audit / invoices)
+ */
+export function useDispatchBoardFS<T extends Record<string, any> = any>(
+  opts?: { scope?: "active" | "history" }
+) {
+  const { session } = useAuth();
+  const scope = opts?.scope ?? "active";
+  return useQuery({
+    queryKey: ["v_dispatch_with_flight", "board", scope],
+    queryFn: async (): Promise<T[]> => {
+      let q: any = (supabase as any).from("v_dispatch_with_flight").select("*");
+      if (scope === "active") {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 180);
+        q = q.gte("flight_date", cutoff.toISOString().slice(0, 10));
+      }
+      const { data, error } = await q.order("flight_date", { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      return (data || []) as T[];
+    },
+    enabled: !!session,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
+}
+
 export function useDispatchHistory<T extends Record<string, any> = any>(policy?: Omit<QueryPolicy, "scope">) {
   const { userRoles } = useChannel();
   const resolved = resolvePolicy({ scope: "history", ...policy }, userRoles);
