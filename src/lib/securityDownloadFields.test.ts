@@ -31,7 +31,7 @@ describe("resolveDownloadFields — Security download field sourcing", () => {
     expect(out.atd).toBe("09:32");
   });
 
-  it("Flight metadata prefers task_sheet_data, then flight_schedules, then dispatch row", () => {
+  it("Flight metadata prefers flight_schedules (SSoT), then task_sheet_data, then dispatch row", () => {
     const out = resolveDownloadFields(
       {
         flight_no: "SM 0486",
@@ -40,11 +40,24 @@ describe("resolveDownloadFields — Security download field sourcing", () => {
       },
       { flight_no: "SM 0000", registration: "SU-FS", route: "CAI-DXB", sta: "10:00", std: "11:00" },
     );
-    expect(out.flightNo).toBe("SM 9999");        // task_sheet_data wins
-    expect(out.registration).toBe("SU-TS");      // task_sheet_data wins
-    expect(out.route).toBe("CAI-JED");           // task_sheet_data wins
-    expect(out.sta).toBe("10:00");                // flight_schedules (no ts.sta)
-    expect(out.std).toBe("11:00");                // flight_schedules (no ts.std)
+    expect(out.flightNo).toBe("SM 0000");        // flight_schedules wins (Clearance amendment)
+    expect(out.registration).toBe("SU-FS");      // flight_schedules wins
+    expect(out.route).toBe("CAI-DXB");           // flight_schedules wins
+    expect(out.sta).toBe("10:00");
+    expect(out.std).toBe("11:00");
+  });
+
+  it("Falls through to task_sheet_data when flight_schedules is missing the field", () => {
+    const out = resolveDownloadFields(
+      {
+        flight_no: "SM 0486",
+        task_sheet_data: { registration: "SU-TS", route: "CAI-JED" },
+      },
+      { flight_no: "", registration: "", route: "", sta: "", std: "" },
+    );
+    expect(out.registration).toBe("SU-TS");
+    expect(out.route).toBe("CAI-JED");
+    expect(out.flightNo).toBe("SM 0486");
   });
 
   it("Falls through to flight_schedules when task_sheet_data is missing", () => {
