@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useSupabaseTable } from "@/hooks/useSupabaseQuery";
 import { useFlights } from "@/data/flights";
-import { useDispatchBoard, useCanViewDispatchHistory } from "@/data/dispatch";
+import { useDispatchBoard, useDispatchBoardFS, useCanViewDispatchHistory } from "@/data/dispatch";
 import { useAirlinesRef, useContractServiceRatesRef } from "@/data/referenceData";
 import { DataScopeToggle } from "@/components/DataScopeToggle";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,11 +37,11 @@ type DispatchRow = {
   id: string;
   flight_schedule_id: string | null;
   contract_id: string | null;
-  station: string;
-  airline: string;
-  flight_no: string;
+  station?: string | null;
+  airline?: string | null;
+  flight_no?: string | null;
   flight_date: string;
-  service_type: string;
+  service_type?: string | null;
   staff_names: string;
   staff_count: number;
   scheduled_start: string;
@@ -200,8 +200,10 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
   const canViewHistory = useCanViewDispatchHistory();
   // Domain layer (Flights + Dispatch) via the policy engine.
   const { data: flights, isLoading: flightsLoading } = useFlights({ scope });
-  const { data: dispatches, isLoading: dispLoading } = useDispatchBoard({ scope });
-  // Mutations still go through the underlying table hook until the domain layer wraps them.
+  // Phase 3B Step 1: read dispatches through the FS-driven view so the four
+  // mirror display fields (station/airline/flight_no/service_type) resolve
+  // from flight_schedules + airlines. Mutations stay on the base table.
+  const { data: dispatches = [], isLoading: dispLoading } = useDispatchBoardFS<DispatchRow>({ scope });
   const { add, update, remove, isAdding, isUpdating } =
     useSupabaseTable<DispatchRow>("dispatch_assignments", { stationFilter: true });
   const { data: contracts } = useSupabaseTable<ContractRow>("contracts");
@@ -256,16 +258,22 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
     const secTypes = SERVICE_TYPES_SECURITY.map(s => s.toLowerCase());
     let r = [...dispatches];
     r = r.filter(d => {
-      const isSec = secTypes.includes(d.service_type.toLowerCase()) || SECURITY_CLEARANCE_TYPES.includes(d.service_type);
+      const st = (d.service_type || "").toString();
+      const isSec = secTypes.includes(st.toLowerCase()) || SECURITY_CLEARANCE_TYPES.includes(st);
       return serviceCategory === "security" ? isSec : !isSec;
     });
-    if (stationFilter) r = r.filter(d => d.station === stationFilter);
+    if (stationFilter) r = r.filter(d => (d.station || "") === stationFilter);
     if (dateFrom) r = r.filter(d => d.flight_date >= dateFrom);
     if (dateTo) r = r.filter(d => d.flight_date <= dateTo);
-    if (airlineFilter) r = r.filter(d => d.airline.toLowerCase() === airlineFilter.toLowerCase());
+    if (airlineFilter) r = r.filter(d => (d.airline || "").toLowerCase() === airlineFilter.toLowerCase());
     if (search) {
       const s = search.toLowerCase();
-      r = r.filter(d => d.flight_no.toLowerCase().includes(s) || getDispatchFlightNo(d).toLowerCase().includes(s) || d.airline.toLowerCase().includes(s) || d.staff_names.toLowerCase().includes(s));
+      r = r.filter(d =>
+        (d.flight_no || "").toLowerCase().includes(s) ||
+        getDispatchFlightNo(d).toLowerCase().includes(s) ||
+        (d.airline || "").toLowerCase().includes(s) ||
+        (d.staff_names || "").toLowerCase().includes(s)
+      );
     }
     return r;
   }, [dispatches, stationFilter, dateFrom, dateTo, airlineFilter, search, serviceCategory]);

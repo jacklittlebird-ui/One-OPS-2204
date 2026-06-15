@@ -175,11 +175,11 @@ const emptyTaskSheet = (): TaskSheetData => ({
 
 interface DispatchRow {
   id: string;
-  station: string;
-  airline: string;
-  flight_no: string;
+  station?: string | null;
+  airline?: string | null;
+  flight_no?: string | null;
   flight_date: string;
-  service_type: string;
+  service_type?: string | null;
   staff_names: string;
   staff_count: number;
   scheduled_start: string;
