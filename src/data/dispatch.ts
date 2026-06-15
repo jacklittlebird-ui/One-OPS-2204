@@ -23,6 +23,32 @@ export function useDispatchBoard<T extends Record<string, any> = any>(policy?: Q
   return useSupabaseTable<T>("dispatch_assignments", resolved);
 }
 
+/**
+ * Phase 3B.0.5 — Read-only board hook backed by `v_dispatch_with_flight`.
+ * Same flat shape as `useDispatchBoard().data`, but the four mirror fields
+ * (`flight_no`, `station`, `airline`, `service_type`) are FS-driven via the
+ * view's COALESCE(fs.X, d.X). Use this for pages that only READ dispatch
+ * data (Invoices, OperationsReports, StationDispatch list, DispatchContent,
+ * Clearances). Mutations remain on `useDispatchBoard` against the base table.
+ */
+export function useDispatchBoardFS<T extends Record<string, any> = any>() {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ["v_dispatch_with_flight", "board", "active"],
+    queryFn: async (): Promise<T[]> => {
+      const { data, error } = await (supabase as any)
+        .from("v_dispatch_with_flight")
+        .select("*")
+        .order("flight_date", { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      return (data || []) as T[];
+    },
+    enabled: !!session,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
+}
+
 export function useDispatchHistory<T extends Record<string, any> = any>(policy?: Omit<QueryPolicy, "scope">) {
   const { userRoles } = useChannel();
   const resolved = resolvePolicy({ scope: "history", ...policy }, userRoles);
