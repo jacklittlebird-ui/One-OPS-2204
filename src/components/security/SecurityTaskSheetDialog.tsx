@@ -380,10 +380,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     initializedRowKeyRef.current = key;
 
     // Default arrival/departure date from clearance (flight schedule) when missing
+    // Only seed dates from parent props when creating a NEW row. For existing
+    // (saved) rows, respect the persisted value verbatim — including empty —
+    // so a deliberately-blank Departure Date does not silently re-appear on
+    // edit. (Issue: user leaves Departure Date empty → save → reopen → field
+    // showed parent's departureDate prop again.)
     setEditableRow({
       ...row,
-      flight_date: row.flight_date || arrivalDate || "",
-      departure_date: (row as any).departure_date || departureDate || "",
+      flight_date: row.flight_date || (isNew ? (arrivalDate || "") : ""),
+      departure_date: (row as any).departure_date || (isNew ? (departureDate || "") : ""),
     } as DispatchRow);
     setReviewComment(row.review_comment || "");
     setContractId((row as any).contract_id || "");
@@ -1009,7 +1014,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Arrival Date</label>
                 <input
                   className={inputCls + " font-mono"}
-                  value={isoToDmy(editableRow.flight_date || (!isNew ? arrivalDate || "" : ""))}
+                  value={isoToDmy(editableRow.flight_date || (isNew ? (arrivalDate || "") : ""))}
                   onChange={e => {
                     const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.flight_date || ""));
                     const iso = dmyToIso(formatted);
@@ -1024,9 +1029,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Departure Date</label>
                 <input
                   className={inputCls + " font-mono"}
-                  value={isoToDmy(editableRow.departure_date || departureDate || "")}
+                  value={isoToDmy(editableRow.departure_date || (isNew ? (departureDate || "") : ""))}
                   onChange={e => {
-                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.departure_date || departureDate || ""));
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.departure_date || ""));
                     const iso = dmyToIso(formatted);
                     updateRow("departure_date", iso || formatted);
                   }}
