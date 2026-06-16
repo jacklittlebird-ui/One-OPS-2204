@@ -935,7 +935,16 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             </span>
           </div>
         )}
-        <fieldset disabled={reviewMode || isReceivablesView} className="contents">
+        {stationLockedAfterApproval && (
+          <div className="rounded-lg border border-success/40 bg-success/10 px-3 py-2.5 text-xs text-foreground flex items-start gap-2 no-print mb-3">
+            <Eye size={14} className="text-success mt-0.5 shrink-0" />
+            <span>
+              <span className="font-semibold uppercase tracking-wider text-success">Approved by Operations</span>
+              {" "}— This report has been approved and is locked for editing at the Station. If changes are needed, ask Operations to reject the report so it returns here for amendment.
+            </span>
+          </div>
+        )}
+        <fieldset disabled={reviewMode || isReceivablesView || stationLockedAfterApproval} className="contents">
           {/* Assignment — Airline & Station (editable for new) + Skd Type */}
           <Section title="Assignment" icon={<Plane size={14} />} accent="text-primary" iconBg="bg-primary/10">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
