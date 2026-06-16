@@ -70,18 +70,23 @@ describe("resolveSecurityRowDisplay (SM 0486 unlinked)", () => {
     expect(d.arrivalDate).toBe("2026-05-10");
   });
 
-  it("uses the saved dispatch service date for departure-only Security even when the linked schedule arrival date is stale", () => {
+  it("respects explicit empty arrival_date / departure_date saved by the station form (no back-fill)", () => {
+    // Departure-only Security: user cleared Arrival Date in the form. Even
+    // though the dispatch row carries a flight_date and the schedule has an
+    // arrival_date, the explicitly saved empty value must win.
     const d = resolveSecurityRowDisplay(
       {
         flight_no: "SM 0451",
         flight_date: "2026-05-25",
+        arrival_date: "",
+        departure_date: "2026-05-25",
         service_type: "Departure Security",
-        task_sheet_data: { shift_start_date: "2026-05-24", shift_end_date: "2026-05-25" },
-      },
+        task_sheet_data: { arrival_date: "", departure_date: "2026-05-25" },
+      } as any,
       { arrival_date: "2026-05-24", departure_date: "2026-05-25", std: "01:40" } as any,
       null
     );
-    expect(d.arrivalDate).toBe("2026-05-25");
+    expect(d.arrivalDate).toBe("");
     expect(d.departureDate).toBe("2026-05-25");
   });
 
