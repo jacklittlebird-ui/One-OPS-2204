@@ -101,7 +101,8 @@ export function resolveSecurityRowDisplay(
   } else if (rowHasArrival) {
     arrivalDate = String((r as any).arrival_date ?? "").trim();
   } else {
-    arrivalDate = pick(fd.arrival_date, meta.arrival_date);
+    // Legacy / unlinked rows that never carried explicit arrival_date.
+    arrivalDate = pick(fd.arrival_date, meta.arrival_date, r.flight_date, ts.shift_start_date);
   }
 
   let departureDate: string;
@@ -110,7 +111,7 @@ export function resolveSecurityRowDisplay(
   } else if (rowHasDeparture) {
     departureDate = String(r.departure_date ?? "").trim();
   } else {
-    departureDate = pick(fd.departure_date, meta.departure_date);
+    departureDate = pick(fd.departure_date, meta.departure_date, ts.shift_end_date);
   }
 
   // SSoT Phase B: flight_schedules (fd) is the AUTHORITATIVE source for every
