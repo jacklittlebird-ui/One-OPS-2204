@@ -380,10 +380,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     initializedRowKeyRef.current = key;
 
     // Default arrival/departure date from clearance (flight schedule) when missing
+    // Only seed dates from parent props when creating a NEW row. For existing
+    // (saved) rows, respect the persisted value verbatim — including empty —
+    // so a deliberately-blank Departure Date does not silently re-appear on
+    // edit. (Issue: user leaves Departure Date empty → save → reopen → field
+    // showed parent's departureDate prop again.)
     setEditableRow({
       ...row,
-      flight_date: row.flight_date || arrivalDate || "",
-      departure_date: (row as any).departure_date || departureDate || "",
+      flight_date: row.flight_date || (isNew ? (arrivalDate || "") : ""),
+      departure_date: (row as any).departure_date || (isNew ? (departureDate || "") : ""),
     } as DispatchRow);
     setReviewComment(row.review_comment || "");
     setContractId((row as any).contract_id || "");
