@@ -1444,11 +1444,22 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               )}
               <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
               {!isReceivablesView && (
-                <Button variant="secondary" onClick={() => handleSave(false)} disabled={saving} className="shadow-sm">
+                <Button
+                  variant="secondary"
+                  onClick={() => handleSave(false)}
+                  disabled={saving}
+                  className="shadow-sm"
+                  title="Persists all entered fields to the database and keeps the dialog open so you can continue editing."
+                >
                   {saving ? <>Saving…</> : <><Shield size={14} className="mr-1" /> Save</>}
                 </Button>
               )}
-              <Button onClick={() => handleSave(true)} disabled={saving || (isReceivablesView && receivablesLocked)} className="shadow-sm">
+              <Button
+                onClick={() => handleSave(true)}
+                disabled={saving || (isReceivablesView && receivablesLocked)}
+                className="shadow-sm"
+                title="Persists all entered fields and closes the dialog."
+              >
                 {saving ? (
                   <>Saving…</>
                 ) : isReceivablesView ? (
@@ -1458,6 +1469,13 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 )}
               </Button>
             </div>
+          )}
+          {!isReceivablesView && (
+            <p className="text-[11px] text-muted-foreground mt-2 text-right">
+              <strong>Save</strong> writes all fields and keeps the dialog open.{" "}
+              <strong>Save &amp; Close</strong> writes all fields and exits. Both persist the
+              complete task sheet — your entries are not lost between clicks.
+            </p>
           )}
         </div>
       </DialogContent>
