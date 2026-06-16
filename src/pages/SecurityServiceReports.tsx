@@ -585,7 +585,7 @@ export default function SecurityServiceReportsPage() {
       id: "new",
       flight_schedule_id: null,
       contract_id: null,
-      station: "CAI",
+      station: userStation || "CAI",
       airline: "",
       flight_no: "",
       flight_date: new Date().toISOString().slice(0, 10),
