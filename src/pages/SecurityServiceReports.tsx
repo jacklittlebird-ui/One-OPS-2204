@@ -112,20 +112,15 @@ function timeDiffHours(start: string, end: string): number {
 }
 
 function normalizeSecurityDates(row: Record<string, any>, taskSheet: Record<string, any>) {
-  const serviceType = String(row.service_type || "").toLowerCase();
-  const isDepartureOnly = serviceType.includes("departure") && !serviceType.includes("arrival");
-  const isArrivalOnly = serviceType.includes("arrival") && !serviceType.includes("departure");
-  const flightDate = row.flight_date || taskSheet.shift_start_date || taskSheet.shift_end_date || "";
-  const departureDate = row.departure_date || taskSheet.shift_end_date || flightDate;
-  if (isDepartureOnly) {
-    const serviceDate = departureDate || flightDate;
-    return { flightDate: serviceDate, arrivalDate: serviceDate, departureDate: serviceDate };
-  }
-  if (isArrivalOnly) {
-    const serviceDate = flightDate || departureDate;
-    return { flightDate: serviceDate, arrivalDate: serviceDate, departureDate: serviceDate };
-  }
-  return { flightDate, arrivalDate: flightDate, departureDate: departureDate || flightDate };
+  const arrivalDate = String(row.flight_date || "").trim();
+  const departureDate = String(row.departure_date || "").trim();
+  return {
+    // `dispatch_assignments.flight_date` is only the list/filter date. It must
+    // never be used to back-fill Arrival Date when the user cleared it.
+    flightDate: arrivalDate || departureDate || new Date().toISOString().slice(0, 10),
+    arrivalDate,
+    departureDate,
+  };
 }
 
 export default function SecurityServiceReportsPage() {
@@ -1023,8 +1018,14 @@ export default function SecurityServiceReportsPage() {
       flight_no: row.flight_no,
     } as const;
 
+    const taskSheetForSave = {
+      ...(taskSheet || {}),
+      arrival_date: normalizedDates.arrivalDate,
+      departure_date: normalizedDates.departureDate,
+    };
+
     const payload: Record<string, any> = {
-      task_sheet_data: taskSheet,
+      task_sheet_data: taskSheetForSave,
       notes: taskSheet.remarks || row.notes,
       actual_start: shiftStart,
       actual_end: shiftEnd,
