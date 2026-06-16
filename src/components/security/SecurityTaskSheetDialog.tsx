@@ -606,20 +606,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         return;
       }
     }
-    // Normalize dates based on service type so the list always shows the
-    // user-edited date. For Departure-only Security, the dispatch's
-    // flight_date (which drives the listing arrival_date) must follow
-    // departure_date. For Arrival-only Security, departure_date follows
-    // arrival_date. Turnaround keeps both as entered.
-    const ftLower = (flightTypeForCharges || "").toLowerCase();
-    const isDepartureOnly = ftLower.includes("departure") && !ftLower.includes("arrival");
-    const isArrivalOnly = ftLower.includes("arrival") && !ftLower.includes("departure");
+    // Keep dates exactly as entered by the user. Do NOT cross-copy between
+    // arrival_date (flight_date) and departure_date based on service type —
+    // empty fields must remain empty so re-opening the form preserves the
+    // original input (e.g. Departure-only with only Departure Date filled
+    // should not back-fill Arrival Date, and vice versa).
     const merged: any = isNew ? editableRow : { ...(row || {}), ...(editableRow || {}) };
-    if (isDepartureOnly && merged.departure_date) {
-      merged.flight_date = merged.departure_date;
-    } else if (isArrivalOnly && merged.flight_date) {
-      merged.departure_date = merged.flight_date;
-    }
     const enrichedRow = {
       ...merged,
       contract_id: contractId || null,
