@@ -25,6 +25,7 @@ export interface SecurityFlightDetails {
 export interface SecurityRowLike {
   flight_no?: string;
   flight_date?: string;
+  arrival_date?: string;
   departure_date?: string;
   station?: string;
   airline?: string;
