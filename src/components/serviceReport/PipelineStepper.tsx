@@ -63,10 +63,10 @@ export function derivePipelineStage(opts: {
   const createdByStation = origin === "station";
 
   // --- Step completion flags (record-view truth) ---
-  // Step 1 (Clearance) is ONLY completed when the record originated in the Clearance
-  // module AND the clearance was approved. Records created directly by the Station
-  // portal skip step 1 entirely — it remains unmarked forever.
-  let step1Done = createdByClearance && (csCanonical === "Approved" || (opts.isLinked && cs !== "" && cs !== "pending" && cs !== "rejected"));
+  // Step 1 (Clearance) is completed whenever the record originated in the
+  // Clearance module — the act of creation by clearance counts as step 1 done.
+  // Records created directly by the Station portal skip step 1 entirely.
+  let step1Done = createdByClearance;
 
   // Step 2 (Station) is complete when the station task sheet has been saved
   // (dispatch.status === "Completed") OR review_status has advanced past Draft.
@@ -153,9 +153,7 @@ export function derivePipelineCompletedStages(opts: {
 
   const done: PipelineStage[] = [];
   if (createdByClearance) {
-    if (csCanonical === "Approved" || (opts.isLinked && cs && cs !== "pending" && cs !== "rejected")) {
-      done.push("clearance");
-    }
+    done.push("clearance");
   }
   if ((rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any)) || dispatchCompleted) done.push("station");
   if (REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any)) done.push("operations");
