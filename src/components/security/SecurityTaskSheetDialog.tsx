@@ -1448,57 +1448,59 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              {lastWriteCycle && (
-                <div
-                  className={`text-[11px] px-2 py-1 rounded border font-medium ${
-                    lastWriteCycle.status === "PASS"
-                      ? "bg-success/10 text-success border-success/30"
-                      : lastWriteCycle.status === "FAIL"
-                      ? "bg-destructive/10 text-destructive border-destructive/30"
-                      : "bg-muted text-muted-foreground border-border"
-                  }`}
-                  title={`fs=${lastWriteCycle.flight_schedule_id ?? "n/a"} • ${new Date(lastWriteCycle.at).toLocaleTimeString()}`}
-                >
-                  Last Save Verified: {lastWriteCycle.status} · Source: flight_schedules
-                </div>
+            <div className="flex flex-col items-end gap-1">
+              {!isReceivablesView && (
+                <p className="text-[11px] text-muted-foreground text-right">
+                  <strong>Save</strong> writes all fields and keeps the dialog open.{" "}
+                  <strong>Save &amp; Close</strong> writes all fields and exits. Both persist the
+                  complete task sheet — your entries are not lost between clicks.
+                </p>
               )}
-              <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-              {!isReceivablesView && !stationLockedAfterApproval && (
-                <Button
-                  variant="secondary"
-                  onClick={() => handleSave(false)}
-                  disabled={saving}
-                  className="shadow-sm"
-                  title="Persists all entered fields to the database and keeps the dialog open so you can continue editing."
-                >
-                  {saving ? <>Saving…</> : <><Shield size={14} className="mr-1" /> Save</>}
-                </Button>
-              )}
-              {!stationLockedAfterApproval && (
-                <Button
-                  onClick={() => handleSave(true)}
-                  disabled={saving || (isReceivablesView && receivablesLocked)}
-                  className="shadow-sm"
-                  title="Persists all entered fields and closes the dialog."
-                >
-                  {saving ? (
-                    <>Saving…</>
-                  ) : isReceivablesView ? (
-                    <><DollarSign size={14} className="mr-1" /> Save Security Charges</>
-                  ) : (
-                    <><Shield size={14} className="mr-1" /> Save & Close</>
-                  )}
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {lastWriteCycle && (
+                  <div
+                    className={`text-[11px] px-2 py-1 rounded border font-medium ${
+                      lastWriteCycle.status === "PASS"
+                        ? "bg-success/10 text-success border-success/30"
+                        : lastWriteCycle.status === "FAIL"
+                        ? "bg-destructive/10 text-destructive border-destructive/30"
+                        : "bg-muted text-muted-foreground border-border"
+                    }`}
+                    title={`fs=${lastWriteCycle.flight_schedule_id ?? "n/a"} • ${new Date(lastWriteCycle.at).toLocaleTimeString()}`}
+                  >
+                    Last Save Verified: {lastWriteCycle.status} · Source: flight_schedules
+                  </div>
+                )}
+                <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+                {!isReceivablesView && !stationLockedAfterApproval && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleSave(false)}
+                    disabled={saving}
+                    className="shadow-sm"
+                    title="Persists all entered fields to the database and keeps the dialog open so you can continue editing."
+                  >
+                    {saving ? <>Saving…</> : <><Shield size={14} className="mr-1" /> Save</>}
+                  </Button>
+                )}
+                {!stationLockedAfterApproval && (
+                  <Button
+                    onClick={() => handleSave(true)}
+                    disabled={saving || (isReceivablesView && receivablesLocked)}
+                    className="shadow-sm"
+                    title="Persists all entered fields and closes the dialog."
+                  >
+                    {saving ? (
+                      <>Saving…</>
+                    ) : isReceivablesView ? (
+                      <><DollarSign size={14} className="mr-1" /> Save Security Charges</>
+                    ) : (
+                      <><Shield size={14} className="mr-1" /> Save & Close</>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
-          )}
-          {!isReceivablesView && (
-            <p className="text-[11px] text-muted-foreground mt-2 text-right">
-              <strong>Save</strong> writes all fields and keeps the dialog open.{" "}
-              <strong>Save &amp; Close</strong> writes all fields and exits. Both persist the
-              complete task sheet — your entries are not lost between clicks.
-            </p>
           )}
         </div>
       </DialogContent>
