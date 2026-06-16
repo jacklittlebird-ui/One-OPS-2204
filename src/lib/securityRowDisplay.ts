@@ -25,6 +25,7 @@ export interface SecurityFlightDetails {
 export interface SecurityRowLike {
   flight_no?: string;
   flight_date?: string;
+  arrival_date?: string;
   departure_date?: string;
   station?: string;
   airline?: string;
@@ -82,13 +83,36 @@ export function resolveSecurityRowDisplay(
   const meta = flightMeta || {};
   const ts = (r.task_sheet_data || {}) as Record<string, any>;
   const serviceType = pick(r.service_type, fd.clearance_type, meta.clearance_type, ts.service_type);
-  const isDepartureOnly = serviceType.toLowerCase().includes("departure") && !serviceType.toLowerCase().includes("arrival");
-  const arrivalDate = isDepartureOnly
-    ? pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date, ts.shift_start_date)
-    : pick(fd.arrival_date, meta.arrival_date, r.flight_date, ts.arrival_date, ts.shift_start_date);
-  const departureDate = isDepartureOnly
-    ? pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date, fd.arrival_date, meta.arrival_date, ts.arrival_date)
-    : pick(fd.departure_date, meta.departure_date, r.departure_date, r.flight_date, ts.departure_date, ts.shift_end_date);
+
+  // If the station form explicitly saved arrival_date / departure_date in
+  // task_sheet_data, honor those values VERBATIM — even when empty. The user
+  // intentionally cleared them; do not fabricate a value from other fields.
+  const tsHasArrival = ts && Object.prototype.hasOwnProperty.call(ts, "arrival_date");
+  const tsHasDeparture = ts && Object.prototype.hasOwnProperty.call(ts, "departure_date");
+
+  // Same intent for the row column itself: if the dispatch row has the
+  // arrival_date / departure_date column persisted (even empty string), respect it.
+  const rowHasArrival = r && Object.prototype.hasOwnProperty.call(r, "arrival_date");
+  const rowHasDeparture = r && Object.prototype.hasOwnProperty.call(r, "departure_date");
+
+  let arrivalDate: string;
+  if (tsHasArrival) {
+    arrivalDate = String(ts.arrival_date ?? "").trim();
+  } else if (rowHasArrival) {
+    arrivalDate = String((r as any).arrival_date ?? "").trim();
+  } else {
+    // Legacy / unlinked rows that never carried explicit arrival_date.
+    arrivalDate = pick(fd.arrival_date, meta.arrival_date, r.flight_date, ts.shift_start_date);
+  }
+
+  let departureDate: string;
+  if (tsHasDeparture) {
+    departureDate = String(ts.departure_date ?? "").trim();
+  } else if (rowHasDeparture) {
+    departureDate = String(r.departure_date ?? "").trim();
+  } else {
+    departureDate = pick(fd.departure_date, meta.departure_date, ts.shift_end_date);
+  }
 
   // SSoT Phase B: flight_schedules (fd) is the AUTHORITATIVE source for every
   // master field. task_sheet_data (ts) is a frozen snapshot taken when the
