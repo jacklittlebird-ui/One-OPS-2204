@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign, CheckCircle2, XCircle } from "lucide-react";
+import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { SKD_TYPES, SECURITY_CLEARANCE_TYPES, getAllowedServiceTypesForSkd } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
@@ -273,6 +273,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const reviewMode = (isOperationsView && !isNew) || !!pendingApprovalMode;
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [dialogRefreshing, setDialogRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
@@ -580,6 +581,31 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setSheet(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleRefresh = async () => {
+    const id = (currentRow as any)?.id;
+    if (!id || isNew) return;
+    setDialogRefreshing(true);
+    try {
+      const { data, error } = await supabase
+        .from("dispatch_assignments")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      if (data) {
+        setEditableRow(data as DispatchRow);
+        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+        queryClient.invalidateQueries({ queryKey: ["invoices_for_security_pipeline"] });
+        queryClient.invalidateQueries({ queryKey: ["invoice_for_pipeline", dialogFlightRef] });
+        toast({ title: "Refreshed", description: "Pipeline and record data updated." });
+      }
+    } catch (e: any) {
+      toast({ title: "Refresh failed", description: e.message, variant: "destructive" });
+    } finally {
+      setDialogRefreshing(false);
+    }
+  };
+
   const handleSave = async (closeAfter: boolean = true) => {
     // Guard against double-clicks / re-entry while a save is in flight.
     if (savingRef.current) return;
@@ -877,17 +903,29 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
         {/* Pipeline stepper - hidden in print/download */}
         <div className="px-6 py-3 border-b bg-muted/20 flex items-center justify-center print:hidden no-print">
-          <PipelineStepper
-            currentStage={derivePipelineStage({
-              isLinked: !isNew,
-              reviewStatus: (currentRow as any)?.review_status || "pending",
-              dispatchStatus: (currentRow as any)?.status || "Pending",
-              clearanceStatus: (currentRow as any)?.clearance_status,
-              channel: activeChannel,
-              formView: true,
-              invoiceStatus: dialogInvoiceStatus,
-            })}
-          />
+          <div className="flex items-center gap-3">
+            <PipelineStepper
+              currentStage={derivePipelineStage({
+                isLinked: !isNew,
+                reviewStatus: (currentRow as any)?.review_status || "pending",
+                dispatchStatus: (currentRow as any)?.status || "Pending",
+                clearanceStatus: (currentRow as any)?.clearance_status,
+                channel: activeChannel,
+                formView: true,
+                invoiceStatus: dialogInvoiceStatus,
+              })}
+            />
+            {!isNew && (
+              <button
+                onClick={handleRefresh}
+                disabled={dialogRefreshing}
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-md bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                title="Refresh pipeline"
+              >
+                <RefreshCw size={12} className={dialogRefreshing ? "animate-spin" : ""} /> Refresh
+              </button>
+            )}
+          </div>
         </div>
 
         {reviewMode && (
