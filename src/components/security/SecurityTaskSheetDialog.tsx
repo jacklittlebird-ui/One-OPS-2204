@@ -555,6 +555,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const receivablesUnlocked = stationDone && operationsDone;
   const receivablesLocked = isReceivablesView && !receivablesUnlocked;
 
+  // Station lock: once Operations has approved (or advanced to billing) a
+  // report, the Station can no longer edit it. The Station regains edit
+  // access only when Operations rejects the report and sends it back
+  // (review_status = "Rejected"). "Modified" reports were already sent back
+  // by the station after a rejection — keep them locked while ops re-reviews.
+  const isStationViewForLock = !isOperationsView && !isReceivablesView;
+  const stationLockedAfterApproval =
+    isStationViewForLock && !isNew && (operationsDone || reviewStatus === "pending review" || reviewStatus === "modified");
+
   if (!row || !editableRow || !currentRow) return null;
 
   const updateRow = (field: string, value: any) => {
