@@ -581,6 +581,31 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setSheet(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleRefresh = async () => {
+    const id = (currentRow as any)?.id;
+    if (!id || isNew) return;
+    setDialogRefreshing(true);
+    try {
+      const { data, error } = await supabase
+        .from("dispatch_assignments")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      if (data) {
+        setEditableRow(data as DispatchRow);
+        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+        queryClient.invalidateQueries({ queryKey: ["invoices_for_security_pipeline"] });
+        queryClient.invalidateQueries({ queryKey: ["invoice_for_pipeline", dialogFlightRef] });
+        toast({ title: "Refreshed", description: "Pipeline and record data updated." });
+      }
+    } catch (e: any) {
+      toast({ title: "Refresh failed", description: e.message, variant: "destructive" });
+    } finally {
+      setDialogRefreshing(false);
+    }
+  };
+
   const handleSave = async (closeAfter: boolean = true) => {
     // Guard against double-clicks / re-entry while a save is in flight.
     if (savingRef.current) return;
