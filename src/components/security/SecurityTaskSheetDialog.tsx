@@ -1464,7 +1464,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 </div>
               )}
               <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-              {!isReceivablesView && (
+              {!isReceivablesView && !stationLockedAfterApproval && (
                 <Button
                   variant="secondary"
                   onClick={() => handleSave(false)}
@@ -1475,20 +1475,22 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                   {saving ? <>Saving…</> : <><Shield size={14} className="mr-1" /> Save</>}
                 </Button>
               )}
-              <Button
-                onClick={() => handleSave(true)}
-                disabled={saving || (isReceivablesView && receivablesLocked)}
-                className="shadow-sm"
-                title="Persists all entered fields and closes the dialog."
-              >
-                {saving ? (
-                  <>Saving…</>
-                ) : isReceivablesView ? (
-                  <><DollarSign size={14} className="mr-1" /> Save Security Charges</>
-                ) : (
-                  <><Shield size={14} className="mr-1" /> Save & Close</>
-                )}
-              </Button>
+              {!stationLockedAfterApproval && (
+                <Button
+                  onClick={() => handleSave(true)}
+                  disabled={saving || (isReceivablesView && receivablesLocked)}
+                  className="shadow-sm"
+                  title="Persists all entered fields and closes the dialog."
+                >
+                  {saving ? (
+                    <>Saving…</>
+                  ) : isReceivablesView ? (
+                    <><DollarSign size={14} className="mr-1" /> Save Security Charges</>
+                  ) : (
+                    <><Shield size={14} className="mr-1" /> Save & Close</>
+                  )}
+                </Button>
+              )}
             </div>
           )}
           {!isReceivablesView && (
