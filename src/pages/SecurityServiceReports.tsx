@@ -1419,7 +1419,8 @@ export default function SecurityServiceReportsPage() {
               queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
               queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
               queryClient.invalidateQueries({ queryKey: ["security_irregularities"] });
-              toast({ title: "Refreshing", description: "Reloading security service reports…" });
+              queryClient.invalidateQueries({ queryKey: ["invoices_for_security_pipeline"] });
+              toast({ title: "Refreshing", description: "Reloading security service reports and pipeline…" });
             }}
             className="toolbar-btn"
             title="Refresh"

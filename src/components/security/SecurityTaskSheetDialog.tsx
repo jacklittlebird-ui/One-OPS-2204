@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign, CheckCircle2, XCircle } from "lucide-react";
+import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
 import { SKD_TYPES, SECURITY_CLEARANCE_TYPES, getAllowedServiceTypesForSkd } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
