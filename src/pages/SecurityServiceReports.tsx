@@ -1073,7 +1073,12 @@ export default function SecurityServiceReportsPage() {
           ? { review_status: "Modified" }
           : serviceTypeChanged
             ? { review_status: "Draft", reviewed_at: null, reviewed_by: "", review_comment: "" }
-            : {}),
+            : // Plain edit of an existing record: if it was still Draft (auto-created
+              // by clearance approval and never submitted), promote it to "Pending Review"
+              // so step 2 (Station) is marked complete in the pipeline.
+              (row.review_status === "Draft" || !row.review_status)
+                ? { review_status: "Pending Review" }
+                : {}),
     };
 
     let insertedDispatch: any = null;
