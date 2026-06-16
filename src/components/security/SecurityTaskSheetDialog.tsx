@@ -903,17 +903,29 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
         {/* Pipeline stepper - hidden in print/download */}
         <div className="px-6 py-3 border-b bg-muted/20 flex items-center justify-center print:hidden no-print">
-          <PipelineStepper
-            currentStage={derivePipelineStage({
-              isLinked: !isNew,
-              reviewStatus: (currentRow as any)?.review_status || "pending",
-              dispatchStatus: (currentRow as any)?.status || "Pending",
-              clearanceStatus: (currentRow as any)?.clearance_status,
-              channel: activeChannel,
-              formView: true,
-              invoiceStatus: dialogInvoiceStatus,
-            })}
-          />
+          <div className="flex items-center gap-3">
+            <PipelineStepper
+              currentStage={derivePipelineStage({
+                isLinked: !isNew,
+                reviewStatus: (currentRow as any)?.review_status || "pending",
+                dispatchStatus: (currentRow as any)?.status || "Pending",
+                clearanceStatus: (currentRow as any)?.clearance_status,
+                channel: activeChannel,
+                formView: true,
+                invoiceStatus: dialogInvoiceStatus,
+              })}
+            />
+            {!isNew && (
+              <button
+                onClick={handleRefresh}
+                disabled={dialogRefreshing}
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-md bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                title="Refresh pipeline"
+              >
+                <RefreshCw size={12} className={dialogRefreshing ? "animate-spin" : ""} /> Refresh
+              </button>
+            )}
+          </div>
         </div>
 
         {reviewMode && (
