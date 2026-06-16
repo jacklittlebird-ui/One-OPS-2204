@@ -385,10 +385,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     // so a deliberately-blank Departure Date does not silently re-appear on
     // edit. (Issue: user leaves Departure Date empty → save → reopen → field
     // showed parent's departureDate prop again.)
+    const saved = row.task_sheet_data as Record<string, any> | null;
+    const hasSavedArrivalDate = !!saved && Object.prototype.hasOwnProperty.call(saved, "arrival_date");
+    const hasSavedDepartureDate = !!saved && Object.prototype.hasOwnProperty.call(saved, "departure_date");
     setEditableRow({
       ...row,
-      flight_date: row.flight_date || (isNew ? (arrivalDate || "") : ""),
-      departure_date: (row as any).departure_date || (isNew ? (departureDate || "") : ""),
+      flight_date: hasSavedArrivalDate ? String(saved.arrival_date || "") : (row.flight_date || (isNew ? (arrivalDate || "") : "")),
+      departure_date: hasSavedDepartureDate
+        ? String(saved.departure_date || "")
+        : ((row as any).departure_date || (row as any).fs_departure_date || (isNew ? (departureDate || "") : "")),
     } as DispatchRow);
     setReviewComment(row.review_comment || "");
     setContractId((row as any).contract_id || "");
@@ -396,7 +401,6 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setRampVehicleTrips((row as any).ramp_vehicle_trips || 0);
     setShortNotice((row as any).short_notice || false);
     setReturnToRamp((row as any).return_to_ramp_with_load || false);
-    const saved = row.task_sheet_data as Record<string, any> | null;
     // SSoT Phase A: master flight fields always come from the joined
     // flight_schedules row when present. Props passed by the parent are
     // used as a second fallback, and task_sheet_data mirror values are
