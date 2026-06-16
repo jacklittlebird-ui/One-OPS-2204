@@ -1014,7 +1014,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Arrival Date</label>
                 <input
                   className={inputCls + " font-mono"}
-                  value={isoToDmy(editableRow.flight_date || (!isNew ? arrivalDate || "" : ""))}
+                  value={isoToDmy(editableRow.flight_date || (isNew ? (arrivalDate || "") : ""))}
                   onChange={e => {
                     const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.flight_date || ""));
                     const iso = dmyToIso(formatted);
@@ -1029,9 +1029,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Departure Date</label>
                 <input
                   className={inputCls + " font-mono"}
-                  value={isoToDmy(editableRow.departure_date || departureDate || "")}
+                  value={isoToDmy(editableRow.departure_date || (isNew ? (departureDate || "") : ""))}
                   onChange={e => {
-                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.departure_date || departureDate || ""));
+                    const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.departure_date || ""));
                     const iso = dmyToIso(formatted);
                     updateRow("departure_date", iso || formatted);
                   }}
