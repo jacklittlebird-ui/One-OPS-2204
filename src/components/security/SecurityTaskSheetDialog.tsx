@@ -359,7 +359,24 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       return;
     }
     const key = `${row.id || "new"}::${isNew ? "new" : "edit"}`;
-    if (initializedRowKeyRef.current === key) return;
+    const prev = initializedRowKeyRef.current;
+    if (prev === key) return;
+    // GUARD: When the user clicks "Save" (not Save & Close) on a brand-new
+    // report, the parent rebinds the dialog to the freshly-inserted row and
+    // flips isNew → false. That transitions the key from "new::new" to
+    // "<uuid>::edit" for the SAME open dialog session. Re-initializing here
+    // would wipe the user's in-progress edits (Flight No / Reg / Route /
+    // Observers / Times / etc.) by overwriting them with the just-saved
+    // snapshot that may not yet include every field the user is still typing.
+    // Preserve current sheet/editableRow state — just record the new key so
+    // we stop re-initializing on subsequent prop refetches.
+    if (prev && prev.endsWith("::new") && key.endsWith("::edit")) {
+      initializedRowKeyRef.current = key;
+      // Adopt the persisted id on editableRow so subsequent saves UPDATE
+      // (not INSERT) the same record.
+      setEditableRow(curr => curr ? { ...curr, id: row.id } as DispatchRow : curr);
+      return;
+    }
     initializedRowKeyRef.current = key;
 
     // Default arrival/departure date from clearance (flight schedule) when missing
@@ -1427,11 +1444,22 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               )}
               <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
               {!isReceivablesView && (
-                <Button variant="secondary" onClick={() => handleSave(false)} disabled={saving} className="shadow-sm">
+                <Button
+                  variant="secondary"
+                  onClick={() => handleSave(false)}
+                  disabled={saving}
+                  className="shadow-sm"
+                  title="Persists all entered fields to the database and keeps the dialog open so you can continue editing."
+                >
                   {saving ? <>Saving…</> : <><Shield size={14} className="mr-1" /> Save</>}
                 </Button>
               )}
-              <Button onClick={() => handleSave(true)} disabled={saving || (isReceivablesView && receivablesLocked)} className="shadow-sm">
+              <Button
+                onClick={() => handleSave(true)}
+                disabled={saving || (isReceivablesView && receivablesLocked)}
+                className="shadow-sm"
+                title="Persists all entered fields and closes the dialog."
+              >
                 {saving ? (
                   <>Saving…</>
                 ) : isReceivablesView ? (
@@ -1441,6 +1469,13 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 )}
               </Button>
             </div>
+          )}
+          {!isReceivablesView && (
+            <p className="text-[11px] text-muted-foreground mt-2 text-right">
+              <strong>Save</strong> writes all fields and keeps the dialog open.{" "}
+              <strong>Save &amp; Close</strong> writes all fields and exits. Both persist the
+              complete task sheet — your entries are not lost between clicks.
+            </p>
           )}
         </div>
       </DialogContent>
