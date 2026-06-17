@@ -152,11 +152,9 @@ export function derivePipelineCompletedStages(opts: {
   const reviewSubmitted = !!rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any);
 
   const done: PipelineStage[] = [];
-  // Step 1 (Clearance) is only ever completed for records that originated in the
-  // Clearance channel. Station-created records intentionally skip it.
-  if (createdByClearance && (reviewSubmitted || dispatchCompleted || opts.isLinked)) {
-    done.push("clearance");
-  } else if (createdByClearance) {
+  // Step 1 (Clearance) is only ever completed for records that originated in
+  // the Clearance channel. Station-created records intentionally skip it.
+  if (createdByClearance) {
     done.push("clearance");
   }
   // Step 2 (Station) — complete when the task sheet is saved, submitted for
