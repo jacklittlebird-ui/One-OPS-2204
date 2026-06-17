@@ -36,7 +36,7 @@ import { parseDeletionRequests } from "@/lib/statusRouting";
 
 
 
-const REVIEW_STATUSES = ["Draft", "Pending Review", "Approved", "Ready for Billing"] as const;
+const WORKFLOW_STATUSES = ["Pending", "In Progress", "Completed"] as const;
 
 const reviewStatusConfig: Record<string, { icon: React.ReactNode; cls: string }> = {
   "Draft": { icon: <Pencil size={11} />, cls: "bg-muted text-muted-foreground" },
@@ -186,7 +186,7 @@ export default function SecurityServiceReportsPage() {
   const _initParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const [search, setSearch] = useState(_initParams.get("search") || "");
   const [stationFilter, setStationFilter] = useState(_initParams.get("station") || "All Stations");
-  const [reviewFilter, setReviewFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [serviceFilter, setServiceFilter] = useState(_initParams.get("type") || "All Types");
   const [dateFrom, setDateFrom] = useState(_initParams.get("date_from") || "");
   const [dateTo, setDateTo] = useState(_initParams.get("date_to") || "");
@@ -796,12 +796,7 @@ export default function SecurityServiceReportsPage() {
       rows = rows.filter(r => set.has(r.id));
     }
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
-    if (reviewFilter !== "All") rows = rows.filter(r => {
-      const rs = String(r.review_status || "").toLowerCase();
-      const f = reviewFilter.toLowerCase();
-      if (f === "pending" || f === "pending review") return rs === "pending" || rs === "pending review";
-      return rs === f;
-    });
+    if (statusFilter !== "All") rows = rows.filter(r => getWorkflowDispatchStatus(r) === statusFilter);
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
     if (dateFrom) rows = rows.filter(r => (r.flight_date || "") >= dateFrom);
     if (dateTo) rows = rows.filter(r => (r.flight_date || "") <= dateTo);
@@ -844,7 +839,7 @@ export default function SecurityServiceReportsPage() {
       }
       return (a.flight_no || "").localeCompare(b.flight_no || "") || (a.id || "").localeCompare(b.id || "");
     });
-  }, [mergedRows, stationFilter, reviewFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
+  }, [mergedRows, stationFilter, statusFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
 
   
   
@@ -1850,10 +1845,9 @@ export default function SecurityServiceReportsPage() {
             <option>All Types</option>
             {allServiceTypes.map(s => <option key={s}>{s}</option>)}
           </select>
-          <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>
-            {REVIEW_STATUSES.map(s => <option key={s} value={s}>{s === "Pending Review" ? "Pending" : s}</option>)}
-            <option>Rejected</option>
+            {WORKFLOW_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
