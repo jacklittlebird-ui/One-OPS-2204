@@ -4194,6 +4194,7 @@ export type Database = {
         | "Rejected"
         | "Expired"
         | "Cancelled"
+        | "Completed"
       contract_status: "Active" | "Expired" | "Pending" | "Terminated"
       currency_type: "USD" | "EUR" | "EGP"
       handling_type:
@@ -4398,6 +4399,7 @@ export const Constants = {
         "Rejected",
         "Expired",
         "Cancelled",
+        "Completed",
       ],
       contract_status: ["Active", "Expired", "Pending", "Terminated"],
       currency_type: ["USD", "EUR", "EGP"],

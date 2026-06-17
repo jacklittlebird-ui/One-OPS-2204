@@ -1305,7 +1305,7 @@ export default function SecurityServiceReportsPage() {
     // Approving a "Modified" report (resubmitted after rejection) goes straight to Ready for Billing.
     const finalStatus =
       action === "Approved" && reviewRow.review_status === "Modified" ? "Ready for Billing" : action;
-    updateMutation.mutate({
+    await updateMutation.mutateAsync({
       id: reviewRow.id,
       review_status: finalStatus,
       review_comment: reviewComment,
@@ -1314,13 +1314,21 @@ export default function SecurityServiceReportsPage() {
     });
     // On approval, mark the linked flight schedule as Completed so Clearance/Station
     // portals reflect the finished operational cycle.
-    if (action === "Approved" && reviewRow.flight_schedule_id) {
+    if (action === "Approved") {
       try {
+        // Mark the dispatch itself as Completed so the STATUS column flips.
         await supabase
-          .from("flight_schedules")
+          .from("dispatch_assignments")
           .update({ status: "Completed" } as any)
-          .eq("id", reviewRow.flight_schedule_id);
-        queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+          .eq("id", reviewRow.id);
+        if (reviewRow.flight_schedule_id) {
+          await supabase
+            .from("flight_schedules")
+            .update({ status: "Completed" } as any)
+            .eq("id", reviewRow.flight_schedule_id);
+          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+        }
+        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
       } catch (e) {
         // non-fatal — review status already saved
       }

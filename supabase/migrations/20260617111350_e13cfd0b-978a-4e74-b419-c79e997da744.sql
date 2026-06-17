@@ -1,0 +1,1 @@
+ALTER TYPE public.clearance_status ADD VALUE IF NOT EXISTS 'Completed';
