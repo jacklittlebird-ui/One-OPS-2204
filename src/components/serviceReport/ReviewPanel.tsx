@@ -19,7 +19,7 @@ interface ReviewPanelProps {
 
 export function ReviewStatusBadge({ status }: { status: string }) {
   const config: Record<string, { icon: React.ReactNode; cls: string; label: string }> = {
-    pending: { icon: <Clock size={12} />, cls: "bg-warning/15 text-warning", label: "Pending Review" },
+    pending: { icon: <Clock size={12} />, cls: "bg-warning/15 text-warning", label: "Pending" },
     approved: { icon: <CheckCircle2 size={12} />, cls: "bg-success/15 text-success", label: "Approved" },
     rejected: { icon: <XCircle size={12} />, cls: "bg-destructive/15 text-destructive", label: "Rejected" },
   };
