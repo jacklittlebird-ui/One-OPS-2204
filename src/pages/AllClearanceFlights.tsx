@@ -136,6 +136,11 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
           <Badge variant="outline" className="gap-1">
             <Eye size={11} /> Read-only
           </Badge>
+          {isFetching && (
+            <Badge variant="outline" className="gap-1 animate-pulse">
+              Fetching more… {loadedRows.toLocaleString()} loaded
+            </Badge>
+          )}
           <Badge variant="secondary">{filtered.length} flight{filtered.length === 1 ? "" : "s"}</Badge>
         </div>
       </div>
