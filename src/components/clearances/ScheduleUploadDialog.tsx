@@ -138,29 +138,35 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
       const defaultType = defaultCategory === "security" ? "Arrival Security" : "Full Handling";
       const station = (selectedStation || "").toUpperCase().trim();
       const normalized = result.rows.map(r => {
-        let serviceType = r.service_type;
-        if (defaultCategory === "security" && station) {
+        let serviceType: string = r.service_type || defaultType;
+        if (defaultCategory === "security") {
           const segs = (r.route || "")
             .split("/")
             .map(s => s.trim().toUpperCase())
             .filter(Boolean);
-          if (segs.length >= 2) {
+          if (station && segs.length >= 2) {
             const first = segs[0];
             const last = segs[segs.length - 1];
-            if (first === station && last !== station) {
+            if (first === station && last === station) {
+              serviceType = "Turnaround Security";
+            } else if (first === station) {
               serviceType = "Departure Security";
-            } else if (last === station && first !== station) {
+            } else if (last === station) {
               serviceType = "Arrival Security";
             } else {
               serviceType = defaultType;
             }
           } else {
-            serviceType = defaultType;
+            // Force into security bucket regardless of parser hint
+            const cat = getServiceCategory(serviceType as any);
+            if (cat !== "security") serviceType = defaultType;
           }
-          return { ...r, service_type: serviceType };
+        } else {
+          // Handling tab → force handling bucket
+          const cat = getServiceCategory(serviceType as any);
+          if (cat !== "handling") serviceType = defaultType;
         }
-        const cat = getServiceCategory(serviceType as any);
-        return cat === defaultCategory ? { ...r, service_type: serviceType } : { ...r, service_type: defaultType };
+        return { ...r, service_type: serviceType };
       });
       setFlights(normalized);
       setIsTrafficReport(result.isTrafficReport);
@@ -199,8 +205,11 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
 
     try {
       const processed = pairTurnaroundFlights(flights);
+      const fallbackType = defaultCategory === "security" ? "Arrival Security" : "Full Handling";
       const records = processed.map(f => {
-        const ct = f.service_type || "Full Handling";
+        let ct = f.service_type || fallbackType;
+        // Hard rule: tab dictates category — never cross-insert.
+        if (getServiceCategory(ct as any) !== defaultCategory) ct = fallbackType;
         const clearSta = ct === "Departure Security";
         const clearStd = ct === "Arrival Security";
         return {
