@@ -1041,7 +1041,12 @@ function HandlingServiceReportContent() {
     if (statusFilter === "Pending Completion") r = r.filter(x => !x.isLinked);
     if (handlingFilter !== "All Types") r = r.filter(x => x.handlingType === handlingFilter);
     if (stationFilter !== "All Stations") r = r.filter(x => x.station === stationFilter);
-    if (reviewFilter !== "All Review") r = r.filter(x => x.reviewStatus === reviewFilter);
+    if (reviewFilter !== "All Review") r = r.filter(x => {
+      const rs = String(x.reviewStatus || "").toLowerCase();
+      const f = reviewFilter.toLowerCase();
+      if (f === "pending") return rs === "pending" || rs === "pending review";
+      return rs === f;
+    });
     if (airlineFilter !== "All Airlines") r = r.filter(x => x.operator === airlineFilter);
     if (dateFrom || dateTo) r = r.filter(x => overlapsDateWindow(x.arrivalDate, x.departureDate, dateFrom, dateTo));
     if (search) {
