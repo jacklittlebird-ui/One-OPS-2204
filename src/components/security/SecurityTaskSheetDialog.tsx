@@ -458,7 +458,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     if (!contractId && securityContracts.length === 1) setContractId(securityContracts[0].id);
   }, [securityContracts, contractId]);
 
-  const currentRow = isNew ? editableRow : (row || editableRow);
+  const currentRow = isNew ? editableRow : (editableRow || row);
 
   // Look up invoice status for this flight so the Receivables pipeline step
   // only marks complete when the invoice is fully Paid.
@@ -1477,15 +1477,49 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 className="bg-success hover:bg-success/90 text-success-foreground shrink-0"
                 onClick={async () => {
                   setReviewSubmitting(true);
+                  const reviewedAt = new Date().toISOString();
                   const { error } = await supabase.from("dispatch_assignments").update({
+                    status: "Completed",
                     review_status: "Approved",
                     review_comment: reviewComment || "",
                     reviewed_by: "Operations",
-                    reviewed_at: new Date().toISOString(),
+                    reviewed_at: reviewedAt,
                   } as any).eq("id", currentRow.id);
                   setReviewSubmitting(false);
                   if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-                  queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+                  const patchApprovedRow = (old: any) => {
+                    if (!Array.isArray(old)) return old;
+                    return old.map((r: any) => r?.id === currentRow.id ? {
+                      ...r,
+                      status: "Completed",
+                      review_status: "Approved",
+                      review_comment: reviewComment || "",
+                      reviewed_by: "Operations",
+                      reviewed_at: reviewedAt,
+                      fs_status: "Completed",
+                    } : r);
+                  };
+                  setEditableRow(prev => prev ? {
+                    ...prev,
+                    status: "Completed",
+                    review_status: "Approved",
+                    review_comment: reviewComment || "",
+                    reviewed_by: "Operations",
+                    reviewed_at: reviewedAt,
+                  } : prev);
+                  queryClient.setQueriesData({ queryKey: ["dispatch_assignments"] }, patchApprovedRow);
+                  queryClient.setQueriesData({ queryKey: ["v_dispatch_with_flight"] }, patchApprovedRow);
+                  if ((currentRow as any).flight_schedule_id) {
+                    queryClient.setQueriesData({ queryKey: ["flight_schedules"] }, (old: any) => {
+                      if (!Array.isArray(old)) return old;
+                      return old.map((f: any) => f?.id === (currentRow as any).flight_schedule_id ? { ...f, status: "Completed" } : f);
+                    });
+                  }
+                  await Promise.all([
+                    queryClient.refetchQueries({ queryKey: ["v_dispatch_with_flight"], type: "active" }),
+                    queryClient.refetchQueries({ queryKey: ["dispatch_assignments"], type: "active" }),
+                    queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" }),
+                  ]);
                   toast({ title: "✅ Approved", description: "Report approved." });
                   onClose();
                 }}
