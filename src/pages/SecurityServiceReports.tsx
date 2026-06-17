@@ -547,6 +547,7 @@ export default function SecurityServiceReportsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
       toast({ title: "Updated", description: "Service report updated." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -1329,6 +1330,7 @@ export default function SecurityServiceReportsPage() {
           queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
         }
         queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
       } catch (e) {
         // non-fatal — review status already saved
       }
