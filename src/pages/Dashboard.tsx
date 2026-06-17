@@ -361,7 +361,7 @@ function OperationsChannelDashboard() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <StatTile label="Pending Review" value={pendingReview} icon={Clock} tone="warning" hint="Action required" />
+        <StatTile label="Pending" value={pendingReview} icon={Clock} tone="warning" hint="Action required" />
         <StatTile label="Approved Today" value={approvedToday} icon={CheckCircle2} tone="success" />
         <StatTile label="Rejected" value={rejected} icon={XCircle} tone="destructive" />
         <StatTile label="Open Irregularities" value={openIrreg} icon={AlertTriangle} tone="destructive" />
