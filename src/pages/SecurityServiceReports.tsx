@@ -53,6 +53,14 @@ const dispatchStatusConfig: Record<string, string> = {
   "Completed": "bg-success/15 text-success",
 };
 
+const isOperationsApprovedReview = (status?: string | null) => {
+  const value = String(status || "").trim().toLowerCase();
+  return value === "approved" || value === "ready for billing";
+};
+
+const getWorkflowDispatchStatus = (row: { status?: string | null; review_status?: string | null }) =>
+  isOperationsApprovedReview(row.review_status) ? "Completed" : (row.status || "Pending");
+
 interface DispatchRow {
   id: string;
   flight_schedule_id: string | null;
@@ -150,11 +158,12 @@ export default function SecurityServiceReportsPage() {
 
   const tryOpenEdit = (r: DispatchRow) => {
     if (isReceivablesView) {
+      const workflowStatus = getWorkflowDispatchStatus(r);
       const completed = derivePipelineCompletedStages({
-        isLinked: r.status === "Completed",
+        isLinked: workflowStatus === "Completed",
         reviewStatus: r.review_status,
         clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
-        dispatchStatus: r.status,
+        dispatchStatus: workflowStatus,
         createdVia: (r as any).created_via,
       });
       // Receivables can edit once Station (task sheet saved) and Operations (review approved)
@@ -198,6 +207,31 @@ export default function SecurityServiceReportsPage() {
   const [pendingStatusFilter, setPendingStatusFilter] = useState("All Statuses");
   const [pendingDateFrom, setPendingDateFrom] = useState("");
   const [pendingDateTo, setPendingDateTo] = useState("");
+
+  const syncApprovedStatusCache = useCallback((opts: { dispatchId?: string | null; flightId?: string | null; reviewStatus?: string; reviewedBy?: string; reviewedAt?: string }) => {
+    const { dispatchId, flightId, reviewStatus = "Approved", reviewedBy, reviewedAt } = opts;
+    const patchDispatchRows = (old: any) => {
+      if (!Array.isArray(old)) return old;
+      return old.map((row: any) => {
+        const match = (dispatchId && row?.id === dispatchId) || (flightId && row?.flight_schedule_id === flightId);
+        return match
+          ? { ...row, status: "Completed", review_status: reviewStatus, reviewed_by: reviewedBy ?? row.reviewed_by, reviewed_at: reviewedAt ?? row.reviewed_at, fs_status: "Completed" }
+          : row;
+      });
+    };
+    queryClient.setQueriesData({ queryKey: ["dispatch_assignments"] }, patchDispatchRows);
+    queryClient.setQueriesData({ queryKey: ["v_dispatch_with_flight"] }, patchDispatchRows);
+    if (flightId) {
+      queryClient.setQueriesData({ queryKey: ["flight_schedules"] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((flight: any) => flight?.id === flightId ? { ...flight, status: "Completed" } : flight);
+      });
+      queryClient.setQueriesData({ queryKey: ["flight_schedules", "station-dispatch-pending"] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((flight: any) => flight?.id !== flightId);
+      });
+    }
+  }, [queryClient]);
   
 
   // Phase 3B Step 1: dispatch_assignments no longer holds mirror columns
@@ -347,7 +381,7 @@ export default function SecurityServiceReportsPage() {
   const approvePendingFlight = async (flightId: string) => {
     const { error } = await supabase
       .from("flight_schedules")
-      .update({ status: "Approved" } as any)
+      .update({ status: "Completed" } as any)
       .eq("id", flightId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -364,7 +398,7 @@ export default function SecurityServiceReportsPage() {
       .eq("flight_schedule_id", flightId);
 
     if (existingDispatches && existingDispatches.length > 0) {
-      await supabase
+      const { error: dispatchErr } = await supabase
         .from("dispatch_assignments")
         .update({
           status: "Completed",
@@ -373,6 +407,10 @@ export default function SecurityServiceReportsPage() {
           reviewed_at: reviewedAt,
         } as any)
         .eq("flight_schedule_id", flightId);
+      if (dispatchErr) {
+        toast({ title: "Error", description: dispatchErr.message, variant: "destructive" });
+        return;
+      }
     } else {
       // No task sheet was filed yet — create a minimal dispatch row so the
       // pipeline reflects the Operations approval (steps 1, 2 and 3 complete).
@@ -386,7 +424,7 @@ export default function SecurityServiceReportsPage() {
         // Phase 3B.0.6: dispatch_assignments writes are FS-linked only.
         // Mirror columns (station/airline/flight_no/service_type) are
         // resolved at read time via v_dispatch_with_flight.
-        await supabase.from("dispatch_assignments").insert({
+        const { error: insertErr } = await supabase.from("dispatch_assignments").insert({
           flight_schedule_id: flightId,
           flight_date: f.arrival_date || f.departure_date || new Date().toISOString().slice(0, 10),
           scheduled_start: f.sta || f.std || "",
@@ -398,6 +436,10 @@ export default function SecurityServiceReportsPage() {
           dispatched_by: reviewer,
           notes: f.remarks || "",
         } as any);
+        if (insertErr) {
+          toast({ title: "Error", description: insertErr.message, variant: "destructive" });
+          return;
+        }
       }
     }
 
@@ -407,11 +449,13 @@ export default function SecurityServiceReportsPage() {
       if (!Array.isArray(old)) return old;
       return old.filter((f: any) => f?.id !== flightId);
     });
+    syncApprovedStatusCache({ flightId, reviewedBy: reviewer, reviewedAt });
 
     // Refresh every downstream surface that consumes this flight / dispatch / invoice data
     // so the pipeline shows step 3 complete and the row appears in all reports.
     queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
     queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+    queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
     queryClient.invalidateQueries({ queryKey: ["service_reports"] });
     queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
     queryClient.invalidateQueries({ queryKey: ["invoices"] });
@@ -805,7 +849,7 @@ export default function SecurityServiceReportsPage() {
 
   // KPIs (computed from the merged/filtered list)
   const totalReports = filtered.length;
-  const completedReports = filtered.filter(r => r.status === "Completed").length;
+  const completedReports = filtered.filter(r => getWorkflowDispatchStatus(r) === "Completed").length;
   const approvedReports = filtered.filter(r => r.review_status === "Approved" || r.review_status === "Ready for Billing").length;
   const totalRevenue = filtered.reduce((s, r) => s + (r.total_charge || 0), 0);
   const totalOvertimeHrs = filtered.reduce((s, r) => s + (r.overtime_hours || 0), 0);
@@ -906,7 +950,7 @@ export default function SecurityServiceReportsPage() {
     let eligible = filtered.filter(r => {
       if ((r as any).isPending) return false;
       const reviewDone = (r.review_status || "").toLowerCase() === "approved" || (r.review_status || "").toLowerCase().includes("billing");
-      return r.status === "Completed" && reviewDone && r.contract_id;
+      return getWorkflowDispatchStatus(r) === "Completed" && reviewDone && r.contract_id;
     });
     // If the user has selected specific rows, restrict the action to those.
     if (selectedIds.size > 0) {
@@ -1317,6 +1361,13 @@ export default function SecurityServiceReportsPage() {
     // portals reflect the finished operational cycle.
     if (action === "Approved") {
       try {
+        syncApprovedStatusCache({
+          dispatchId: reviewRow.id,
+          flightId: reviewRow.flight_schedule_id,
+          reviewStatus: finalStatus,
+          reviewedBy: session?.user?.email || "Reviewer",
+          reviewedAt: new Date().toISOString(),
+        });
         // Mark the dispatch itself as Completed so the STATUS column flips.
         await supabase
           .from("dispatch_assignments")
@@ -1881,7 +1932,8 @@ export default function SecurityServiceReportsPage() {
                       {sorted.map(r => {
                         const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
                         const d = resolveSecurityRowDisplay(r as any, fd, (r as any).flightMeta);
-                        const sc = dispatchStatusConfig[r.status] || dispatchStatusConfig["Pending"];
+                        const workflowStatus = getWorkflowDispatchStatus(r);
+                        const sc = dispatchStatusConfig[workflowStatus] || dispatchStatusConfig["Pending"];
                         return (
                           <button
                             key={r.id}
@@ -1897,7 +1949,7 @@ export default function SecurityServiceReportsPage() {
                           >
                             <div className="flex items-center justify-between gap-2 mb-1">
                               <span className="font-mono text-xs font-bold text-foreground">{d.flightNo || r.flight_no || "—"}</span>
-                              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${sc}`}>{r.status}</span>
+                              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${sc}`}>{workflowStatus}</span>
                             </div>
                             <div className="text-xs text-muted-foreground mb-1">{r.airline || "—"} · {r.station}</div>
                             <div className="flex items-center gap-3 text-[11px] font-mono text-foreground">
@@ -1913,10 +1965,10 @@ export default function SecurityServiceReportsPage() {
                               const invStatus: "none" | "issued" | "paid" =
                                 baseInvStatus === "paid" || chargesSavedIds.has(r.id) || chargesPersisted ? "paid" : baseInvStatus;
                               const pipelineOpts = {
-                                isLinked: r.status === "Completed",
+                                isLinked: workflowStatus === "Completed",
                                 reviewStatus: r.review_status,
                                 clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
-                                dispatchStatus: r.status,
+                                dispatchStatus: workflowStatus,
                                 invoiceStatus: invStatus,
                                 createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                               };
@@ -1979,7 +2031,8 @@ export default function SecurityServiceReportsPage() {
                       </td>
                     </tr>
                   ) : pageData.map((r, i) => {
-                    const sc = dispatchStatusConfig[r.status] || dispatchStatusConfig["Pending"];
+                    const workflowStatus = getWorkflowDispatchStatus(r);
+                    const sc = dispatchStatusConfig[workflowStatus] || dispatchStatusConfig["Pending"];
                     const hasIrregularity = r.irregularity_id && linkedIrregularities.has(r.irregularity_id);
                     const isPending = (r as any).isPending === true;
                     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
@@ -2134,7 +2187,7 @@ export default function SecurityServiceReportsPage() {
                           );
                         })()}
                         <td className="px-3 py-2.5">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc}`}>{r.status}</span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc}`}>{workflowStatus}</span>
                           {hasIrregularity && (
                             <span title="Has irregularity"><AlertTriangle size={12} className="inline ml-1 text-destructive" /></span>
                           )}
@@ -2155,19 +2208,19 @@ export default function SecurityServiceReportsPage() {
                             return (
                               <PipelineStepper
                                 currentStage={derivePipelineStage({
-                                  isLinked: r.status === "Completed",
+                                  isLinked: workflowStatus === "Completed",
                                   reviewStatus: r.review_status,
                                   clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
-                                  dispatchStatus: r.status,
+                                  dispatchStatus: workflowStatus,
                                   channel: activeChannel,
                                   invoiceStatus: invStatus,
                                   createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                                 })}
                                 completedStages={derivePipelineCompletedStages({
-                                  isLinked: r.status === "Completed",
+                                  isLinked: workflowStatus === "Completed",
                                   reviewStatus: r.review_status,
                                   clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
-                                  dispatchStatus: r.status,
+                                  dispatchStatus: workflowStatus,
                                   invoiceStatus: invStatus,
                                   createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                                 })}

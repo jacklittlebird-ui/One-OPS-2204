@@ -9,7 +9,7 @@
 
 // ---------- Canonical backend values ----------
 
-export const FLIGHT_SCHEDULE_STATUSES = ["Pending", "Approved", "Rejected"] as const;
+export const FLIGHT_SCHEDULE_STATUSES = ["Pending", "Approved", "Rejected", "Completed"] as const;
 export type FlightScheduleStatus = (typeof FLIGHT_SCHEDULE_STATUSES)[number];
 
 export const DISPATCH_STATUSES = ["Pending", "Approved", "Completed", "Cancelled"] as const;
@@ -48,6 +48,7 @@ const FLIGHT_STATUS_NORMALIZE: Record<string, FlightScheduleStatus> = {
   pending: "Pending",
   approved: "Approved",
   rejected: "Rejected",
+  completed: "Completed",
 };
 export function normalizeFlightStatus(raw?: string | null): FlightScheduleStatus | "" {
   if (!raw) return "";
@@ -88,6 +89,7 @@ export const FLIGHT_STATUS_COLORS: Record<FlightScheduleStatus, string> = {
   Pending: "bg-warning/15 text-warning border-warning/30",
   Approved: "bg-success/15 text-success border-success/30",
   Rejected: "bg-destructive/15 text-destructive border-destructive/30",
+  Completed: "bg-success/15 text-success border-success/30",
 };
 
 export function reviewStatusClass(raw?: string | null): string {
