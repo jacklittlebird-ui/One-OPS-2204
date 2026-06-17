@@ -71,7 +71,9 @@ export function derivePipelineStage(opts: {
 
   // Step 2 (Station) is complete when the station task sheet has been saved
   // and submitted for Operations review. review_status is the source of truth.
-  let step2Done = reviewSubmitted;
+  // Records that originated in the Station channel mark step 2 done as soon as
+  // the task sheet exists (dispatch completed) or the record is linked.
+  let step2Done = reviewSubmitted || (createdByStation && (dispatchCompleted || opts.isLinked));
 
   // Step 3 (Operations) is complete when operations has approved (or marked Ready for Billing).
   let step3Done = REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any);
@@ -147,12 +149,22 @@ export function derivePipelineCompletedStages(opts: {
   const inv = opts.invoiceStatus || "none";
   const origin = (opts.createdVia || "").toLowerCase();
   const createdByClearance = origin === "clearance" || origin === "";
+  const createdByStation = origin === "station";
+  const dispatchCompleted = (opts.dispatchStatus || "").toLowerCase() === "completed";
+  const reviewSubmitted = !!rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any);
 
   const done: PipelineStage[] = [];
+  // Step 1 (Clearance) is only ever completed for records that originated in
+  // the Clearance channel. Station-created records intentionally skip it.
   if (createdByClearance) {
     done.push("clearance");
   }
-  if (rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any)) done.push("station");
+  // Step 2 (Station) — complete when the task sheet is saved, submitted for
+  // review, OR the record was originated by the station (which by definition
+  // means the station step is already done).
+  if (reviewSubmitted || dispatchCompleted || createdByStation) {
+    done.push("station");
+  }
   if (REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any)) done.push("operations");
   if (inv === "paid") done.push("receivables");
   return done;
