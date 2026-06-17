@@ -1143,7 +1143,7 @@ export default function SecurityServiceReportsPage() {
           std: taskSheet.std || "",
           skd_type: taskSheet.flight_type || "",
           clearance_type: row.service_type || "Arrival Security",
-          status: "Pending" as const,
+          status: "Approved" as const,
           authority: row.station || "CAI",
           handling_agent: "",
           arrival_date: normalizedDates.arrivalDate || null,
