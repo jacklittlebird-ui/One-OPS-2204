@@ -1330,6 +1330,7 @@ export default function SecurityServiceReportsPage() {
           queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
         }
         queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
       } catch (e) {
         // non-fatal — review status already saved
       }
