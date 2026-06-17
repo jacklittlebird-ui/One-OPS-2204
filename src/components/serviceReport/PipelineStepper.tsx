@@ -71,7 +71,9 @@ export function derivePipelineStage(opts: {
 
   // Step 2 (Station) is complete when the station task sheet has been saved
   // and submitted for Operations review. review_status is the source of truth.
-  let step2Done = reviewSubmitted;
+  // Records that originated in the Station channel mark step 2 done as soon as
+  // the task sheet exists (dispatch completed) or the record is linked.
+  let step2Done = reviewSubmitted || (createdByStation && (dispatchCompleted || opts.isLinked));
 
   // Step 3 (Operations) is complete when operations has approved (or marked Ready for Billing).
   let step3Done = REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any);
