@@ -59,17 +59,18 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const { station: userStation, isStationScoped } = useUserStation();
 
-  const { data: flights = [], isLoading } = useQuery({
-    queryKey: ["all_clearance_flights_readonly", isStationScoped ? userStation : null],
+  const [loadedRows, setLoadedRows] = useState(0);
+  const { data: flights = [], isLoading, isFetching } = useQuery({
+    queryKey: ["all_clearance_flights_readonly", isStationScoped ? userStation : null, securityOnly],
     queryFn: async () => {
-      let q = supabase
-        .from("flight_schedules")
-        .select("*")
-        .order("arrival_date", { ascending: false, nullsFirst: false });
-      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data || []) as unknown as FlightRow[];
+      setLoadedRows(0);
+      // Shared filter layer → identical totals to the Operations Security tab.
+      const rows = await fetchSecurityFlights(supabase as any, {
+        station: isStationScoped && userStation ? userStation : null,
+        includeAllForStation: !securityOnly,
+        onPage: ({ loaded }) => setLoadedRows(loaded),
+      });
+      return rows as unknown as FlightRow[];
     },
   });
 
