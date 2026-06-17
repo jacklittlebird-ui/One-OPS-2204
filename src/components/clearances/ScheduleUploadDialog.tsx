@@ -205,8 +205,11 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
 
     try {
       const processed = pairTurnaroundFlights(flights);
+      const fallbackType = defaultCategory === "security" ? "Arrival Security" : "Full Handling";
       const records = processed.map(f => {
-        const ct = f.service_type || "Full Handling";
+        let ct = f.service_type || fallbackType;
+        // Hard rule: tab dictates category — never cross-insert.
+        if (getServiceCategory(ct as any) !== defaultCategory) ct = fallbackType;
         const clearSta = ct === "Departure Security";
         const clearStd = ct === "Arrival Security";
         return {
