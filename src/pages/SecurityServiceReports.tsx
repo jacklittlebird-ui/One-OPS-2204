@@ -344,11 +344,10 @@ export default function SecurityServiceReportsPage() {
         allPending.push(...(data || []));
         if (!data || data.length < PAGE_SIZE) break;
       }
-      const flights = allPending.filter((f: any) => {
-        const purpose = f.purpose || "";
-        const remarks = f.remarks || "";
-        return purpose === "Station Dispatch" || purpose === "Security Service" || remarks.includes("Added from Station Dispatch") || remarks.includes("Added from Security Service") || remarks.includes("Added from Service Report");
-      });
+      // Surface every Pending flight created by a Station (regardless of which
+      // module it came from). Operations needs visibility into all station-
+      // originated flights, not only those tagged with a known purpose/remark.
+      const flights = allPending;
       if (flights.length === 0) return [] as any[];
 
       // Enrich each pending flight with its latest dispatch_assignments row so
