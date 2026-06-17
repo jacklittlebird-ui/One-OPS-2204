@@ -246,7 +246,8 @@ export default function SecurityServiceReportsPage() {
         let q: any = (supabase as any)
           .from("v_dispatch_with_flight")
           .select("*")
-          .order("flight_date", { ascending: false })
+          .order("flight_date", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = q.eq("station", userStation);
         if (dateFrom) q = q.gte("flight_date", dateFrom);
