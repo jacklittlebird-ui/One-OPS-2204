@@ -1300,7 +1300,7 @@ export default function SecurityServiceReportsPage() {
   };
 
   // Review actions
-  const handleReviewAction = (action: "Approved" | "Rejected") => {
+  const handleReviewAction = async (action: "Approved" | "Rejected") => {
     if (!reviewRow) return;
     // Approving a "Modified" report (resubmitted after rejection) goes straight to Ready for Billing.
     const finalStatus =
@@ -1312,6 +1312,19 @@ export default function SecurityServiceReportsPage() {
       reviewed_by: session?.user?.email || "Reviewer",
       reviewed_at: new Date().toISOString(),
     });
+    // On approval, mark the linked flight schedule as Completed so Clearance/Station
+    // portals reflect the finished operational cycle.
+    if (action === "Approved" && reviewRow.flight_schedule_id) {
+      try {
+        await supabase
+          .from("flight_schedules")
+          .update({ status: "Completed" } as any)
+          .eq("id", reviewRow.flight_schedule_id);
+        queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+      } catch (e) {
+        // non-fatal — review status already saved
+      }
+    }
     setReviewRow(null);
     setReviewComment("");
   };
