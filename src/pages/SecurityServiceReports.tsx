@@ -1305,7 +1305,7 @@ export default function SecurityServiceReportsPage() {
     // Approving a "Modified" report (resubmitted after rejection) goes straight to Ready for Billing.
     const finalStatus =
       action === "Approved" && reviewRow.review_status === "Modified" ? "Ready for Billing" : action;
-    updateMutation.mutate({
+    await updateMutation.mutateAsync({
       id: reviewRow.id,
       review_status: finalStatus,
       review_comment: reviewComment,
