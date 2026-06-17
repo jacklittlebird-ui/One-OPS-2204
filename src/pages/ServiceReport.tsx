@@ -756,7 +756,7 @@ function HandlingServiceReportContent() {
     if (isStationScoped) return [];
     const reportsByFlight = new Map<string, ReportFormData[]>();
     reports.forEach(r => {
-      const key = r.flightNo.trim().toLowerCase();
+      const key = (r.flightNo || "").trim().toLowerCase();
       if (!reportsByFlight.has(key)) reportsByFlight.set(key, []);
       reportsByFlight.get(key)!.push(r);
     });
