@@ -12,6 +12,7 @@ import {
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useUserStation } from "@/contexts/UserStationContext";
+import { fetchSecurityFlights } from "@/lib/securityFlightsQuery";
 
 interface AllClearanceFlightsPageProps {
   /** When true, only Security clearance types are shown (Operations security view). */
