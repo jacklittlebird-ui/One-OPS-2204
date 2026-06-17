@@ -1476,9 +1476,17 @@ function HandlingServiceReportContent() {
                     }
                     approved += slice.length;
                   }
+                  // Sync linked flight_schedules to Completed
+                  const fsIds = targets.map(r => r.flightScheduleId).filter(Boolean) as string[];
+                  if (fsIds.length > 0) {
+                    for (let i = 0; i < fsIds.length; i += CHUNK) {
+                      await supabase.from("flight_schedules").update({ status: "Completed" } as any).in("id", fsIds.slice(i, i + CHUNK));
+                    }
+                  }
                 } finally {
                   setBulkApproving(false);
                   queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
+                  queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
                 }
                 if (firstError) {
                   toast({ title: `Partial approval (${approved}/${ids.length})`, description: firstError, variant: "destructive" });
@@ -1649,6 +1657,10 @@ function HandlingServiceReportContent() {
                               <button onClick={async () => {
                                 const reviewedAt = new Date().toISOString();
                                 await supabase.from("service_reports").update({ review_status: "approved", reviewed_by: "Operations", reviewed_at: reviewedAt } as any).eq("id", r.id);
+                                if (r.flightScheduleId) {
+                                  await supabase.from("flight_schedules").update({ status: "Completed" } as any).eq("id", r.flightScheduleId);
+                                  queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+                                }
                                 // Update cache in place to preserve current row order (no refetch / no re-sort)
                                 queryClient.setQueriesData({ queryKey: ["service_reports"] }, (old: any) => {
                                   if (!Array.isArray(old)) return old;
