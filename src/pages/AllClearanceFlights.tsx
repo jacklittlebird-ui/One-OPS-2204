@@ -12,6 +12,7 @@ import {
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useUserStation } from "@/contexts/UserStationContext";
+import { fetchSecurityFlights } from "@/lib/securityFlightsQuery";
 
 interface AllClearanceFlightsPageProps {
   /** When true, only Security clearance types are shown (Operations security view). */
@@ -58,17 +59,18 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const { station: userStation, isStationScoped } = useUserStation();
 
-  const { data: flights = [], isLoading } = useQuery({
-    queryKey: ["all_clearance_flights_readonly", isStationScoped ? userStation : null],
+  const [loadedRows, setLoadedRows] = useState(0);
+  const { data: flights = [], isLoading, isFetching } = useQuery({
+    queryKey: ["all_clearance_flights_readonly", isStationScoped ? userStation : null, securityOnly],
     queryFn: async () => {
-      let q = supabase
-        .from("flight_schedules")
-        .select("*")
-        .order("arrival_date", { ascending: false, nullsFirst: false });
-      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data || []) as unknown as FlightRow[];
+      setLoadedRows(0);
+      // Shared filter layer → identical totals to the Operations Security tab.
+      const rows = await fetchSecurityFlights(supabase as any, {
+        station: isStationScoped && userStation ? userStation : null,
+        includeAllForStation: !securityOnly,
+        onPage: ({ loaded }) => setLoadedRows(loaded),
+      });
+      return rows as unknown as FlightRow[];
     },
   });
 
@@ -134,6 +136,11 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
           <Badge variant="outline" className="gap-1">
             <Eye size={11} /> Read-only
           </Badge>
+          {isFetching && (
+            <Badge variant="outline" className="gap-1 animate-pulse">
+              Fetching more… {loadedRows.toLocaleString()} loaded
+            </Badge>
+          )}
           <Badge variant="secondary">{filtered.length} flight{filtered.length === 1 ? "" : "s"}</Badge>
         </div>
       </div>

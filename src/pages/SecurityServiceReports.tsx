@@ -308,33 +308,21 @@ export default function SecurityServiceReportsPage() {
   // security (Handling tab is empty for stations and ops needs visibility into
   // every station's flights), so skip the clearance_type filter.
   const includeAllFlights = (isStationScoped && !!userStation) || isOperationsView;
-  const { data: securityFlights = [] } = useQuery({
+  const [securityLoadedRows, setSecurityLoadedRows] = useState(0);
+  const { data: securityFlights = [], isFetching: securityFlightsFetching } = useQuery({
     queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, dateFrom || null, dateTo || null],
     queryFn: async () => {
-      const all: any[] = [];
-      const PAGE_SIZE = 1000;
-      for (let from = 0; ; from += PAGE_SIZE) {
-        let q = supabase
-          .from("flight_schedules")
-          .select("*, airlines:airline_id(name, iata_code)")
-          .order("arrival_date", { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
-        if (isStationScoped && userStation) {
-          q = (q as any).eq("authority", userStation);
-        } else if (!includeAllFlights) {
-          q = (q as any).in("clearance_type", SECURITY_CLEARANCE_TYPES);
-        }
-        // Never surface clearance-cancelled or clearance-rejected flights as
-        // pending security work.
-        q = (q as any).not("status", "in", "(Cancelled,Rejected)");
-        if (dateFrom) q = (q as any).gte("arrival_date", dateFrom);
-        if (dateTo) q = (q as any).lte("arrival_date", dateTo);
-        const { data, error } = await q;
-        if (error) throw error;
-        all.push(...(data || []));
-        if (!data || data.length < PAGE_SIZE) break;
-      }
-      return all as any[];
+      setSecurityLoadedRows(0);
+      // Shared filter layer → identical totals to the Clearance Security tab.
+      const { fetchSecurityFlights } = await import("@/lib/securityFlightsQuery");
+      return await fetchSecurityFlights(supabase as any, {
+        station: isStationScoped && userStation ? userStation : null,
+        includeAllForStation: includeAllFlights,
+        dateFrom: dateFrom || null,
+        dateTo: dateTo || null,
+        select: "*, airlines:airline_id(name, iata_code)",
+        onPage: ({ loaded }) => setSecurityLoadedRows(loaded),
+      });
     },
     enabled: !!session,
   });
@@ -1511,6 +1499,11 @@ export default function SecurityServiceReportsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {securityFlightsFetching && (
+            <Badge variant="outline" className="gap-1 animate-pulse">
+              Fetching more… {securityLoadedRows.toLocaleString()} loaded
+            </Badge>
+          )}
           <button
             onClick={() => {
               queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
