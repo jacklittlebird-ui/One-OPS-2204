@@ -335,7 +335,7 @@ export default function SecurityServiceReportsPage() {
         let q = supabase
           .from("flight_schedules")
           .select("*, airlines:airline_id(name, iata_code)")
-          .eq("status", "Pending")
+          .neq("status", "Completed")
           .order("arrival_date", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
@@ -344,10 +344,13 @@ export default function SecurityServiceReportsPage() {
         allPending.push(...(data || []));
         if (!data || data.length < PAGE_SIZE) break;
       }
-      // Surface every Pending flight created by a Station (regardless of which
-      // module it came from). Operations needs visibility into all station-
-      // originated flights, not only those tagged with a known purpose/remark.
-      const flights = allPending;
+      // Surface every station-created flight that Operations has not yet
+      // approved (status !== "Completed"). Approval flips the flight status to
+      // "Completed", so this filter cleanly excludes already-approved rows.
+      const flights = allPending.filter((f: any) => {
+        const origin = String(f.created_via || "").toLowerCase();
+        return origin === "station";
+      });
       if (flights.length === 0) return [] as any[];
 
       // Enrich each pending flight with its latest dispatch_assignments row so
