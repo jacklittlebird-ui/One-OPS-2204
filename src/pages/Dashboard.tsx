@@ -230,7 +230,7 @@ function StationDashboard() {
             icon={r.review_status === "approved" ? CheckCircle2 : r.review_status === "rejected" ? XCircle : Clock}
             tone={r.review_status === "approved" ? "success" : r.review_status === "rejected" ? "destructive" : "warning"}
             title={<span><span className="font-semibold">{r.flight_no || "—"}</span> · {r.operator || "—"} · {r.station || "—"}</span>}
-            meta={<>{r.handling_type || "—"} · {r.review_status} · {relTime(r.created_at)}</>}
+            meta={<>{r.handling_type || "—"} · {r.review_status === "Pending Review" ? "Pending" : r.review_status} · {relTime(r.created_at)}</>}
           />
         ))}
         {reports.length === 0 && <p className="text-xs text-muted-foreground">No reports yet.</p>}
