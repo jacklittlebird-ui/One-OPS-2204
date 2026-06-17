@@ -52,7 +52,6 @@ export function derivePipelineStage(opts: {
   createdVia?: string;
 }): PipelineStage {
   const rsCanonical = normalizeReviewStatus(opts.reviewStatus);
-  const rs = rsCanonical.toLowerCase();
   const dispatchCompleted = (opts.dispatchStatus || "").toLowerCase() === "completed";
   const csCanonical = normalizeFlightStatus(opts.clearanceStatus);
   const cs = csCanonical.toLowerCase();
@@ -145,9 +144,6 @@ export function derivePipelineCompletedStages(opts: {
   createdVia?: string;
 }): PipelineStage[] {
   const rsCanonical = normalizeReviewStatus(opts.reviewStatus);
-  const dispatchCompleted = (opts.dispatchStatus || "").toLowerCase() === "completed";
-  const csCanonical = normalizeFlightStatus(opts.clearanceStatus);
-  const cs = csCanonical.toLowerCase();
   const inv = opts.invoiceStatus || "none";
   const origin = (opts.createdVia || "").toLowerCase();
   const createdByClearance = origin === "clearance" || origin === "";
