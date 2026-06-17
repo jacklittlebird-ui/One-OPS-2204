@@ -820,7 +820,7 @@ function HandlingServiceReportContent() {
       const ht = (r.handlingType || "").toString().toLowerCase();
       if (ht.includes("security")) return;
       // Skip reports whose flight has a dispatch_assignment (Security flight)
-      if (securityFlightNos.has(r.flightNo.trim().toLowerCase())) return;
+      if (securityFlightNos.has((r.flightNo || "").trim().toLowerCase())) return;
       rows.push({ ...r, isLinked: true });
     });
 
