@@ -749,7 +749,12 @@ export default function SecurityServiceReportsPage() {
       rows = rows.filter(r => set.has(r.id));
     }
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
-    if (reviewFilter !== "All") rows = rows.filter(r => r.review_status === reviewFilter);
+    if (reviewFilter !== "All") rows = rows.filter(r => {
+      const rs = String(r.review_status || "").toLowerCase();
+      const f = reviewFilter.toLowerCase();
+      if (f === "pending" || f === "pending review") return rs === "pending" || rs === "pending review";
+      return rs === f;
+    });
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
     if (dateFrom) rows = rows.filter(r => (r.flight_date || "") >= dateFrom);
     if (dateTo) rows = rows.filter(r => (r.flight_date || "") <= dateTo);
