@@ -63,15 +63,16 @@ export function derivePipelineStage(opts: {
   const createdByStation = origin === "station";
 
   // --- Step completion flags (record-view truth) ---
-  // Step 1 (Clearance) is completed whenever the record originated in the
-  // Clearance module — the act of creation by clearance counts as step 1 done.
+  const reviewSubmitted = !!rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any);
+
+  // Step 1 (Clearance) is completed when the flight is approved/completed, or
+  // when a linked/submitted record proves the clearance handoff already happened.
   // Records created directly by the Station portal skip step 1 entirely.
-  let step1Done = createdByClearance;
+  let step1Done = createdByClearance && (cs === "approved" || cs === "completed" || opts.isLinked || reviewSubmitted || dispatchCompleted);
 
   // Step 2 (Station) is complete when the station task sheet has been saved
-  // (dispatch.status === "Completed") OR review_status has advanced past Draft.
-  const reviewSubmitted = !!rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any);
-  let step2Done = reviewSubmitted || dispatchCompleted;
+  // and submitted for Operations review. review_status is the source of truth.
+  let step2Done = reviewSubmitted;
 
   // Step 3 (Operations) is complete when operations has approved (or marked Ready for Billing).
   let step3Done = REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any);
@@ -155,7 +156,7 @@ export function derivePipelineCompletedStages(opts: {
   if (createdByClearance) {
     done.push("clearance");
   }
-  if ((rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any)) || dispatchCompleted) done.push("station");
+  if (rsCanonical && REVIEW_STATUSES_AFTER_STATION.includes(rsCanonical as any)) done.push("station");
   if (REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any)) done.push("operations");
   if (inv === "paid") done.push("receivables");
   return done;
