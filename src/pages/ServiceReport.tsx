@@ -765,7 +765,7 @@ function HandlingServiceReportContent() {
     const usedReportIds = new Set<string>();
 
     scheduleSources.forEach(source => {
-      const key = source.flightNo.trim().toLowerCase();
+      const key = (source.flightNo || "").trim().toLowerCase();
       const matchedReports = reportsByFlight.get(key) || [];
 
       if (matchedReports.length > 0) {
