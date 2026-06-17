@@ -36,7 +36,7 @@ import { parseDeletionRequests } from "@/lib/statusRouting";
 
 
 
-const REVIEW_STATUSES = ["Draft", "Pending Review", "Approved", "Ready for Billing"] as const;
+const WORKFLOW_STATUSES = ["Pending", "In Progress", "Completed"] as const;
 
 const reviewStatusConfig: Record<string, { icon: React.ReactNode; cls: string }> = {
   "Draft": { icon: <Pencil size={11} />, cls: "bg-muted text-muted-foreground" },
