@@ -1499,6 +1499,11 @@ export default function SecurityServiceReportsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {securityFlightsFetching && (
+            <Badge variant="outline" className="gap-1 animate-pulse">
+              Fetching more… {securityLoadedRows.toLocaleString()} loaded
+            </Badge>
+          )}
           <button
             onClick={() => {
               queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
