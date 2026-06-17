@@ -683,7 +683,7 @@ function HandlingServiceReportContent() {
         c.purpose === "Security Service" ||
         ((c.remarks || "") as string).includes("Added from Security Service");
       if (!isSec) return;
-      const fn = getScheduleFlightNo(c).trim().toLowerCase();
+      const fn = (getScheduleFlightNo(c) || "").trim().toLowerCase();
       if (fn) s.add(fn);
     });
     return s;
