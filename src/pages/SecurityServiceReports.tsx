@@ -1109,6 +1109,7 @@ export default function SecurityServiceReportsPage() {
         const fsSync: Record<string, any> = {
           arrival_date: normalizedDates.arrivalDate || null,
           departure_date: normalizedDates.departureDate || null,
+          status: "Approved",
         };
         if (taskSheet.registration !== undefined) fsSync.registration = taskSheet.registration || "";
         if (taskSheet.route !== undefined) fsSync.route = taskSheet.route || "";
