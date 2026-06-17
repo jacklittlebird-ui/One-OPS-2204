@@ -240,19 +240,27 @@ export default function SecurityServiceReportsPage() {
   const { data: dispatches = [], isLoading } = useQuery({
     queryKey: ["v_dispatch_with_flight", "service-reports", session?.user?.id, isStationScoped ? userStation : null, dateFrom || null, dateTo || null],
     queryFn: async () => {
-      let q: any = (supabase as any)
-        .from("v_dispatch_with_flight")
-        .select("*")
-        .order("flight_date", { ascending: false });
-      if (isStationScoped && userStation) q = q.eq("station", userStation);
-      if (dateFrom) q = q.gte("flight_date", dateFrom);
-      if (dateTo) q = q.lte("flight_date", dateTo);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as DispatchRow[];
+      const all: any[] = [];
+      const PAGE_SIZE = 1000;
+      for (let from = 0; ; from += PAGE_SIZE) {
+        let q: any = (supabase as any)
+          .from("v_dispatch_with_flight")
+          .select("*")
+          .order("flight_date", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (isStationScoped && userStation) q = q.eq("station", userStation);
+        if (dateFrom) q = q.gte("flight_date", dateFrom);
+        if (dateTo) q = q.lte("flight_date", dateTo);
+        const { data, error } = await q;
+        if (error) throw error;
+        all.push(...(data || []));
+        if (!data || data.length < PAGE_SIZE) break;
+      }
+      return all as DispatchRow[];
     },
     enabled: !!session,
   });
+
 
   // Fetch irregularity reports for linking
   const { data: irregularities = [] } = useQuery({
