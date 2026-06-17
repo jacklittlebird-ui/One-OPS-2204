@@ -1767,7 +1767,7 @@ export default function SecurityServiceReportsPage() {
           </select>
           <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>
-            {REVIEW_STATUSES.map(s => <option key={s}>{s}</option>)}
+            {REVIEW_STATUSES.map(s => <option key={s} value={s}>{s === "Pending Review" ? "Pending" : s}</option>)}
             <option>Rejected</option>
           </select>
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
