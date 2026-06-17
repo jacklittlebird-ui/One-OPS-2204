@@ -453,13 +453,15 @@ export default function SecurityServiceReportsPage() {
 
     // Refresh every downstream surface that consumes this flight / dispatch / invoice data
     // so the pipeline shows step 3 complete and the row appears in all reports.
-    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-    queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
-    queryClient.invalidateQueries({ queryKey: ["service_reports"] });
-    queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
-    queryClient.invalidateQueries({ queryKey: ["invoices"] });
-    queryClient.invalidateQueries({ queryKey: ["invoices_for_security_pipeline"] });
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["dispatch_assignments"], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["v_dispatch_with_flight"], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["service_reports"], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["v_service_report_with_flight"], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["invoices"], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["invoices_for_security_pipeline"], type: "active" }),
+    ]);
     toast({ title: "Approved", description: "Flight approved by Operations — removed from Pending Approval and advanced to Receivables." });
   };
 
@@ -1361,12 +1363,13 @@ export default function SecurityServiceReportsPage() {
     // portals reflect the finished operational cycle.
     if (action === "Approved") {
       try {
+        const reviewedAt = new Date().toISOString();
         syncApprovedStatusCache({
           dispatchId: reviewRow.id,
           flightId: reviewRow.flight_schedule_id,
           reviewStatus: finalStatus,
           reviewedBy: session?.user?.email || "Reviewer",
-          reviewedAt: new Date().toISOString(),
+          reviewedAt,
         });
         // Mark the dispatch itself as Completed so the STATUS column flips.
         await supabase
@@ -1378,10 +1381,12 @@ export default function SecurityServiceReportsPage() {
             .from("flight_schedules")
             .update({ status: "Completed" } as any)
             .eq("id", reviewRow.flight_schedule_id);
-          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
         }
-        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" }),
+          queryClient.refetchQueries({ queryKey: ["dispatch_assignments"], type: "active" }),
+          queryClient.refetchQueries({ queryKey: ["v_dispatch_with_flight"], type: "active" }),
+        ]);
       } catch (e) {
         // non-fatal — review status already saved
       }
