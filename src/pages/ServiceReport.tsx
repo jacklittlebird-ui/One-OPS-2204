@@ -683,7 +683,7 @@ function HandlingServiceReportContent() {
         c.purpose === "Security Service" ||
         ((c.remarks || "") as string).includes("Added from Security Service");
       if (!isSec) return;
-      const fn = getScheduleFlightNo(c).trim().toLowerCase();
+      const fn = (getScheduleFlightNo(c) || "").trim().toLowerCase();
       if (fn) s.add(fn);
     });
     return s;
@@ -756,7 +756,7 @@ function HandlingServiceReportContent() {
     if (isStationScoped) return [];
     const reportsByFlight = new Map<string, ReportFormData[]>();
     reports.forEach(r => {
-      const key = r.flightNo.trim().toLowerCase();
+      const key = (r.flightNo || "").trim().toLowerCase();
       if (!reportsByFlight.has(key)) reportsByFlight.set(key, []);
       reportsByFlight.get(key)!.push(r);
     });
@@ -765,7 +765,7 @@ function HandlingServiceReportContent() {
     const usedReportIds = new Set<string>();
 
     scheduleSources.forEach(source => {
-      const key = source.flightNo.trim().toLowerCase();
+      const key = (source.flightNo || "").trim().toLowerCase();
       const matchedReports = reportsByFlight.get(key) || [];
 
       if (matchedReports.length > 0) {
@@ -820,7 +820,7 @@ function HandlingServiceReportContent() {
       const ht = (r.handlingType || "").toString().toLowerCase();
       if (ht.includes("security")) return;
       // Skip reports whose flight has a dispatch_assignment (Security flight)
-      if (securityFlightNos.has(r.flightNo.trim().toLowerCase())) return;
+      if (securityFlightNos.has((r.flightNo || "").trim().toLowerCase())) return;
       rows.push({ ...r, isLinked: true });
     });
 
