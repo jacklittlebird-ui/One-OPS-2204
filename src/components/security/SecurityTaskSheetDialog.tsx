@@ -430,6 +430,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       if (m.std) restored.std = m.std;
       if (!restored.ata && ata) restored.ata = ata;
       if (!restored.atd && atd) restored.atd = atd;
+      // Shift Start/End: when the saved task sheet lacks these fields (e.g.
+      // legacy rows or rows created via the Station Dispatch form which only
+      // writes the actual_start/actual_end columns), fall back to those
+      // columns so the edit form mirrors what the table/record view shows.
+      if (!restored.shift_start && (row as any).actual_start) restored.shift_start = (row as any).actual_start;
+      if (!restored.shift_end && (row as any).actual_end) restored.shift_end = (row as any).actual_end;
       // Registration & route: master wins when present; otherwise keep edited value.
       if (m.registration) restored.registration = m.registration;
       if (m.route) restored.route = m.route;
@@ -440,6 +446,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         flight_type: m.skd_type || "",
         sta: m.sta || "", std: m.std || "", ata: ata || "", atd: atd || "",
         registration: m.registration || "", route: m.route || "",
+        shift_start: (row as any).actual_start || "",
+        shift_end: (row as any).actual_end || "",
         remarks: row.notes || "",
       });
     }
