@@ -582,8 +582,19 @@ export default function ClearancesPage() {
                   </TableHeader>
                   <TableBody>
                     {pag.pageRows.map(c => {
-                      const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.Pending;
-                      const statusIcon = c.status === "Pending" ? <Clock size={12} /> : c.status === "Approved" ? <CheckCircle2 size={12} /> : c.status === "Rejected" ? <XCircle size={12} /> : <AlertTriangle size={12} />;
+                      // Derive display status: if a linked dispatch is Completed, surface that
+                      // so the Clearance portal reflects downstream Operations progress.
+                      const linkedDispatchEarly = findDispatch(c);
+                      const dispatchStatusLower = String(linkedDispatchEarly?.status || "").toLowerCase();
+                      const displayStatus = c.status === "Rejected"
+                        ? "Rejected"
+                        : dispatchStatusLower === "completed"
+                          ? "Completed"
+                          : dispatchStatusLower === "in progress" || dispatchStatusLower === "in_progress"
+                            ? "Approved"
+                            : c.status;
+                      const cfg = STATUS_CONFIG[displayStatus] || STATUS_CONFIG.Pending;
+                      const statusIcon = displayStatus === "Pending" ? <Clock size={12} /> : displayStatus === "Approved" || displayStatus === "Completed" ? <CheckCircle2 size={12} /> : displayStatus === "Rejected" ? <XCircle size={12} /> : <AlertTriangle size={12} />;
                       const deletionEntries = parseDeletionRequests(c.remarks);
                       const latestDeletionEntry = deletionEntries[deletionEntries.length - 1];
                       const deletionLabel = latestDeletionEntry?.kind === "ops_delete" ? "Operations Delete Request:" : "Station Return to Clearance:";
