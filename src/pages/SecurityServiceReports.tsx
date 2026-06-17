@@ -246,7 +246,8 @@ export default function SecurityServiceReportsPage() {
         let q: any = (supabase as any)
           .from("v_dispatch_with_flight")
           .select("*")
-          .order("flight_date", { ascending: false })
+          .order("flight_date", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = q.eq("station", userStation);
         if (dateFrom) q = q.gte("flight_date", dateFrom);
@@ -339,7 +340,8 @@ export default function SecurityServiceReportsPage() {
           .from("flight_schedules")
           .select("*, airlines:airline_id(name, iata_code)")
           .neq("status", "Completed")
-          .order("arrival_date", { ascending: true })
+          .order("arrival_date", { ascending: true, nullsFirst: false })
+          .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
         const { data, error } = await q;
