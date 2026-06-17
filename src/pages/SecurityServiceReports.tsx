@@ -340,7 +340,8 @@ export default function SecurityServiceReportsPage() {
           .from("flight_schedules")
           .select("*, airlines:airline_id(name, iata_code)")
           .neq("status", "Completed")
-          .order("arrival_date", { ascending: true })
+          .order("arrival_date", { ascending: true, nullsFirst: false })
+          .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
         const { data, error } = await q;
