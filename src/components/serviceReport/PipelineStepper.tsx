@@ -82,7 +82,7 @@ export function derivePipelineStage(opts: {
   // --- Form-view overrides ---
   if (opts.formView) {
     if (ch === "station") {
-      step1Done = createdByClearance && step1Done;
+      step1Done = true;
       // When EDITING an existing record (isLinked), keep step 2 as derived
       // (station already saved → complete). Only force it false for NEW records.
       if (!opts.isLinked) step2Done = false;
