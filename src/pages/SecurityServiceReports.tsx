@@ -1109,6 +1109,7 @@ export default function SecurityServiceReportsPage() {
         const fsSync: Record<string, any> = {
           arrival_date: normalizedDates.arrivalDate || null,
           departure_date: normalizedDates.departureDate || null,
+          status: "Approved",
         };
         if (taskSheet.registration !== undefined) fsSync.registration = taskSheet.registration || "";
         if (taskSheet.route !== undefined) fsSync.route = taskSheet.route || "";
@@ -1142,7 +1143,7 @@ export default function SecurityServiceReportsPage() {
           std: taskSheet.std || "",
           skd_type: taskSheet.flight_type || "",
           clearance_type: row.service_type || "Arrival Security",
-          status: "Pending" as const,
+          status: "Approved" as const,
           authority: row.station || "CAI",
           handling_agent: "",
           arrival_date: normalizedDates.arrivalDate || null,
@@ -1767,7 +1768,7 @@ export default function SecurityServiceReportsPage() {
           </select>
           <select value={reviewFilter} onChange={e => { setReviewFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>
-            {REVIEW_STATUSES.map(s => <option key={s}>{s}</option>)}
+            {REVIEW_STATUSES.map(s => <option key={s} value={s}>{s === "Pending Review" ? "Pending" : s}</option>)}
             <option>Rejected</option>
           </select>
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
