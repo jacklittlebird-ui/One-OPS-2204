@@ -240,19 +240,27 @@ export default function SecurityServiceReportsPage() {
   const { data: dispatches = [], isLoading } = useQuery({
     queryKey: ["v_dispatch_with_flight", "service-reports", session?.user?.id, isStationScoped ? userStation : null, dateFrom || null, dateTo || null],
     queryFn: async () => {
-      let q: any = (supabase as any)
-        .from("v_dispatch_with_flight")
-        .select("*")
-        .order("flight_date", { ascending: false });
-      if (isStationScoped && userStation) q = q.eq("station", userStation);
-      if (dateFrom) q = q.gte("flight_date", dateFrom);
-      if (dateTo) q = q.lte("flight_date", dateTo);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as DispatchRow[];
+      const all: any[] = [];
+      const PAGE_SIZE = 1000;
+      for (let from = 0; ; from += PAGE_SIZE) {
+        let q: any = (supabase as any)
+          .from("v_dispatch_with_flight")
+          .select("*")
+          .order("flight_date", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (isStationScoped && userStation) q = q.eq("station", userStation);
+        if (dateFrom) q = q.gte("flight_date", dateFrom);
+        if (dateTo) q = q.lte("flight_date", dateTo);
+        const { data, error } = await q;
+        if (error) throw error;
+        all.push(...(data || []));
+        if (!data || data.length < PAGE_SIZE) break;
+      }
+      return all as DispatchRow[];
     },
     enabled: !!session,
   });
+
 
   // Fetch irregularity reports for linking
   const { data: irregularities = [] } = useQuery({
@@ -303,27 +311,34 @@ export default function SecurityServiceReportsPage() {
   const { data: securityFlights = [] } = useQuery({
     queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, dateFrom || null, dateTo || null],
     queryFn: async () => {
-      let q = supabase
-        .from("flight_schedules")
-        .select("*, airlines:airline_id(name, iata_code)")
-        .order("arrival_date", { ascending: false });
-      if (isStationScoped && userStation) {
-        q = (q as any).eq("authority", userStation);
-      } else if (!includeAllFlights) {
-        q = (q as any).in("clearance_type", SECURITY_CLEARANCE_TYPES);
+      const all: any[] = [];
+      const PAGE_SIZE = 1000;
+      for (let from = 0; ; from += PAGE_SIZE) {
+        let q = supabase
+          .from("flight_schedules")
+          .select("*, airlines:airline_id(name, iata_code)")
+          .order("arrival_date", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (isStationScoped && userStation) {
+          q = (q as any).eq("authority", userStation);
+        } else if (!includeAllFlights) {
+          q = (q as any).in("clearance_type", SECURITY_CLEARANCE_TYPES);
+        }
+        // Never surface clearance-cancelled or clearance-rejected flights as
+        // pending security work.
+        q = (q as any).not("status", "in", "(Cancelled,Rejected)");
+        if (dateFrom) q = (q as any).gte("arrival_date", dateFrom);
+        if (dateTo) q = (q as any).lte("arrival_date", dateTo);
+        const { data, error } = await q;
+        if (error) throw error;
+        all.push(...(data || []));
+        if (!data || data.length < PAGE_SIZE) break;
       }
-      // Never surface clearance-cancelled or clearance-rejected flights as
-      // pending security work. Stations were seeing "ghost" rows for flights
-      // Clearance had already cancelled/rejected/returned.
-      q = (q as any).not("status", "in", "(Cancelled,Rejected)");
-      if (dateFrom) q = (q as any).gte("arrival_date", dateFrom);
-      if (dateTo) q = (q as any).lte("arrival_date", dateTo);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as any[];
+      return all as any[];
     },
     enabled: !!session,
   });
+
 
   // Fetch flight schedules awaiting Operations approval (created by Station/Security service reports).
   const { data: pendingApprovalFlights = [] } = useQuery({
