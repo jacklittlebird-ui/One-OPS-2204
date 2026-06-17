@@ -149,7 +149,16 @@ export function useSupabaseTable<T extends Record<string, any>>(
           }
         }
         if (dateFloor && dateCol) {
-          q = (q as any).gte(dateCol, dateFloor);
+          // For flight_schedules / service_reports a row can be departure-only
+          // (arrival_date IS NULL) or arrival-only (departure_date IS NULL).
+          // A plain gte on arrival_date silently drops departure-only flights
+          // — which caused Station-returned departure flights to vanish from
+          // the Clearance portal. Match on EITHER date being inside the window.
+          if (table === "flight_schedules" || table === "service_reports") {
+            q = (q as any).or(`arrival_date.gte.${dateFloor},departure_date.gte.${dateFloor}`);
+          } else {
+            q = (q as any).gte(dateCol, dateFloor);
+          }
         }
         const { data, error } = await q;
         if (error) throw error;
