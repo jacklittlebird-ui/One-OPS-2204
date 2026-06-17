@@ -72,6 +72,7 @@ export const HANDLING_OPTIONS = ["Ferry", "Full Handling", "Ramp Only", "Technic
 export const STATUS_CONFIG: Record<string, { cls: string }> = {
   Pending:   { cls: "bg-warning/15 text-warning" },
   Approved:  { cls: "bg-success/15 text-success" },
+  Completed: { cls: "bg-success/15 text-success" },
   Rejected:  { cls: "bg-destructive/15 text-destructive" },
   Expired:   { cls: "bg-muted text-muted-foreground" },
   Cancelled: { cls: "bg-muted text-muted-foreground" },
