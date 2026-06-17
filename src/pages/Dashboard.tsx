@@ -200,7 +200,7 @@ function StationDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <StatTile label="Scheduled Flights" value={schedules.length} icon={Plane} tone="primary" />
         <StatTile label="Today's Reports" value={todayReports} icon={FileBarChart2} tone="info" />
-        <StatTile label="Pending Review" value={pendingReview} icon={Clock} tone="warning" />
+        <StatTile label="Pending" value={pendingReview} icon={Clock} tone="warning" />
         <StatTile label="Approved" value={approved} icon={CheckCircle2} tone="success" />
         <StatTile label="Rejected" value={rejected} icon={XCircle} tone="destructive" />
       </div>
