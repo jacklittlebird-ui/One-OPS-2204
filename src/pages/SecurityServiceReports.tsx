@@ -1713,7 +1713,7 @@ export default function SecurityServiceReportsPage() {
         </div>
         <div className="stat-card">
           <div className="stat-card-icon bg-warning"><Clock size={20} /></div>
-          <div><div className="text-xl font-bold text-foreground">{pendingReview}</div><div className="text-xs text-muted-foreground">Pending Review</div></div>
+          <div><div className="text-xl font-bold text-foreground">{pendingReview}</div><div className="text-xs text-muted-foreground">Pending</div></div>
         </div>
         {!isOperationsView && (
           <div className="stat-card">

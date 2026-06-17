@@ -200,7 +200,7 @@ function StationDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <StatTile label="Scheduled Flights" value={schedules.length} icon={Plane} tone="primary" />
         <StatTile label="Today's Reports" value={todayReports} icon={FileBarChart2} tone="info" />
-        <StatTile label="Pending Review" value={pendingReview} icon={Clock} tone="warning" />
+        <StatTile label="Pending" value={pendingReview} icon={Clock} tone="warning" />
         <StatTile label="Approved" value={approved} icon={CheckCircle2} tone="success" />
         <StatTile label="Rejected" value={rejected} icon={XCircle} tone="destructive" />
       </div>
@@ -230,7 +230,7 @@ function StationDashboard() {
             icon={r.review_status === "approved" ? CheckCircle2 : r.review_status === "rejected" ? XCircle : Clock}
             tone={r.review_status === "approved" ? "success" : r.review_status === "rejected" ? "destructive" : "warning"}
             title={<span><span className="font-semibold">{r.flight_no || "—"}</span> · {r.operator || "—"} · {r.station || "—"}</span>}
-            meta={<>{r.handling_type || "—"} · {r.review_status} · {relTime(r.created_at)}</>}
+            meta={<>{r.handling_type || "—"} · {r.review_status === "Pending Review" ? "Pending" : r.review_status} · {relTime(r.created_at)}</>}
           />
         ))}
         {reports.length === 0 && <p className="text-xs text-muted-foreground">No reports yet.</p>}
@@ -361,7 +361,7 @@ function OperationsChannelDashboard() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <StatTile label="Pending Review" value={pendingReview} icon={Clock} tone="warning" hint="Action required" />
+        <StatTile label="Pending" value={pendingReview} icon={Clock} tone="warning" hint="Action required" />
         <StatTile label="Approved Today" value={approvedToday} icon={CheckCircle2} tone="success" />
         <StatTile label="Rejected" value={rejected} icon={XCircle} tone="destructive" />
         <StatTile label="Open Irregularities" value={openIrreg} icon={AlertTriangle} tone="destructive" />
