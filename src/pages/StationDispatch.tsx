@@ -357,10 +357,12 @@ export default function StationDispatchPage() {
       }
       const ta = (a as any).sta || (a as any).std || "";
       const tb = (b as any).sta || (b as any).std || "";
-      if (!ta && !tb) return 0;
-      if (!ta) return 1;
-      if (!tb) return -1;
-      return ta.localeCompare(tb);
+      if (ta !== tb) {
+        if (!ta) return 1;
+        if (!tb) return -1;
+        return ta.localeCompare(tb);
+      }
+      return (a.id || "").localeCompare(b.id || "");
     });
   }, [flights, stationFilter, dateFrom, dateTo, airlineFilter, airlineMap, serviceCategory]);
 
