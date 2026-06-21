@@ -820,8 +820,9 @@ export default function SecurityServiceReportsPage() {
         );
       });
     }
-    // Sort by the same display date shown in the table so corrected
-    // departure-only Security rows never get ordered by a stale schedule date.
+    // Sort by the same display date shown in the table, falling back to the
+    // departure date when the flight has no arrival date so departure-only
+    // Security rows are ordered by their actual service date.
     const ascending = true;
     return [...rows].sort((a, b) => {
       const aMeta = (a as any).flightMeta;
@@ -830,8 +831,8 @@ export default function SecurityServiceReportsPage() {
       const bFd = b.flight_schedule_id ? flightDetailsById.get(b.flight_schedule_id) : undefined;
       const aDisplay = resolveSecurityRowDisplay(a as any, aFd, aMeta);
       const bDisplay = resolveSecurityRowDisplay(b as any, bFd, bMeta);
-      const ad = aDisplay.arrivalDate || "";
-      const bd = bDisplay.arrivalDate || "";
+      const ad = aDisplay.arrivalDate || aDisplay.departureDate || "";
+      const bd = bDisplay.arrivalDate || bDisplay.departureDate || "";
       if (ad !== bd) {
         if (!ad) return 1;
         if (!bd) return -1;
