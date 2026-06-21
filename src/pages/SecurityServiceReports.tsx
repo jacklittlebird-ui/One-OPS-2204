@@ -880,6 +880,18 @@ export default function SecurityServiceReportsPage() {
         (f.authority || "").toLowerCase().includes(s)
       );
     }
+    // Order by arrival date, falling back to departure date, for a stable,
+    // deterministic pending-approval list.
+    rows.sort((a: any, b: any) => {
+      const ad = a.arrival_date || a.departure_date || "";
+      const bd = b.arrival_date || b.departure_date || "";
+      if (ad !== bd) {
+        if (!ad) return 1;
+        if (!bd) return -1;
+        return ad.localeCompare(bd);
+      }
+      return (a.id || "").localeCompare(b.id || "");
+    });
     return rows;
   }, [pendingApprovalFlights, pendingStationFilter, pendingTypeFilter, pendingStatusFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
 
