@@ -311,7 +311,7 @@ export default function SecurityServiceReportsPage() {
   const includeAllFlights = (isStationScoped && !!userStation) || isOperationsView;
   const [securityLoadedRows, setSecurityLoadedRows] = useState(0);
   const { data: securityFlights = [], isFetching: securityFlightsFetching } = useQuery({
-    queryKey: ["flight_schedules", "security-types", "v2-incl-rejected", isStationScoped ? userStation : null, isOperationsView, dateFrom || null, dateTo || null],
+    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, dateFrom || null, dateTo || null],
     queryFn: async () => {
       setSecurityLoadedRows(0);
       // Shared filter layer → identical totals to the Clearance Security tab.
