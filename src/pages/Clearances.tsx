@@ -31,7 +31,7 @@ import ClearanceDetailDialog from "@/components/clearances/ClearanceDetailDialog
 import ScheduleUploadDialog from "@/components/clearances/ScheduleUploadDialog";
 import { AdvancedFilters } from "@/components/filters/AdvancedFilters";
 import { parseDeletionRequests } from "@/lib/statusRouting";
-import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages, resolvePipelineCreatedVia } from "@/components/serviceReport/PipelineStepper";
 import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 
 // ─── Calendar View Component ───
@@ -694,6 +694,7 @@ export default function ClearancesPage() {
                                 reviewStatus: d?.review_status || "",
                                 clearanceStatus: c.status,
                                 dispatchStatus: d?.status,
+                                createdVia: resolvePipelineCreatedVia(c, d),
                               };
                               const completed = derivePipelineCompletedStages(stageOpts);
                               const rs = d?.review_status || "—";
