@@ -193,7 +193,7 @@ export function derivePipelineCompletedStages(opts: {
   // Step 2 (Station) — complete when the task sheet is saved, submitted for
   // review, OR the record was originated by the station (which by definition
   // means the station step is already done).
-  if (reviewSubmitted || dispatchCompleted || createdByStation) {
+  if (reviewSubmitted || createdByStation) {
     done.push("station");
   }
   if (REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any)) done.push("operations");
