@@ -340,4 +340,28 @@ describe("review_status states — Draft vs Submitted vs Approved (record/list v
     expect(done).toContain("station");
     expect(done).toContain("operations");
   });
+
+  it("REGRESSION: Station-created records with legacy clearance origin skip step 1 and complete step 2", () => {
+    const createdVia = resolvePipelineCreatedVia({
+      created_via: "clearance",
+      purpose: "Security Service",
+      remarks: "Added from Security Service – pending Operations approval",
+    });
+    const done = derivePipelineCompletedStages({
+      isLinked: true,
+      clearanceStatus: "Rejected",
+      dispatchStatus: "Completed",
+      reviewStatus: "Pending Review",
+      createdVia,
+    });
+    expect(createdVia).toBe("station");
+    expect(done).toEqual(["station"]);
+    expect(derivePipelineStage({
+      isLinked: true,
+      clearanceStatus: "Rejected",
+      dispatchStatus: "Completed",
+      reviewStatus: "Pending Review",
+      createdVia,
+    })).toBe("operations");
+  });
 });
