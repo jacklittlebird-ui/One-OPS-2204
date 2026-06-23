@@ -2450,8 +2450,6 @@ export default function SecurityServiceReportsPage() {
                 <div><span className="text-muted-foreground">Date:</span> {reviewRow.flight_date}</div>
                 <div><span className="text-muted-foreground">Staff:</span> {reviewRow.staff_count} ({reviewRow.staff_names || "—"})</div>
                 <div><span className="text-muted-foreground">Actual Time:</span> {reviewRow.actual_start} – {reviewRow.actual_end}</div>
-                <div><span className="text-muted-foreground">Overtime:</span> {reviewRow.overtime_hours}h</div>
-                <div><span className="text-muted-foreground">Total Charge:</span> ${reviewRow.total_charge.toLocaleString()}</div>
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Review Comment</label>
