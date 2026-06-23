@@ -86,13 +86,46 @@ export function parseStationReturnRequests(remarks?: string | null): DeletionReq
 /**
  * Combined deletion/clearance request log for a flight, covering BOTH the
  * Operations "Request Deletion" flow and the Station "Return to Clearance"
- * flow. Used by the Station view's expandable reason panel.
+ * flow. Entries are sorted chronologically by their bracketed header so the
+ * caller can rely on `entries[entries.length - 1]` being the most recent
+ * action regardless of insertion order.
+ *
+ * Fallback: if the regex extractors fail to match but the raw remarks contain
+ * a recognizable marker, synthesize a single entry from the matching line so
+ * the banner still surfaces a reason instead of silently disappearing.
  */
 export function parseDeletionRequests(remarks?: string | null): DeletionRequestEntry[] {
-  return [
+  if (!remarks) return [];
+  const merged: DeletionRequestEntry[] = [
     ...parseOpsDeleteRequests(remarks),
     ...parseStationReturnRequests(remarks),
   ];
+
+  if (merged.length === 0) {
+    // Fallback: regex couldn't structure the line, but a marker is clearly
+    // present. Surface the raw line so the UI still has something to display.
+    for (const line of remarks.split(/\r?\n/)) {
+      const t = line.trim();
+      if (!t) continue;
+      if (t.includes("[OPS DELETE REQUEST")) {
+        return [{ kind: "ops_delete", header: "", reason: t.replace(/^\[OPS DELETE REQUEST[^\]]*\]\s*/, "").trim() || t }];
+      }
+      if (t.includes("[Station Return")) {
+        return [{ kind: "station_return", header: "", reason: t.replace(/^\[Station Return[^\]]*\]\s*/, "").trim() || t }];
+      }
+    }
+    return [];
+  }
+
+  // Sort by header (ISO-ish "YYYY-MM-DD HH:MM" sorts lexicographically). Empty
+  // headers fall back to insertion order via a stable comparison.
+  return merged
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => {
+      const cmp = (a.e.header || "").localeCompare(b.e.header || "");
+      return cmp !== 0 ? cmp : a.i - b.i;
+    })
+    .map(({ e }) => e);
 }
 
 /** Latest "Ops delete reason" extracted from a flight's remarks, or "". */
