@@ -1591,11 +1591,18 @@ function HandlingServiceReportContent() {
                             if (!comment) return;
                             const stamp = `[Station Return ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${comment}`;
                             try {
-                              const { data: cur } = await supabase.from("flight_schedules").select("remarks").eq("id", r.flightScheduleId!).maybeSingle();
-                              const existing = (cur as any)?.remarks || "";
-                              const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
-                              const { error } = await supabase.from("flight_schedules").update({ status: "Rejected", remarks: newRemarks } as any).eq("id", r.flightScheduleId!);
+                              const { data: updated, error } = await (supabase as any).rpc("return_flight_to_clearance", {
+                                _id: r.flightScheduleId!,
+                                _stamp: stamp,
+                              });
                               if (error) throw error;
+                              const patched = Array.isArray(updated) ? updated[0] : updated;
+                              if (patched) {
+                                queryClient.setQueriesData({ queryKey: ["flight_schedules"] }, (old: any) => {
+                                  if (!Array.isArray(old)) return old;
+                                  return old.map((f: any) => f?.id === r.flightScheduleId ? { ...f, ...patched } : f);
+                                });
+                              }
                               queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
                               toast({ title: "↩️ Returned to Clearance", description: comment });
                             } catch (e: any) {

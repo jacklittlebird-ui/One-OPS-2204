@@ -4124,6 +4124,54 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       refresh_invoice_monthly_summary: { Args: never; Returns: undefined }
+      return_flight_to_clearance: {
+        Args: { _id: string; _stamp: string }
+        Returns: {
+          aircraft_type: string
+          airline_id: string | null
+          arrival_date: string | null
+          arrival_flight: string | null
+          authority: string
+          cargo_kg: number
+          clearance_type: string
+          config: number | null
+          created_at: string
+          created_via: string | null
+          departure_date: string | null
+          departure_flight: string | null
+          flight_no: string
+          handling: string | null
+          handling_agent: string
+          id: string
+          no_of_flights: number | null
+          notes: string | null
+          passengers: number
+          period_from: string | null
+          period_to: string | null
+          permit_no: string
+          purpose: string
+          ref_no: string | null
+          registration: string
+          remarks: string
+          requested_date: string | null
+          route: string
+          royalty: boolean | null
+          skd_type: string | null
+          sta: string | null
+          status: Database["public"]["Enums"]["clearance_status"]
+          std: string | null
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+          week_days: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "flight_schedules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_flight_master_from_station: {
         Args: { _id: string; _patch: Json }
         Returns: {
