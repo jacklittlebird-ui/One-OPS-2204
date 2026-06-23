@@ -319,6 +319,7 @@ export default function SecurityServiceReportsPage() {
       return await fetchSecurityFlights(supabase as any, {
         station: isStationScoped && userStation ? userStation : null,
         includeAllForStation: includeAllFlights,
+        includeRejected: true,
         dateFrom: dateFrom || null,
         dateTo: dateTo || null,
         select: "*, airlines:airline_id(name, iata_code)",
