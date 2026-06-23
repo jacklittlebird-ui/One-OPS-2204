@@ -35,6 +35,7 @@ export type ClearanceRow = {
   no_of_flights: number;
   ref_no: string;
   notes: string;
+  created_via?: string;
 };
 
 export const CLEARANCE_TYPES = ["Arrival Handling", "Arrival Security", "Catering Only", "Departure Handling", "Departure Security", "Fuel Only", "Full Handling", "Hotel Accommodation", "Maintenance", "Maintenance Security", "Payment", "Supervision Only", "Technical Stop", "Touch & Go", "Transportation", "Turnaround Security"];
