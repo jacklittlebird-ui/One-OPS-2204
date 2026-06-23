@@ -784,6 +784,7 @@ function HandlingServiceReportContent() {
             skdType: source.skdType,
             serviceType: source.serviceType,
             purpose: source.purpose,
+            createdVia: source.createdVia,
           });
         });
         return;
@@ -815,6 +816,7 @@ function HandlingServiceReportContent() {
         skdType: source.skdType,
         serviceType: source.serviceType,
         purpose: source.purpose,
+        createdVia: source.createdVia,
       });
     });
 
@@ -1582,8 +1584,8 @@ function HandlingServiceReportContent() {
                       const invStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flightNo || ""))) || "none";
                       return (
                         <PipelineStepper
-                          currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel, invoiceStatus: invStatus })}
-                          completedStages={derivePipelineCompletedStages({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", invoiceStatus: invStatus })}
+                          currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel, invoiceStatus: invStatus, createdVia: resolvePipelineCreatedVia(r) })}
+                          completedStages={derivePipelineCompletedStages({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", invoiceStatus: invStatus, createdVia: resolvePipelineCreatedVia(r) })}
                           compact
                         />
                       );
