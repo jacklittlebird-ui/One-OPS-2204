@@ -1588,8 +1588,9 @@ function HandlingServiceReportContent() {
                         <button
                           onClick={async () => {
                             const comment = prompt(`Return flight ${r.flightNo} to Clearance — reason:`);
-                            if (!comment) return;
-                            const stamp = `[Station Return ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${comment}`;
+                            const reason = (comment || "").trim();
+                            if (!reason) return;
+                            const stamp = `[Station Return ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${reason}`;
                             try {
                               const { data: updated, error } = await (supabase as any).rpc("return_flight_to_clearance", {
                                 _id: r.flightScheduleId!,
@@ -1603,8 +1604,18 @@ function HandlingServiceReportContent() {
                                   return old.map((f: any) => f?.id === r.flightScheduleId ? { ...f, ...patched } : f);
                                 });
                               }
-                              queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-                              toast({ title: "↩️ Returned to Clearance", description: comment });
+                              await Promise.all([
+                                queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
+                                queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
+                              ]);
+                              await queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" });
+                              const persisted = ((patched as any)?.remarks || "").includes(stamp);
+                              toast({
+                                title: persisted ? "↩️ Returned to Clearance — reason saved" : "↩️ Returned to Clearance",
+                                description: persisted
+                                  ? `Saved to flight remarks: "${reason}"`
+                                  : `Reason: "${reason}"`,
+                              });
                             } catch (e: any) {
                               toast({ title: "Error", description: e.message, variant: "destructive" });
                             }

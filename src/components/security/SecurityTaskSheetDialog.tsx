@@ -1561,8 +1561,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                     onClick={async () => {
                       const fsid = (currentRow as any).flight_schedule_id as string;
                       const comment = window.prompt(`Return flight ${currentRow.flight_no || ""} to Clearance — reason:`);
-                      if (!comment || !comment.trim()) return;
-                      const stamp = `[Station Return ${new Date().toISOString().slice(0, 16).replace("T", " ")}] ${comment.trim()}`;
+                      const reason = (comment || "").trim();
+                      if (!reason) return;
+                      const stamp = `[Station Return ${new Date().toISOString().slice(0, 16).replace("T", " ")}] ${reason}`;
                       try {
                         // Atomic on the server: appends to remarks and flips status
                         // in a single statement so concurrent edits cannot drop the
@@ -1572,19 +1573,38 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                           _stamp: stamp,
                         });
                         if (error) throw error;
-                        // Optimistically patch caches with the authoritative row so
-                        // the banner appears immediately even before refetch lands.
                         const patched = Array.isArray(updated) ? updated[0] : updated;
+                        // Optimistically patch every flight_schedules-backed query so
+                        // the banner renders immediately, even before refetch lands.
                         if (patched) {
                           queryClient.setQueriesData({ queryKey: ["flight_schedules"] }, (old: any) => {
                             if (!Array.isArray(old)) return old;
                             return old.map((f: any) => f?.id === fsid ? { ...f, ...patched } : f);
                           });
                         }
-                        queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-                        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-                        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
-                        toast({ title: "↩️ Returned to Clearance", description: comment.trim() });
+                        // Force a refetch of the active flight/dispatch queries so
+                        // the banner is guaranteed to re-render from authoritative
+                        // server data — does not rely on a query-key change.
+                        await Promise.all([
+                          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
+                          queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
+                          queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] }),
+                        ]);
+                        await Promise.all([
+                          queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" }),
+                          queryClient.refetchQueries({ queryKey: ["dispatch_assignments"], type: "active" }),
+                        ]);
+                        // Confirmation toast echoes the exact reason that was
+                        // persisted to flight_schedules.remarks so the user can
+                        // verify what was saved without reopening the row.
+                        const persistedRemarks = (patched as any)?.remarks || "";
+                        const persisted = persistedRemarks.includes(stamp);
+                        toast({
+                          title: persisted ? "↩️ Returned to Clearance — reason saved" : "↩️ Returned to Clearance",
+                          description: persisted
+                            ? `Saved to flight remarks: "${reason}"`
+                            : `Reason: "${reason}"`,
+                        });
                         onClose();
                       } catch (e: any) {
                         toast({ title: "Error", description: e.message, variant: "destructive" });
