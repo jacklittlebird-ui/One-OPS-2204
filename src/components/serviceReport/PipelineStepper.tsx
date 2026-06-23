@@ -17,6 +17,37 @@ const STEPS = [
 
 export type PipelineStage = "clearance" | "station" | "operations" | "receivables";
 
+const STATION_CREATED_PURPOSES = new Set(["security service", "station dispatch"]);
+const STATION_CREATED_REMARK_MARKERS = [
+  "added from security service",
+  "added from station dispatch",
+  "added from service report",
+];
+
+function normalizeOrigin(value: unknown): string {
+  return String(value || "").trim().toLowerCase();
+}
+
+function inferOrigin(input: unknown): string {
+  if (!input) return "";
+  if (typeof input === "string") return normalizeOrigin(input);
+
+  const record = input as Record<string, unknown>;
+  const direct = normalizeOrigin(record.created_via ?? record.createdVia);
+  const purpose = normalizeOrigin(record.purpose);
+  const remarks = normalizeOrigin(record.remarks ?? record.flight_remarks ?? record.notes);
+
+  if (STATION_CREATED_PURPOSES.has(purpose)) return "station";
+  if (STATION_CREATED_REMARK_MARKERS.some(marker => remarks.includes(marker))) return "station";
+  return direct;
+}
+
+export function resolvePipelineCreatedVia(...inputs: unknown[]): string | undefined {
+  const inferred = inputs.map(inferOrigin).filter(Boolean);
+  if (inferred.includes("station")) return "station";
+  return inferred[0] || undefined;
+}
+
 /**
  * Derives the current pipeline stage. The "current" stage is the first not-yet-completed step.
  *
@@ -57,7 +88,7 @@ export function derivePipelineStage(opts: {
   const cs = csCanonical.toLowerCase();
   const ch = (opts.channel || "").toLowerCase();
   const inv = opts.invoiceStatus || "none";
-  const origin = (opts.createdVia || "").toLowerCase();
+  const origin = resolvePipelineCreatedVia(opts.createdVia) || "";
   const createdByClearance = origin === "clearance" || origin === ""; // default to clearance when unknown
   const createdByStation = origin === "station";
 
@@ -147,7 +178,7 @@ export function derivePipelineCompletedStages(opts: {
 }): PipelineStage[] {
   const rsCanonical = normalizeReviewStatus(opts.reviewStatus);
   const inv = opts.invoiceStatus || "none";
-  const origin = (opts.createdVia || "").toLowerCase();
+  const origin = resolvePipelineCreatedVia(opts.createdVia) || "";
   const createdByClearance = origin === "clearance" || origin === "";
   const createdByStation = origin === "station";
   const dispatchCompleted = (opts.dispatchStatus || "").toLowerCase() === "completed";
