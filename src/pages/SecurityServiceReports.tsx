@@ -1227,6 +1227,7 @@ export default function SecurityServiceReportsPage() {
           remarks: "Added from Security Service – pending Operations approval",
           notes: "",
           purpose: "Security Service",
+          created_via: "station",
         };
         if (airlineData?.id) clearancePayload.airline_id = airlineData.id;
 
@@ -1239,7 +1240,7 @@ export default function SecurityServiceReportsPage() {
 
         // 3. Insert dispatch with link to the flight_schedule
         // Phase 6.5: strip legacy mirror keys before INSERT.
-        const dispatchInsertRaw = { ...payload, flight_schedule_id: createdFlight?.id || null };
+        const dispatchInsertRaw = { ...payload, flight_schedule_id: createdFlight?.id || null, created_via: "station" };
         const dispatchInsert = await resolveFlightMasterForWrite(
           dispatchInsertRaw,
           createdFlight?.id || null,

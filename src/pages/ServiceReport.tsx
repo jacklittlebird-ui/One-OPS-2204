@@ -860,6 +860,9 @@ function HandlingServiceReportContent() {
     mutationFn: async (data: Partial<ReportFormData>) => {
       const delays = data.delays || [];
       let dbData: any = formToDb(data);
+      // Tag origin so the pipeline stepper can mark step 1 (Clearance) as
+      // skipped and step 2 (Station) as completed for station-originated reports.
+      if (isStationView && !dbData.created_via) dbData.created_via = "station";
       // Phase 3B Step 2.2 — strip FS-mirror keys; insert shim for NOT NULL flight_no
       dbData = await resolveFlightMasterForWrite(dbData, data.flightScheduleId, "service_reports", "insert");
       const { data: inserted, error } = await supabase.from("service_reports").insert(dbData as any).select().single();
