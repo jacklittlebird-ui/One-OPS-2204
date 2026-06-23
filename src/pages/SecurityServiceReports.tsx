@@ -2324,8 +2324,9 @@ export default function SecurityServiceReportsPage() {
                               <button
                                 onClick={async () => {
                                   const comment = prompt(`Return flight ${r.flight_no} to Clearance — reason:`);
-                                  if (!comment) return;
-                                  const stamp = `[Station Return ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${comment}`;
+                                  const reason = (comment || "").trim();
+                                  if (!reason) return;
+                                  const stamp = `[Station Return ${new Date().toISOString().slice(0,16).replace("T"," ")}] ${reason}`;
                                   try {
                                     // Resolve flight_schedule_id: prefer the direct link, otherwise look up
                                     // by flight_no + flight_date (some Security-Service-created dispatches
@@ -2362,14 +2363,40 @@ export default function SecurityServiceReportsPage() {
                                       toast({ title: "Cannot return", description: "No linked flight schedule was found for this report. Ask Clearance to create one first.", variant: "destructive" });
                                       return;
                                     }
-                                    const { data: cur } = await supabase.from("flight_schedules").select("remarks").eq("id", fsId).maybeSingle();
-                                    const existing = (cur as any)?.remarks || "";
-                                    const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
-                                    const { error } = await supabase.from("flight_schedules").update({ status: "Rejected", remarks: newRemarks } as any).eq("id", fsId);
+                                    // Atomic server-side append + status flip so the
+                                    // banner always has a fresh row to read from.
+                                    const { data: updated, error } = await (supabase as any).rpc("return_flight_to_clearance", {
+                                      _id: fsId,
+                                      _stamp: stamp,
+                                    });
                                     if (error) throw error;
-                                    queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-                                    queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-                                    toast({ title: "↩️ Returned to Clearance", description: comment });
+                                    const patched = Array.isArray(updated) ? updated[0] : updated;
+                                    // Optimistically patch every flight_schedules-backed cache so
+                                    // the "Station Return to Clearance" banner renders on the row
+                                    // immediately, before the refetch lands.
+                                    if (patched) {
+                                      queryClient.setQueriesData({ queryKey: ["flight_schedules"] }, (old: any) => {
+                                        if (!Array.isArray(old)) return old;
+                                        return old.map((f: any) => f?.id === fsId ? { ...f, ...patched } : f);
+                                      });
+                                    }
+                                    await Promise.all([
+                                      queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
+                                      queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
+                                      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] }),
+                                    ]);
+                                    await Promise.all([
+                                      queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" }),
+                                      queryClient.refetchQueries({ queryKey: ["dispatch_assignments"], type: "active" }),
+                                      queryClient.refetchQueries({ queryKey: ["v_dispatch_with_flight"], type: "active" }),
+                                    ]);
+                                    const persisted = ((patched as any)?.remarks || "").includes(stamp);
+                                    toast({
+                                      title: persisted ? "↩️ Returned to Clearance — reason saved" : "↩️ Returned to Clearance",
+                                      description: persisted
+                                        ? `Saved to flight remarks: "${reason}"`
+                                        : `Reason: "${reason}"`,
+                                    });
                                   } catch (e: any) {
                                     toast({ title: "Error", description: e.message, variant: "destructive" });
                                   }
