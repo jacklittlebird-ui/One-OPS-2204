@@ -1227,6 +1227,7 @@ export default function SecurityServiceReportsPage() {
           remarks: "Added from Security Service – pending Operations approval",
           notes: "",
           purpose: "Security Service",
+          created_via: "station",
         };
         if (airlineData?.id) clearancePayload.airline_id = airlineData.id;
 
