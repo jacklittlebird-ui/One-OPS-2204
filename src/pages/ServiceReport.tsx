@@ -17,7 +17,7 @@ import { useServiceReportsFS } from "@/data/serviceReports";
 import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
 import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
-import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages, resolvePipelineCreatedVia } from "@/components/serviceReport/PipelineStepper";
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
@@ -159,6 +159,7 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
     reviewComment: row.review_comment || "",
     reviewedBy: row.reviewed_by || "",
     reviewedAt: row.reviewed_at || null,
+    createdVia: row.created_via || row.createdVia || "",
   };
 }
 
@@ -235,6 +236,7 @@ interface MergedRow extends ReportFormData {
   skdType?: string;
   serviceType?: string;
   purpose?: string;
+  createdVia?: string;
 }
 
 interface ScheduleSourceRow {
@@ -255,6 +257,7 @@ interface ScheduleSourceRow {
   skdType: string;
   serviceType: string;
   purpose: string;
+  createdVia: string;
 }
 
 function resolveStationFromRoute(route: string, preferred?: string | null) {
