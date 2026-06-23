@@ -1552,6 +1552,43 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                   </div>
                 )}
                 <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+                {!isReceivablesView && !isNew && (currentRow as any).flight_schedule_id && (
+                  <Button
+                    variant="outline"
+                    disabled={saving}
+                    className="border-warning/40 text-warning hover:bg-warning/10"
+                    title="Close this report and send the flight back to Clearance with a reason."
+                    onClick={async () => {
+                      const fsid = (currentRow as any).flight_schedule_id as string;
+                      const comment = window.prompt(`Return flight ${currentRow.flight_no || ""} to Clearance — reason:`);
+                      if (!comment || !comment.trim()) return;
+                      const stamp = `[Station Return ${new Date().toISOString().slice(0, 16).replace("T", " ")}] ${comment.trim()}`;
+                      try {
+                        const { data: cur } = await supabase
+                          .from("flight_schedules")
+                          .select("remarks")
+                          .eq("id", fsid)
+                          .maybeSingle();
+                        const existing = (cur as any)?.remarks || "";
+                        const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
+                        const { error } = await supabase
+                          .from("flight_schedules")
+                          .update({ status: "Rejected", remarks: newRemarks } as any)
+                          .eq("id", fsid);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+                        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+                        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+                        toast({ title: "↩️ Returned to Clearance", description: comment.trim() });
+                        onClose();
+                      } catch (e: any) {
+                        toast({ title: "Error", description: e.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <RefreshCw size={14} className="mr-1" /> Close & Return to Clearance
+                  </Button>
+                )}
                 {!isReceivablesView && !stationLockedAfterApproval && (
                   <Button
                     variant="secondary"
