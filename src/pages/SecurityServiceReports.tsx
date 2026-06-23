@@ -880,8 +880,9 @@ export default function SecurityServiceReportsPage() {
         (f.authority || "").toLowerCase().includes(s)
       );
     }
-    // Order by arrival date, falling back to departure date, for a stable,
-    // deterministic pending-approval list.
+    // Order by arrival date (falling back to departure date when the flight
+    // has no arrival), then by STA (falling back to STD) — matches the main
+    // Operations list ordering for a consistent pending-approval view.
     rows.sort((a: any, b: any) => {
       const ad = a.arrival_date || a.departure_date || "";
       const bd = b.arrival_date || b.departure_date || "";
@@ -889,6 +890,13 @@ export default function SecurityServiceReportsPage() {
         if (!ad) return 1;
         if (!bd) return -1;
         return ad.localeCompare(bd);
+      }
+      const at = a.sta || a.std || "";
+      const bt = b.sta || b.std || "";
+      if (at !== bt) {
+        if (!at) return 1;
+        if (!bt) return -1;
+        return at.localeCompare(bt);
       }
       return (a.id || "").localeCompare(b.id || "");
     });
