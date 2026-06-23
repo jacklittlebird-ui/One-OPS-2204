@@ -22,6 +22,10 @@ export interface SecurityFlightsOptions {
   station?: string | null;
   /** When true (station-scoped or Operations portal), skip the clearance_type IN filter. */
   includeAllForStation?: boolean;
+  /** When true, do not exclude status=Rejected rows (so Station/Ops can still
+   *  see a flight that was returned to Clearance — the row keeps rendering
+   *  with its return-reason banner until Clearance resolves it). */
+  includeRejected?: boolean;
   dateFrom?: string | null;
   dateTo?: string | null;
   select?: string;
@@ -44,6 +48,7 @@ export async function fetchSecurityFlights(
   const {
     station,
     includeAllForStation = false,
+    includeRejected = false,
     dateFrom,
     dateTo,
     select = "*",
@@ -63,7 +68,7 @@ export async function fetchSecurityFlights(
 
     if (station) q = q.eq("authority", station);
     if (!includeAllForStation) q = q.in("clearance_type", SECURITY_CLEARANCE_TYPES);
-    q = q.not("status", "in", "(Cancelled,Rejected)");
+    q = q.not("status", "in", includeRejected ? "(Cancelled)" : "(Cancelled,Rejected)");
     if (dateFrom) q = q.gte("arrival_date", dateFrom);
     if (dateTo) q = q.lte("arrival_date", dateTo);
 
