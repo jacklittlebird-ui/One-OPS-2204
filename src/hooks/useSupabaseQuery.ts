@@ -182,7 +182,13 @@ export function useSupabaseTable<T extends Record<string, any>>(
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: [table] });
     if (table === "flight_schedules") {
+      // Cascade invalidation: deleting/updating a flight propagates to every
+      // portal that mirrors it (dispatch, security/handling service reports,
+      // and the joined view) so all tables refresh in lockstep.
       queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["service_reports"] });
+      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+      queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
     }
   };
 
