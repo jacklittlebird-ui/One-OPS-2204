@@ -1564,18 +1564,23 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                       if (!comment || !comment.trim()) return;
                       const stamp = `[Station Return ${new Date().toISOString().slice(0, 16).replace("T", " ")}] ${comment.trim()}`;
                       try {
-                        const { data: cur } = await supabase
-                          .from("flight_schedules")
-                          .select("remarks")
-                          .eq("id", fsid)
-                          .maybeSingle();
-                        const existing = (cur as any)?.remarks || "";
-                        const newRemarks = existing ? `${existing}\n${stamp}` : stamp;
-                        const { error } = await supabase
-                          .from("flight_schedules")
-                          .update({ status: "Rejected", remarks: newRemarks } as any)
-                          .eq("id", fsid);
+                        // Atomic on the server: appends to remarks and flips status
+                        // in a single statement so concurrent edits cannot drop the
+                        // reason. Returns the freshly-updated row.
+                        const { data: updated, error } = await (supabase as any).rpc("return_flight_to_clearance", {
+                          _id: fsid,
+                          _stamp: stamp,
+                        });
                         if (error) throw error;
+                        // Optimistically patch caches with the authoritative row so
+                        // the banner appears immediately even before refetch lands.
+                        const patched = Array.isArray(updated) ? updated[0] : updated;
+                        if (patched) {
+                          queryClient.setQueriesData({ queryKey: ["flight_schedules"] }, (old: any) => {
+                            if (!Array.isArray(old)) return old;
+                            return old.map((f: any) => f?.id === fsid ? { ...f, ...patched } : f);
+                          });
+                        }
                         queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
                         queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
                         queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
