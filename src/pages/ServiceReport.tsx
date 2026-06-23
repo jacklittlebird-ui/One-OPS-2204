@@ -1156,6 +1156,7 @@ function HandlingServiceReportContent() {
         reviewStatus: merged.reviewStatus || "",
         clearanceStatus: merged.clearanceStatus,
         dispatchStatus: merged.isLinked ? "Completed" : "Pending",
+        createdVia: resolvePipelineCreatedVia(merged),
       });
       // Receivables can edit once Station (task sheet saved) and Operations (review approved)
       // are complete. Clearance status is informational at billing stage.
