@@ -2175,7 +2175,26 @@ export default function SecurityServiceReportsPage() {
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagMain.start + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
                         <td className="px-3 py-2.5 text-foreground">{r.airline || "—"}</td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-foreground">{flightNo || "—"}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-foreground">
+                          <div className="flex flex-col gap-0.5">
+                            <span>{flightNo || "—"}</span>
+                            {(() => {
+                              const latestReturn = [...opsDeleteEntries].reverse().find(e => e.kind === "station_return");
+                              if (!latestReturn) return null;
+                              const reason = latestReturn.reason || "Reason not provided";
+                              const preview = reason.length > 40 ? `${reason.slice(0, 40)}…` : reason;
+                              return (
+                                <span
+                                  className="inline-flex items-center gap-1 self-start px-1.5 py-0.5 rounded text-[10px] font-semibold bg-warning/10 text-warning border border-warning/30 max-w-[220px] truncate"
+                                  title={`Returned to Clearance: ${reason}`}
+                                >
+                                  <RefreshCw size={10} className="shrink-0" />
+                                  <span className="truncate">↩ {preview}</span>
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        </td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{reg || "—"}</td>
                         <td className="px-3 py-2.5">
                           <div className="flex flex-wrap items-center gap-1">
