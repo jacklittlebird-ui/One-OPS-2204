@@ -3,6 +3,7 @@ import {
   derivePipelineStage,
   derivePipelineCompletedStages,
   derivePendingActionMessage,
+  resolvePipelineCreatedVia,
 } from "./PipelineStepper";
 
 describe("derivePipelineCompletedStages — Receivables completion", () => {
