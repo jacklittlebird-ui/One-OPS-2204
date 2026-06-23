@@ -17,7 +17,7 @@ import { useServiceReportsFS } from "@/data/serviceReports";
 import { toast } from "@/hooks/use-toast";
 import { Constants } from "@/integrations/supabase/types";
 import TabbedReportForm from "@/components/serviceReport/TabbedReportForm";
-import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages, resolvePipelineCreatedVia } from "@/components/serviceReport/PipelineStepper";
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
@@ -159,6 +159,7 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
     reviewComment: row.review_comment || "",
     reviewedBy: row.reviewed_by || "",
     reviewedAt: row.reviewed_at || null,
+    createdVia: row.created_via || row.createdVia || "",
   };
 }
 
@@ -235,6 +236,7 @@ interface MergedRow extends ReportFormData {
   skdType?: string;
   serviceType?: string;
   purpose?: string;
+  createdVia?: string;
 }
 
 interface ScheduleSourceRow {
@@ -255,6 +257,7 @@ interface ScheduleSourceRow {
   skdType: string;
   serviceType: string;
   purpose: string;
+  createdVia: string;
 }
 
 function resolveStationFromRoute(route: string, preferred?: string | null) {
@@ -614,7 +617,7 @@ function HandlingServiceReportContent() {
     queryFn: async () => {
       let q = supabase
         .from("flight_schedules")
-        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks")
+        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks, created_via")
         .order("arrival_date", { ascending: false, nullsFirst: false });
       if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
@@ -747,6 +750,7 @@ function HandlingServiceReportContent() {
           skdType: c.skd_type || "",
           serviceType: c.clearance_type || "",
           purpose: c.purpose || "",
+          createdVia: resolvePipelineCreatedVia(c) || "",
         };
       });
   }, [dbFlights, airlineById, aircraftByReg, userStation, isStationScoped, securityFlightIds]);
@@ -780,6 +784,7 @@ function HandlingServiceReportContent() {
             skdType: source.skdType,
             serviceType: source.serviceType,
             purpose: source.purpose,
+            createdVia: source.createdVia,
           });
         });
         return;
@@ -811,6 +816,7 @@ function HandlingServiceReportContent() {
         skdType: source.skdType,
         serviceType: source.serviceType,
         purpose: source.purpose,
+        createdVia: source.createdVia,
       });
     });
 
@@ -1150,6 +1156,7 @@ function HandlingServiceReportContent() {
         reviewStatus: merged.reviewStatus || "",
         clearanceStatus: merged.clearanceStatus,
         dispatchStatus: merged.isLinked ? "Completed" : "Pending",
+        createdVia: resolvePipelineCreatedVia(merged),
       });
       // Receivables can edit once Station (task sheet saved) and Operations (review approved)
       // are complete. Clearance status is informational at billing stage.
@@ -1578,8 +1585,8 @@ function HandlingServiceReportContent() {
                       const invStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(r.flightNo || ""))) || "none";
                       return (
                         <PipelineStepper
-                          currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel, invoiceStatus: invStatus })}
-                          completedStages={derivePipelineCompletedStages({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", invoiceStatus: invStatus })}
+                          currentStage={derivePipelineStage({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", channel: activeChannel, invoiceStatus: invStatus, createdVia: resolvePipelineCreatedVia(r) })}
+                          completedStages={derivePipelineCompletedStages({ isLinked: !!r.isLinked, reviewStatus: r.reviewStatus, clearanceStatus: r.clearanceStatus, dispatchStatus: r.isLinked ? "Completed" : "Pending", invoiceStatus: invStatus, createdVia: resolvePipelineCreatedVia(r) })}
                           compact
                         />
                       );

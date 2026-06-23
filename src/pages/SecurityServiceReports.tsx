@@ -19,7 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
-import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages, resolvePipelineCreatedVia } from "@/components/serviceReport/PipelineStepper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -164,7 +164,7 @@ export default function SecurityServiceReportsPage() {
         reviewStatus: r.review_status,
         clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
         dispatchStatus: workflowStatus,
-        createdVia: (r as any).created_via,
+        createdVia: resolvePipelineCreatedVia(r, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
       });
       // Receivables can edit once Station (task sheet saved) and Operations (review approved)
       // are complete. Clearance status is informational at billing stage.
@@ -678,9 +678,9 @@ export default function SecurityServiceReportsPage() {
 
   const flightCreatedViaById = useMemo(() => {
     const map = new Map<string, string>();
-    securityFlights.forEach((f: any) => map.set(f.id, f.created_via || ""));
+    [...securityFlights, ...pendingApprovalFlights].forEach((f: any) => map.set(f.id, resolvePipelineCreatedVia(f) || ""));
     return map;
-  }, [securityFlights]);
+  }, [securityFlights, pendingApprovalFlights]);
 
   // Build lookup for flight schedule details (flight no, registration, route, sta, std, dates, aircraft type)
   const flightDetailsById = useMemo(() => {
@@ -784,6 +784,7 @@ export default function SecurityServiceReportsPage() {
           irregularity_id: null,
           created_at: f.created_at || "",
           updated_at: f.updated_at || "",
+          created_via: resolvePipelineCreatedVia(f),
           isPending: true,
           flightMeta: f,
         } as MergedSecurityRow;
@@ -2004,7 +2005,7 @@ export default function SecurityServiceReportsPage() {
                                 clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
                                 dispatchStatus: workflowStatus,
                                 invoiceStatus: invStatus,
-                                createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
+                                createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                               };
                               return (
                                 <div className="mt-2 pt-2 border-t flex justify-center">
@@ -2248,7 +2249,7 @@ export default function SecurityServiceReportsPage() {
                                   dispatchStatus: workflowStatus,
                                   channel: activeChannel,
                                   invoiceStatus: invStatus,
-                                  createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
+                                  createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                                 })}
                                 completedStages={derivePipelineCompletedStages({
                                   isLinked: workflowStatus === "Completed",
@@ -2256,7 +2257,7 @@ export default function SecurityServiceReportsPage() {
                                   clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
                                   dispatchStatus: workflowStatus,
                                   invoiceStatus: invStatus,
-                                  createdVia: (r as any).created_via || (r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
+                                  createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                                 })}
                                 compact
                               />

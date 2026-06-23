@@ -127,6 +127,7 @@ export interface ReportFormData {
   reviewComment: string;
   reviewedBy: string;
   reviewedAt: string | null;
+  createdVia?: string;
 }
 
 export type ReportTab = "flight" | "passengers" | "timing" | "civil-aviation" | "catering" | "hotac" | "fuel-handling";
