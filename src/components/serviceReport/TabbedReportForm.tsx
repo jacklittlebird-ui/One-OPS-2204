@@ -610,7 +610,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         {reviewMode && (
           <div className="px-6 py-3 bg-info/10 border-b border-info/30 flex items-center justify-between gap-2 text-sm text-info">
             <span className="flex items-center gap-2"><Clock size={16} className="shrink-0" /><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>SKD Type</strong> in the Flight tab, then click Save.</span>
-            <button type="button" onClick={onSave} className="toolbar-btn-primary h-8 shrink-0">Save Changes</button>
+            <button type="button" onClick={handleSave} className="toolbar-btn-primary h-8 shrink-0">Save Changes</button>
           </div>
         )}
 
