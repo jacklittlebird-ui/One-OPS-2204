@@ -81,6 +81,7 @@ function autoDayNight(td: string, arrivalDate: string): "D" | "N" {
 function dbToForm(row: any, delays: any[]): ReportFormData {
   return {
     id: row.id,
+    flightScheduleId: row.flight_schedule_id || row.fs_id,
     operator: row.operator,
     handlingType: row.handling_type,
     skdType: row.fs_skd_type || row.skd_type || "",
