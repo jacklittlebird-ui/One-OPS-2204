@@ -334,6 +334,22 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     }
   }, [data, onChange]);
 
+  const handleSave = useCallback(() => {
+    const op = (data.operator || "").trim();
+    const skd = (data.skdType || "").trim();
+    if (!op) {
+      toast.error("Airline (Account / Operator) is required");
+      setActiveTab("flight");
+      return;
+    }
+    if (!skd) {
+      toast.error("SKD Type is required");
+      setActiveTab("flight");
+      return;
+    }
+    onSave();
+  }, [data.operator, data.skdType, onSave]);
+
   const set = (key: keyof ReportFormData, val: any) => {
     if (reviewMode && key !== "operator" && key !== "skdType") return;
     const updated = { ...data, [key]: val };
