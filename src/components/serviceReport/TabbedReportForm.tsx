@@ -12,6 +12,7 @@ import {
   ReportFormData, ReportTab, REPORT_TABS, FLIGHT_STATUSES,
   CateringLineItem, HotacLineItem, FuelLineItem, DelayEntry
 } from "./ReportFormTypes";
+import { SKD_TYPES } from "@/components/clearances/ClearanceTypes";
 import PipelineStepper, { derivePipelineStage } from "./PipelineStepper";
 import { supabase } from "@/integrations/supabase/client";
 import { useChannel } from "@/contexts/ChannelContext";
@@ -333,7 +334,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
   }, [data, onChange]);
 
   const set = (key: keyof ReportFormData, val: any) => {
-    if (reviewMode && key !== "operator" && key !== "handlingType") return;
+    if (reviewMode && key !== "operator" && key !== "skdType") return;
     const updated = { ...data, [key]: val };
     if (key === "co" || key === "ob") {
       updated.groundTime = calcGroundTime(
@@ -591,7 +592,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         {/* Review Mode Banner */}
         {reviewMode && (
           <div className="px-6 py-3 bg-info/10 border-b border-info/30 flex items-center justify-between gap-2 text-sm text-info">
-            <span className="flex items-center gap-2"><Clock size={16} className="shrink-0" /><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>Handling Type (SKD)</strong> in the Flight tab, then click Save.</span>
+            <span className="flex items-center gap-2"><Clock size={16} className="shrink-0" /><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>SKD Type</strong> in the Flight tab, then click Save.</span>
             <button type="button" onClick={onSave} className="toolbar-btn-primary h-8 shrink-0">Save Changes</button>
           </div>
         )}
@@ -642,8 +643,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <DatePickerField label="Arrival Date" value={data.arrivalDate || ""} onChange={v => set("arrivalDate", v)} />
                   <DatePickerField label="Departure Date" value={data.departureDate || ""} onChange={v => set("departureDate", v)} />
                   <FormField label="Handling Type">
-                    <select data-review-editable={reviewMode ? "true" : undefined} className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
+                    <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
                       {handlingTypes.map(h => <option key={h}>{h}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="SKD Type">
+                    <select data-review-editable={reviewMode ? "true" : undefined} className={selectCls} value={data.skdType || "Schedule"} onChange={e => set("skdType", e.target.value)}>
+                      {SKD_TYPES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </FormField>
                   <FormField label="Confirmation No"><input className={inputCls} value={data.confirmationNo || ""} onChange={e => set("confirmationNo", e.target.value)} /></FormField>
