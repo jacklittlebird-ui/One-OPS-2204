@@ -639,7 +639,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label={<>Account / Operator <span className="text-destructive">*</span></> as any}><input required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${inputCls} ${!(data.operator || "").trim() ? "border-destructive/60" : ""}`} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
+                  <FormField label={<>Account / Operator <span className="text-destructive">*</span></>}><input required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${inputCls} ${!(data.operator || "").trim() ? "border-destructive/60" : ""}`} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
                   <FormField label="Station">
                     {lockedStationName ? (
