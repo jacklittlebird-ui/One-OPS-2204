@@ -664,8 +664,9 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                       {handlingTypes.map(h => <option key={h}>{h}</option>)}
                     </select>
                   </FormField>
-                  <FormField label="SKD Type">
-                    <select data-review-editable={reviewMode ? "true" : undefined} className={selectCls} value={data.skdType || "Schedule"} onChange={e => set("skdType", e.target.value)}>
+                  <FormField label="SKD Type *">
+                    <select required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${selectCls} ${!(data.skdType || "").trim() ? "border-destructive/60" : ""}`} value={data.skdType || ""} onChange={e => set("skdType", e.target.value)}>
+                      <option value="" disabled>Select SKD Type…</option>
                       {SKD_TYPES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </FormField>
