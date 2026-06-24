@@ -58,7 +58,7 @@ const inputCls = "text-sm border rounded px-2.5 py-2 bg-card text-foreground foc
 const selectCls = "text-sm border rounded px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
 const readOnlyCls = "text-sm border rounded px-2.5 py-2 bg-muted text-foreground w-full";
 
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+function FormField({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
@@ -639,7 +639,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label="Account / Operator *"><input required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${inputCls} ${!(data.operator || "").trim() ? "border-destructive/60" : ""}`} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
+                  <FormField label={<>Account / Operator <span className="text-destructive">*</span></>}><input required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${inputCls} ${!(data.operator || "").trim() ? "border-destructive/60" : ""}`} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
                   <FormField label="Station">
                     {lockedStationName ? (
@@ -664,7 +664,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                       {handlingTypes.map(h => <option key={h}>{h}</option>)}
                     </select>
                   </FormField>
-                  <FormField label="SKD Type *">
+                  <FormField label={<>SKD Type <span className="text-destructive">*</span></>}>
                     <select required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${selectCls} ${!(data.skdType || "").trim() ? "border-destructive/60" : ""}`} value={data.skdType || ""} onChange={e => set("skdType", e.target.value)}>
                       <option value="" disabled>Select SKD Type…</option>
                       {SKD_TYPES.map(s => <option key={s}>{s}</option>)}
