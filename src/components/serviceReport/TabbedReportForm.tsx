@@ -12,6 +12,7 @@ import {
   ReportFormData, ReportTab, REPORT_TABS, FLIGHT_STATUSES,
   CateringLineItem, HotacLineItem, FuelLineItem, DelayEntry
 } from "./ReportFormTypes";
+import { SKD_TYPES } from "@/components/clearances/ClearanceTypes";
 import PipelineStepper, { derivePipelineStage } from "./PipelineStepper";
 import { supabase } from "@/integrations/supabase/client";
 import { useChannel } from "@/contexts/ChannelContext";
@@ -333,6 +334,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
   }, [data, onChange]);
 
   const set = (key: keyof ReportFormData, val: any) => {
+    if (reviewMode && key !== "operator" && key !== "skdType") return;
     const updated = { ...data, [key]: val };
     if (key === "co" || key === "ob") {
       updated.groundTime = calcGroundTime(
@@ -575,11 +577,12 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             <button
               key={s}
               onClick={() => set("flightStatus", s)}
+                disabled={reviewMode}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                 data.flightStatus === s
                   ? "bg-primary text-primary-foreground shadow-sm scale-[1.02]"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted bg-card/60 border"
-              }`}
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
             >
               {s}
             </button>
@@ -589,7 +592,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         {/* Review Mode Banner */}
         {reviewMode && (
           <div className="px-6 py-3 bg-info/10 border-b border-info/30 flex items-center justify-between gap-2 text-sm text-info">
-            <span className="flex items-center gap-2"><Clock size={16} className="shrink-0" /><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>Handling Type (SKD)</strong> in the Flight tab, then click Save.</span>
+            <span className="flex items-center gap-2"><Clock size={16} className="shrink-0" /><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>SKD Type</strong> in the Flight tab, then click Save.</span>
             <button type="button" onClick={onSave} className="toolbar-btn-primary h-8 shrink-0">Save Changes</button>
           </div>
         )}
@@ -612,14 +615,14 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
           ))}
         </div>
 
-        {/* Tab content - wrapped in fieldset so all inputs become truly disabled */}
-        <fieldset disabled={reviewMode} className={`flex-1 overflow-y-auto p-6 bg-muted/10 min-w-0 ${reviewMode ? "[&_input]:!bg-muted/40 [&_select]:!bg-muted/40 [&_textarea]:!bg-muted/40 [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed [&_textarea]:cursor-not-allowed" : ""}`}>
+        {/* Tab content */}
+        <div className={`flex-1 overflow-y-auto p-6 bg-muted/10 min-w-0 ${reviewMode ? "[&_input:not([data-review-editable])]:!bg-muted/40 [&_select:not([data-review-editable])]:!bg-muted/40 [&_textarea:not([data-review-editable])]:!bg-muted/40 [&_input:not([data-review-editable])]:cursor-not-allowed [&_select:not([data-review-editable])]:cursor-not-allowed [&_textarea:not([data-review-editable])]:cursor-not-allowed [&_input:not([data-review-editable])]:pointer-events-none [&_select:not([data-review-editable])]:pointer-events-none [&_textarea:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:opacity-60" : ""}`}>
           
           {activeTab === "flight" && (
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label="Account / Operator"><fieldset disabled={false} className="contents"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></fieldset></FormField>
+                  <FormField label="Account / Operator"><input data-review-editable={reviewMode ? "true" : undefined} className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
                   <FormField label="Station">
                     {lockedStationName ? (
@@ -640,11 +643,14 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <DatePickerField label="Arrival Date" value={data.arrivalDate || ""} onChange={v => set("arrivalDate", v)} />
                   <DatePickerField label="Departure Date" value={data.departureDate || ""} onChange={v => set("departureDate", v)} />
                   <FormField label="Handling Type">
-                    <fieldset disabled={false} className="contents">
-                      <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
-                        {handlingTypes.map(h => <option key={h}>{h}</option>)}
-                      </select>
-                    </fieldset>
+                    <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
+                      {handlingTypes.map(h => <option key={h}>{h}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="SKD Type">
+                    <select data-review-editable={reviewMode ? "true" : undefined} className={selectCls} value={data.skdType || "Schedule"} onChange={e => set("skdType", e.target.value)}>
+                      {SKD_TYPES.map(s => <option key={s}>{s}</option>)}
+                    </select>
                   </FormField>
                   <FormField label="Confirmation No"><input className={inputCls} value={data.confirmationNo || ""} onChange={e => set("confirmationNo", e.target.value)} /></FormField>
                   <FormField label="Performed By"><input className={inputCls} value={data.performedBy || ""} onChange={e => set("performedBy", e.target.value)} /></FormField>
@@ -936,7 +942,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
               </Section>
             </div>
           )}
-        </fieldset>
+        </div>
 
         {/* Footer */}
         {reviewMode ? (

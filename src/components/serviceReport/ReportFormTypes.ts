@@ -42,6 +42,7 @@ export interface ReportFormData {
   flightScheduleId?: string;
   operator: string;
   handlingType: HandlingType;
+  skdType?: string;
   station: string;
   aircraftType: string;
   registration: string;
@@ -145,7 +146,7 @@ export const REPORT_TABS: { key: ReportTab; label: string }[] = [
 export const FLIGHT_STATUSES = ["Scheduled", "Departed", "Arrived", "Check In"];
 
 export const emptyReport = (): Partial<ReportFormData> => ({
-  operator: "", handlingType: "Turn Around",
+  operator: "", handlingType: "Turn Around", skdType: "Schedule",
   station: "Cairo",
   aircraftType: "", registration: "", flightNo: "",
   mtow: "", route: "",
