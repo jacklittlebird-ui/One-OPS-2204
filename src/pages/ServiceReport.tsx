@@ -25,7 +25,6 @@ import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
 } from "@/components/serviceReport/ReportFormTypes";
-import { SKD_TYPES } from "@/components/clearances/ClearanceTypes";
 
 
 
