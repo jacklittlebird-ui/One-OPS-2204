@@ -1008,7 +1008,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             </div>
             <div className="flex gap-2">
               <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
-              <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+              <button onClick={handleSave} className="toolbar-btn-primary">Save Report</button>
             </div>
           </div>
         )}
