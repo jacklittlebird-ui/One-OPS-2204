@@ -588,29 +588,10 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
 
         {/* Review Mode Banner */}
         {reviewMode && (
-          <>
-            <div className="px-6 py-3 bg-info/10 border-b border-info/30 flex items-center gap-2 text-sm text-info">
-              <Clock size={16} className="shrink-0" />
-              <span><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>Handling Type (SKD)</strong> below, then click Save Changes.</span>
-            </div>
-            <div className="px-6 py-4 bg-warning/5 border-b border-warning/30 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              <FormField label="Airline / Operator">
-                <input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="e.g. Air Cairo" />
-              </FormField>
-              <FormField label="Handling Type (SKD)">
-                <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
-                  {handlingTypes.map(h => <option key={h}>{h}</option>)}
-                </select>
-              </FormField>
-              <button
-                type="button"
-                onClick={onSave}
-                className="toolbar-btn-primary h-10"
-              >
-                Save Changes
-              </button>
-            </div>
-          </>
+          <div className="px-6 py-3 bg-info/10 border-b border-info/30 flex items-center justify-between gap-2 text-sm text-info">
+            <span className="flex items-center gap-2"><Clock size={16} className="shrink-0" /><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>Handling Type (SKD)</strong> in the Flight tab, then click Save.</span>
+            <button type="button" onClick={onSave} className="toolbar-btn-primary h-8 shrink-0">Save Changes</button>
+          </div>
         )}
 
         {/* Tab navigation */}
@@ -638,7 +619,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label="Account / Operator"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
+                  <FormField label="Account / Operator"><fieldset disabled={false} className="contents"><input className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></fieldset></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
                   <FormField label="Station">
                     {lockedStationName ? (
@@ -659,9 +640,11 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <DatePickerField label="Arrival Date" value={data.arrivalDate || ""} onChange={v => set("arrivalDate", v)} />
                   <DatePickerField label="Departure Date" value={data.departureDate || ""} onChange={v => set("departureDate", v)} />
                   <FormField label="Handling Type">
-                    <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
-                      {handlingTypes.map(h => <option key={h}>{h}</option>)}
-                    </select>
+                    <fieldset disabled={false} className="contents">
+                      <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
+                        {handlingTypes.map(h => <option key={h}>{h}</option>)}
+                      </select>
+                    </fieldset>
                   </FormField>
                   <FormField label="Confirmation No"><input className={inputCls} value={data.confirmationNo || ""} onChange={e => set("confirmationNo", e.target.value)} /></FormField>
                   <FormField label="Performed By"><input className={inputCls} value={data.performedBy || ""} onChange={e => set("performedBy", e.target.value)} /></FormField>
