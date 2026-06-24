@@ -640,9 +640,11 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                   <DatePickerField label="Arrival Date" value={data.arrivalDate || ""} onChange={v => set("arrivalDate", v)} />
                   <DatePickerField label="Departure Date" value={data.departureDate || ""} onChange={v => set("departureDate", v)} />
                   <FormField label="Handling Type">
-                    <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
-                      {handlingTypes.map(h => <option key={h}>{h}</option>)}
-                    </select>
+                    <fieldset disabled={false} className="contents">
+                      <select className={selectCls} value={data.handlingType} onChange={e => set("handlingType", e.target.value)}>
+                        {handlingTypes.map(h => <option key={h}>{h}</option>)}
+                      </select>
+                    </fieldset>
                   </FormField>
                   <FormField label="Confirmation No"><input className={inputCls} value={data.confirmationNo || ""} onChange={e => set("confirmationNo", e.target.value)} /></FormField>
                   <FormField label="Performed By"><input className={inputCls} value={data.performedBy || ""} onChange={e => set("performedBy", e.target.value)} /></FormField>
