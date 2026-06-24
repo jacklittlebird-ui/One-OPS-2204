@@ -639,6 +639,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         required.push({ key: "std", label: "STD" }, { key: "atd", label: "ATD" });
       }
       const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
+      if (isNew) {
+        if (!String(editableRow.airline || "").trim()) missing.unshift("Airline");
+        if (!String(sheet.flight_type || "").trim()) missing.push("Skd Type");
+      }
       if (missing.length > 0) {
         toast({
           title: "Missing required fields",
@@ -997,7 +1001,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               {isNew ? (
                 <>
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline <span className="text-destructive">*</span></label>
                     <select className={inputCls} value={editableRow.airline} onChange={e => updateRow("airline", e.target.value)}>
                       <option value="">Select Airline</option>
                       {airlines.map((a: any) => (
@@ -1047,7 +1051,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 </>
               )}
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Skd Type</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Skd Type {isNew && <span className="text-destructive">*</span>}</label>
                 {isNew ? (
                   <select className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}>
                     <option value="">Select...</option>
