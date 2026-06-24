@@ -58,7 +58,7 @@ const inputCls = "text-sm border rounded px-2.5 py-2 bg-card text-foreground foc
 const selectCls = "text-sm border rounded px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full";
 const readOnlyCls = "text-sm border rounded px-2.5 py-2 bg-muted text-foreground w-full";
 
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+function FormField({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
