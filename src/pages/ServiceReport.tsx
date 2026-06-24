@@ -25,6 +25,7 @@ import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
 } from "@/components/serviceReport/ReportFormTypes";
+import { SKD_TYPES } from "@/components/clearances/ClearanceTypes";
 
 
 
@@ -83,6 +84,7 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
     id: row.id,
     operator: row.operator,
     handlingType: row.handling_type,
+    skdType: row.fs_skd_type || row.skd_type || "",
     station: row.station,
     aircraftType: row.aircraft_type,
     registration: row.registration,
@@ -918,6 +920,13 @@ function HandlingServiceReportContent() {
       }
       const { error } = await supabase.from("service_reports").update(dbData).eq("id", id);
       if (error) throw error;
+      if (isOperationsView && data.flightScheduleId && typeof data.skdType === "string") {
+        const { error: fsErr } = await supabase
+          .from("flight_schedules")
+          .update({ skd_type: data.skdType } as any)
+          .eq("id", data.flightScheduleId);
+        if (fsErr) throw fsErr;
+      }
       await supabase.from("service_report_delays").delete().eq("report_id", id);
       if (delays.length > 0) {
         const delayRows = delays.map((d, i) => ({
@@ -935,6 +944,7 @@ function HandlingServiceReportContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
+      queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
       toast({ title: "Updated", description: "Service report updated." });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
