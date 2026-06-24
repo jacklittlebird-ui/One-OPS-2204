@@ -1001,7 +1001,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
               {isNew ? (
                 <>
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Airline <span className="text-destructive">*</span></label>
                     <select className={inputCls} value={editableRow.airline} onChange={e => updateRow("airline", e.target.value)}>
                       <option value="">Select Airline</option>
                       {airlines.map((a: any) => (
