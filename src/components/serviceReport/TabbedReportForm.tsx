@@ -15,6 +15,7 @@ import {
 import { SKD_TYPES } from "@/components/clearances/ClearanceTypes";
 import PipelineStepper, { derivePipelineStage } from "./PipelineStepper";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
 
@@ -333,6 +334,22 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     }
   }, [data, onChange]);
 
+  const handleSave = useCallback(() => {
+    const op = (data.operator || "").trim();
+    const skd = (data.skdType || "").trim();
+    if (!op) {
+      toast.error("Airline (Account / Operator) is required");
+      setActiveTab("flight");
+      return;
+    }
+    if (!skd) {
+      toast.error("SKD Type is required");
+      setActiveTab("flight");
+      return;
+    }
+    onSave();
+  }, [data.operator, data.skdType, onSave]);
+
   const set = (key: keyof ReportFormData, val: any) => {
     if (reviewMode && key !== "operator" && key !== "skdType") return;
     const updated = { ...data, [key]: val };
@@ -593,7 +610,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         {reviewMode && (
           <div className="px-6 py-3 bg-info/10 border-b border-info/30 flex items-center justify-between gap-2 text-sm text-info">
             <span className="flex items-center gap-2"><Clock size={16} className="shrink-0" /><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>SKD Type</strong> in the Flight tab, then click Save.</span>
-            <button type="button" onClick={onSave} className="toolbar-btn-primary h-8 shrink-0">Save Changes</button>
+            <button type="button" onClick={handleSave} className="toolbar-btn-primary h-8 shrink-0">Save Changes</button>
           </div>
         )}
 
@@ -622,7 +639,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label="Account / Operator"><input data-review-editable={reviewMode ? "true" : undefined} className={inputCls} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
+                  <FormField label="Account / Operator *"><input required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${inputCls} ${!(data.operator || "").trim() ? "border-destructive/60" : ""}`} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
                   <FormField label="Station">
                     {lockedStationName ? (
@@ -647,8 +664,9 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                       {handlingTypes.map(h => <option key={h}>{h}</option>)}
                     </select>
                   </FormField>
-                  <FormField label="SKD Type">
-                    <select data-review-editable={reviewMode ? "true" : undefined} className={selectCls} value={data.skdType || "Schedule"} onChange={e => set("skdType", e.target.value)}>
+                  <FormField label="SKD Type *">
+                    <select required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${selectCls} ${!(data.skdType || "").trim() ? "border-destructive/60" : ""}`} value={data.skdType || ""} onChange={e => set("skdType", e.target.value)}>
+                      <option value="" disabled>Select SKD Type…</option>
                       {SKD_TYPES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </FormField>
@@ -990,7 +1008,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             </div>
             <div className="flex gap-2">
               <button onClick={onCancel} className="toolbar-btn-outline">Cancel</button>
-              <button onClick={onSave} className="toolbar-btn-primary">Save Report</button>
+              <button onClick={handleSave} className="toolbar-btn-primary">Save Report</button>
             </div>
           </div>
         )}
