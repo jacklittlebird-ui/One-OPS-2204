@@ -146,7 +146,7 @@ export const REPORT_TABS: { key: ReportTab; label: string }[] = [
 export const FLIGHT_STATUSES = ["Scheduled", "Departed", "Arrived", "Check In"];
 
 export const emptyReport = (): Partial<ReportFormData> => ({
-  operator: "", handlingType: "Turn Around", skdType: "Schedule",
+  operator: "", handlingType: "Turn Around", skdType: "",
   station: "Cairo",
   aircraftType: "", registration: "", flightNo: "",
   mtow: "", route: "",
