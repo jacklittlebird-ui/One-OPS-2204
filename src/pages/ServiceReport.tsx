@@ -1152,7 +1152,18 @@ function HandlingServiceReportContent() {
   const totalHandlingFees = filtered.reduce((s, r) => s + r.handlingFee, 0);
 
   const saveNew = () => {
-    if (!newReport.flightNo || !newReport.operator) return;
+    if (!(newReport.operator || "").trim()) {
+      toast({ title: "Airline is required", description: "Please select the Airline before saving.", variant: "destructive" });
+      return;
+    }
+    if (!(newReport.skdType || "").trim()) {
+      toast({ title: "Skd Type is required", description: "Please select the Skd Type before saving.", variant: "destructive" });
+      return;
+    }
+    if (!newReport.flightNo) {
+      toast({ title: "Flight No is required", description: "Please enter the Flight No before saving.", variant: "destructive" });
+      return;
+    }
     addMutation.mutate(newReport);
     setShowAdd(false);
     setNewReport(emptyReport());
