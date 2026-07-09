@@ -265,6 +265,9 @@ const channelNavs: Record<Channel, NavSection[]> = {
       children: [
         { label: "Companies", path: "/accounting/companies" },
         { label: "Finance Stations", path: "/accounting/stations" },
+        { label: "Customer Price List", path: "/accounting/customer-prices" },
+        { label: "Supplier Price List", path: "/accounting/supplier-prices" },
+        { label: "Exchange Rates", path: "/accounting/exchange-rates" },
       ],
     },
     TREASURY_SECTION,
