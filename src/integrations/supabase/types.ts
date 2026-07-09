@@ -1631,6 +1631,63 @@ export type Database = {
         }
         Relationships: []
       }
+      depreciation_entries: {
+        Row: {
+          asset_id: string
+          created_at: string
+          depreciation_amount: number
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          period_month: number
+          period_year: number
+          posted_at: string
+          posted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          depreciation_amount?: number
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period_month: number
+          period_year: number
+          posted_at?: string
+          posted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          depreciation_amount?: number
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period_month?: number
+          period_year?: number
+          posted_at?: string
+          posted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depreciation_entries_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depreciation_entries_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dispatch_assignments: {
         Row: {
           actual_duration_hours: number
@@ -1906,6 +1963,102 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fixed_assets: {
+        Row: {
+          accumulated_depr_account_code: string | null
+          accumulated_depreciation: number
+          asset_account_code: string | null
+          asset_code: string
+          asset_name: string
+          category: string | null
+          company_id: string | null
+          cost_center: string | null
+          created_at: string
+          currency: string
+          depreciation_account_code: string | null
+          depreciation_method: string
+          disposal_amount: number | null
+          disposal_date: string | null
+          id: string
+          in_service_date: string | null
+          notes: string | null
+          purchase_cost: number
+          purchase_date: string
+          salvage_value: number
+          station_id: string | null
+          status: string
+          updated_at: string
+          useful_life_months: number
+        }
+        Insert: {
+          accumulated_depr_account_code?: string | null
+          accumulated_depreciation?: number
+          asset_account_code?: string | null
+          asset_code: string
+          asset_name: string
+          category?: string | null
+          company_id?: string | null
+          cost_center?: string | null
+          created_at?: string
+          currency?: string
+          depreciation_account_code?: string | null
+          depreciation_method?: string
+          disposal_amount?: number | null
+          disposal_date?: string | null
+          id?: string
+          in_service_date?: string | null
+          notes?: string | null
+          purchase_cost?: number
+          purchase_date: string
+          salvage_value?: number
+          station_id?: string | null
+          status?: string
+          updated_at?: string
+          useful_life_months?: number
+        }
+        Update: {
+          accumulated_depr_account_code?: string | null
+          accumulated_depreciation?: number
+          asset_account_code?: string | null
+          asset_code?: string
+          asset_name?: string
+          category?: string | null
+          company_id?: string | null
+          cost_center?: string | null
+          created_at?: string
+          currency?: string
+          depreciation_account_code?: string | null
+          depreciation_method?: string
+          disposal_amount?: number | null
+          disposal_date?: string | null
+          id?: string
+          in_service_date?: string | null
+          notes?: string | null
+          purchase_cost?: number
+          purchase_date?: string
+          salvage_value?: number
+          station_id?: string | null
+          status?: string
+          updated_at?: string
+          useful_life_months?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_assets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
             referencedColumns: ["id"]
           },
         ]
