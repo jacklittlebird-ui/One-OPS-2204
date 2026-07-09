@@ -253,6 +253,13 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Airline Incentives", path: "/airline-incentives" },
       ],
     },
+    {
+      label: "ACCOUNTING SETUP", icon: <Building size={18} />, collapsible: true,
+      children: [
+        { label: "Companies", path: "/accounting/companies" },
+        { label: "Finance Stations", path: "/accounting/stations" },
+      ],
+    },
     TREASURY_SECTION,
     {
       label: "CONTRACT", icon: <FileText size={18} />, collapsible: true,
