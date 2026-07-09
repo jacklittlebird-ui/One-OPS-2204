@@ -1,9 +1,12 @@
-import { FileText, X, Mail, User, Calendar, DollarSign, Building2, Shield } from "lucide-react";
+import { FileText, X, Mail, User, Calendar, DollarSign, Building2, Shield, Receipt } from "lucide-react";
+import { useState } from "react";
 import { formatDateDMY } from "@/lib/utils";
 import type { ContractRow } from "./ContractTypes";
 import { ContractStatusBadge, ContractTypeBadge } from "./ContractStatusBadge";
 import { daysUntilExpiry } from "./ContractTypes";
 import { SecurityRatesEditor } from "./SecurityRatesEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   contract: ContractRow;
