@@ -254,7 +254,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
       ],
     },
     {
-      label: "ACCOUNTING SETUP", icon: <Building size={18} />, collapsible: true,
+      label: "ACCOUNTING SETUP", icon: <Building2 size={18} />, collapsible: true,
       children: [
         { label: "Companies", path: "/accounting/companies" },
         { label: "Finance Stations", path: "/accounting/stations" },
