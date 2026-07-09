@@ -1,0 +1,35 @@
+{
+  "common": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "code": "Code",
+    "name": "Name",
+    "actions": "Actions",
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "accounting": {
+    "setup": "Accounting Setup",
+    "companies": "Companies",
+    "company": "Company",
+    "stations": "Finance Stations",
+    "station": "Station",
+    "currency": "Currency",
+    "country": "Country",
+    "taxId": "Tax ID",
+    "commercialReg": "Commercial Register",
+    "address": "Address",
+    "companiesTitle": "Group Companies",
+    "companiesSubtitle": "5 legal entities of the Link Group and their base currency",
+    "stationsTitle": "Finance Cost-Centers (Stations)",
+    "stationsSubtitle": "Operating stations used as cost centers in journal entries"
+  }
+}
