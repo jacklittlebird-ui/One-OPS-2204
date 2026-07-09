@@ -59,6 +59,7 @@ import PaymentsPage from "./pages/treasury/Payments";
 import ReceiptsPage from "./pages/treasury/Receipts";
 import BankTransfersPage from "./pages/treasury/BankTransfers";
 import BankReconciliationPage from "./pages/treasury/BankReconciliation";
+import BankReconciliationDetailPage from "./pages/treasury/BankReconciliationDetail";
 import ReportsAdminPage from "./pages/ReportsAdmin";
 import SecurityStatusPage from "./pages/SecurityStatus";
 import OperationsReportsPage from "./pages/OperationsReports";
