@@ -327,8 +327,44 @@ export default function FinancialReportsPage() {
         <p className="text-muted-foreground text-sm">التقارير المالية · Trial Balance, P&L, Balance Sheet</p>
       </div>
 
+      {/* Filters: Company × Station × Period (4D cost-center scope) */}
+      <Card>
+        <CardContent className="p-3 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+          <div>
+            <label className="text-xs text-muted-foreground">Company / الشركة</label>
+            <Select value={companyFilter} onValueChange={(v) => { setCompanyFilter(v); setStationFilter("all"); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Companies</SelectItem>
+                {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Station / المحطة</label>
+            <Select value={stationFilter} onValueChange={setStationFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stations</SelectItem>
+                {stationsForCompany.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Date From</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Date To</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => { setCompanyFilter("all"); setStationFilter("all"); setDateFrom(""); setDateTo(""); }}>Clear</Button>
+        </CardContent>
+      </Card>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-3">
+
         {[
           { label: "Total Assets", value: totalAssets, cls: "text-primary" },
           { label: "Total Liabilities", value: totalLiabilities, cls: "text-destructive" },
