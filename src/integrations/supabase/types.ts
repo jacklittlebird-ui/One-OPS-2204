@@ -3000,6 +3000,8 @@ export type Database = {
           notes: string | null
           payment_date: string
           payment_no: string
+          reconciled_at: string | null
+          reconciliation_id: string | null
           reference: string | null
           status: string
           updated_at: string
@@ -3021,6 +3023,8 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_no: string
+          reconciled_at?: string | null
+          reconciliation_id?: string | null
           reference?: string | null
           status?: string
           updated_at?: string
@@ -3042,6 +3046,8 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_no?: string
+          reconciled_at?: string | null
+          reconciliation_id?: string | null
           reference?: string | null
           status?: string
           updated_at?: string
@@ -3061,6 +3067,13 @@ export type Database = {
             columns: ["cash_account_id"]
             isOneToOne: false
             referencedRelation: "cash_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_reconciliation_id_fkey"
+            columns: ["reconciliation_id"]
+            isOneToOne: false
+            referencedRelation: "bank_reconciliations"
             referencedColumns: ["id"]
           },
           {
@@ -3120,6 +3133,8 @@ export type Database = {
           notes: string | null
           receipt_date: string
           receipt_no: string
+          reconciled_at: string | null
+          reconciliation_id: string | null
           reference: string | null
           status: string
           updated_at: string
@@ -3141,6 +3156,8 @@ export type Database = {
           notes?: string | null
           receipt_date?: string
           receipt_no: string
+          reconciled_at?: string | null
+          reconciliation_id?: string | null
           reference?: string | null
           status?: string
           updated_at?: string
@@ -3162,6 +3179,8 @@ export type Database = {
           notes?: string | null
           receipt_date?: string
           receipt_no?: string
+          reconciled_at?: string | null
+          reconciliation_id?: string | null
           reference?: string | null
           status?: string
           updated_at?: string
@@ -3186,6 +3205,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_reconciliation_id_fkey"
+            columns: ["reconciliation_id"]
+            isOneToOne: false
+            referencedRelation: "bank_reconciliations"
             referencedColumns: ["id"]
           },
         ]
@@ -5583,6 +5609,27 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      recalc_bank_reconciliation: {
+        Args: { _id: string }
+        Returns: {
+          bank_account_id: string
+          created_at: string
+          difference: number
+          id: string
+          notes: string | null
+          statement_balance: number
+          statement_date: string
+          status: string
+          system_balance: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bank_reconciliations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       refresh_invoice_monthly_summary: { Args: never; Returns: undefined }
       return_flight_to_clearance: {
         Args: { _id: string; _stamp: string }

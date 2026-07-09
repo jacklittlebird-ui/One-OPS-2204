@@ -1,5 +1,6 @@
 import TreasuryTablePage, { StatusBadge } from "@/components/treasury/TreasuryTablePage";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
 const STATUS = [{value:"Open",label:"Open"},{value:"Reconciled",label:"Reconciled"},{value:"Closed",label:"Closed"}];
 
@@ -30,6 +31,7 @@ export default function BankReconciliationPage() {
       { key: "system_balance", label: "System", render: (r) => Number(r.system_balance || 0).toLocaleString() },
       { key: "difference", label: "Difference", render: (r) => Number(r.difference || 0).toLocaleString() },
       { key: "status", label: "Status", render: (r) => <StatusBadge value={r.status} /> },
+      { key: "id", label: "", render: (r) => <Link to={`/treasury/bank-reconciliation/${r.id}`} className="text-primary hover:underline text-sm font-medium">Reconcile →</Link> },
     ]}
   />;
 }

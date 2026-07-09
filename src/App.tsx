@@ -59,6 +59,7 @@ import PaymentsPage from "./pages/treasury/Payments";
 import ReceiptsPage from "./pages/treasury/Receipts";
 import BankTransfersPage from "./pages/treasury/BankTransfers";
 import BankReconciliationPage from "./pages/treasury/BankReconciliation";
+import BankReconciliationDetailPage from "./pages/treasury/BankReconciliationDetail";
 import ReportsAdminPage from "./pages/ReportsAdmin";
 import SecurityStatusPage from "./pages/SecurityStatus";
 import OperationsReportsPage from "./pages/OperationsReports";
@@ -155,6 +156,8 @@ function AppRoutes() {
       <Route path="/treasury/receipts" element={<ProtectedRoute><AppLayout><ReceiptsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/treasury/bank-transfers" element={<ProtectedRoute><AppLayout><BankTransfersPage /></AppLayout></ProtectedRoute>} />
       <Route path="/treasury/bank-reconciliation" element={<ProtectedRoute><AppLayout><BankReconciliationPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/treasury/bank-reconciliation/:id" element={<ProtectedRoute><AppLayout><BankReconciliationDetailPage /></AppLayout></ProtectedRoute>} />
+
       <Route path="/reports-admin" element={<ProtectedRoute><AppLayout><ReportsAdminPage /></AppLayout></ProtectedRoute>} />
       <Route path="/security-status" element={<ProtectedRoute><AppLayout><SecurityStatusPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/companies" element={<ProtectedRoute><AppLayout><CompaniesPage /></AppLayout></ProtectedRoute>} />
