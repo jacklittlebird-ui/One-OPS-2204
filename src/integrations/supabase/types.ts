@@ -475,6 +475,8 @@ export type Database = {
           account_name: string
           account_number: string | null
           bank_name: string
+          branch: string | null
+          company_id: string | null
           created_at: string
           currency: string
           current_balance: number
@@ -490,6 +492,8 @@ export type Database = {
           account_name: string
           account_number?: string | null
           bank_name: string
+          branch?: string | null
+          company_id?: string | null
           created_at?: string
           currency?: string
           current_balance?: number
@@ -505,6 +509,8 @@ export type Database = {
           account_name?: string
           account_number?: string | null
           bank_name?: string
+          branch?: string | null
+          company_id?: string | null
           created_at?: string
           currency?: string
           current_balance?: number
@@ -516,7 +522,15 @@ export type Database = {
           swift?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bank_reconciliations: {
         Row: {
@@ -568,15 +582,24 @@ export type Database = {
       bank_transfers: {
         Row: {
           amount: number
+          company_id: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
           created_at: string
           currency: string
           fees: number
           from_bank_id: string | null
           from_cash_id: string | null
           id: string
+          matched_invoices: Json
           notes: string | null
+          payment_type: string | null
           reference: string | null
+          service_type: string | null
           status: string
+          supplier_bank_profile_id: string | null
+          supplier_category: string | null
+          supplier_id: string | null
           to_bank_id: string | null
           to_cash_id: string | null
           transfer_date: string
@@ -585,15 +608,24 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          company_id?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           currency?: string
           fees?: number
           from_bank_id?: string | null
           from_cash_id?: string | null
           id?: string
+          matched_invoices?: Json
           notes?: string | null
+          payment_type?: string | null
           reference?: string | null
+          service_type?: string | null
           status?: string
+          supplier_bank_profile_id?: string | null
+          supplier_category?: string | null
+          supplier_id?: string | null
           to_bank_id?: string | null
           to_cash_id?: string | null
           transfer_date?: string
@@ -602,15 +634,24 @@ export type Database = {
         }
         Update: {
           amount?: number
+          company_id?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           currency?: string
           fees?: number
           from_bank_id?: string | null
           from_cash_id?: string | null
           id?: string
+          matched_invoices?: Json
           notes?: string | null
+          payment_type?: string | null
           reference?: string | null
+          service_type?: string | null
           status?: string
+          supplier_bank_profile_id?: string | null
+          supplier_category?: string | null
+          supplier_id?: string | null
           to_bank_id?: string | null
           to_cash_id?: string | null
           transfer_date?: string
@@ -618,6 +659,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bank_transfers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bank_transfers_from_bank_id_fkey"
             columns: ["from_bank_id"]
@@ -630,6 +678,20 @@ export type Database = {
             columns: ["from_cash_id"]
             isOneToOne: false
             referencedRelation: "cash_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transfers_supplier_bank_profile_id_fkey"
+            columns: ["supplier_bank_profile_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_bank_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transfers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
             referencedColumns: ["id"]
           },
           {
@@ -732,44 +794,71 @@ export type Database = {
       cash_accounts: {
         Row: {
           account_name: string
+          company_id: string | null
           created_at: string
           currency: string
           current_balance: number
           custodian: string | null
+          custody_type: string
           id: string
           location: string | null
           notes: string | null
           opening_balance: number
+          original_amount: number
+          station_id: string | null
           status: string
           updated_at: string
         }
         Insert: {
           account_name: string
+          company_id?: string | null
           created_at?: string
           currency?: string
           current_balance?: number
           custodian?: string | null
+          custody_type?: string
           id?: string
           location?: string | null
           notes?: string | null
           opening_balance?: number
+          original_amount?: number
+          station_id?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           account_name?: string
+          company_id?: string | null
           created_at?: string
           currency?: string
           current_balance?: number
           custodian?: string | null
+          custody_type?: string
           id?: string
           location?: string | null
           notes?: string | null
           opening_balance?: number
+          original_amount?: number
+          station_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cash_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_accounts_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       catering_items: {
         Row: {
@@ -802,6 +891,7 @@ export type Database = {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
           code: string
+          company_id: string | null
           created_at: string
           currency: string
           current_balance: number
@@ -813,12 +903,14 @@ export type Database = {
           name_ar: string
           opening_balance: number
           parent_id: string | null
+          requires_flight_link: boolean
           status: string
           updated_at: string
         }
         Insert: {
           account_type: Database["public"]["Enums"]["account_type"]
           code: string
+          company_id?: string | null
           created_at?: string
           currency?: string
           current_balance?: number
@@ -830,12 +922,14 @@ export type Database = {
           name_ar?: string
           opening_balance?: number
           parent_id?: string | null
+          requires_flight_link?: boolean
           status?: string
           updated_at?: string
         }
         Update: {
           account_type?: Database["public"]["Enums"]["account_type"]
           code?: string
+          company_id?: string | null
           created_at?: string
           currency?: string
           current_balance?: number
@@ -847,10 +941,18 @@ export type Database = {
           name_ar?: string
           opening_balance?: number
           parent_id?: string | null
+          requires_flight_link?: boolean
           status?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chart_of_accounts_parent_id_fkey"
             columns: ["parent_id"]
@@ -859,6 +961,140 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cheques_under_collection: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          cheque_date: string
+          cheque_no: string
+          cleared_date: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          customer_id: string | null
+          customer_name: string | null
+          deposit_date: string | null
+          drawn_on_bank: string | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          received_date: string
+          status: Database["public"]["Enums"]["collection_cheque_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id?: string | null
+          cheque_date: string
+          cheque_no: string
+          cleared_date?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          customer_id?: string | null
+          customer_name?: string | null
+          deposit_date?: string | null
+          drawn_on_bank?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          received_date?: string
+          status?: Database["public"]["Enums"]["collection_cheque_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          cheque_date?: string
+          cheque_no?: string
+          cleared_date?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          customer_id?: string | null
+          customer_name?: string | null
+          deposit_date?: string | null
+          drawn_on_bank?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          received_date?: string
+          status?: Database["public"]["Enums"]["collection_cheque_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cheques_under_collection_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_under_collection_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_under_collection_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_under_collection_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          base_currency: Database["public"]["Enums"]["finance_currency"]
+          code: string
+          country: string | null
+          created_at: string
+          id: string
+          is_headquarters: boolean
+          name: string
+          name_ar: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          base_currency: Database["public"]["Enums"]["finance_currency"]
+          code: string
+          country?: string | null
+          created_at?: string
+          id?: string
+          is_headquarters?: boolean
+          name: string
+          name_ar?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          base_currency?: Database["public"]["Enums"]["finance_currency"]
+          code?: string
+          country?: string | null
+          created_at?: string
+          id?: string
+          is_headquarters?: boolean
+          name?: string
+          name_ar?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       contract_service_rates: {
         Row: {
@@ -930,6 +1166,7 @@ export type Database = {
           auto_renew: boolean
           base_flat_fee: number
           billing_frequency: string
+          company_id: string | null
           contact_email: string
           contact_person: string
           contract_no: string
@@ -958,6 +1195,7 @@ export type Database = {
           auto_renew?: boolean
           base_flat_fee?: number
           billing_frequency?: string
+          company_id?: string | null
           contact_email?: string
           contact_person?: string
           contract_no: string
@@ -986,6 +1224,7 @@ export type Database = {
           auto_renew?: boolean
           base_flat_fee?: number
           billing_frequency?: string
+          company_id?: string | null
           contact_email?: string
           contact_person?: string
           contract_no?: string
@@ -1007,7 +1246,176 @@ export type Database = {
           status?: Database["public"]["Enums"]["contract_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contracts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_report_lines: {
+        Row: {
+          cost_report_id: string
+          created_at: string
+          description: string
+          details: Json
+          id: string
+          item_type: string
+          quantity: number
+          sort_order: number
+          total_cost: number
+          total_selling: number
+          unit: string | null
+          unit_cost: number
+          unit_selling: number
+        }
+        Insert: {
+          cost_report_id: string
+          created_at?: string
+          description?: string
+          details?: Json
+          id?: string
+          item_type: string
+          quantity?: number
+          sort_order?: number
+          total_cost?: number
+          total_selling?: number
+          unit?: string | null
+          unit_cost?: number
+          unit_selling?: number
+        }
+        Update: {
+          cost_report_id?: string
+          created_at?: string
+          description?: string
+          details?: Json
+          id?: string
+          item_type?: string
+          quantity?: number
+          sort_order?: number
+          total_cost?: number
+          total_selling?: number
+          unit?: string | null
+          unit_cost?: number
+          unit_selling?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_report_lines_cost_report_id_fkey"
+            columns: ["cost_report_id"]
+            isOneToOne: false
+            referencedRelation: "cost_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_reports: {
+        Row: {
+          airline_id: string | null
+          billed_invoice_id: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          flight_schedule_id: string | null
+          id: string
+          margin: number | null
+          report_date: string
+          report_no: string
+          service_report_id: string | null
+          service_type: string
+          source: string
+          station_id: string | null
+          status: string
+          supplier_id: string | null
+          total_cost: number
+          total_selling: number
+          updated_at: string
+        }
+        Insert: {
+          airline_id?: string | null
+          billed_invoice_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          flight_schedule_id?: string | null
+          id?: string
+          margin?: number | null
+          report_date?: string
+          report_no: string
+          service_report_id?: string | null
+          service_type: string
+          source?: string
+          station_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          total_cost?: number
+          total_selling?: number
+          updated_at?: string
+        }
+        Update: {
+          airline_id?: string | null
+          billed_invoice_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          flight_schedule_id?: string | null
+          id?: string
+          margin?: number | null
+          report_date?: string
+          report_no?: string
+          service_report_id?: string | null
+          service_type?: string
+          source?: string
+          station_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          total_cost?: number
+          total_selling?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_reports_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_reports_billed_invoice_id_fkey"
+            columns: ["billed_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_reports_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_reports_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       countries: {
         Row: {
@@ -1038,6 +1446,85 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      customer_price_list: {
+        Row: {
+          airline_iata: string | null
+          airline_id: string | null
+          company_id: string | null
+          contract_id: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          end_date: string | null
+          id: string
+          notes: string | null
+          service_type: string
+          start_date: string | null
+          station_code: string | null
+          status: string
+          unit: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          airline_iata?: string | null
+          airline_id?: string | null
+          company_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          service_type: string
+          start_date?: string | null
+          station_code?: string | null
+          status?: string
+          unit?: string
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          airline_iata?: string | null
+          airline_id?: string | null
+          company_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          service_type?: string
+          start_date?: string | null
+          station_code?: string | null
+          status?: string
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_price_list_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_price_list_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_price_list_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delay_codes: {
         Row: {
@@ -1241,6 +1728,122 @@ export type Database = {
           },
         ]
       }
+      exchange_rates: {
+        Row: {
+          base_currency: Database["public"]["Enums"]["finance_currency"]
+          buy_rate: number | null
+          created_at: string
+          id: string
+          mid_rate: number
+          quote_currency: Database["public"]["Enums"]["finance_currency"]
+          rate_date: string
+          sell_rate: number | null
+          source: string | null
+        }
+        Insert: {
+          base_currency: Database["public"]["Enums"]["finance_currency"]
+          buy_rate?: number | null
+          created_at?: string
+          id?: string
+          mid_rate: number
+          quote_currency: Database["public"]["Enums"]["finance_currency"]
+          rate_date: string
+          sell_rate?: number | null
+          source?: string | null
+        }
+        Update: {
+          base_currency?: Database["public"]["Enums"]["finance_currency"]
+          buy_rate?: number | null
+          created_at?: string
+          id?: string
+          mid_rate?: number
+          quote_currency?: Database["public"]["Enums"]["finance_currency"]
+          rate_date?: string
+          sell_rate?: number | null
+          source?: string | null
+        }
+        Relationships: []
+      }
+      finance_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          after_data: Json | null
+          before_data: Json | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      finance_stations: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          name_ar: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          name_ar?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          name_ar?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_stations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flight_schedules: {
         Row: {
           aircraft_type: string
@@ -1396,24 +1999,102 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_variance_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          details: Json
+          draft_invoice_id: string | null
+          flight_schedule_id: string | null
+          id: string
+          resolution: string | null
+          severity: string
+          supplier_id: string | null
+          updated_at: string
+          variance_amount: number
+          variance_pct: number
+          vendor_invoice_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          details?: Json
+          draft_invoice_id?: string | null
+          flight_schedule_id?: string | null
+          id?: string
+          resolution?: string | null
+          severity?: string
+          supplier_id?: string | null
+          updated_at?: string
+          variance_amount?: number
+          variance_pct?: number
+          vendor_invoice_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          details?: Json
+          draft_invoice_id?: string | null
+          flight_schedule_id?: string | null
+          id?: string
+          resolution?: string | null
+          severity?: string
+          supplier_id?: string | null
+          updated_at?: string
+          variance_amount?: number
+          variance_pct?: number
+          vendor_invoice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_variance_reports_draft_invoice_id_fkey"
+            columns: ["draft_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_variance_reports_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_variance_reports_vendor_invoice_id_fkey"
+            columns: ["vendor_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           airline_iata: string | null
           airport_charges: number
+          base_currency: Database["public"]["Enums"]["finance_currency"] | null
+          base_total: number | null
           billing_period: string
           catering: number
           civil_aviation: number
+          company_id: string | null
           created_at: string
           credit_note_ref: string
           currency: Database["public"]["Enums"]["currency_type"]
           date: string
           description: string | null
+          draft_status: string
           due_date: string
+          exchange_rate: number | null
+          exchange_rate_date: string | null
           finalized_at: string | null
           finalized_by: string | null
           flight_ref: string | null
+          flight_schedule_id: string | null
           handling: number
           id: string
+          invoice_direction: Database["public"]["Enums"]["invoice_direction"]
           invoice_no: string
           invoice_type: string
           journal_entry_id: string | null
@@ -1424,30 +2105,46 @@ export type Database = {
           payment_ref: string
           sent_at: string | null
           sent_to: string | null
+          service_report_id: string | null
+          service_type: string | null
+          source: string
           station: string
+          station_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
+          supplier_id: string | null
           total: number
+          transaction_currency:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
           updated_at: string
           vat: number
         }
         Insert: {
           airline_iata?: string | null
           airport_charges?: number
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          base_total?: number | null
           billing_period?: string
           catering?: number
           civil_aviation?: number
+          company_id?: string | null
           created_at?: string
           credit_note_ref?: string
           currency?: Database["public"]["Enums"]["currency_type"]
           date?: string
           description?: string | null
+          draft_status?: string
           due_date?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
           finalized_at?: string | null
           finalized_by?: string | null
           flight_ref?: string | null
+          flight_schedule_id?: string | null
           handling?: number
           id?: string
+          invoice_direction?: Database["public"]["Enums"]["invoice_direction"]
           invoice_no: string
           invoice_type?: string
           journal_entry_id?: string | null
@@ -1458,30 +2155,46 @@ export type Database = {
           payment_ref?: string
           sent_at?: string | null
           sent_to?: string | null
+          service_report_id?: string | null
+          service_type?: string | null
+          source?: string
           station?: string
+          station_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
+          supplier_id?: string | null
           total?: number
+          transaction_currency?:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
           updated_at?: string
           vat?: number
         }
         Update: {
           airline_iata?: string | null
           airport_charges?: number
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          base_total?: number | null
           billing_period?: string
           catering?: number
           civil_aviation?: number
+          company_id?: string | null
           created_at?: string
           credit_note_ref?: string
           currency?: Database["public"]["Enums"]["currency_type"]
           date?: string
           description?: string | null
+          draft_status?: string
           due_date?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
           finalized_at?: string | null
           finalized_by?: string | null
           flight_ref?: string | null
+          flight_schedule_id?: string | null
           handling?: number
           id?: string
+          invoice_direction?: Database["public"]["Enums"]["invoice_direction"]
           invoice_no?: string
           invoice_type?: string
           journal_entry_id?: string | null
@@ -1492,19 +2205,48 @@ export type Database = {
           payment_ref?: string
           sent_at?: string | null
           sent_to?: string | null
+          service_report_id?: string | null
+          service_type?: string | null
+          source?: string
           station?: string
+          station_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
+          supplier_id?: string | null
           total?: number
+          transaction_currency?:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
           updated_at?: string
           vat?: number
         }
         Relationships: [
           {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_journal_entry_id_fkey"
             columns: ["journal_entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
             referencedColumns: ["id"]
           },
         ]
@@ -1568,6 +2310,8 @@ export type Database = {
       }
       journal_entries: {
         Row: {
+          base_currency: Database["public"]["Enums"]["finance_currency"] | null
+          company_id: string | null
           created_at: string
           created_by: string
           description: string
@@ -1584,6 +2328,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          company_id?: string | null
           created_at?: string
           created_by?: string
           description?: string
@@ -1600,6 +2346,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          company_id?: string | null
           created_at?: string
           created_by?: string
           description?: string
@@ -1615,35 +2363,85 @@ export type Database = {
           total_debit?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       journal_entry_lines: {
         Row: {
           account_id: string
+          airline_id: string | null
+          base_amount: number | null
+          base_currency: Database["public"]["Enums"]["finance_currency"] | null
+          company_id: string | null
           credit: number
           debit: number
           description: string
           entry_id: string
+          exchange_rate: number
+          exchange_rate_date: string | null
+          flight_schedule_id: string | null
           id: string
+          service_type: string | null
           sort_order: number
+          station_id: string | null
+          supplier_id: string | null
+          transaction_amount: number | null
+          transaction_currency:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
         }
         Insert: {
           account_id: string
+          airline_id?: string | null
+          base_amount?: number | null
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          company_id?: string | null
           credit?: number
           debit?: number
           description?: string
           entry_id: string
+          exchange_rate?: number
+          exchange_rate_date?: string | null
+          flight_schedule_id?: string | null
           id?: string
+          service_type?: string | null
           sort_order?: number
+          station_id?: string | null
+          supplier_id?: string | null
+          transaction_amount?: number | null
+          transaction_currency?:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
         }
         Update: {
           account_id?: string
+          airline_id?: string | null
+          base_amount?: number | null
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          company_id?: string | null
           credit?: number
           debit?: number
           description?: string
           entry_id?: string
+          exchange_rate?: number
+          exchange_rate_date?: string | null
+          flight_schedule_id?: string | null
           id?: string
+          service_type?: string | null
           sort_order?: number
+          station_id?: string | null
+          supplier_id?: string | null
+          transaction_amount?: number | null
+          transaction_currency?:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
         }
         Relationships: [
           {
@@ -1654,10 +2452,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "journal_entry_lines_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "journal_entry_lines_entry_id_fkey"
             columns: ["entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
             referencedColumns: ["id"]
           },
         ]
@@ -1809,6 +2635,100 @@ export type Database = {
         }
         Relationships: []
       }
+      notes_payable: {
+        Row: {
+          amount: number
+          bank_account_id: string
+          cheque_date: string
+          cheque_no: string
+          clearance_date: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          id: string
+          matched_invoices: Json
+          notes: string | null
+          payment_type: string
+          posted_at: string | null
+          posted_by: string | null
+          reconciliation_memo: string | null
+          status: Database["public"]["Enums"]["cheque_status"]
+          supplier_category: string
+          supplier_id: string | null
+          supplier_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id: string
+          cheque_date: string
+          cheque_no: string
+          clearance_date?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          id?: string
+          matched_invoices?: Json
+          notes?: string | null
+          payment_type: string
+          posted_at?: string | null
+          posted_by?: string | null
+          reconciliation_memo?: string | null
+          status?: Database["public"]["Enums"]["cheque_status"]
+          supplier_category: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string
+          cheque_date?: string
+          cheque_no?: string
+          clearance_date?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          id?: string
+          matched_invoices?: Json
+          notes?: string | null
+          payment_type?: string
+          posted_at?: string | null
+          posted_by?: string | null
+          reconciliation_memo?: string | null
+          status?: Database["public"]["Enums"]["cheque_status"]
+          supplier_category?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_payable_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_payable_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_payable_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           contract_alerts: boolean
@@ -1895,6 +2815,93 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      objection_letters: {
+        Row: {
+          audit_trail: Json
+          closed_at: string | null
+          closed_by: string | null
+          contracted_price: number
+          created_at: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          difference: number | null
+          disputed_service: string
+          flight_date: string | null
+          flight_ref: string | null
+          id: string
+          invoiced_price: number
+          letter_no: string
+          notes: string | null
+          opened_by: string | null
+          payment_frozen: boolean
+          settled_amount: number | null
+          status: Database["public"]["Enums"]["objection_status"]
+          supplier_id: string | null
+          updated_at: string
+          variance_report_id: string | null
+        }
+        Insert: {
+          audit_trail?: Json
+          closed_at?: string | null
+          closed_by?: string | null
+          contracted_price?: number
+          created_at?: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          difference?: number | null
+          disputed_service?: string
+          flight_date?: string | null
+          flight_ref?: string | null
+          id?: string
+          invoiced_price?: number
+          letter_no: string
+          notes?: string | null
+          opened_by?: string | null
+          payment_frozen?: boolean
+          settled_amount?: number | null
+          status?: Database["public"]["Enums"]["objection_status"]
+          supplier_id?: string | null
+          updated_at?: string
+          variance_report_id?: string | null
+        }
+        Update: {
+          audit_trail?: Json
+          closed_at?: string | null
+          closed_by?: string | null
+          contracted_price?: number
+          created_at?: string
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          difference?: number | null
+          disputed_service?: string
+          flight_date?: string | null
+          flight_ref?: string | null
+          id?: string
+          invoiced_price?: number
+          letter_no?: string
+          notes?: string | null
+          opened_by?: string | null
+          payment_frozen?: boolean
+          settled_amount?: number | null
+          status?: Database["public"]["Enums"]["objection_status"]
+          supplier_id?: string | null
+          updated_at?: string
+          variance_report_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objection_letters_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "objection_letters_variance_report_id_fkey"
+            columns: ["variance_report_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_variance_reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       overfly_schedules: {
         Row: {
@@ -2734,6 +3741,123 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      short_term_loans: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          deduction_plan: string
+          employee_id: string | null
+          employee_name: string
+          id: string
+          installments: number
+          installments_paid: number
+          loan_no: string
+          notes: string | null
+          rejection_reason: string | null
+          request_date: string
+          requested_by: string | null
+          source_bank_id: string | null
+          source_cash_id: string | null
+          source_type: string
+          station_id: string | null
+          status: Database["public"]["Enums"]["loan_status"]
+          updated_at: string
+          voucher_id: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          deduction_plan: string
+          employee_id?: string | null
+          employee_name: string
+          id?: string
+          installments?: number
+          installments_paid?: number
+          loan_no: string
+          notes?: string | null
+          rejection_reason?: string | null
+          request_date?: string
+          requested_by?: string | null
+          source_bank_id?: string | null
+          source_cash_id?: string | null
+          source_type: string
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["loan_status"]
+          updated_at?: string
+          voucher_id?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          deduction_plan?: string
+          employee_id?: string | null
+          employee_name?: string
+          id?: string
+          installments?: number
+          installments_paid?: number
+          loan_no?: string
+          notes?: string | null
+          rejection_reason?: string | null
+          request_date?: string
+          requested_by?: string | null
+          source_bank_id?: string | null
+          source_cash_id?: string | null
+          source_type?: string
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["loan_status"]
+          updated_at?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_term_loans_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "short_term_loans_source_bank_id_fkey"
+            columns: ["source_bank_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "short_term_loans_source_cash_id_fkey"
+            columns: ["source_cash_id"]
+            isOneToOne: false
+            referencedRelation: "cash_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "short_term_loans_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "short_term_loans_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "treasury_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       snapshot_dispatch_assignments_pre_phase3: {
         Row: {
@@ -3620,6 +4744,137 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_bank_profiles: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          bank_name: string
+          branch: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          iban: string | null
+          id: string
+          is_default: boolean
+          notes: string | null
+          service_type: string
+          status: string
+          supplier_id: string
+          swift: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name: string
+          branch?: string | null
+          created_at?: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          iban?: string | null
+          id?: string
+          is_default?: boolean
+          notes?: string | null
+          service_type: string
+          status?: string
+          supplier_id: string
+          swift?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string
+          branch?: string | null
+          created_at?: string
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          iban?: string | null
+          id?: string
+          is_default?: boolean
+          notes?: string | null
+          service_type?: string
+          status?: string
+          supplier_id?: string
+          swift?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_bank_profiles_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_price_list: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          end_date: string | null
+          id: string
+          notes: string | null
+          service_type: string
+          start_date: string | null
+          station_code: string | null
+          status: string
+          supplier_id: string | null
+          tax_rate: number
+          unit: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          service_type: string
+          start_date?: string | null
+          station_code?: string | null
+          status?: string
+          supplier_id?: string | null
+          tax_rate?: number
+          unit?: string
+          unit_cost: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          service_type?: string
+          start_date?: string | null
+          station_code?: string | null
+          status?: string
+          supplier_id?: string | null
+          tax_rate?: number
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_price_list_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_price_list_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       traffic_rights: {
         Row: {
           created_at: string
@@ -3646,6 +4901,187 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      treasury_vouchers: {
+        Row: {
+          account_id: string | null
+          airline_id: string | null
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_account_id: string | null
+          base_amount: number
+          base_currency: Database["public"]["Enums"]["finance_currency"] | null
+          cash_account_id: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          description: string
+          exchange_rate: number
+          flight_schedule_id: string | null
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          parent_pending_id: string | null
+          party_name: string | null
+          party_type: string | null
+          posted_at: string | null
+          posted_by: string | null
+          reference: string | null
+          requires_approval: boolean
+          service_type: string | null
+          settled_at: string | null
+          settled_by: string | null
+          station_id: string | null
+          status: Database["public"]["Enums"]["voucher_status"]
+          supplier_id: string | null
+          updated_at: string
+          voucher_date: string
+          voucher_no: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+        }
+        Insert: {
+          account_id?: string | null
+          airline_id?: string | null
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_id?: string | null
+          base_amount?: number
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          cash_account_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          description?: string
+          exchange_rate?: number
+          flight_schedule_id?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          parent_pending_id?: string | null
+          party_name?: string | null
+          party_type?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
+          reference?: string | null
+          requires_approval?: boolean
+          service_type?: string | null
+          settled_at?: string | null
+          settled_by?: string | null
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["voucher_status"]
+          supplier_id?: string | null
+          updated_at?: string
+          voucher_date?: string
+          voucher_no: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+        }
+        Update: {
+          account_id?: string | null
+          airline_id?: string | null
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_id?: string | null
+          base_amount?: number
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          cash_account_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          description?: string
+          exchange_rate?: number
+          flight_schedule_id?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          parent_pending_id?: string | null
+          party_name?: string | null
+          party_type?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
+          reference?: string | null
+          requires_approval?: boolean
+          service_type?: string | null
+          settled_at?: string | null
+          settled_by?: string | null
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["voucher_status"]
+          supplier_id?: string | null
+          updated_at?: string
+          voucher_date?: string
+          voucher_no?: string
+          voucher_type?: Database["public"]["Enums"]["voucher_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treasury_vouchers_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            isOneToOne: false
+            referencedRelation: "cash_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_parent_pending_id_fkey"
+            columns: ["parent_pending_id"]
+            isOneToOne: false
+            referencedRelation: "treasury_vouchers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tube_charges: {
         Row: {
@@ -4236,6 +5672,7 @@ export type Database = {
         | "general_accounts"
         | "accountant"
         | "viewer"
+      cheque_status: "issued" | "sent" | "cleared" | "bounced" | "cancelled"
       clearance_status:
         | "Pending"
         | "Approved"
@@ -4243,8 +5680,18 @@ export type Database = {
         | "Expired"
         | "Cancelled"
         | "Completed"
+      collection_cheque_status: "received" | "deposited" | "cleared" | "bounced"
       contract_status: "Active" | "Expired" | "Pending" | "Terminated"
       currency_type: "USD" | "EUR" | "EGP"
+      finance_currency:
+        | "EGP"
+        | "AED"
+        | "MAD"
+        | "JOD"
+        | "USD"
+        | "EUR"
+        | "SAR"
+        | "GBP"
       handling_type:
         | "Turn Around"
         | "Night Stop"
@@ -4272,15 +5719,29 @@ export type Database = {
         | "Growth"
         | "Loyalty"
         | "Performance"
+      invoice_direction: "AR" | "AP"
       invoice_status: "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled"
       invoice_type: "Preliminary" | "Final"
       journal_status: "Draft" | "Posted" | "Void"
+      loan_status:
+        | "requested"
+        | "approved"
+        | "rejected"
+        | "active"
+        | "completed"
+        | "cancelled"
       lost_found_status:
         | "Reported"
         | "In Storage"
         | "Claimed"
         | "Forwarded"
         | "Disposed"
+      objection_status:
+        | "sent"
+        | "under_negotiation"
+        | "resolved"
+        | "escalated"
+        | "frozen"
       overfly_status:
         | "Approved"
         | "Pending"
@@ -4299,6 +5760,14 @@ export type Database = {
         | "VIP"
       shift_type: "Morning" | "Afternoon" | "Night" | "Split" | "Off"
       staff_status: "Active" | "On Leave" | "Training" | "Suspended"
+      voucher_status:
+        | "draft"
+        | "pending_approval"
+        | "approved"
+        | "posted"
+        | "settled"
+        | "void"
+      voucher_type: "receipt" | "payment" | "pending"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4441,6 +5910,7 @@ export const Constants = {
         "accountant",
         "viewer",
       ],
+      cheque_status: ["issued", "sent", "cleared", "bounced", "cancelled"],
       clearance_status: [
         "Pending",
         "Approved",
@@ -4449,8 +5919,19 @@ export const Constants = {
         "Cancelled",
         "Completed",
       ],
+      collection_cheque_status: ["received", "deposited", "cleared", "bounced"],
       contract_status: ["Active", "Expired", "Pending", "Terminated"],
       currency_type: ["USD", "EUR", "EGP"],
+      finance_currency: [
+        "EGP",
+        "AED",
+        "MAD",
+        "JOD",
+        "USD",
+        "EUR",
+        "SAR",
+        "GBP",
+      ],
       handling_type: [
         "Turn Around",
         "Night Stop",
@@ -4474,15 +5955,31 @@ export const Constants = {
       ],
       incentive_period: ["Monthly", "Quarterly", "Semi-Annual", "Annual"],
       incentive_type: ["Volume", "Revenue", "Growth", "Loyalty", "Performance"],
+      invoice_direction: ["AR", "AP"],
       invoice_status: ["Draft", "Sent", "Paid", "Overdue", "Cancelled"],
       invoice_type: ["Preliminary", "Final"],
       journal_status: ["Draft", "Posted", "Void"],
+      loan_status: [
+        "requested",
+        "approved",
+        "rejected",
+        "active",
+        "completed",
+        "cancelled",
+      ],
       lost_found_status: [
         "Reported",
         "In Storage",
         "Claimed",
         "Forwarded",
         "Disposed",
+      ],
+      objection_status: [
+        "sent",
+        "under_negotiation",
+        "resolved",
+        "escalated",
+        "frozen",
       ],
       overfly_status: [
         "Approved",
@@ -4504,6 +6001,15 @@ export const Constants = {
       ],
       shift_type: ["Morning", "Afternoon", "Night", "Split", "Off"],
       staff_status: ["Active", "On Leave", "Training", "Suspended"],
+      voucher_status: [
+        "draft",
+        "pending_approval",
+        "approved",
+        "posted",
+        "settled",
+        "void",
+      ],
+      voucher_type: ["receipt", "payment", "pending"],
     },
   },
 } as const
