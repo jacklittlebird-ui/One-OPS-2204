@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Settings, LogOut, Moon, Sun, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Bell, Settings, LogOut, Moon, Sun, Menu, PanelLeftClose, PanelLeft, Languages } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
   onMenuClick?: () => void;
