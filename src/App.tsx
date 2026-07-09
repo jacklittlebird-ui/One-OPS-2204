@@ -47,6 +47,8 @@ import FxRevaluationPage from "./pages/accounting/FxRevaluation";
 import VatReturnPage from "./pages/accounting/VatReturn";
 import RecurringJournalsPage from "./pages/accounting/RecurringJournals";
 import BudgetsPage from "./pages/accounting/Budgets";
+import FixedAssetsPage from "./pages/accounting/FixedAssets";
+import BudgetsPage from "./pages/accounting/Budgets";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
