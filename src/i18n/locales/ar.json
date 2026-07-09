@@ -30,6 +30,26 @@
     "companiesTitle": "شركات المجموعة",
     "companiesSubtitle": "الكيانات القانونية الخمسة لمجموعة لينك وعملتها الأساسية",
     "stationsTitle": "مراكز التكلفة (المحطات)",
-    "stationsSubtitle": "المحطات التشغيلية المستخدمة كمراكز تكلفة في القيود المحاسبية"
+    "stationsSubtitle": "المحطات التشغيلية المستخدمة كمراكز تكلفة في القيود المحاسبية",
+    "customerPriceList": "قائمة أسعار العملاء",
+    "customerPriceListSubtitle": "أسعار البيع لكل شركة طيران / محطة حسب الخدمة",
+    "supplierPriceList": "قائمة أسعار الموردين",
+    "supplierPriceListSubtitle": "أسعار التكلفة المتفق عليها مع الموردين لكل محطة",
+    "exchangeRates": "أسعار الصرف",
+    "exchangeRatesSubtitle": "أسعار الصرف اليومية المستخدمة لإعادة التقييم",
+    "airline": "شركة الطيران",
+    "serviceType": "نوع الخدمة",
+    "unit": "الوحدة",
+    "unitPrice": "سعر الوحدة",
+    "startDate": "تاريخ البدء",
+    "endDate": "تاريخ الانتهاء",
+    "supplier": "المورد",
+    "date": "التاريخ",
+    "baseCurrency": "الأساسية",
+    "quoteCurrency": "المقابلة",
+    "midRate": "الوسط",
+    "buyRate": "الشراء",
+    "sellRate": "البيع",
+    "source": "المصدر"
   }
 }

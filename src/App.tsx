@@ -64,6 +64,9 @@ import SecurityStatusPage from "./pages/SecurityStatus";
 import OperationsReportsPage from "./pages/OperationsReports";
 import CompaniesPage from "./pages/accounting/Companies";
 import FinanceStationsPage from "./pages/accounting/FinanceStations";
+import ExchangeRatesPage from "./pages/accounting/ExchangeRates";
+import CustomerPriceListPage from "./pages/accounting/CustomerPriceList";
+import SupplierPriceListPage from "./pages/accounting/SupplierPriceList";
 import "./i18n";
 
 
@@ -156,6 +159,9 @@ function AppRoutes() {
       <Route path="/security-status" element={<ProtectedRoute><AppLayout><SecurityStatusPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/companies" element={<ProtectedRoute><AppLayout><CompaniesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/stations" element={<ProtectedRoute><AppLayout><FinanceStationsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/exchange-rates" element={<ProtectedRoute><AppLayout><ExchangeRatesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/customer-prices" element={<ProtectedRoute><AppLayout><CustomerPriceListPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/supplier-prices" element={<ProtectedRoute><AppLayout><SupplierPriceListPage /></AppLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

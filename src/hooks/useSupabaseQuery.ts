@@ -15,7 +15,8 @@ type TableName =
   | "chart_of_accounts" | "journal_entries" | "journal_entry_lines"
   | "vendor_invoices" | "airline_incentives" | "airport_charges" | "audit_logs"
   | "irregularity_reports" | "dispatch_assignments"
-  | "companies" | "finance_stations";
+  | "companies" | "finance_stations"
+  | "customer_price_list" | "supplier_price_list" | "exchange_rates";
 
 export function useSupabaseTable<T extends Record<string, any>>(
   table: TableName,
