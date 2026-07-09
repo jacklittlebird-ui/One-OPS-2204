@@ -32,7 +32,7 @@ interface Budget {
   notes: string | null;
 }
 
-interface Account { id: string; code: string; name: string; type: string | null; }
+interface Account { id: string; code: string; name: string; }
 interface Company { id: string; name: string; }
 interface Station { id: string; name: string; }
 
