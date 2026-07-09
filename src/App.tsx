@@ -141,6 +141,7 @@ function AppRoutes() {
       <Route path="/journal-entries" element={<ProtectedRoute><AppLayout><JournalEntriesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/financial-reports" element={<ProtectedRoute><AppLayout><FinancialReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/cost-center" element={<ProtectedRoute><AppLayout><CostCenterReportsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/fx-revaluation" element={<ProtectedRoute><AppLayout><FxRevaluationPage /></AppLayout></ProtectedRoute>} />
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/airline-incentives" element={<ProtectedRoute><AppLayout><AirlineIncentivesPage /></AppLayout></ProtectedRoute>} />
