@@ -46,6 +46,7 @@ import CostCenterReportsPage from "./pages/accounting/CostCenterReports";
 import FxRevaluationPage from "./pages/accounting/FxRevaluation";
 import VatReturnPage from "./pages/accounting/VatReturn";
 import RecurringJournalsPage from "./pages/accounting/RecurringJournals";
+import BudgetsPage from "./pages/accounting/Budgets";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -146,6 +147,7 @@ function AppRoutes() {
       <Route path="/accounting/fx-revaluation" element={<ProtectedRoute><AppLayout><FxRevaluationPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/vat-return" element={<ProtectedRoute><AppLayout><VatReturnPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/recurring-journals" element={<ProtectedRoute><AppLayout><RecurringJournalsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/budgets" element={<ProtectedRoute><AppLayout><BudgetsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/airline-incentives" element={<ProtectedRoute><AppLayout><AirlineIncentivesPage /></AppLayout></ProtectedRoute>} />
