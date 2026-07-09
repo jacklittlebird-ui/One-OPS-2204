@@ -64,6 +64,9 @@ import SecurityStatusPage from "./pages/SecurityStatus";
 import OperationsReportsPage from "./pages/OperationsReports";
 import CompaniesPage from "./pages/accounting/Companies";
 import FinanceStationsPage from "./pages/accounting/FinanceStations";
+import ExchangeRatesPage from "./pages/accounting/ExchangeRates";
+import CustomerPriceListPage from "./pages/accounting/CustomerPriceList";
+import SupplierPriceListPage from "./pages/accounting/SupplierPriceList";
 import "./i18n";
 
 
