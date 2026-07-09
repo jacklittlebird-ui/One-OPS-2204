@@ -76,7 +76,7 @@ export default function FixedAssetsPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("fixed_assets" as any).select("*").order("asset_code");
       if (error) throw error;
-      return data as FixedAsset[];
+      return (data ?? []) as unknown as FixedAsset[];
     },
   });
 
