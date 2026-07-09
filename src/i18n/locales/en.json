@@ -30,6 +30,26 @@
     "companiesTitle": "Group Companies",
     "companiesSubtitle": "5 legal entities of the Link Group and their base currency",
     "stationsTitle": "Finance Cost-Centers (Stations)",
-    "stationsSubtitle": "Operating stations used as cost centers in journal entries"
+    "stationsSubtitle": "Operating stations used as cost centers in journal entries",
+    "customerPriceList": "Customer Price List",
+    "customerPriceListSubtitle": "Per-airline / per-station selling rates by service",
+    "supplierPriceList": "Supplier Price List",
+    "supplierPriceListSubtitle": "Cost prices agreed with suppliers per station",
+    "exchangeRates": "Exchange Rates",
+    "exchangeRatesSubtitle": "Daily FX mid/buy/sell rates used for revaluation",
+    "airline": "Airline",
+    "serviceType": "Service Type",
+    "unit": "Unit",
+    "unitPrice": "Unit Price",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "supplier": "Supplier",
+    "date": "Date",
+    "baseCurrency": "Base",
+    "quoteCurrency": "Quote",
+    "midRate": "Mid",
+    "buyRate": "Buy",
+    "sellRate": "Sell",
+    "source": "Source"
   }
 }
