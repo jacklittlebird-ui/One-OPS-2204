@@ -62,6 +62,10 @@ import BankReconciliationPage from "./pages/treasury/BankReconciliation";
 import ReportsAdminPage from "./pages/ReportsAdmin";
 import SecurityStatusPage from "./pages/SecurityStatus";
 import OperationsReportsPage from "./pages/OperationsReports";
+import CompaniesPage from "./pages/accounting/Companies";
+import FinanceStationsPage from "./pages/accounting/FinanceStations";
+import "./i18n";
+import OperationsReportsPage from "./pages/OperationsReports";
 
 
 // Global React Query defaults aligned with the architecture blueprint:
