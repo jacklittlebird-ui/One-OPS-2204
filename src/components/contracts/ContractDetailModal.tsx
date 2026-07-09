@@ -28,6 +28,32 @@ function InfoRow({ label, value, icon }: { label: string; value: string | React.
 export function ContractDetailModal({ contract: c, onClose }: Props) {
   const days = daysUntilExpiry(c.end_date);
   const duration = Math.ceil((new Date(c.end_date).getTime() - new Date(c.start_date).getTime()) / 86400000);
+  const { toast } = useToast();
+  const today = new Date();
+  const defaultTo = today.toISOString().slice(0, 10);
+  const defaultFrom = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+  const [from, setFrom] = useState(defaultFrom);
+  const [to, setTo] = useState(defaultTo);
+  const [generating, setGenerating] = useState(false);
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-preliminary-invoice", {
+        body: { contract_id: c.id, from, to },
+      });
+      if (error) throw error;
+      toast({
+        title: "Preliminary invoice generated",
+        description: `${data?.invoice?.invoice_no} — ${data?.line_count} lines${data?.unmatched ? `, ${data.unmatched} unmatched` : ""}`,
+      });
+    } catch (e: any) {
+      toast({ title: "Generation failed", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
