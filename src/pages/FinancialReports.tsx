@@ -13,8 +13,10 @@ import { exportToPdf } from "@/lib/exportPdf";
 import { logAudit } from "@/lib/auditLogger";
 
 type AccountRow = { id: string; code: string; name: string; name_ar: string; account_type: string; is_group: boolean; current_balance: number; opening_balance: number; parent_id: string | null; };
-type JournalLineWithDate = { account_id: string; debit: number; credit: number; entry_id: string; };
+type JournalLineWithDate = { account_id: string; debit: number; credit: number; entry_id: string; company_id: string | null; station_id: string | null; };
 type JournalEntry = { id: string; status: string; entry_date: string; };
+type CompanyRow = { id: string; name: string };
+type StationRow = { id: string; name: string; company_id: string | null };
 
 export default function FinancialReportsPage() {
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
