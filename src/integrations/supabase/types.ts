@@ -734,6 +734,72 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_entries: {
+        Row: {
+          account_code: string
+          account_name: string | null
+          budget_amount: number
+          company_id: string | null
+          cost_center: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          fiscal_year: number
+          id: string
+          notes: string | null
+          period_month: number
+          station_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_code: string
+          account_name?: string | null
+          budget_amount?: number
+          company_id?: string | null
+          cost_center?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fiscal_year: number
+          id?: string
+          notes?: string | null
+          period_month: number
+          station_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_code?: string
+          account_name?: string | null
+          budget_amount?: number
+          company_id?: string | null
+          cost_center?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fiscal_year?: number
+          id?: string
+          notes?: string | null
+          period_month?: number
+          station_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_entries_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bulletins: {
         Row: {
           acknowledged_by: string
