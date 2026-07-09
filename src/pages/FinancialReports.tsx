@@ -20,6 +20,10 @@ type StationRow = { id: string; name: string; company_id: string | null };
 
 export default function FinancialReportsPage() {
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [stationFilter, setStationFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
 
   const { data: accounts = [] } = useQuery({
     queryKey: ["chart_of_accounts"],
@@ -31,7 +35,15 @@ export default function FinancialReportsPage() {
   });
   const { data: journalLines = [] } = useQuery({
     queryKey: ["journal_entry_lines_all"],
-    queryFn: async () => { const { data } = await supabase.from("journal_entry_lines" as any).select("account_id,debit,credit,entry_id"); return (data || []) as unknown as JournalLineWithDate[]; },
+    queryFn: async () => { const { data } = await supabase.from("journal_entry_lines" as any).select("account_id,debit,credit,entry_id,company_id,station_id"); return (data || []) as unknown as JournalLineWithDate[]; },
+  });
+  const { data: companies = [] } = useQuery({
+    queryKey: ["companies_lookup"],
+    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,name").order("name"); return (data || []) as unknown as CompanyRow[]; },
+  });
+  const { data: stations = [] } = useQuery({
+    queryKey: ["finance_stations_lookup"],
+    queryFn: async () => { const { data } = await supabase.from("finance_stations" as any).select("id,name,company_id").order("name"); return (data || []) as unknown as StationRow[]; },
   });
 
   // Map entry_id → entry_date
@@ -49,16 +61,37 @@ export default function FinancialReportsPage() {
     return Array.from(years).sort().reverse();
   }, [journalEntries]);
 
+  // Filter journal lines by cost-center + date range
+  const filteredLines = useMemo(() => {
+    return journalLines.filter(l => {
+      if (companyFilter !== "all" && l.company_id !== companyFilter) return false;
+      if (stationFilter !== "all" && l.station_id !== stationFilter) return false;
+      if (dateFrom || dateTo) {
+        const d = entryDateMap[l.entry_id];
+        if (!d) return false;
+        const day = d.slice(0, 10);
+        if (dateFrom && day < dateFrom) return false;
+        if (dateTo && day > dateTo) return false;
+      }
+      return true;
+    });
+  }, [journalLines, companyFilter, stationFilter, dateFrom, dateTo, entryDateMap]);
+
+  const stationsForCompany = useMemo(() => {
+    if (companyFilter === "all") return stations;
+    return stations.filter(s => s.company_id === companyFilter);
+  }, [stations, companyFilter]);
+
   // Overall balances (for Trial Balance, overall P&L, BS)
   const accountBalances = useMemo(() => {
     const balances: Record<string, { debit: number; credit: number }> = {};
-    journalLines.forEach(l => {
+    filteredLines.forEach(l => {
       if (!balances[l.account_id]) balances[l.account_id] = { debit: 0, credit: 0 };
       balances[l.account_id].debit += l.debit || 0;
       balances[l.account_id].credit += l.credit || 0;
     });
     return balances;
-  }, [journalLines]);
+  }, [filteredLines]);
 
   const leafAccounts = accounts.filter(a => !a.is_group);
   const trialBalance = leafAccounts.map(a => {
