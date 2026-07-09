@@ -13,11 +13,17 @@ import { exportToPdf } from "@/lib/exportPdf";
 import { logAudit } from "@/lib/auditLogger";
 
 type AccountRow = { id: string; code: string; name: string; name_ar: string; account_type: string; is_group: boolean; current_balance: number; opening_balance: number; parent_id: string | null; };
-type JournalLineWithDate = { account_id: string; debit: number; credit: number; entry_id: string; };
+type JournalLineWithDate = { account_id: string; debit: number; credit: number; entry_id: string; company_id: string | null; station_id: string | null; };
 type JournalEntry = { id: string; status: string; entry_date: string; };
+type CompanyRow = { id: string; name: string };
+type StationRow = { id: string; name: string; company_id: string | null };
 
 export default function FinancialReportsPage() {
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [stationFilter, setStationFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
 
   const { data: accounts = [] } = useQuery({
     queryKey: ["chart_of_accounts"],
@@ -29,7 +35,15 @@ export default function FinancialReportsPage() {
   });
   const { data: journalLines = [] } = useQuery({
     queryKey: ["journal_entry_lines_all"],
-    queryFn: async () => { const { data } = await supabase.from("journal_entry_lines" as any).select("account_id,debit,credit,entry_id"); return (data || []) as unknown as JournalLineWithDate[]; },
+    queryFn: async () => { const { data } = await supabase.from("journal_entry_lines" as any).select("account_id,debit,credit,entry_id,company_id,station_id"); return (data || []) as unknown as JournalLineWithDate[]; },
+  });
+  const { data: companies = [] } = useQuery({
+    queryKey: ["companies_lookup"],
+    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,name").order("name"); return (data || []) as unknown as CompanyRow[]; },
+  });
+  const { data: stations = [] } = useQuery({
+    queryKey: ["finance_stations_lookup"],
+    queryFn: async () => { const { data } = await supabase.from("finance_stations" as any).select("id,name,company_id").order("name"); return (data || []) as unknown as StationRow[]; },
   });
 
   // Map entry_id → entry_date
@@ -47,16 +61,37 @@ export default function FinancialReportsPage() {
     return Array.from(years).sort().reverse();
   }, [journalEntries]);
 
+  // Filter journal lines by cost-center + date range
+  const filteredLines = useMemo(() => {
+    return journalLines.filter(l => {
+      if (companyFilter !== "all" && l.company_id !== companyFilter) return false;
+      if (stationFilter !== "all" && l.station_id !== stationFilter) return false;
+      if (dateFrom || dateTo) {
+        const d = entryDateMap[l.entry_id];
+        if (!d) return false;
+        const day = d.slice(0, 10);
+        if (dateFrom && day < dateFrom) return false;
+        if (dateTo && day > dateTo) return false;
+      }
+      return true;
+    });
+  }, [journalLines, companyFilter, stationFilter, dateFrom, dateTo, entryDateMap]);
+
+  const stationsForCompany = useMemo(() => {
+    if (companyFilter === "all") return stations;
+    return stations.filter(s => s.company_id === companyFilter);
+  }, [stations, companyFilter]);
+
   // Overall balances (for Trial Balance, overall P&L, BS)
   const accountBalances = useMemo(() => {
     const balances: Record<string, { debit: number; credit: number }> = {};
-    journalLines.forEach(l => {
+    filteredLines.forEach(l => {
       if (!balances[l.account_id]) balances[l.account_id] = { debit: 0, credit: 0 };
       balances[l.account_id].debit += l.debit || 0;
       balances[l.account_id].credit += l.credit || 0;
     });
     return balances;
-  }, [journalLines]);
+  }, [filteredLines]);
 
   const leafAccounts = accounts.filter(a => !a.is_group);
   const trialBalance = leafAccounts.map(a => {
@@ -95,7 +130,7 @@ export default function FinancialReportsPage() {
   // Monthly balances: { accountId -> { "01": credit, "02": credit, ... } }
   const monthlyData = useMemo(() => {
     const data: Record<string, Record<string, { debit: number; credit: number }>> = {};
-    journalLines.forEach(l => {
+    filteredLines.forEach(l => {
       const entryDate = entryDateMap[l.entry_id];
       if (!entryDate || !entryDate.startsWith(selectedYear)) return;
       const month = entryDate.slice(5, 7); // "01"-"12"
@@ -105,7 +140,7 @@ export default function FinancialReportsPage() {
       data[l.account_id][month].credit += l.credit || 0;
     });
     return data;
-  }, [journalLines, entryDateMap, selectedYear]);
+  }, [filteredLines, entryDateMap, selectedYear]);
 
   const getMonthVal = (accountId: string, month: string, type: "Revenue" | "Expense") => {
     const d = monthlyData[accountId]?.[month];
@@ -292,8 +327,44 @@ export default function FinancialReportsPage() {
         <p className="text-muted-foreground text-sm">التقارير المالية · Trial Balance, P&L, Balance Sheet</p>
       </div>
 
+      {/* Filters: Company × Station × Period (4D cost-center scope) */}
+      <Card>
+        <CardContent className="p-3 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+          <div>
+            <label className="text-xs text-muted-foreground">Company / الشركة</label>
+            <Select value={companyFilter} onValueChange={(v) => { setCompanyFilter(v); setStationFilter("all"); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Companies</SelectItem>
+                {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Station / المحطة</label>
+            <Select value={stationFilter} onValueChange={setStationFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stations</SelectItem>
+                {stationsForCompany.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Date From</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Date To</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => { setCompanyFilter("all"); setStationFilter("all"); setDateFrom(""); setDateTo(""); }}>Clear</Button>
+        </CardContent>
+      </Card>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-3">
+
         {[
           { label: "Total Assets", value: totalAssets, cls: "text-primary" },
           { label: "Total Liabilities", value: totalLiabilities, cls: "text-destructive" },
