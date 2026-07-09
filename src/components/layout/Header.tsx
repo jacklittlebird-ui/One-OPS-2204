@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Settings, LogOut, Moon, Sun, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Bell, Settings, LogOut, Moon, Sun, Menu, PanelLeftClose, PanelLeft, Languages } from "lucide-react";
 import GlobalSearch from "@/components/GlobalSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { useChannel } from "@/contexts/ChannelContext";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -18,6 +19,7 @@ export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar 
   const { user, signOut } = useAuth();
   const { station, isStationScoped } = useUserStation();
   const { activeChannel, isAdmin } = useChannel();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
@@ -83,6 +85,16 @@ export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar 
       <div className="flex-1 min-w-0">
         {isAdmin && <GlobalSearch />}
       </div>
+
+      {/* Language Toggle */}
+      <button
+        onClick={() => i18n.changeLanguage(i18n.language === "ar" ? "en" : "ar")}
+        className="p-2 rounded-full hover:bg-muted transition-colors shrink-0 flex items-center gap-1"
+        title={i18n.language === "ar" ? "Switch to English" : "التبديل إلى العربية"}
+      >
+        <Languages size={18} className="text-muted-foreground" />
+        <span className="text-xs font-semibold">{i18n.language === "ar" ? "EN" : "ع"}</span>
+      </button>
 
       {/* Dark Mode Toggle */}
       <button

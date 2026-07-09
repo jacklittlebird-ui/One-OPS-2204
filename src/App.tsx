@@ -62,6 +62,9 @@ import BankReconciliationPage from "./pages/treasury/BankReconciliation";
 import ReportsAdminPage from "./pages/ReportsAdmin";
 import SecurityStatusPage from "./pages/SecurityStatus";
 import OperationsReportsPage from "./pages/OperationsReports";
+import CompaniesPage from "./pages/accounting/Companies";
+import FinanceStationsPage from "./pages/accounting/FinanceStations";
+import "./i18n";
 
 
 // Global React Query defaults aligned with the architecture blueprint:
@@ -151,6 +154,8 @@ function AppRoutes() {
       <Route path="/treasury/bank-reconciliation" element={<ProtectedRoute><AppLayout><BankReconciliationPage /></AppLayout></ProtectedRoute>} />
       <Route path="/reports-admin" element={<ProtectedRoute><AppLayout><ReportsAdminPage /></AppLayout></ProtectedRoute>} />
       <Route path="/security-status" element={<ProtectedRoute><AppLayout><SecurityStatusPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/companies" element={<ProtectedRoute><AppLayout><CompaniesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/stations" element={<ProtectedRoute><AppLayout><FinanceStationsPage /></AppLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

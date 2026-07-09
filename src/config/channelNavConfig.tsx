@@ -207,6 +207,13 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Airline Incentives", path: "/airline-incentives" },
       ],
     },
+    {
+      label: "ACCOUNTING SETUP", icon: <Building2 size={18} />, collapsible: true,
+      children: [
+        { label: "Companies", path: "/accounting/companies" },
+        { label: "Finance Stations", path: "/accounting/stations" },
+      ],
+    },
     TREASURY_SECTION,
     {
       label: "REFERENCE", icon: <MoreHorizontal size={18} />, collapsible: true,
@@ -251,6 +258,13 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Financial Reports", path: "/financial-reports" },
         { label: "Reports / Admin", path: "/reports-admin" },
         { label: "Airline Incentives", path: "/airline-incentives" },
+      ],
+    },
+    {
+      label: "ACCOUNTING SETUP", icon: <Building2 size={18} />, collapsible: true,
+      children: [
+        { label: "Companies", path: "/accounting/companies" },
+        { label: "Finance Stations", path: "/accounting/stations" },
       ],
     },
     TREASURY_SECTION,

@@ -1,0 +1,35 @@
+{
+  "common": {
+    "add": "إضافة",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "search": "بحث",
+    "status": "الحالة",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "code": "الكود",
+    "name": "الاسم",
+    "actions": "إجراءات",
+    "language": "اللغة",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "accounting": {
+    "setup": "إعداد المحاسبة",
+    "companies": "الشركات",
+    "company": "شركة",
+    "stations": "المحطات المالية",
+    "station": "محطة",
+    "currency": "العملة",
+    "country": "الدولة",
+    "taxId": "الرقم الضريبي",
+    "commercialReg": "السجل التجاري",
+    "address": "العنوان",
+    "companiesTitle": "شركات المجموعة",
+    "companiesSubtitle": "الكيانات القانونية الخمسة لمجموعة لينك وعملتها الأساسية",
+    "stationsTitle": "مراكز التكلفة (المحطات)",
+    "stationsSubtitle": "المحطات التشغيلية المستخدمة كمراكز تكلفة في القيود المحاسبية"
+  }
+}
