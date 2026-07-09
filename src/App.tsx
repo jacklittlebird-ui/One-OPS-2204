@@ -149,6 +149,7 @@ function AppRoutes() {
       <Route path="/accounting/vat-return" element={<ProtectedRoute><AppLayout><VatReturnPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/recurring-journals" element={<ProtectedRoute><AppLayout><RecurringJournalsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/budgets" element={<ProtectedRoute><AppLayout><BudgetsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/fixed-assets" element={<ProtectedRoute><AppLayout><FixedAssetsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/airline-incentives" element={<ProtectedRoute><AppLayout><AirlineIncentivesPage /></AppLayout></ProtectedRoute>} />
