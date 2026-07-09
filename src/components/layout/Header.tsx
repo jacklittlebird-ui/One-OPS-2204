@@ -19,6 +19,7 @@ export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar 
   const { user, signOut } = useAuth();
   const { station, isStationScoped } = useUserStation();
   const { activeChannel, isAdmin } = useChannel();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
