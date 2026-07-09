@@ -1,9 +1,12 @@
-import { FileText, X, Mail, User, Calendar, DollarSign, Building2, Shield } from "lucide-react";
+import { FileText, X, Mail, User, Calendar, DollarSign, Building2, Shield, Receipt } from "lucide-react";
+import { useState } from "react";
 import { formatDateDMY } from "@/lib/utils";
 import type { ContractRow } from "./ContractTypes";
 import { ContractStatusBadge, ContractTypeBadge } from "./ContractStatusBadge";
 import { daysUntilExpiry } from "./ContractTypes";
 import { SecurityRatesEditor } from "./SecurityRatesEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   contract: ContractRow;
@@ -25,6 +28,32 @@ function InfoRow({ label, value, icon }: { label: string; value: string | React.
 export function ContractDetailModal({ contract: c, onClose }: Props) {
   const days = daysUntilExpiry(c.end_date);
   const duration = Math.ceil((new Date(c.end_date).getTime() - new Date(c.start_date).getTime()) / 86400000);
+  const { toast } = useToast();
+  const today = new Date();
+  const defaultTo = today.toISOString().slice(0, 10);
+  const defaultFrom = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+  const [from, setFrom] = useState(defaultFrom);
+  const [to, setTo] = useState(defaultTo);
+  const [generating, setGenerating] = useState(false);
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-preliminary-invoice", {
+        body: { contract_id: c.id, from, to },
+      });
+      if (error) throw error;
+      toast({
+        title: "Preliminary invoice generated",
+        description: `${data?.invoice?.invoice_no} — ${data?.line_count} lines${data?.unmatched ? `, ${data.unmatched} unmatched` : ""}`,
+      });
+    } catch (e: any) {
+      toast({ title: "Generation failed", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
@@ -102,7 +131,36 @@ export function ContractDetailModal({ contract: c, onClose }: Props) {
               <p className="text-sm text-foreground whitespace-pre-wrap">{c.notes}</p>
             </div>
           )}
+
+          <div className="border-t pt-4">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Receipt size={13} className="text-primary" /> Generate Preliminary Invoice
+            </h3>
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">From</label>
+                <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm bg-background" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">To</label>
+                <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm bg-background" />
+              </div>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+              >
+                {generating ? "Generating…" : "Generate"}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Aggregates flight activity for {c.airline_iata || c.airline} over the period and matches unit prices from the customer price list.
+            </p>
+          </div>
         </div>
+
 
         <div className="sticky bottom-0 bg-card border-t px-6 py-4 flex justify-end rounded-b-xl">
           <button onClick={onClose} className="toolbar-btn-outline">Close</button>
