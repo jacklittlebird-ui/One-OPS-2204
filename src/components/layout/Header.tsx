@@ -86,6 +86,16 @@ export default function Header({ onMenuClick, sidebarCollapsed, onToggleSidebar 
         {isAdmin && <GlobalSearch />}
       </div>
 
+      {/* Language Toggle */}
+      <button
+        onClick={() => i18n.changeLanguage(i18n.language === "ar" ? "en" : "ar")}
+        className="p-2 rounded-full hover:bg-muted transition-colors shrink-0 flex items-center gap-1"
+        title={i18n.language === "ar" ? "Switch to English" : "التبديل إلى العربية"}
+      >
+        <Languages size={18} className="text-muted-foreground" />
+        <span className="text-xs font-semibold">{i18n.language === "ar" ? "EN" : "ع"}</span>
+      </button>
+
       {/* Dark Mode Toggle */}
       <button
         onClick={() => setDark(d => !d)}
