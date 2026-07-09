@@ -131,7 +131,36 @@ export function ContractDetailModal({ contract: c, onClose }: Props) {
               <p className="text-sm text-foreground whitespace-pre-wrap">{c.notes}</p>
             </div>
           )}
+
+          <div className="border-t pt-4">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Receipt size={13} className="text-primary" /> Generate Preliminary Invoice
+            </h3>
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">From</label>
+                <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm bg-background" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">To</label>
+                <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm bg-background" />
+              </div>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+              >
+                {generating ? "Generating…" : "Generate"}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Aggregates flight activity for {c.airline_iata || c.airline} over the period and matches unit prices from the customer price list.
+            </p>
+          </div>
         </div>
+
 
         <div className="sticky bottom-0 bg-card border-t px-6 py-4 flex justify-end rounded-b-xl">
           <button onClick={onClose} className="toolbar-btn-outline">Close</button>
