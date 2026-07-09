@@ -130,7 +130,7 @@ export default function FinancialReportsPage() {
   // Monthly balances: { accountId -> { "01": credit, "02": credit, ... } }
   const monthlyData = useMemo(() => {
     const data: Record<string, Record<string, { debit: number; credit: number }>> = {};
-    journalLines.forEach(l => {
+    filteredLines.forEach(l => {
       const entryDate = entryDateMap[l.entry_id];
       if (!entryDate || !entryDate.startsWith(selectedYear)) return;
       const month = entryDate.slice(5, 7); // "01"-"12"
@@ -140,7 +140,7 @@ export default function FinancialReportsPage() {
       data[l.account_id][month].credit += l.credit || 0;
     });
     return data;
-  }, [journalLines, entryDateMap, selectedYear]);
+  }, [filteredLines, entryDateMap, selectedYear]);
 
   const getMonthVal = (accountId: string, month: string, type: "Revenue" | "Expense") => {
     const d = monthlyData[accountId]?.[month];
