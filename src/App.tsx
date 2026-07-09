@@ -44,6 +44,7 @@ import JournalEntriesPage from "./pages/JournalEntries";
 import FinancialReportsPage from "./pages/FinancialReports";
 import CostCenterReportsPage from "./pages/accounting/CostCenterReports";
 import FxRevaluationPage from "./pages/accounting/FxRevaluation";
+import VatReturnPage from "./pages/accounting/VatReturn";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
