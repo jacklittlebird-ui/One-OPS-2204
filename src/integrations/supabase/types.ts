@@ -2988,9 +2988,13 @@ export type Database = {
         Row: {
           amount: number
           bank_account_id: string | null
+          base_amount: number | null
+          base_currency: string | null
           cash_account_id: string | null
           created_at: string
           currency: string
+          exchange_rate: number | null
+          exchange_rate_date: string | null
           id: string
           method: string
           notes: string | null
@@ -3005,9 +3009,13 @@ export type Database = {
         Insert: {
           amount?: number
           bank_account_id?: string | null
+          base_amount?: number | null
+          base_currency?: string | null
           cash_account_id?: string | null
           created_at?: string
           currency?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
           id?: string
           method?: string
           notes?: string | null
@@ -3022,9 +3030,13 @@ export type Database = {
         Update: {
           amount?: number
           bank_account_id?: string | null
+          base_amount?: number | null
+          base_currency?: string | null
           cash_account_id?: string | null
           created_at?: string
           currency?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
           id?: string
           method?: string
           notes?: string | null
@@ -3094,10 +3106,14 @@ export type Database = {
         Row: {
           amount: number
           bank_account_id: string | null
+          base_amount: number | null
+          base_currency: string | null
           cash_account_id: string | null
           created_at: string
           currency: string
           customer_name: string
+          exchange_rate: number | null
+          exchange_rate_date: string | null
           id: string
           invoice_id: string | null
           method: string
@@ -3111,10 +3127,14 @@ export type Database = {
         Insert: {
           amount?: number
           bank_account_id?: string | null
+          base_amount?: number | null
+          base_currency?: string | null
           cash_account_id?: string | null
           created_at?: string
           currency?: string
           customer_name: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
           id?: string
           invoice_id?: string | null
           method?: string
@@ -3128,10 +3148,14 @@ export type Database = {
         Update: {
           amount?: number
           bank_account_id?: string | null
+          base_amount?: number | null
+          base_currency?: string | null
           cash_account_id?: string | null
           created_at?: string
           currency?: string
           customer_name?: string
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
           id?: string
           invoice_id?: string | null
           method?: string
