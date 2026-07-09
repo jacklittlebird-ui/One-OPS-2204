@@ -160,6 +160,12 @@ export default function FixedAssetsPage() {
     mutationFn: async () => {
       const active = assets.filter((a) => a.status === "Active");
       const runDate = `${runYear}-${String(runMonth).padStart(2, "0")}-01`;
+
+      // Preload chart of accounts to resolve code → id
+      const { data: coa } = await supabase.from("chart_of_accounts").select("id,code");
+      const codeToId = new Map<string, string>();
+      (coa ?? []).forEach((c: any) => codeToId.set(c.code, c.id));
+
       let posted = 0;
       for (const a of active) {
         const monthly = monthlyDepreciation(a);
@@ -168,9 +174,8 @@ export default function FixedAssetsPage() {
         if (remaining <= 0) continue;
         const amount = Math.min(monthly, remaining);
 
-        // Check existing
         const { data: existing } = await supabase
-          .from("depreciation_entries")
+          .from("depreciation_entries" as any)
           .select("id")
           .eq("asset_id", a.id)
           .eq("period_year", runYear)
@@ -178,45 +183,58 @@ export default function FixedAssetsPage() {
           .maybeSingle();
         if (existing) continue;
 
-        // Journal entry
+        const deprCode = a.depreciation_account_code || "5500";
+        const accumCode = a.accumulated_depr_account_code || "1590";
+        const deprId = codeToId.get(deprCode);
+        const accumId = codeToId.get(accumCode);
+        if (!deprId || !accumId) {
+          throw new Error(`Chart of Accounts missing code(s): ${!deprId ? deprCode : ""} ${!accumId ? accumCode : ""}`);
+        }
+
         const entryNo = `DEP-${runYear}${String(runMonth).padStart(2, "0")}-${a.asset_code}`;
         const { data: je, error: jeErr } = await supabase
-          .from("journal_entries")
+          .from("journal_entries" as any)
           .insert({
             entry_no: entryNo,
             entry_date: runDate,
             description: `Depreciation ${a.asset_name} (${runYear}-${String(runMonth).padStart(2, "0")})`,
+            reference: a.asset_code,
+            reference_type: "Depreciation",
             status: "Posted",
-            currency: a.currency,
+            total_debit: amount,
+            total_credit: amount,
           })
           .select("id")
           .single();
         if (jeErr) throw jeErr;
+        const entryId = (je as any).id as string;
 
-        const { error: linesErr } = await supabase.from("journal_entry_lines").insert([
+        const { error: linesErr } = await supabase.from("journal_entry_lines" as any).insert([
           {
-            entry_id: je.id,
-            account_code: a.depreciation_account_code || "5500",
+            entry_id: entryId,
+            account_id: deprId,
             debit: amount,
             credit: 0,
             description: `Depreciation - ${a.asset_name}`,
+            sort_order: 0,
           },
           {
-            entry_id: je.id,
-            account_code: a.accumulated_depr_account_code || "1590",
+            entry_id: entryId,
+            account_id: accumId,
             debit: 0,
             credit: amount,
             description: `Accumulated depreciation - ${a.asset_name}`,
+            sort_order: 1,
           },
         ]);
         if (linesErr) throw linesErr;
 
-        await supabase.from("depreciation_entries").insert({
+        await supabase.from("depreciation_entries" as any).insert({
           asset_id: a.id,
           period_year: runYear,
           period_month: runMonth,
           depreciation_amount: amount,
-          journal_entry_id: je.id,
+          journal_entry_id: entryId,
         });
 
         await supabase
