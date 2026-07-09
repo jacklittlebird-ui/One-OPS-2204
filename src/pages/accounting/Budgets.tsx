@@ -82,7 +82,7 @@ export default function BudgetsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chart_of_accounts")
-        .select("id,code,name,type")
+        .select("id,code,name")
         .order("code");
       if (error) throw error;
       return (data ?? []) as Account[];
