@@ -74,7 +74,7 @@ export default function FixedAssetsPage() {
   const { data: assets = [] } = useQuery({
     queryKey: ["fixed_assets"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("fixed_assets").select("*").order("asset_code");
+      const { data, error } = await supabase.from("fixed_assets" as any).select("*").order("asset_code");
       if (error) throw error;
       return data as FixedAsset[];
     },
@@ -100,7 +100,7 @@ export default function FixedAssetsPage() {
     queryKey: ["depreciation_entries"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("depreciation_entries")
+        .from("depreciation_entries" as any)
         .select("*")
         .order("period_year", { ascending: false })
         .order("period_month", { ascending: false });
@@ -114,11 +114,11 @@ export default function FixedAssetsPage() {
       if (!row.asset_code || !row.asset_name) throw new Error("Code and name are required");
       const payload: any = { ...row };
       if (row.id) {
-        const { error } = await supabase.from("fixed_assets").update(payload).eq("id", row.id);
+        const { error } = await supabase.from("fixed_assets" as any).update(payload).eq("id", row.id);
         if (error) throw error;
       } else {
         delete payload.id;
-        const { error } = await supabase.from("fixed_assets").insert(payload);
+        const { error } = await supabase.from("fixed_assets" as any).insert(payload);
         if (error) throw error;
       }
     },
@@ -133,7 +133,7 @@ export default function FixedAssetsPage() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("fixed_assets").delete().eq("id", id);
+      const { error } = await supabase.from("fixed_assets" as any).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -238,7 +238,7 @@ export default function FixedAssetsPage() {
         });
 
         await supabase
-          .from("fixed_assets")
+          .from("fixed_assets" as any)
           .update({ accumulated_depreciation: (a.accumulated_depreciation || 0) + amount })
           .eq("id", a.id);
 
@@ -257,7 +257,7 @@ export default function FixedAssetsPage() {
   const disposeMut = useMutation({
     mutationFn: async ({ id, amount, date }: { id: string; amount: number; date: string }) => {
       const { error } = await supabase
-        .from("fixed_assets")
+        .from("fixed_assets" as any)
         .update({ status: "Disposed", disposal_amount: amount, disposal_date: date })
         .eq("id", id);
       if (error) throw error;
