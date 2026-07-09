@@ -3216,6 +3216,72 @@ export type Database = {
           },
         ]
       }
+      recurring_journal_entries: {
+        Row: {
+          active: boolean
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          day_of_month: number
+          description: string | null
+          end_date: string | null
+          frequency: string
+          id: string
+          last_run_date: string | null
+          name: string
+          next_run_date: string
+          reference_prefix: string | null
+          run_count: number
+          start_date: string
+          station_id: string | null
+          template_lines: Json
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          day_of_month?: number
+          description?: string | null
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          last_run_date?: string | null
+          name: string
+          next_run_date: string
+          reference_prefix?: string | null
+          run_count?: number
+          start_date: string
+          station_id?: string | null
+          template_lines?: Json
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          day_of_month?: number
+          description?: string | null
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          last_run_date?: string | null
+          name?: string
+          next_run_date?: string
+          reference_prefix?: string | null
+          run_count?: number
+          start_date?: string
+          station_id?: string | null
+          template_lines?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       security_check_runs: {
         Row: {
           checks: Json
