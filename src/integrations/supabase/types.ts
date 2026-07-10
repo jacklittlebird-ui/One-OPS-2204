@@ -2052,6 +2052,50 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_renewal_events: {
+        Row: {
+          contract_id: string
+          created_at: string
+          created_by: string | null
+          event_date: string
+          event_type: string
+          id: string
+          new_end_date: string | null
+          notes: string | null
+          previous_end_date: string | null
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          created_by?: string | null
+          event_date?: string
+          event_type: string
+          id?: string
+          new_end_date?: string | null
+          notes?: string | null
+          previous_end_date?: string | null
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          created_by?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          new_end_date?: string | null
+          notes?: string | null
+          previous_end_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_renewal_events_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_service_rates: {
         Row: {
           airport: string
@@ -2114,6 +2158,59 @@ export type Database = {
           },
         ]
       }
+      contract_sla_incidents: {
+        Row: {
+          contract_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          incident_date: string
+          incident_type: string
+          resolved: boolean
+          resolved_at: string | null
+          response_time_hours: number | null
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          incident_date?: string
+          incident_type: string
+          resolved?: boolean
+          resolved_at?: string | null
+          response_time_hours?: number | null
+          severity?: string
+          updated_at?: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          incident_date?: string
+          incident_type?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          response_time_hours?: number | null
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_sla_incidents_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           airline: string
@@ -2132,13 +2229,18 @@ export type Database = {
           default_team_size: string
           end_date: string
           id: string
+          last_renewed_at: string | null
           notes: string | null
           overtime_rate: number
           payment_terms: string
+          renewal_notice_days: number | null
+          renewal_status: string | null
           service_category: string
           service_scope: string
           services: string | null
           sgha_ref: string
+          sla_response_hours: number | null
+          sla_uptime_target: number | null
           start_date: string
           stations: string | null
           status: Database["public"]["Enums"]["contract_status"]
@@ -2161,13 +2263,18 @@ export type Database = {
           default_team_size?: string
           end_date: string
           id?: string
+          last_renewed_at?: string | null
           notes?: string | null
           overtime_rate?: number
           payment_terms?: string
+          renewal_notice_days?: number | null
+          renewal_status?: string | null
           service_category?: string
           service_scope?: string
           services?: string | null
           sgha_ref?: string
+          sla_response_hours?: number | null
+          sla_uptime_target?: number | null
           start_date: string
           stations?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
@@ -2190,13 +2297,18 @@ export type Database = {
           default_team_size?: string
           end_date?: string
           id?: string
+          last_renewed_at?: string | null
           notes?: string | null
           overtime_rate?: number
           payment_terms?: string
+          renewal_notice_days?: number | null
+          renewal_status?: string | null
           service_category?: string
           service_scope?: string
           services?: string | null
           sgha_ref?: string
+          sla_response_hours?: number | null
+          sla_uptime_target?: number | null
           start_date?: string
           stations?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
