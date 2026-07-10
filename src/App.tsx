@@ -69,6 +69,7 @@ import CashFlowForecastPage from "./pages/accounting/CashFlowForecast";
 import BankReconciliationWorkbenchPage from "./pages/accounting/BankReconciliationWorkbench";
 import CollectionsWorkflowPage from "./pages/accounting/CollectionsWorkflow";
 import ConsolidationWorkbenchPage from "./pages/accounting/ConsolidationWorkbench";
+import FinancialRatiosPage from "./pages/accounting/FinancialRatios";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -192,6 +193,7 @@ function AppRoutes() {
       <Route path="/accounting/bank-reconciliation" element={<ProtectedRoute><AppLayout><BankReconciliationWorkbenchPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/collections" element={<ProtectedRoute><AppLayout><CollectionsWorkflowPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/consolidation-workbench" element={<ProtectedRoute><AppLayout><ConsolidationWorkbenchPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/financial-ratios" element={<ProtectedRoute><AppLayout><FinancialRatiosPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
