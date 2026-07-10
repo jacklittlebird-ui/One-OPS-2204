@@ -341,7 +341,7 @@ export default function DepreciationSchedulerPage() {
                     "Remaining months": remainingMonths(a),
                     "Posted this period": alreadyPosted.has(a.id) ? "Yes" : "No",
                   })),
-                  `depreciation-schedule-${runYear}-${String(runMonth).padStart(2, "0")}`,
+                  "Schedule", `depreciation-schedule-${runYear}-${String(runMonth).padStart(2, "0")}`,
                 )}
               >
                 <Download className="h-4 w-4 mr-2" /> Export
@@ -424,7 +424,7 @@ export default function DepreciationSchedulerPage() {
                     "Posted at": h.posted_at,
                     "Journal entry": h.journal_entry_id ?? "",
                   })),
-                  "depreciation-history",
+                  "History", "depreciation-history",
                 )}
               >
                 <Download className="h-4 w-4 mr-2" /> Export
