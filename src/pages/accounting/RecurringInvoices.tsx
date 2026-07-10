@@ -190,7 +190,7 @@ export default function RecurringInvoices() {
   // ---------- Lines ----------
   const addLine = useMutation({
     mutationFn: async (payload: Partial<Line>) => {
-      const { error } = await supabase.from("recurring_invoice_lines").insert(payload);
+      const { error } = await supabase.from("recurring_invoice_lines").insert(payload as any);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["recurring-invoice-lines"] }),
