@@ -236,7 +236,7 @@ export default function ObjectionVariance() {
                         Resolution: v.resolution ?? "",
                         Created: format(new Date(v.created_at), "dd/MM/yyyy"),
                       })),
-                      "invoice_variance_reports"
+                      "Variances", "invoice_variance_reports.xlsx"
                     )
                   }
                 >
@@ -322,7 +322,7 @@ export default function ObjectionVariance() {
                         Status: OBJ_LABEL[l.status as ObjStatus] ?? l.status,
                         Frozen: l.payment_frozen ? "Yes" : "No",
                       })),
-                      "objection_letters"
+                      "Letters", "objection_letters.xlsx"
                     )
                   }
                 >
