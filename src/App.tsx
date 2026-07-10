@@ -203,6 +203,7 @@ function AppRoutes() {
       <Route path="/accounting/fixed-assets-advanced" element={<ProtectedRoute><AppLayout><FixedAssetsEnhancedPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/recurring-invoices" element={<ProtectedRoute><AppLayout><RecurringInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/fx-gain-loss" element={<ProtectedRoute><AppLayout><FxGainLossPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/contracts-renewals" element={<ProtectedRoute><AppLayout><ContractsRenewalsPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
