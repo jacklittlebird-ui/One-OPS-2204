@@ -8885,6 +8885,15 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_period_locked: { Args: { _d: string }; Returns: boolean }
+      notify_finance_users: {
+        Args: {
+          _category: string
+          _link?: string
+          _message: string
+          _title: string
+        }
+        Returns: undefined
+      }
       recalc_bank_reconciliation: {
         Args: { _id: string }
         Returns: {
