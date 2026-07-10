@@ -1775,6 +1775,54 @@ export type Database = {
         }
         Relationships: []
       }
+      consolidation_runs: {
+        Row: {
+          base_currency: string
+          created_at: string
+          finalized_at: string | null
+          finalized_by: string | null
+          id: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          run_no: string
+          status: string
+          total_elimination: number
+          total_minority_interest: number
+          updated_at: string
+        }
+        Insert: {
+          base_currency?: string
+          created_at?: string
+          finalized_at?: string | null
+          finalized_by?: string | null
+          id?: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          run_no: string
+          status?: string
+          total_elimination?: number
+          total_minority_interest?: number
+          updated_at?: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          finalized_at?: string | null
+          finalized_by?: string | null
+          id?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          run_no?: string
+          status?: string
+          total_elimination?: number
+          total_minority_interest?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contract_service_rates: {
         Row: {
           airport: string
@@ -2603,6 +2651,69 @@ export type Database = {
             columns: ["irregularity_id"]
             isOneToOne: false
             referencedRelation: "irregularity_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elimination_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          entry_type: string
+          from_account_id: string | null
+          from_company_id: string | null
+          ic_transaction_id: string | null
+          id: string
+          run_id: string
+          to_account_id: string | null
+          to_company_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          entry_type: string
+          from_account_id?: string | null
+          from_company_id?: string | null
+          ic_transaction_id?: string | null
+          id?: string
+          run_id: string
+          to_account_id?: string | null
+          to_company_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          entry_type?: string
+          from_account_id?: string | null
+          from_company_id?: string | null
+          ic_transaction_id?: string | null
+          id?: string
+          run_id?: string
+          to_account_id?: string | null
+          to_company_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elimination_entries_ic_transaction_id_fkey"
+            columns: ["ic_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "intercompany_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "elimination_entries_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "consolidation_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -3721,6 +3832,63 @@ export type Database = {
           record_id?: string | null
         }
         Relationships: []
+      }
+      minority_interests: {
+        Row: {
+          created_at: string
+          id: string
+          minority_interest_amount: number
+          minority_pct: number
+          notes: string | null
+          ownership_pct: number
+          run_id: string
+          subsidiary_company_id: string
+          subsidiary_equity: number
+          subsidiary_net_income: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          minority_interest_amount?: number
+          minority_pct?: number
+          notes?: string | null
+          ownership_pct?: number
+          run_id: string
+          subsidiary_company_id: string
+          subsidiary_equity?: number
+          subsidiary_net_income?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          minority_interest_amount?: number
+          minority_pct?: number
+          notes?: string | null
+          ownership_pct?: number
+          run_id?: string
+          subsidiary_company_id?: string
+          subsidiary_equity?: number
+          subsidiary_net_income?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "minority_interests_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "consolidation_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "minority_interests_subsidiary_company_id_fkey"
+            columns: ["subsidiary_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notes_payable: {
         Row: {
@@ -7125,6 +7293,21 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      suggest_ic_eliminations: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          amount: number
+          base_amount: number
+          currency: string
+          description: string
+          from_company_id: string
+          ic_id: string
+          ic_no: string
+          reconciled: boolean
+          to_company_id: string
+          transaction_date: string
+        }[]
       }
       update_flight_master_from_station: {
         Args: { _id: string; _patch: Json }
