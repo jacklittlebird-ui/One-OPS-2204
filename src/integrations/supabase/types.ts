@@ -6374,6 +6374,127 @@ export type Database = {
           },
         ]
       }
+      tax_calendar_events: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          event_date: string
+          id: string
+          notes: string | null
+          recurrence: string | null
+          reminder_days: number
+          tax_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_date: string
+          id?: string
+          notes?: string | null
+          recurrence?: string | null
+          reminder_days?: number
+          tax_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_date?: string
+          id?: string
+          notes?: string | null
+          recurrence?: string | null
+          reminder_days?: number
+          tax_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_calendar_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_filings: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          due_date: string
+          e_invoice_status: string | null
+          filing_date: string | null
+          id: string
+          notes: string | null
+          paid_amount: number | null
+          period_from: string
+          period_to: string
+          reference_no: string | null
+          status: string
+          tax_amount: number | null
+          tax_type: string
+          taxable_base: number | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          due_date: string
+          e_invoice_status?: string | null
+          filing_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number | null
+          period_from: string
+          period_to: string
+          reference_no?: string | null
+          status?: string
+          tax_amount?: number | null
+          tax_type: string
+          taxable_base?: number | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          due_date?: string
+          e_invoice_status?: string | null
+          filing_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number | null
+          period_from?: string
+          period_to?: string
+          reference_no?: string | null
+          status?: string
+          tax_amount?: number | null
+          tax_type?: string
+          taxable_base?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_filings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       traffic_rights: {
         Row: {
           created_at: string
