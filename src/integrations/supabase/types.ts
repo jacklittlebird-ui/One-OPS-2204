@@ -8964,6 +8964,20 @@ export type Database = {
           variance_pct: number
         }[]
       }
+      get_cash_flow_forecast: {
+        Args: { _start?: string; _weeks?: number }
+        Returns: {
+          ap_outflow: number
+          ar_inflow: number
+          closing_balance: number
+          net_change: number
+          opening_balance: number
+          recurring_inflow: number
+          week_end: string
+          week_index: number
+          week_start: string
+        }[]
+      }
       get_customer_statement: {
         Args: { _airline_iata?: string; _from: string; _to: string }
         Returns: {
