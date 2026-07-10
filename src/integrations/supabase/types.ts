@@ -35,6 +35,57 @@ export type Database = {
         }
         Relationships: []
       }
+      accounting_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          id: string
+          locked_at: string | null
+          locked_by: string | null
+          month: number
+          notes: string | null
+          period_end: string
+          period_start: string
+          reopened: boolean
+          status: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          month: number
+          notes?: string | null
+          period_end: string
+          period_start: string
+          reopened?: boolean
+          status?: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          month?: number
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          reopened?: boolean
+          status?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       accruals_deferrals: {
         Row: {
           amount: number
@@ -5004,6 +5055,94 @@ export type Database = {
           },
         ]
       }
+      period_close_audit: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          performed_by: string | null
+          period_id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          performed_by?: string | null
+          period_id: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          performed_by?: string | null
+          period_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "period_close_audit_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      period_close_checklist_items: {
+        Row: {
+          category: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_complete: boolean
+          name: string
+          notes: string | null
+          period_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          name: string
+          notes?: string | null
+          period_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          name?: string
+          notes?: string | null
+          period_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "period_close_checklist_items_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       petty_cash_expenses: {
         Row: {
           amount: number
@@ -8578,6 +8717,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_period_locked: { Args: { _d: string }; Returns: boolean }
       recalc_bank_reconciliation: {
         Args: { _id: string }
         Returns: {
