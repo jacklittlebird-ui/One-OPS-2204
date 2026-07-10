@@ -3088,6 +3088,173 @@ export type Database = {
           },
         ]
       }
+      document_signatures: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          ip_address: string | null
+          notes: string | null
+          order_index: number
+          requested_by: string | null
+          role_label: string | null
+          signature_data: string | null
+          signed_at: string | null
+          signer_email: string | null
+          signer_name: string
+          signer_user_id: string | null
+          status: string
+          updated_at: string
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          order_index?: number
+          requested_by?: string | null
+          role_label?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signer_email?: string | null
+          signer_name: string
+          signer_user_id?: string | null
+          status?: string
+          updated_at?: string
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          order_index?: number
+          requested_by?: string | null
+          role_label?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signer_email?: string | null
+          signer_name?: string
+          signer_user_id?: string | null
+          status?: string
+          updated_at?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_signatures_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_signatures_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          created_at: string
+          document_id: string
+          file_name: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          notes: string | null
+          storage_path: string
+          uploaded_by: string | null
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_path: string
+          uploaded_by?: string | null
+          version_number: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_path?: string
+          uploaded_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          category: string
+          created_at: string
+          current_version: number
+          description: string | null
+          entity_id: string | null
+          entity_type: string | null
+          expiry_date: string | null
+          id: string
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          current_version?: number
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expiry_date?: string | null
+          id?: string
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current_version?: number
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expiry_date?: string | null
+          id?: string
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       dunning_policies: {
         Row: {
           created_at: string
