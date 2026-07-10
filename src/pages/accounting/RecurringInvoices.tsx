@@ -347,7 +347,7 @@ export default function RecurringInvoices() {
                   template_no: t.template_no, name: t.name, customer: t.customer_name,
                   frequency: t.frequency, next_run: t.next_run_date, status: t.status,
                   vat_rate: t.vat_rate, currency: t.currency,
-                })), "recurring_templates")}>
+                })), "Templates", "recurring_templates.xlsx")}>
                 <Download className="h-4 w-4 mr-1" /> Export
               </Button>
             </CardHeader>
