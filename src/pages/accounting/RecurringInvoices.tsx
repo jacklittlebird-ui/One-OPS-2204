@@ -438,7 +438,7 @@ export default function RecurringInvoices() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Preview Details</CardTitle>
-                <Button size="sm" variant="ghost" onClick={() => exportToExcel(preview, "recurring_preview")}>
+                <Button size="sm" variant="ghost" onClick={() => exportToExcel(preview, "Preview", "recurring_preview.xlsx")}>
                   <Download className="h-4 w-4 mr-1" /> Export
                 </Button>
               </CardHeader>
