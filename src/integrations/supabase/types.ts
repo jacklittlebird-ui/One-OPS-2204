@@ -1010,6 +1010,7 @@ export type Database = {
         Row: {
           account_code: string
           account_name: string | null
+          alert_threshold_pct: number | null
           budget_amount: number
           company_id: string | null
           cost_center: string | null
@@ -1026,6 +1027,7 @@ export type Database = {
         Insert: {
           account_code: string
           account_name?: string | null
+          alert_threshold_pct?: number | null
           budget_amount?: number
           company_id?: string | null
           cost_center?: string | null
@@ -1042,6 +1044,7 @@ export type Database = {
         Update: {
           account_code?: string
           account_name?: string | null
+          alert_threshold_pct?: number | null
           budget_amount?: number
           company_id?: string | null
           cost_center?: string | null
@@ -1068,6 +1071,80 @@ export type Database = {
             columns: ["station_id"]
             isOneToOne: false
             referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_variance_alerts: {
+        Row: {
+          account_code: string
+          account_name: string | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          actual_amount: number
+          budget_amount: number
+          company_id: string | null
+          cost_center: string | null
+          created_at: string
+          fiscal_year: number
+          id: string
+          notes: string | null
+          period_month: number
+          severity: string
+          status: string
+          threshold_pct: number
+          updated_at: string
+          variance_amount: number
+          variance_pct: number
+        }
+        Insert: {
+          account_code: string
+          account_name?: string | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actual_amount?: number
+          budget_amount?: number
+          company_id?: string | null
+          cost_center?: string | null
+          created_at?: string
+          fiscal_year: number
+          id?: string
+          notes?: string | null
+          period_month: number
+          severity?: string
+          status?: string
+          threshold_pct?: number
+          updated_at?: string
+          variance_amount?: number
+          variance_pct?: number
+        }
+        Update: {
+          account_code?: string
+          account_name?: string | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actual_amount?: number
+          budget_amount?: number
+          company_id?: string | null
+          cost_center?: string | null
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          notes?: string | null
+          period_month?: number
+          severity?: string
+          status?: string
+          threshold_pct?: number
+          updated_at?: string
+          variance_amount?: number
+          variance_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_variance_alerts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
