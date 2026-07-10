@@ -85,6 +85,7 @@ import FinanceNotificationCenter from "./pages/accounting/FinanceNotificationCen
 import CustomReportBuilder from "./pages/accounting/CustomReportBuilder";
 import BudgetManagement from "./pages/accounting/BudgetManagement";
 import CashFlowForecast from "./pages/accounting/CashFlowForecast";
+import TaxCompliance from "./pages/accounting/TaxCompliance";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
