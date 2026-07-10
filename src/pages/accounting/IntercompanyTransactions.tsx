@@ -213,14 +213,14 @@ export default function IntercompanyTransactionsPage() {
           entry_id: jFrom.id, account_id: arAcct.id, debit: ic.amount, credit: 0,
           description: desc, sort_order: 1,
           company_id: ic.from_company_id, station_id: ic.from_station_id,
-          transaction_currency: ic.currency, transaction_amount: ic.amount,
+          transaction_currency: ic.currency as any, transaction_amount: ic.amount,
           exchange_rate: ic.exchange_rate,
         },
         {
           entry_id: jFrom.id, account_id: clearingA.id, debit: 0, credit: ic.amount,
           description: desc, sort_order: 2,
           company_id: ic.from_company_id, station_id: ic.from_station_id,
-          transaction_currency: ic.currency, transaction_amount: ic.amount,
+          transaction_currency: ic.currency as any, transaction_amount: ic.amount,
           exchange_rate: ic.exchange_rate,
         },
       ]);
@@ -245,14 +245,14 @@ export default function IntercompanyTransactionsPage() {
           entry_id: jTo.id, account_id: clearingB.id, debit: ic.amount, credit: 0,
           description: desc, sort_order: 1,
           company_id: ic.to_company_id, station_id: ic.to_station_id,
-          transaction_currency: ic.currency, transaction_amount: ic.amount,
+          transaction_currency: ic.currency as any, transaction_amount: ic.amount,
           exchange_rate: ic.exchange_rate,
         },
         {
           entry_id: jTo.id, account_id: apAcct.id, debit: 0, credit: ic.amount,
           description: desc, sort_order: 2,
           company_id: ic.to_company_id, station_id: ic.to_station_id,
-          transaction_currency: ic.currency, transaction_amount: ic.amount,
+          transaction_currency: ic.currency as any, transaction_amount: ic.amount,
           exchange_rate: ic.exchange_rate,
         },
       ]);
