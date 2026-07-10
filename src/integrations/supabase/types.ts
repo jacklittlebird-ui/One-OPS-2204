@@ -3037,6 +3037,45 @@ export type Database = {
           },
         ]
       }
+      dunning_policies: {
+        Row: {
+          created_at: string
+          days_overdue: number
+          email_body: string
+          email_subject: string
+          id: string
+          is_active: boolean
+          level: number
+          name: string
+          tone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          days_overdue: number
+          email_body: string
+          email_subject: string
+          id?: string
+          is_active?: boolean
+          level: number
+          name: string
+          tone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          days_overdue?: number
+          email_body?: string
+          email_subject?: string
+          id?: string
+          is_active?: boolean
+          level?: number
+          name?: string
+          tone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       elimination_entries: {
         Row: {
           amount: number
@@ -4797,6 +4836,72 @@ export type Database = {
           valid_to?: string | null
         }
         Relationships: []
+      }
+      payment_reminders: {
+        Row: {
+          airline_iata: string | null
+          body: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          invoice_id: string
+          level: number
+          method: string
+          recipient_email: string | null
+          sent_at: string
+          sent_by: string | null
+          status: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          airline_iata?: string | null
+          body?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          invoice_id: string
+          level: number
+          method?: string
+          recipient_email?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          airline_iata?: string | null
+          body?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          invoice_id?: string
+          level?: number
+          method?: string
+          recipient_email?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reminders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reminders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -8443,6 +8548,24 @@ export type Database = {
           entry_type: string
           reference: string
           running_balance: number
+        }[]
+      }
+      get_pending_reminders: {
+        Args: never
+        Returns: {
+          airline_iata: string
+          currency: string
+          days_overdue: number
+          due_date: string
+          invoice_date: string
+          invoice_id: string
+          invoice_no: string
+          last_reminder_at: string
+          last_reminder_level: number
+          next_level: number
+          next_level_name: string
+          operator: string
+          total: number
         }[]
       }
       has_finance_access: { Args: { _user_id: string }; Returns: boolean }
