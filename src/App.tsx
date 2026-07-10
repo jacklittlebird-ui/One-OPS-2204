@@ -55,6 +55,7 @@ import IntercompanyTransactionsPage from "./pages/accounting/IntercompanyTransac
 import ApprovalWorkflowsPage from "./pages/accounting/ApprovalWorkflows";
 import WithholdingTaxPage from "./pages/accounting/WithholdingTax";
 import ChequeManagementPage from "./pages/accounting/ChequeManagement";
+import PettyCashPage from "./pages/accounting/PettyCash";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";

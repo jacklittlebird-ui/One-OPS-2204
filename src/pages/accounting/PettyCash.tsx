@@ -296,7 +296,7 @@ function FundsTab({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Petty Cash Funds</CardTitle>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportToExcel(funds, "petty_cash_funds")}>
+          <Button variant="outline" size="sm" onClick={() => exportToExcel(funds, "Funds", "petty_cash_funds")}>
             <Download size={16} className="mr-1" /> Export
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
@@ -484,7 +484,7 @@ function ExpensesTab({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Expense Entries</CardTitle>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportToExcel(expenses, "petty_cash_expenses")}>
+          <Button variant="outline" size="sm" onClick={() => exportToExcel(expenses, "Expenses", "petty_cash_expenses")}>
             <Download size={16} className="mr-1" /> Export
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
