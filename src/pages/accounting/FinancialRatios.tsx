@@ -104,25 +104,24 @@ export default function FinancialRatiosPage() {
 
   // Aggregate account totals by type (using absolute current_balance)
   const totals = useMemo(() => {
-    const map: Record<string, number> = { asset: 0, liability: 0, equity: 0, revenue: 0, expense: 0 };
-    const detail: Record<string, { current_assets: number; current_liabilities: number; inventory: number; cash: number; receivables: number }> = {
-      current: { current_assets: 0, current_liabilities: 0, inventory: 0, cash: 0, receivables: 0 } as any,
+    const t: Record<string, number> = {
+      asset: 0, liability: 0, equity: 0, revenue: 0, expense: 0,
+      current_assets: 0, current_liabilities: 0, inventory: 0, cash: 0, receivables: 0,
     };
     for (const a of coaQ.data || []) {
-      const t = String(a.account_type || "").toLowerCase();
+      const type = String(a.account_type || "").toLowerCase();
       const bal = Math.abs(Number(a.current_balance || 0));
-      map[t] = (map[t] || 0) + bal;
+      t[type] = (t[type] || 0) + bal;
       const code = String(a.code || "");
-      // Egyptian CoA style: 11xx = current assets (11 cash/bank, 12 AR, 13 inventory), 21xx = current liabilities
-      if (t === "asset") {
-        if (code.startsWith("11") || code.startsWith("12") || code.startsWith("13")) detail.current.current_assets += bal;
-        if (code.startsWith("111") || code.startsWith("112")) detail.current.cash += bal;
-        if (code.startsWith("12")) detail.current.receivables += bal;
-        if (code.startsWith("13")) detail.current.inventory += bal;
+      if (type === "asset") {
+        if (code.startsWith("11") || code.startsWith("12") || code.startsWith("13")) t.current_assets += bal;
+        if (code.startsWith("111") || code.startsWith("112")) t.cash += bal;
+        if (code.startsWith("12")) t.receivables += bal;
+        if (code.startsWith("13")) t.inventory += bal;
       }
-      if (t === "liability" && code.startsWith("21")) detail.current.current_liabilities += bal;
+      if (type === "liability" && code.startsWith("21")) t.current_liabilities += bal;
     }
-    return { ...map, ...detail.current };
+    return t;
   }, [coaQ.data]);
 
   // Monthly revenue trend
