@@ -206,6 +206,7 @@ export default function CashFlowForecastPage() {
         Net: b.net.toFixed(2),
         Closing: b.closing.toFixed(2),
       })),
+      "Weekly Forecast",
       `cash-flow-forecast-${format(today, "yyyyMMdd")}`
     );
 
