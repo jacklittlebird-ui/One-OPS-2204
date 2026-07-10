@@ -703,6 +703,235 @@ export type Database = {
           },
         ]
       }
+      asset_disposals: {
+        Row: {
+          accumulated_depreciation: number | null
+          approved_by: string | null
+          asset_id: string
+          book_value: number | null
+          buyer: string | null
+          created_at: string
+          created_by: string | null
+          disposal_amount: number | null
+          disposal_date: string
+          disposal_type: string
+          gain_loss: number | null
+          id: string
+          reason: string | null
+          reference_no: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accumulated_depreciation?: number | null
+          approved_by?: string | null
+          asset_id: string
+          book_value?: number | null
+          buyer?: string | null
+          created_at?: string
+          created_by?: string | null
+          disposal_amount?: number | null
+          disposal_date?: string
+          disposal_type: string
+          gain_loss?: number | null
+          id?: string
+          reason?: string | null
+          reference_no?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accumulated_depreciation?: number | null
+          approved_by?: string | null
+          asset_id?: string
+          book_value?: number | null
+          buyer?: string | null
+          created_at?: string
+          created_by?: string | null
+          disposal_amount?: number | null
+          disposal_date?: string
+          disposal_type?: string
+          gain_loss?: number | null
+          id?: string
+          reason?: string | null
+          reference_no?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_disposals_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_physical_count_lines: {
+        Row: {
+          actual_location: string | null
+          asset_id: string | null
+          condition: string | null
+          count_id: string
+          created_at: string
+          expected_location: string | null
+          found: boolean
+          id: string
+          notes: string | null
+          scanned_code: string | null
+          variance: string | null
+        }
+        Insert: {
+          actual_location?: string | null
+          asset_id?: string | null
+          condition?: string | null
+          count_id: string
+          created_at?: string
+          expected_location?: string | null
+          found?: boolean
+          id?: string
+          notes?: string | null
+          scanned_code?: string | null
+          variance?: string | null
+        }
+        Update: {
+          actual_location?: string | null
+          asset_id?: string | null
+          condition?: string | null
+          count_id?: string
+          created_at?: string
+          expected_location?: string | null
+          found?: boolean
+          id?: string
+          notes?: string | null
+          scanned_code?: string | null
+          variance?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_physical_count_lines_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_physical_count_lines_count_id_fkey"
+            columns: ["count_id"]
+            isOneToOne: false
+            referencedRelation: "asset_physical_counts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_physical_counts: {
+        Row: {
+          count_date: string
+          count_no: string
+          created_at: string
+          created_by: string | null
+          department: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          performed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          count_date?: string
+          count_no: string
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          count_date?: string
+          count_no?: string
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      asset_transfers: {
+        Row: {
+          approved_by: string | null
+          asset_id: string
+          created_at: string
+          created_by: string | null
+          from_custodian: string | null
+          from_department: string | null
+          from_location: string | null
+          id: string
+          reason: string | null
+          reference_no: string | null
+          status: string
+          to_custodian: string | null
+          to_department: string | null
+          to_location: string
+          transfer_date: string
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          asset_id: string
+          created_at?: string
+          created_by?: string | null
+          from_custodian?: string | null
+          from_department?: string | null
+          from_location?: string | null
+          id?: string
+          reason?: string | null
+          reference_no?: string | null
+          status?: string
+          to_custodian?: string | null
+          to_department?: string | null
+          to_location: string
+          transfer_date?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          asset_id?: string
+          created_at?: string
+          created_by?: string | null
+          from_custodian?: string | null
+          from_department?: string | null
+          from_location?: string | null
+          id?: string
+          reason?: string | null
+          reference_no?: string | null
+          status?: string
+          to_custodian?: string | null
+          to_department?: string | null
+          to_location?: string
+          transfer_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_transfers_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
