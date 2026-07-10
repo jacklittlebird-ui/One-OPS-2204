@@ -78,6 +78,7 @@ import ContractsRenewalsPage from "./pages/accounting/ContractsRenewals";
 import VendorPortalPage from "./pages/accounting/VendorPortal";
 import CustomerPortalPage from "./pages/accounting/CustomerPortal";
 import PaymentRemindersPage from "./pages/accounting/PaymentReminders";
+import FinancialClosePage from "./pages/accounting/FinancialClose";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -210,6 +211,7 @@ function AppRoutes() {
       <Route path="/accounting/vendor-portal" element={<ProtectedRoute><AppLayout><VendorPortalPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/customer-portal" element={<ProtectedRoute><AppLayout><CustomerPortalPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/payment-reminders" element={<ProtectedRoute><AppLayout><PaymentRemindersPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/financial-close" element={<ProtectedRoute><AppLayout><FinancialClosePage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
