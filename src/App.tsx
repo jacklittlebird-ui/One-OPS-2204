@@ -58,6 +58,7 @@ import ChequeManagementPage from "./pages/accounting/ChequeManagement";
 import PettyCashPage from "./pages/accounting/PettyCash";
 import NotesPayableLoansPage from "./pages/accounting/NotesPayableLoans";
 import ObjectionVariancePage from "./pages/accounting/ObjectionVariance";
+import FinancialStatementsPage from "./pages/accounting/FinancialStatements";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
