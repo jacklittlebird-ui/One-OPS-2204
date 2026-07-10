@@ -53,6 +53,7 @@ import ConsolidatedStatementsPage from "./pages/accounting/ConsolidatedStatement
 import PartnerStatementsPage from "./pages/accounting/PartnerStatements";
 import IntercompanyTransactionsPage from "./pages/accounting/IntercompanyTransactions";
 import ApprovalWorkflowsPage from "./pages/accounting/ApprovalWorkflows";
+import WithholdingTaxPage from "./pages/accounting/WithholdingTax";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -160,6 +161,7 @@ function AppRoutes() {
       <Route path="/accounting/statements" element={<ProtectedRoute><AppLayout><PartnerStatementsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/intercompany" element={<ProtectedRoute><AppLayout><IntercompanyTransactionsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/approvals" element={<ProtectedRoute><AppLayout><ApprovalWorkflowsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/wht" element={<ProtectedRoute><AppLayout><WithholdingTaxPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
