@@ -282,6 +282,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Partner Statements", path: "/accounting/statements" },
         { label: "Intercompany", path: "/accounting/intercompany" },
         { label: "Approval Workflows", path: "/accounting/approvals" },
+        { label: "Tax Withholding", path: "/accounting/wht" },
         { label: "Reports / Admin", path: "/reports-admin" },
         { label: "Airline Incentives", path: "/airline-incentives" },
       ],
