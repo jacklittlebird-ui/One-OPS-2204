@@ -60,7 +60,7 @@ import NotesPayableLoansPage from "./pages/accounting/NotesPayableLoans";
 import ObjectionVariancePage from "./pages/accounting/ObjectionVariance";
 import FinancialStatementsPage from "./pages/accounting/FinancialStatements";
 import TreasuryVouchersPage from "./pages/accounting/TreasuryVouchers";
-import AuditLogPage from "./pages/accounting/AuditLog";
+import FinanceAuditLogPage from "./pages/accounting/AuditLog";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
