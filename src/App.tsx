@@ -49,6 +49,7 @@ import RecurringJournalsPage from "./pages/accounting/RecurringJournals";
 import BudgetsPage from "./pages/accounting/Budgets";
 import FixedAssetsPage from "./pages/accounting/FixedAssets";
 import CashFlowStatementPage from "./pages/accounting/CashFlowStatement";
+import ConsolidatedStatementsPage from "./pages/accounting/ConsolidatedStatements";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
