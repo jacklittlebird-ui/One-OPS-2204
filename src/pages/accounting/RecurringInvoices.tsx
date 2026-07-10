@@ -154,9 +154,10 @@ export default function RecurringInvoices() {
   const createTemplate = useMutation({
     mutationFn: async (payload: Partial<Template>) => {
       const tno = `RIT-${Date.now()}`;
+      const row: any = { ...payload, template_no: tno };
       const { data, error } = await supabase
         .from("recurring_invoice_templates")
-        .insert({ ...payload, template_no: tno }).select().single();
+        .insert(row).select().single();
       if (error) throw error;
       return data;
     },
