@@ -209,6 +209,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Recurring Entries", path: "/accounting/recurring-journals" },
         { label: "Budgets & Variance", path: "/accounting/budgets" },
         { label: "Fixed Assets", path: "/accounting/fixed-assets" },
+        { label: "Fixed Assets — Advanced", path: "/accounting/fixed-assets-advanced" },
         { label: "Depreciation Scheduler", path: "/accounting/depreciation" },
         { label: "Accruals & Deferrals", path: "/accounting/accruals" },
         { label: "Cost Allocation", path: "/accounting/cost-allocation" },
