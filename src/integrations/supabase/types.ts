@@ -3736,6 +3736,134 @@ export type Database = {
           },
         ]
       }
+      petty_cash_expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          category: string | null
+          created_at: string
+          currency: string
+          description: string
+          entry_type: string
+          expense_date: string
+          fund_id: string
+          gl_account_id: string | null
+          id: string
+          notes: string | null
+          receipt_ref: string | null
+          status: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string | null
+          created_at?: string
+          currency?: string
+          description: string
+          entry_type?: string
+          expense_date?: string
+          fund_id: string
+          gl_account_id?: string | null
+          id?: string
+          notes?: string | null
+          receipt_ref?: string | null
+          status?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          entry_type?: string
+          expense_date?: string
+          fund_id?: string
+          gl_account_id?: string | null
+          id?: string
+          notes?: string | null
+          receipt_ref?: string | null
+          status?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "petty_cash_expenses_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "petty_cash_funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "petty_cash_expenses_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      petty_cash_funds: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          currency: string
+          current_balance: number
+          custodian_name: string
+          float_limit: number
+          fund_code: string
+          id: string
+          notes: string | null
+          station: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          current_balance?: number
+          custodian_name: string
+          float_limit?: number
+          fund_code: string
+          id?: string
+          notes?: string | null
+          station?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          current_balance?: number
+          custodian_name?: string
+          float_limit?: number
+          fund_code?: string
+          id?: string
+          notes?: string | null
+          station?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "petty_cash_funds_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
