@@ -1739,6 +1739,149 @@ export type Database = {
           },
         ]
       }
+      cost_allocation_rule_lines: {
+        Row: {
+          created_at: string
+          id: string
+          percentage: number | null
+          rule_id: string
+          target_account_code: string | null
+          target_company: string
+          target_cost_center: string | null
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          percentage?: number | null
+          rule_id: string
+          target_account_code?: string | null
+          target_company: string
+          target_cost_center?: string | null
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          percentage?: number | null
+          rule_id?: string
+          target_account_code?: string | null
+          target_company?: string
+          target_cost_center?: string | null
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_allocation_rule_lines_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "cost_allocation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_allocation_rules: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          driver: string | null
+          id: string
+          method: string
+          name: string
+          source_account_code: string
+          source_company: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          driver?: string | null
+          id?: string
+          method?: string
+          name: string
+          source_account_code: string
+          source_company?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          driver?: string | null
+          id?: string
+          method?: string
+          name?: string
+          source_account_code?: string
+          source_company?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cost_allocation_runs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          distribution: Json
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          period: string
+          rule_id: string
+          source_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          distribution?: Json
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period: string
+          rule_id: string
+          source_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          distribution?: Json
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period?: string
+          rule_id?: string
+          source_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_allocation_runs_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_allocation_runs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "cost_allocation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_report_lines: {
         Row: {
           cost_report_id: string

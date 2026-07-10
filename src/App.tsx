@@ -63,6 +63,7 @@ import TreasuryVouchersPage from "./pages/accounting/TreasuryVouchers";
 import FinanceAuditLogPage from "./pages/accounting/AuditLog";
 import DepreciationSchedulerPage from "./pages/accounting/DepreciationScheduler";
 import AccrualsDeferralsPage from "./pages/accounting/AccrualsDeferrals";
+import CostAllocationPage from "./pages/accounting/CostAllocation";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -180,6 +181,7 @@ function AppRoutes() {
       <Route path="/accounting/audit-log" element={<ProtectedRoute><AppLayout><FinanceAuditLogPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/depreciation" element={<ProtectedRoute><AppLayout><DepreciationSchedulerPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/accruals" element={<ProtectedRoute><AppLayout><AccrualsDeferralsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/cost-allocation" element={<ProtectedRoute><AppLayout><CostAllocationPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
