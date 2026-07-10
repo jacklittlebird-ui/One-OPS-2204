@@ -211,6 +211,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Fixed Assets", path: "/accounting/fixed-assets" },
         { label: "Cash Flow Statement", path: "/accounting/cash-flow" },
         { label: "Consolidated Statements", path: "/accounting/consolidated" },
+        { label: "Partner Statements", path: "/accounting/statements" },
         { label: "Reports / Admin", path: "/reports-admin" },
         { label: "Airline Incentives", path: "/airline-incentives" },
       ],
