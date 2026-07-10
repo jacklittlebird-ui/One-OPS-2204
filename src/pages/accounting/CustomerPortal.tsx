@@ -19,7 +19,7 @@ import {
 import { FileText, Download, Users, Receipt, Wallet, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import * as XLSX from "xlsx";
 
 type CustomerUser = {
