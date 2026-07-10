@@ -3287,6 +3287,176 @@ export type Database = {
           },
         ]
       }
+      fx_realized_entries: {
+        Row: {
+          base_currency: string
+          booked_rate: number
+          counterparty: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          entry_date: string
+          entry_no: string
+          gain_loss: number
+          id: string
+          notes: string | null
+          original_amount: number
+          settlement_rate: number
+          source_id: string | null
+          source_no: string | null
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          base_currency?: string
+          booked_rate?: number
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          entry_date?: string
+          entry_no: string
+          gain_loss?: number
+          id?: string
+          notes?: string | null
+          original_amount?: number
+          settlement_rate?: number
+          source_id?: string | null
+          source_no?: string | null
+          source_type: string
+          updated_at?: string
+        }
+        Update: {
+          base_currency?: string
+          booked_rate?: number
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_date?: string
+          entry_no?: string
+          gain_loss?: number
+          id?: string
+          notes?: string | null
+          original_amount?: number
+          settlement_rate?: number
+          source_id?: string | null
+          source_no?: string | null
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fx_revaluation_lines: {
+        Row: {
+          booked_base: number
+          booked_rate: number
+          counterparty: string | null
+          created_at: string
+          currency: string
+          current_base: number
+          current_rate: number
+          document_id: string | null
+          document_no: string | null
+          document_type: string
+          gain_loss: number
+          id: string
+          original_amount: number
+          run_id: string
+        }
+        Insert: {
+          booked_base?: number
+          booked_rate?: number
+          counterparty?: string | null
+          created_at?: string
+          currency: string
+          current_base?: number
+          current_rate?: number
+          document_id?: string | null
+          document_no?: string | null
+          document_type: string
+          gain_loss?: number
+          id?: string
+          original_amount?: number
+          run_id: string
+        }
+        Update: {
+          booked_base?: number
+          booked_rate?: number
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          current_base?: number
+          current_rate?: number
+          document_id?: string | null
+          document_no?: string | null
+          document_type?: string
+          gain_loss?: number
+          id?: string
+          original_amount?: number
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_revaluation_lines_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "fx_revaluation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fx_revaluation_runs: {
+        Row: {
+          as_of_date: string
+          base_currency: string
+          created_at: string
+          documents_evaluated: number
+          id: string
+          mode: string
+          net_impact: number
+          notes: string | null
+          run_by: string | null
+          run_no: string
+          status: string
+          total_gain: number
+          total_loss: number
+          updated_at: string
+        }
+        Insert: {
+          as_of_date?: string
+          base_currency?: string
+          created_at?: string
+          documents_evaluated?: number
+          id?: string
+          mode?: string
+          net_impact?: number
+          notes?: string | null
+          run_by?: string | null
+          run_no: string
+          status?: string
+          total_gain?: number
+          total_loss?: number
+          updated_at?: string
+        }
+        Update: {
+          as_of_date?: string
+          base_currency?: string
+          created_at?: string
+          documents_evaluated?: number
+          id?: string
+          mode?: string
+          net_impact?: number
+          notes?: string | null
+          run_by?: string | null
+          run_no?: string
+          status?: string
+          total_gain?: number
+          total_loss?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hall_vvip: {
         Row: {
           created_at: string
