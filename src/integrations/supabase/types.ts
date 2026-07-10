@@ -1203,6 +1203,151 @@ export type Database = {
           },
         ]
       }
+      cheque_books: {
+        Row: {
+          bank_account_id: string
+          created_at: string
+          end_number: number
+          id: string
+          next_number: number
+          notes: string | null
+          series_prefix: string | null
+          start_number: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bank_account_id: string
+          created_at?: string
+          end_number: number
+          id?: string
+          next_number: number
+          notes?: string | null
+          series_prefix?: string | null
+          start_number: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bank_account_id?: string
+          created_at?: string
+          end_number?: number
+          id?: string
+          next_number?: number
+          notes?: string | null
+          series_prefix?: string | null
+          start_number?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cheque_books_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cheques: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          bounce_reason: string | null
+          bounced_date: string | null
+          cheque_book_id: string | null
+          cheque_number: string
+          cleared_date: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          direction: string
+          due_date: string | null
+          id: string
+          issue_date: string
+          notes: string | null
+          party_name: string
+          payment_id: string | null
+          receipt_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          bank_account_id?: string | null
+          bounce_reason?: string | null
+          bounced_date?: string | null
+          cheque_book_id?: string | null
+          cheque_number: string
+          cleared_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          direction?: string
+          due_date?: string | null
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          party_name: string
+          payment_id?: string | null
+          receipt_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          bounce_reason?: string | null
+          bounced_date?: string | null
+          cheque_book_id?: string | null
+          cheque_number?: string
+          cleared_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          direction?: string
+          due_date?: string | null
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          party_name?: string
+          payment_id?: string | null
+          receipt_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cheques_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_cheque_book_id_fkey"
+            columns: ["cheque_book_id"]
+            isOneToOne: false
+            referencedRelation: "cheque_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cheques_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cheques_under_collection: {
         Row: {
           amount: number
