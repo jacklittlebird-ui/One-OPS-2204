@@ -217,7 +217,7 @@ export default function TaxComplianceCenter() {
     exportToExcel(
       filings.map(f => ({
         "Tax Type": f.tax_type,
-        Company: companies.find(c => c.id === f.company_id)?.name ?? "-",
+        Company: companies.find((c: any) => c.id === f.company_id)?.name ?? "-",
         "Period From": f.period_from,
         "Period To": f.period_to,
         "Due Date": f.due_date,
@@ -230,6 +230,7 @@ export default function TaxComplianceCenter() {
         Status: f.status,
         "e-Invoice": f.e_invoice_status,
       })),
+      "Filings",
       `tax-filings-${format(new Date(), "yyyy-MM-dd")}`
     );
   };
