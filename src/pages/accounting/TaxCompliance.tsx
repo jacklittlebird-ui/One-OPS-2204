@@ -26,7 +26,7 @@ function EtaTab() {
       const { data, error } = await supabase
         .from("invoices")
         .select("id, invoice_no, date, airline_iata, operator, currency, total, status")
-        .in("status", ["Finalized", "Sent", "finalized", "sent"])
+        .in("status", ["Sent", "Paid", "Overdue"])
         .order("date", { ascending: false })
         .limit(200);
       if (error) throw error;
