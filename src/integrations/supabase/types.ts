@@ -3461,6 +3461,81 @@ export type Database = {
           },
         ]
       }
+      eta_submissions: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          document_type: string
+          environment: string
+          error_message: string | null
+          id: string
+          internal_id: string | null
+          invoice_id: string | null
+          long_id: string | null
+          payload: Json | null
+          rejected_at: string | null
+          response: Json | null
+          status: string
+          submission_uuid: string | null
+          submitted_at: string | null
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          document_type?: string
+          environment?: string
+          error_message?: string | null
+          id?: string
+          internal_id?: string | null
+          invoice_id?: string | null
+          long_id?: string | null
+          payload?: Json | null
+          rejected_at?: string | null
+          response?: Json | null
+          status?: string
+          submission_uuid?: string | null
+          submitted_at?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          document_type?: string
+          environment?: string
+          error_message?: string | null
+          id?: string
+          internal_id?: string | null
+          invoice_id?: string | null
+          long_id?: string | null
+          payload?: Json | null
+          rejected_at?: string | null
+          response?: Json | null
+          status?: string
+          submission_uuid?: string | null
+          submitted_at?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eta_submissions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eta_submissions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exchange_rates: {
         Row: {
           base_currency: Database["public"]["Enums"]["finance_currency"]
@@ -7998,6 +8073,74 @@ export type Database = {
         }
         Relationships: []
       }
+      vat_returns: {
+        Row: {
+          breakdown: Json | null
+          company_id: string | null
+          created_at: string
+          filed_at: string | null
+          filed_by: string | null
+          id: string
+          input_vat: number
+          net_vat: number
+          notes: string | null
+          output_vat: number
+          period_month: number
+          period_year: number
+          reference_no: string | null
+          status: string
+          total_purchases: number
+          total_sales: number
+          updated_at: string
+        }
+        Insert: {
+          breakdown?: Json | null
+          company_id?: string | null
+          created_at?: string
+          filed_at?: string | null
+          filed_by?: string | null
+          id?: string
+          input_vat?: number
+          net_vat?: number
+          notes?: string | null
+          output_vat?: number
+          period_month: number
+          period_year: number
+          reference_no?: string | null
+          status?: string
+          total_purchases?: number
+          total_sales?: number
+          updated_at?: string
+        }
+        Update: {
+          breakdown?: Json | null
+          company_id?: string | null
+          created_at?: string
+          filed_at?: string | null
+          filed_by?: string | null
+          id?: string
+          input_vat?: number
+          net_vat?: number
+          notes?: string | null
+          output_vat?: number
+          period_month?: number
+          period_year?: number
+          reference_no?: string | null
+          status?: string
+          total_purchases?: number
+          total_sales?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vat_returns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_documents: {
         Row: {
           created_at: string
@@ -8945,6 +9088,16 @@ export type Database = {
     }
     Functions: {
       compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
+      compute_vat_return: {
+        Args: { _company?: string; _month: number; _year: number }
+        Returns: {
+          input_vat: number
+          net_vat: number
+          output_vat: number
+          total_purchases: number
+          total_sales: number
+        }[]
+      }
       current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
       get_budget_variance: {
@@ -9162,6 +9315,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      wht_summary: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          certificate_count: number
+          currency: string
+          gross_amount: number
+          vendor_name: string
+          wht_amount: number
+        }[]
       }
     }
     Enums: {
