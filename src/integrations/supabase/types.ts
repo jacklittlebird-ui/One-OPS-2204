@@ -5870,6 +5870,170 @@ export type Database = {
           },
         ]
       }
+      wht_certificates: {
+        Row: {
+          certificate_no: string
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          gross_amount: number
+          id: string
+          issue_date: string
+          net_amount: number
+          notes: string | null
+          payment_id: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          updated_at: string
+          vendor_invoice_id: string | null
+          vendor_name: string
+          vendor_tax_id: string | null
+          wht_amount: number
+          wht_rate: number
+          wht_rule_id: string | null
+        }
+        Insert: {
+          certificate_no: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          gross_amount?: number
+          id?: string
+          issue_date?: string
+          net_amount?: number
+          notes?: string | null
+          payment_id?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          updated_at?: string
+          vendor_invoice_id?: string | null
+          vendor_name: string
+          vendor_tax_id?: string | null
+          wht_amount?: number
+          wht_rate?: number
+          wht_rule_id?: string | null
+        }
+        Update: {
+          certificate_no?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          gross_amount?: number
+          id?: string
+          issue_date?: string
+          net_amount?: number
+          notes?: string | null
+          payment_id?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          updated_at?: string
+          vendor_invoice_id?: string | null
+          vendor_name?: string
+          vendor_tax_id?: string | null
+          wht_amount?: number
+          wht_rate?: number
+          wht_rule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wht_certificates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wht_certificates_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wht_certificates_vendor_invoice_id_fkey"
+            columns: ["vendor_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wht_certificates_wht_rule_id_fkey"
+            columns: ["wht_rule_id"]
+            isOneToOne: false
+            referencedRelation: "wht_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wht_rules: {
+        Row: {
+          active: boolean
+          applies_to: string
+          code: string
+          company_id: string | null
+          created_at: string
+          id: string
+          liability_account_id: string | null
+          min_amount: number | null
+          name: string
+          notes: string | null
+          rate: number
+          service_category: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          applies_to?: string
+          code: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          liability_account_id?: string | null
+          min_amount?: number | null
+          name: string
+          notes?: string | null
+          rate?: number
+          service_category?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          applies_to?: string
+          code?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          liability_account_id?: string | null
+          min_amount?: number | null
+          name?: string
+          notes?: string | null
+          rate?: number
+          service_category?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wht_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wht_rules_liability_account_id_fkey"
+            columns: ["liability_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       mv_invoice_monthly_summary: {
