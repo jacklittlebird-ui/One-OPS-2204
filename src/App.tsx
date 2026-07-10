@@ -181,6 +181,7 @@ function AppRoutes() {
       <Route path="/accounting/audit-log" element={<ProtectedRoute><AppLayout><FinanceAuditLogPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/depreciation" element={<ProtectedRoute><AppLayout><DepreciationSchedulerPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/accruals" element={<ProtectedRoute><AppLayout><AccrualsDeferralsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/cost-allocation" element={<ProtectedRoute><AppLayout><CostAllocationPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
