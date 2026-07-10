@@ -1844,6 +1844,13 @@ export type Database = {
             referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cheques_under_collection_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
+          },
         ]
       }
       collection_activities: {
@@ -2606,6 +2613,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cost_reports_billed_invoice_id_fkey"
+            columns: ["billed_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cost_reports_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -2736,6 +2750,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_users: {
+        Row: {
+          airline_iata: string
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          airline_iata: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          airline_iata?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       delay_codes: {
         Row: {
@@ -3760,6 +3801,13 @@ export type Database = {
             columns: ["draft_invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_variance_reports_draft_invoice_id_fkey"
+            columns: ["draft_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
             referencedColumns: ["id"]
           },
           {
@@ -5099,6 +5147,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
             referencedColumns: ["id"]
           },
           {
@@ -7650,6 +7705,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendor_invoices_client_invoice_id_fkey"
+            columns: ["client_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vendor_invoices_service_report_id_fkey"
             columns: ["service_report_id"]
             isOneToOne: false
@@ -7943,6 +8005,194 @@ export type Database = {
           },
         ]
       }
+      v_customer_invoices: {
+        Row: {
+          airline_iata: string | null
+          airport_charges: number | null
+          base_currency: Database["public"]["Enums"]["finance_currency"] | null
+          base_total: number | null
+          billing_period: string | null
+          catering: number | null
+          civil_aviation: number | null
+          company_id: string | null
+          created_at: string | null
+          credit_note_ref: string | null
+          currency: Database["public"]["Enums"]["currency_type"] | null
+          date: string | null
+          description: string | null
+          draft_status: string | null
+          due_date: string | null
+          exchange_rate: number | null
+          exchange_rate_date: string | null
+          finalized_at: string | null
+          finalized_by: string | null
+          flight_ref: string | null
+          flight_schedule_id: string | null
+          handling: number | null
+          id: string | null
+          invoice_direction:
+            | Database["public"]["Enums"]["invoice_direction"]
+            | null
+          invoice_no: string | null
+          invoice_type: string | null
+          journal_entry_id: string | null
+          notes: string | null
+          operator: string | null
+          other: number | null
+          payment_date: string | null
+          payment_ref: string | null
+          sent_at: string | null
+          sent_to: string | null
+          service_report_id: string | null
+          service_type: string | null
+          source: string | null
+          station: string | null
+          station_id: string | null
+          status: Database["public"]["Enums"]["invoice_status"] | null
+          subtotal: number | null
+          supplier_id: string | null
+          total: number | null
+          transaction_currency:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
+          updated_at: string | null
+          vat: number | null
+        }
+        Insert: {
+          airline_iata?: string | null
+          airport_charges?: number | null
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          base_total?: number | null
+          billing_period?: string | null
+          catering?: number | null
+          civil_aviation?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          credit_note_ref?: string | null
+          currency?: Database["public"]["Enums"]["currency_type"] | null
+          date?: string | null
+          description?: string | null
+          draft_status?: string | null
+          due_date?: string | null
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
+          finalized_at?: string | null
+          finalized_by?: string | null
+          flight_ref?: string | null
+          flight_schedule_id?: string | null
+          handling?: number | null
+          id?: string | null
+          invoice_direction?:
+            | Database["public"]["Enums"]["invoice_direction"]
+            | null
+          invoice_no?: string | null
+          invoice_type?: string | null
+          journal_entry_id?: string | null
+          notes?: string | null
+          operator?: string | null
+          other?: number | null
+          payment_date?: string | null
+          payment_ref?: string | null
+          sent_at?: string | null
+          sent_to?: string | null
+          service_report_id?: string | null
+          service_type?: string | null
+          source?: string | null
+          station?: string | null
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          subtotal?: number | null
+          supplier_id?: string | null
+          total?: number | null
+          transaction_currency?:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
+          updated_at?: string | null
+          vat?: number | null
+        }
+        Update: {
+          airline_iata?: string | null
+          airport_charges?: number | null
+          base_currency?: Database["public"]["Enums"]["finance_currency"] | null
+          base_total?: number | null
+          billing_period?: string | null
+          catering?: number | null
+          civil_aviation?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          credit_note_ref?: string | null
+          currency?: Database["public"]["Enums"]["currency_type"] | null
+          date?: string | null
+          description?: string | null
+          draft_status?: string | null
+          due_date?: string | null
+          exchange_rate?: number | null
+          exchange_rate_date?: string | null
+          finalized_at?: string | null
+          finalized_by?: string | null
+          flight_ref?: string | null
+          flight_schedule_id?: string | null
+          handling?: number | null
+          id?: string | null
+          invoice_direction?:
+            | Database["public"]["Enums"]["invoice_direction"]
+            | null
+          invoice_no?: string | null
+          invoice_type?: string | null
+          journal_entry_id?: string | null
+          notes?: string | null
+          operator?: string | null
+          other?: number | null
+          payment_date?: string | null
+          payment_ref?: string | null
+          sent_at?: string | null
+          sent_to?: string | null
+          service_report_id?: string | null
+          service_type?: string | null
+          source?: string | null
+          station?: string | null
+          station_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          subtotal?: number | null
+          supplier_id?: string | null
+          total?: number | null
+          transaction_currency?:
+            | Database["public"]["Enums"]["finance_currency"]
+            | null
+          updated_at?: string | null
+          vat?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_dispatch_with_flight: {
         Row: {
           actual_duration_hours: number | null
@@ -8180,7 +8430,21 @@ export type Database = {
     }
     Functions: {
       compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
+      current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
+      get_customer_statement: {
+        Args: { _airline_iata?: string; _from: string; _to: string }
+        Returns: {
+          credit: number
+          currency: string
+          debit: number
+          description: string
+          entry_date: string
+          entry_type: string
+          reference: string
+          running_balance: number
+        }[]
+      }
       has_finance_access: { Args: { _user_id: string }; Returns: boolean }
       has_ops_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {

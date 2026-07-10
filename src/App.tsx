@@ -76,6 +76,7 @@ import RecurringInvoicesPage from "./pages/accounting/RecurringInvoices";
 import FxGainLossPage from "./pages/accounting/FxGainLoss";
 import ContractsRenewalsPage from "./pages/accounting/ContractsRenewals";
 import VendorPortalPage from "./pages/accounting/VendorPortal";
+import CustomerPortalPage from "./pages/accounting/CustomerPortal";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -206,6 +207,7 @@ function AppRoutes() {
       <Route path="/accounting/fx-gain-loss" element={<ProtectedRoute><AppLayout><FxGainLossPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/contracts-renewals" element={<ProtectedRoute><AppLayout><ContractsRenewalsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/vendor-portal" element={<ProtectedRoute><AppLayout><VendorPortalPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/customer-portal" element={<ProtectedRoute><AppLayout><CustomerPortalPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
