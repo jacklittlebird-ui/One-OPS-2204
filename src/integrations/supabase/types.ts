@@ -7428,6 +7428,53 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_documents: {
+        Row: {
+          created_at: string
+          doc_name: string
+          doc_type: string
+          expiry_date: string | null
+          file_url: string | null
+          id: string
+          notes: string | null
+          updated_at: string
+          uploaded_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_name: string
+          doc_type: string
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_name?: string
+          doc_type?: string
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_documents_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_equipment: {
         Row: {
           created_at: string
@@ -7454,6 +7501,90 @@ export type Database = {
           vendor?: string
         }
         Relationships: []
+      }
+      vendor_invoice_submissions: {
+        Row: {
+          amount: number
+          approved_vendor_invoice_id: string | null
+          attachment_url: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_no: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
+          status: string
+          submission_no: string
+          submitted_by: string | null
+          total: number
+          updated_at: string
+          vat: number
+          vendor_id: string
+        }
+        Insert: {
+          amount?: number
+          approved_vendor_invoice_id?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date: string
+          invoice_no: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          submission_no: string
+          submitted_by?: string | null
+          total?: number
+          updated_at?: string
+          vat?: number
+          vendor_id: string
+        }
+        Update: {
+          amount?: number
+          approved_vendor_invoice_id?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_no?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          submission_no?: string
+          submitted_by?: string | null
+          total?: number
+          updated_at?: string
+          vat?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invoice_submissions_approved_vendor_invoice_id_fkey"
+            columns: ["approved_vendor_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendor_invoices: {
         Row: {
@@ -7541,6 +7672,41 @@ export type Database = {
           },
           {
             foreignKeyName: "vendor_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_users: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          user_id: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_users_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "service_providers"
@@ -8014,6 +8180,7 @@ export type Database = {
     }
     Functions: {
       compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
+      current_vendor_id: { Args: never; Returns: string }
       has_finance_access: { Args: { _user_id: string }; Returns: boolean }
       has_ops_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
