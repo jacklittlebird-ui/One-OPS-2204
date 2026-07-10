@@ -431,6 +431,181 @@ export type Database = {
           },
         ]
       }
+      approval_actions: {
+        Row: {
+          acted_at: string
+          action: string
+          approver_id: string | null
+          approver_role: string | null
+          comment: string | null
+          id: string
+          request_id: string
+          step: number
+        }
+        Insert: {
+          acted_at?: string
+          action: string
+          approver_id?: string | null
+          approver_role?: string | null
+          comment?: string | null
+          id?: string
+          request_id: string
+          step: number
+        }
+        Update: {
+          acted_at?: string
+          action?: string
+          approver_id?: string | null
+          approver_role?: string | null
+          comment?: string | null
+          id?: string
+          request_id?: string
+          step?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_actions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_requests: {
+        Row: {
+          amount: number
+          approver_roles: string[]
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          currency: string | null
+          current_step: number
+          doc_id: string
+          doc_reference: string | null
+          doc_type: string
+          id: string
+          notes: string | null
+          request_no: string
+          rule_id: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          total_steps: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          approver_roles?: string[]
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string | null
+          current_step?: number
+          doc_id: string
+          doc_reference?: string | null
+          doc_type: string
+          id?: string
+          notes?: string | null
+          request_no: string
+          rule_id?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          total_steps?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approver_roles?: string[]
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string | null
+          current_step?: number
+          doc_id?: string
+          doc_reference?: string | null
+          doc_type?: string
+          id?: string
+          notes?: string | null
+          request_no?: string
+          rule_id?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          total_steps?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_requests_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "approval_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_rules: {
+        Row: {
+          active: boolean
+          approver_roles: string[]
+          company_id: string | null
+          created_at: string
+          currency: string | null
+          doc_type: string
+          id: string
+          max_amount: number | null
+          min_amount: number
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          approver_roles?: string[]
+          company_id?: string | null
+          created_at?: string
+          currency?: string | null
+          doc_type: string
+          id?: string
+          max_amount?: number | null
+          min_amount?: number
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          approver_roles?: string[]
+          company_id?: string | null
+          created_at?: string
+          currency?: string | null
+          doc_type?: string
+          id?: string
+          max_amount?: number | null
+          min_amount?: number
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
