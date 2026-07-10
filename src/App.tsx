@@ -82,6 +82,7 @@ import FinancialClosePage from "./pages/accounting/FinancialClose";
 import DocumentManagementPage from "./pages/accounting/DocumentManagement";
 import ApprovalMatrixPage from "./pages/accounting/ApprovalMatrix";
 import FinanceNotificationCenter from "./pages/accounting/FinanceNotificationCenter";
+import CustomReportBuilder from "./pages/accounting/CustomReportBuilder";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -218,6 +219,7 @@ function AppRoutes() {
       <Route path="/accounting/documents" element={<ProtectedRoute><AppLayout><DocumentManagementPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/approval-matrix" element={<ProtectedRoute><AppLayout><ApprovalMatrixPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/notifications" element={<ProtectedRoute><AppLayout><FinanceNotificationCenter /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/custom-reports" element={<ProtectedRoute><AppLayout><CustomReportBuilder /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />

@@ -2723,6 +2723,110 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_report_definitions: {
+        Row: {
+          chart_config: Json | null
+          chart_type: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fields: Json
+          filters: Json
+          group_by: Json
+          id: string
+          is_shared: boolean
+          last_run_at: string | null
+          name: string
+          schedule_cron: string | null
+          schedule_recipients: string[] | null
+          sort: Json
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          chart_config?: Json | null
+          chart_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          filters?: Json
+          group_by?: Json
+          id?: string
+          is_shared?: boolean
+          last_run_at?: string | null
+          name: string
+          schedule_cron?: string | null
+          schedule_recipients?: string[] | null
+          sort?: Json
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          chart_config?: Json | null
+          chart_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          filters?: Json
+          group_by?: Json
+          id?: string
+          is_shared?: boolean
+          last_run_at?: string | null
+          name?: string
+          schedule_cron?: string | null
+          schedule_recipients?: string[] | null
+          sort?: Json
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      custom_report_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          export_path: string | null
+          id: string
+          report_id: string
+          row_count: number | null
+          run_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          export_path?: string | null
+          id?: string
+          report_id: string
+          row_count?: number | null
+          run_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          export_path?: string | null
+          id?: string
+          report_id?: string
+          row_count?: number | null
+          run_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_report_runs_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "custom_report_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_price_list: {
         Row: {
           airline_iata: string | null
