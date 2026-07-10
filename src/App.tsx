@@ -73,6 +73,7 @@ import FinancialRatiosPage from "./pages/accounting/FinancialRatios";
 import TaxComplianceCenterPage from "./pages/accounting/TaxComplianceCenter";
 import FixedAssetsEnhancedPage from "./pages/accounting/FixedAssetsEnhanced";
 import RecurringInvoicesPage from "./pages/accounting/RecurringInvoices";
+import FxGainLossPage from "./pages/accounting/FxGainLoss";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
