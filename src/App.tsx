@@ -72,6 +72,7 @@ import ConsolidationWorkbenchPage from "./pages/accounting/ConsolidationWorkbenc
 import FinancialRatiosPage from "./pages/accounting/FinancialRatios";
 import TaxComplianceCenterPage from "./pages/accounting/TaxComplianceCenter";
 import FixedAssetsEnhancedPage from "./pages/accounting/FixedAssetsEnhanced";
+import RecurringInvoicesPage from "./pages/accounting/RecurringInvoices";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -198,6 +199,7 @@ function AppRoutes() {
       <Route path="/accounting/financial-ratios" element={<ProtectedRoute><AppLayout><FinancialRatiosPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/tax-compliance" element={<ProtectedRoute><AppLayout><TaxComplianceCenterPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/fixed-assets-advanced" element={<ProtectedRoute><AppLayout><FixedAssetsEnhancedPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/recurring-invoices" element={<ProtectedRoute><AppLayout><RecurringInvoicesPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />

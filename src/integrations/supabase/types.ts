@@ -4828,6 +4828,175 @@ export type Database = {
           },
         ]
       }
+      recurring_invoice_lines: {
+        Row: {
+          account_code: string | null
+          amount: number | null
+          created_at: string
+          description: string
+          id: string
+          quantity: number
+          sort_order: number
+          template_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          account_code?: string | null
+          amount?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          quantity?: number
+          sort_order?: number
+          template_id: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          account_code?: string | null
+          amount?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          quantity?: number
+          sort_order?: number
+          template_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_invoice_lines_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_invoice_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_invoice_runs: {
+        Row: {
+          created_at: string
+          currency: string | null
+          details: Json | null
+          id: string
+          invoices_created: number
+          mode: string
+          run_by: string | null
+          run_date: string
+          run_no: string
+          status: string
+          templates_processed: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          details?: Json | null
+          id?: string
+          invoices_created?: number
+          mode?: string
+          run_by?: string | null
+          run_date?: string
+          run_no: string
+          status?: string
+          templates_processed?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          details?: Json | null
+          id?: string
+          invoices_created?: number
+          mode?: string
+          run_by?: string | null
+          run_date?: string
+          run_no?: string
+          status?: string
+          templates_processed?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recurring_invoice_templates: {
+        Row: {
+          auto_post: boolean
+          company_id: string | null
+          created_at: string
+          currency: string
+          customer_id: string | null
+          customer_name: string | null
+          day_of_month: number | null
+          end_date: string | null
+          frequency: string
+          id: string
+          last_run_date: string | null
+          name: string
+          next_run_date: string
+          notes: string | null
+          start_date: string
+          status: string
+          template_no: string
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          auto_post?: boolean
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          day_of_month?: number | null
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          last_run_date?: string | null
+          name: string
+          next_run_date?: string
+          notes?: string | null
+          start_date?: string
+          status?: string
+          template_no: string
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          auto_post?: boolean
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          day_of_month?: number | null
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          last_run_date?: string | null
+          name?: string
+          next_run_date?: string
+          notes?: string | null
+          start_date?: string
+          status?: string
+          template_no?: string
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_invoice_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_journal_entries: {
         Row: {
           active: boolean
