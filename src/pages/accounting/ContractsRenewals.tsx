@@ -297,6 +297,7 @@ export default function ContractsRenewals() {
         Currency: c.currency,
         Renewal_Status: c.renewal_status ?? "",
       })),
+      "Renewals",
       "contract_renewals"
     );
   };
