@@ -2218,6 +2218,118 @@ export type Database = {
         }
         Relationships: []
       }
+      intercompany_transactions: {
+        Row: {
+          amount: number
+          base_amount: number | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          exchange_rate: number
+          from_company_id: string
+          from_journal_id: string | null
+          from_station_id: string | null
+          ic_no: string
+          id: string
+          notes: string | null
+          reconciled_at: string | null
+          status: string
+          to_company_id: string
+          to_journal_id: string | null
+          to_station_id: string | null
+          transaction_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          base_amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          exchange_rate?: number
+          from_company_id: string
+          from_journal_id?: string | null
+          from_station_id?: string | null
+          ic_no: string
+          id?: string
+          notes?: string | null
+          reconciled_at?: string | null
+          status?: string
+          to_company_id: string
+          to_journal_id?: string | null
+          to_station_id?: string | null
+          transaction_date?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          base_amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          exchange_rate?: number
+          from_company_id?: string
+          from_journal_id?: string | null
+          from_station_id?: string | null
+          ic_no?: string
+          id?: string
+          notes?: string | null
+          reconciled_at?: string | null
+          status?: string
+          to_company_id?: string
+          to_journal_id?: string | null
+          to_station_id?: string | null
+          transaction_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intercompany_transactions_from_company_id_fkey"
+            columns: ["from_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompany_transactions_from_journal_id_fkey"
+            columns: ["from_journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompany_transactions_from_station_id_fkey"
+            columns: ["from_station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompany_transactions_to_company_id_fkey"
+            columns: ["to_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompany_transactions_to_journal_id_fkey"
+            columns: ["to_journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompany_transactions_to_station_id_fkey"
+            columns: ["to_station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_variance_reports: {
         Row: {
           created_at: string
