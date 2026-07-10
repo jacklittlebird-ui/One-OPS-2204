@@ -80,6 +80,7 @@ import CustomerPortalPage from "./pages/accounting/CustomerPortal";
 import PaymentRemindersPage from "./pages/accounting/PaymentReminders";
 import FinancialClosePage from "./pages/accounting/FinancialClose";
 import DocumentManagementPage from "./pages/accounting/DocumentManagement";
+import ApprovalMatrixPage from "./pages/accounting/ApprovalMatrix";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -214,6 +215,7 @@ function AppRoutes() {
       <Route path="/accounting/payment-reminders" element={<ProtectedRoute><AppLayout><PaymentRemindersPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/financial-close" element={<ProtectedRoute><AppLayout><FinancialClosePage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/documents" element={<ProtectedRoute><AppLayout><DocumentManagementPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/approval-matrix" element={<ProtectedRoute><AppLayout><ApprovalMatrixPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
