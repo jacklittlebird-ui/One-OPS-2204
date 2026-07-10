@@ -219,7 +219,11 @@ export default function TreasuryVouchersPage() {
 
   const transition = useMutation({
     mutationFn: async ({ id, to }: { id: string; to: VoucherStatus }) => {
-      const patch: Partial<Voucher> & Record<string, unknown> = { status: to };
+      const patch: {
+        status: VoucherStatus;
+        posted_at?: string;
+        settled_at?: string;
+      } = { status: to };
       if (to === "posted") patch.posted_at = new Date().toISOString();
       if (to === "settled") patch.settled_at = new Date().toISOString();
       const { error } = await supabase
