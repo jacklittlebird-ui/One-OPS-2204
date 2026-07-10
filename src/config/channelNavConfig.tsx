@@ -219,6 +219,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Collections Workflow", path: "/accounting/collections" },
         { label: "Consolidation Workbench", path: "/accounting/consolidation-workbench" },
         { label: "Financial Ratios & KPIs", path: "/accounting/financial-ratios" },
+        { label: "Tax Compliance Center", path: "/accounting/tax-compliance" },
         { label: "Consolidated Statements", path: "/accounting/consolidated" },
         { label: "Partner Statements", path: "/accounting/statements" },
         { label: "Intercompany", path: "/accounting/intercompany" },
