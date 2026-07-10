@@ -215,6 +215,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Budget vs Actual", path: "/accounting/budget-variance" },
         { label: "Cash Flow Statement", path: "/accounting/cash-flow" },
         { label: "Cash Flow Forecast (13w)", path: "/accounting/cash-flow-forecast" },
+        { label: "Bank Reconciliation", path: "/accounting/bank-reconciliation" },
         { label: "Consolidated Statements", path: "/accounting/consolidated" },
         { label: "Partner Statements", path: "/accounting/statements" },
         { label: "Intercompany", path: "/accounting/intercompany" },
