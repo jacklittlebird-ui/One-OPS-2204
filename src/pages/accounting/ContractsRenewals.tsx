@@ -315,6 +315,7 @@ export default function ContractsRenewals() {
         Critical: c.critical,
         SLA_Compliance: c.slaMet == null ? "n/a" : c.slaMet ? "met" : "breached",
       })),
+      "SLA",
       "contract_sla_dashboard"
     );
   };
