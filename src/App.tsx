@@ -63,6 +63,7 @@ import TreasuryVouchersPage from "./pages/accounting/TreasuryVouchers";
 import FinanceAuditLogPage from "./pages/accounting/AuditLog";
 import DepreciationSchedulerPage from "./pages/accounting/DepreciationScheduler";
 import AccrualsDeferralsPage from "./pages/accounting/AccrualsDeferrals";
+import CostAllocationPage from "./pages/accounting/CostAllocation";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
