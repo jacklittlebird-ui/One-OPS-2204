@@ -131,7 +131,7 @@ export default function CustomerPortal() {
         .order("date", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data || []) as Invoice[];
+      return ((data || []) as unknown) as Invoice[];
     },
     enabled: !!activeAirline,
   });
