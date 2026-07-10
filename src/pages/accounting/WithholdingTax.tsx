@@ -242,6 +242,7 @@ export default function WithholdingTax() {
         Currency: c.currency,
         Status: c.status,
       })),
+      "WHT Certificates",
       "wht_certificates",
     );
   };
