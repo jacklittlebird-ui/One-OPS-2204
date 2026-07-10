@@ -8947,6 +8947,23 @@ export type Database = {
       compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
       current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
+      get_budget_variance: {
+        Args: { _month?: number; _year: number }
+        Returns: {
+          account_code: string
+          account_name: string
+          actual_amount: number
+          alert_threshold_pct: number
+          budget_amount: number
+          budget_id: string
+          cost_center: string
+          currency: string
+          fiscal_year: number
+          period_month: number
+          variance_amount: number
+          variance_pct: number
+        }[]
+      }
       get_customer_statement: {
         Args: { _airline_iata?: string; _from: string; _to: string }
         Returns: {
