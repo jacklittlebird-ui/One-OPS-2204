@@ -153,10 +153,10 @@ export default function PettyCash() {
 
   const upsertExpense = useMutation({
     mutationFn: async (payload: Partial<Expense>) => {
-      const row = { ...payload };
+      const { petty_cash_funds: _pcf, ...row } = payload as any;
       const { error } = payload.id
         ? await supabase.from("petty_cash_expenses").update(row).eq("id", payload.id)
-        : await supabase.from("petty_cash_expenses").insert(row as any);
+        : await supabase.from("petty_cash_expenses").insert(row);
       if (error) throw error;
     },
     onSuccess: () => {
