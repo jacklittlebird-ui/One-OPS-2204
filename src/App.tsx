@@ -56,6 +56,7 @@ import ApprovalWorkflowsPage from "./pages/accounting/ApprovalWorkflows";
 import WithholdingTaxPage from "./pages/accounting/WithholdingTax";
 import ChequeManagementPage from "./pages/accounting/ChequeManagement";
 import PettyCashPage from "./pages/accounting/PettyCash";
+import NotesPayableLoansPage from "./pages/accounting/NotesPayableLoans";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -166,6 +167,7 @@ function AppRoutes() {
       <Route path="/accounting/wht" element={<ProtectedRoute><AppLayout><WithholdingTaxPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/cheques" element={<ProtectedRoute><AppLayout><ChequeManagementPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/petty-cash" element={<ProtectedRoute><AppLayout><PettyCashPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/notes-payable" element={<ProtectedRoute><AppLayout><NotesPayableLoansPage /></AppLayout></ProtectedRoute>} />
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
