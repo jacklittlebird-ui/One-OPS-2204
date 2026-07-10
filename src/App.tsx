@@ -77,6 +77,7 @@ import FxGainLossPage from "./pages/accounting/FxGainLoss";
 import ContractsRenewalsPage from "./pages/accounting/ContractsRenewals";
 import VendorPortalPage from "./pages/accounting/VendorPortal";
 import CustomerPortalPage from "./pages/accounting/CustomerPortal";
+import PaymentRemindersPage from "./pages/accounting/PaymentReminders";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
