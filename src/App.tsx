@@ -83,6 +83,7 @@ import DocumentManagementPage from "./pages/accounting/DocumentManagement";
 import ApprovalMatrixPage from "./pages/accounting/ApprovalMatrix";
 import FinanceNotificationCenter from "./pages/accounting/FinanceNotificationCenter";
 import CustomReportBuilder from "./pages/accounting/CustomReportBuilder";
+import BudgetManagement from "./pages/accounting/BudgetManagement";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
