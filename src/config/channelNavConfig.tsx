@@ -289,6 +289,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Fixed Assets", path: "/accounting/fixed-assets" },
         { label: "Depreciation Scheduler", path: "/accounting/depreciation" },
         { label: "Accruals & Deferrals", path: "/accounting/accruals" },
+        { label: "Cost Allocation", path: "/accounting/cost-allocation" },
         { label: "Cash Flow Statement", path: "/accounting/cash-flow" },
         { label: "Consolidated Statements", path: "/accounting/consolidated" },
         { label: "Partner Statements", path: "/accounting/statements" },
