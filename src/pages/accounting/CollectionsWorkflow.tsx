@@ -266,6 +266,7 @@ export default function CollectionsWorkflowPage() {
         LastContact: c.last_contact_date || "",
         NextAction: c.next_action_date || "",
       })),
+      "Collections",
       `collections_${Date.now()}.xlsx`
     );
 
