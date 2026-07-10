@@ -308,11 +308,14 @@ export default function CostAllocationPage() {
         jeLines[jeLines.length - 1].debit = +(jeLines[jeLines.length - 1].debit + diff).toFixed(2);
       }
 
+      const stamp = Date.now().toString(36).toUpperCase();
       const { data: je, error: jeErr } = await supabase.from("journal_entries").insert({
+        entry_no: `JE-ALLOC-${stamp}`,
         entry_date: periodEnd,
         reference: `ALLOC-${rule.name}-${runForm.period.slice(0, 7)}`,
         description: runForm.notes || `Cost allocation · ${rule.name} · ${format(new Date(periodEnd), "MMM yyyy")}`,
         status: "Posted",
+        posted_at: new Date().toISOString(),
         created_by: session?.user?.id,
       }).select("id").single();
       if (jeErr) throw jeErr;
