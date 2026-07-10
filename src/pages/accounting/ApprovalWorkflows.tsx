@@ -288,7 +288,11 @@ export default function ApprovalWorkflowsPage() {
       });
       if (aErr) throw aErr;
 
-      const patch: Partial<Request> & Record<string, any> = { updated_at: new Date().toISOString() };
+      const patch: {
+        status?: string;
+        completed_at?: string;
+        current_step?: number;
+      } = {};
       if (action === "Rejected") {
         patch.status = "Rejected";
         patch.completed_at = new Date().toISOString();
