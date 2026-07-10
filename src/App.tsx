@@ -49,6 +49,7 @@ import RecurringJournalsPage from "./pages/accounting/RecurringJournals";
 import BudgetsPage from "./pages/accounting/Budgets";
 import FixedAssetsPage from "./pages/accounting/FixedAssets";
 import CashFlowStatementPage from "./pages/accounting/CashFlowStatement";
+import ConsolidatedStatementsPage from "./pages/accounting/ConsolidatedStatements";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -152,6 +153,8 @@ function AppRoutes() {
       <Route path="/accounting/budgets" element={<ProtectedRoute><AppLayout><BudgetsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/fixed-assets" element={<ProtectedRoute><AppLayout><FixedAssetsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/cash-flow" element={<ProtectedRoute><AppLayout><CashFlowStatementPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/consolidated" element={<ProtectedRoute><AppLayout><ConsolidatedStatementsPage /></AppLayout></ProtectedRoute>} />
+
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/airline-incentives" element={<ProtectedRoute><AppLayout><AirlineIncentivesPage /></AppLayout></ProtectedRoute>} />
