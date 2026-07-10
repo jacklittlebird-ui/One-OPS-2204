@@ -1617,6 +1617,125 @@ export type Database = {
           },
         ]
       }
+      collection_activities: {
+        Row: {
+          activity_type: string
+          case_id: string
+          contact_person: string | null
+          created_at: string
+          id: string
+          next_action_date: string | null
+          notes: string | null
+          outcome: string | null
+          performed_at: string
+          performed_by: string | null
+        }
+        Insert: {
+          activity_type: string
+          case_id: string
+          contact_person?: string | null
+          created_at?: string
+          id?: string
+          next_action_date?: string | null
+          notes?: string | null
+          outcome?: string | null
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Update: {
+          activity_type?: string
+          case_id?: string
+          contact_person?: string | null
+          created_at?: string
+          id?: string
+          next_action_date?: string | null
+          notes?: string | null
+          outcome?: string | null
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_activities_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "collection_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_cases: {
+        Row: {
+          aging_bucket: string
+          amount_outstanding: number
+          assigned_to: string | null
+          case_type: string
+          counterparty_id: string | null
+          counterparty_name: string
+          created_at: string
+          currency: string
+          days_overdue: number
+          due_date: string | null
+          dunning_stage: string
+          id: string
+          invoice_id: string | null
+          last_contact_date: string | null
+          next_action_date: string | null
+          notes: string | null
+          promise_to_pay_amount: number | null
+          promise_to_pay_date: string | null
+          status: string
+          updated_at: string
+          vendor_invoice_id: string | null
+        }
+        Insert: {
+          aging_bucket?: string
+          amount_outstanding?: number
+          assigned_to?: string | null
+          case_type: string
+          counterparty_id?: string | null
+          counterparty_name: string
+          created_at?: string
+          currency?: string
+          days_overdue?: number
+          due_date?: string | null
+          dunning_stage?: string
+          id?: string
+          invoice_id?: string | null
+          last_contact_date?: string | null
+          next_action_date?: string | null
+          notes?: string | null
+          promise_to_pay_amount?: number | null
+          promise_to_pay_date?: string | null
+          status?: string
+          updated_at?: string
+          vendor_invoice_id?: string | null
+        }
+        Update: {
+          aging_bucket?: string
+          amount_outstanding?: number
+          assigned_to?: string | null
+          case_type?: string
+          counterparty_id?: string | null
+          counterparty_name?: string
+          created_at?: string
+          currency?: string
+          days_overdue?: number
+          due_date?: string | null
+          dunning_stage?: string
+          id?: string
+          invoice_id?: string | null
+          last_contact_date?: string | null
+          next_action_date?: string | null
+          notes?: string | null
+          promise_to_pay_amount?: number | null
+          promise_to_pay_date?: string | null
+          status?: string
+          updated_at?: string
+          vendor_invoice_id?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           base_currency: Database["public"]["Enums"]["finance_currency"]
@@ -6925,6 +7044,7 @@ export type Database = {
       }
     }
     Functions: {
+      compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
       has_finance_access: { Args: { _user_id: string }; Returns: boolean }
       has_ops_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
@@ -6956,6 +7076,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      refresh_collection_cases_aging: { Args: never; Returns: number }
       refresh_invoice_monthly_summary: { Args: never; Returns: undefined }
       return_flight_to_clearance: {
         Args: { _id: string; _stamp: string }
