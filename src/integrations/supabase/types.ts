@@ -35,6 +35,103 @@ export type Database = {
         }
         Relationships: []
       }
+      accruals_deferrals: {
+        Row: {
+          amount: number
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          credit_account_code: string | null
+          currency: string
+          debit_account_code: string | null
+          description: string
+          entry_no: string
+          entry_type: string
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          period_month: number
+          period_year: number
+          posted_at: string | null
+          reversal_journal_entry_id: string | null
+          reverse_month: number
+          reverse_year: number
+          reversed_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_account_code?: string | null
+          currency?: string
+          debit_account_code?: string | null
+          description: string
+          entry_no: string
+          entry_type: string
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period_month: number
+          period_year: number
+          posted_at?: string | null
+          reversal_journal_entry_id?: string | null
+          reverse_month: number
+          reverse_year: number
+          reversed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_account_code?: string | null
+          currency?: string
+          debit_account_code?: string | null
+          description?: string
+          entry_no?: string
+          entry_type?: string
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period_month?: number
+          period_year?: number
+          posted_at?: string | null
+          reversal_journal_entry_id?: string | null
+          reverse_month?: number
+          reverse_year?: number
+          reversed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accruals_deferrals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accruals_deferrals_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accruals_deferrals_reversal_journal_entry_id_fkey"
+            columns: ["reversal_journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aircraft_types_ref: {
         Row: {
           category: string
