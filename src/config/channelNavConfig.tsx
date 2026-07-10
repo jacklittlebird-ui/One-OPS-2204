@@ -224,6 +224,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Recurring Invoices", path: "/accounting/recurring-invoices" },
         { label: "FX Gain / Loss", path: "/accounting/fx-gain-loss" },
         { label: "Contracts & Renewals", path: "/accounting/contracts-renewals" },
+        { label: "Vendor Portal", path: "/accounting/vendor-portal" },
         { label: "Consolidated Statements", path: "/accounting/consolidated" },
         { label: "Partner Statements", path: "/accounting/statements" },
         { label: "Intercompany", path: "/accounting/intercompany" },
