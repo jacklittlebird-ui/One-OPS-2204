@@ -53,6 +53,7 @@ import ConsolidatedStatementsPage from "./pages/accounting/ConsolidatedStatement
 import PartnerStatementsPage from "./pages/accounting/PartnerStatements";
 import IntercompanyTransactionsPage from "./pages/accounting/IntercompanyTransactions";
 import ApprovalWorkflowsPage from "./pages/accounting/ApprovalWorkflows";
+import WithholdingTaxPage from "./pages/accounting/WithholdingTax";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
