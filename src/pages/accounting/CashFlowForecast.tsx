@@ -222,6 +222,7 @@ export default function CashFlowForecastPage() {
         Currency: r.currency,
         Status: r.status,
       })),
+      "Cash Flow Detail",
       `cash-flow-detail-${format(today, "yyyyMMdd")}`
     );
 
