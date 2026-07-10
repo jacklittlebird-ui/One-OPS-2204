@@ -51,6 +51,7 @@ import FixedAssetsPage from "./pages/accounting/FixedAssets";
 import CashFlowStatementPage from "./pages/accounting/CashFlowStatement";
 import ConsolidatedStatementsPage from "./pages/accounting/ConsolidatedStatements";
 import PartnerStatementsPage from "./pages/accounting/PartnerStatements";
+import IntercompanyTransactionsPage from "./pages/accounting/IntercompanyTransactions";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
