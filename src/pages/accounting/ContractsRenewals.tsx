@@ -247,7 +247,11 @@ export default function ContractsRenewals() {
       if (evErr) throw evErr;
 
       if (renewForm.event_type === "renewed" || renewForm.event_type === "extended") {
-        const patch: Record<string, any> = {
+        const patch: {
+          renewal_status: string;
+          last_renewed_at: string;
+          end_date?: string;
+        } = {
           renewal_status: "renewed",
           last_renewed_at: renewForm.event_date,
         };
@@ -260,7 +264,7 @@ export default function ContractsRenewals() {
       } else if (renewForm.event_type === "terminated") {
         const { error: cErr } = await supabase
           .from("contracts")
-          .update({ status: "terminated", renewal_status: "terminated" })
+          .update({ status: "Terminated", renewal_status: "terminated" })
           .eq("id", renewForm.contract_id);
         if (cErr) throw cErr;
       } else if (renewForm.event_type === "notice_sent") {
