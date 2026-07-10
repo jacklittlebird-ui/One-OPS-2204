@@ -220,6 +220,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Notes Payable & Loans", path: "/accounting/notes-payable" },
         { label: "Objections & Variance", path: "/accounting/objections" },
         { label: "Financial Statements", path: "/accounting/financial-statements" },
+        { label: "Treasury Vouchers", path: "/accounting/treasury-vouchers" },
         { label: "Reports / Admin", path: "/reports-admin" },
         { label: "Airline Incentives", path: "/airline-incentives" },
       ],
