@@ -1084,6 +1084,59 @@ export type Database = {
           },
         ]
       }
+      bank_match_rules: {
+        Row: {
+          amount_tolerance: number | null
+          bank_account_id: string | null
+          created_at: string
+          date_window_days: number | null
+          id: string
+          is_active: boolean | null
+          keyword: string | null
+          name: string
+          party_name: string | null
+          priority: number | null
+          reference_pattern: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_tolerance?: number | null
+          bank_account_id?: string | null
+          created_at?: string
+          date_window_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          keyword?: string | null
+          name: string
+          party_name?: string | null
+          priority?: number | null
+          reference_pattern?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_tolerance?: number | null
+          bank_account_id?: string | null
+          created_at?: string
+          date_window_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          keyword?: string | null
+          name?: string
+          party_name?: string | null
+          priority?: number | null
+          reference_pattern?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_match_rules_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_reconciliations: {
         Row: {
           bank_account_id: string
@@ -1127,6 +1180,138 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_statement_imports: {
+        Row: {
+          bank_account_id: string | null
+          closing_balance: number | null
+          created_at: string
+          file_name: string | null
+          id: string
+          imported_by: string | null
+          line_count: number | null
+          matched_count: number | null
+          notes: string | null
+          opening_balance: number | null
+          period_end: string | null
+          period_start: string | null
+          source_format: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bank_account_id?: string | null
+          closing_balance?: number | null
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          imported_by?: string | null
+          line_count?: number | null
+          matched_count?: number | null
+          notes?: string | null
+          opening_balance?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          source_format?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bank_account_id?: string | null
+          closing_balance?: number | null
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          imported_by?: string | null
+          line_count?: number | null
+          matched_count?: number | null
+          notes?: string | null
+          opening_balance?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          source_format?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_imports_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_statement_lines: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          import_id: string
+          line_date: string | null
+          match_confidence: number | null
+          match_method: string | null
+          matched_at: string | null
+          matched_payment_id: string | null
+          matched_receipt_id: string | null
+          reference: string | null
+          running_balance: number | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          import_id: string
+          line_date?: string | null
+          match_confidence?: number | null
+          match_method?: string | null
+          matched_at?: string | null
+          matched_payment_id?: string | null
+          matched_receipt_id?: string | null
+          reference?: string | null
+          running_balance?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          import_id?: string
+          line_date?: string | null
+          match_confidence?: number | null
+          match_method?: string | null
+          matched_at?: string | null
+          matched_payment_id?: string | null
+          matched_receipt_id?: string | null
+          reference?: string | null
+          running_balance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_lines_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statement_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_matched_payment_id_fkey"
+            columns: ["matched_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_matched_receipt_id_fkey"
+            columns: ["matched_receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
             referencedColumns: ["id"]
           },
         ]
@@ -9474,6 +9659,7 @@ export type Database = {
       }
     }
     Functions: {
+      auto_match_statement_lines: { Args: { _import: string }; Returns: number }
       compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
       compute_vat_return: {
         Args: { _company?: string; _month: number; _year: number }
