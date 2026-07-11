@@ -229,6 +229,8 @@ function AppRoutes() {
       <Route path="/accounting/cash-forecast" element={<ProtectedRoute><AppLayout><CashFlowForecast /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/tax-compliance" element={<ProtectedRoute><AppLayout><TaxCompliance /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/payroll" element={<ProtectedRoute><AppLayout><PayrollExpenses /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/bank-import" element={<ProtectedRoute><AppLayout><BankStatementImport /></AppLayout></ProtectedRoute>} />
+
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aging-reports" element={<ProtectedRoute><AppLayout><AgingReportsPage /></AppLayout></ProtectedRoute>} />
