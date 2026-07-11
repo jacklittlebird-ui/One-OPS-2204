@@ -3461,6 +3461,90 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          bank_account: string | null
+          bank_name: string | null
+          base_salary: number
+          company_id: string | null
+          created_at: string
+          currency: string
+          department: string | null
+          email: string | null
+          employee_no: string
+          full_name: string
+          hire_date: string | null
+          iban: string | null
+          id: string
+          national_id: string | null
+          notes: string | null
+          position: string | null
+          station_id: string | null
+          status: string
+          termination_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          bank_account?: string | null
+          bank_name?: string | null
+          base_salary?: number
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          department?: string | null
+          email?: string | null
+          employee_no: string
+          full_name: string
+          hire_date?: string | null
+          iban?: string | null
+          id?: string
+          national_id?: string | null
+          notes?: string | null
+          position?: string | null
+          station_id?: string | null
+          status?: string
+          termination_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bank_account?: string | null
+          bank_name?: string | null
+          base_salary?: number
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          department?: string | null
+          email?: string | null
+          employee_no?: string
+          full_name?: string
+          hire_date?: string | null
+          iban?: string | null
+          id?: string
+          national_id?: string | null
+          notes?: string | null
+          position?: string | null
+          station_id?: string | null
+          status?: string
+          termination_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eta_submissions: {
         Row: {
           accepted_at: string | null
@@ -3571,6 +3655,156 @@ export type Database = {
           source?: string | null
         }
         Relationships: []
+      }
+      expense_report_lines: {
+        Row: {
+          amount: number
+          category: string
+          cost_center: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          is_billable: boolean
+          line_date: string
+          project: string | null
+          receipt_url: string | null
+          report_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category: string
+          cost_center?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_billable?: boolean
+          line_date?: string
+          project?: string | null
+          receipt_url?: string | null
+          report_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          cost_center?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_billable?: boolean
+          line_date?: string
+          project?: string | null
+          receipt_url?: string | null
+          report_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_report_lines_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "expense_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_reports: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          employee_id: string
+          id: string
+          notes: string | null
+          purpose: string | null
+          reimbursed_at: string | null
+          reimbursement_payment_id: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          report_no: string
+          status: string
+          submitted_at: string | null
+          title: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          reimbursed_at?: string | null
+          reimbursement_payment_id?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          report_no?: string
+          status?: string
+          submitted_at?: string | null
+          title: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          reimbursed_at?: string | null
+          reimbursement_payment_id?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          report_no?: string
+          status?: string
+          submitted_at?: string | null
+          title?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_reports_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_reports_reimbursement_payment_id_fkey"
+            columns: ["reimbursement_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       finance_audit_log: {
         Row: {
@@ -5397,6 +5631,159 @@ export type Database = {
             columns: ["vendor_invoice_id"]
             isOneToOne: false
             referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_run_lines: {
+        Row: {
+          allowances: number
+          bonuses: number
+          created_at: string
+          deductions: number
+          employee_id: string
+          gross_salary: number
+          id: string
+          income_tax: number
+          net_pay: number
+          notes: string | null
+          overtime: number
+          run_id: string
+          social_insurance: number
+          updated_at: string
+        }
+        Insert: {
+          allowances?: number
+          bonuses?: number
+          created_at?: string
+          deductions?: number
+          employee_id: string
+          gross_salary?: number
+          id?: string
+          income_tax?: number
+          net_pay?: number
+          notes?: string | null
+          overtime?: number
+          run_id: string
+          social_insurance?: number
+          updated_at?: string
+        }
+        Update: {
+          allowances?: number
+          bonuses?: number
+          created_at?: string
+          deductions?: number
+          employee_id?: string
+          gross_salary?: number
+          id?: string
+          income_tax?: number
+          net_pay?: number
+          notes?: string | null
+          overtime?: number
+          run_id?: string
+          social_insurance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_run_lines_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_run_lines_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_runs: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          period_month: number
+          period_year: number
+          posted_at: string | null
+          posted_by: string | null
+          status: string
+          total_allowances: number
+          total_deductions: number
+          total_gross: number
+          total_net: number
+          total_social: number
+          total_tax: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period_month: number
+          period_year: number
+          posted_at?: string | null
+          posted_by?: string | null
+          status?: string
+          total_allowances?: number
+          total_deductions?: number
+          total_gross?: number
+          total_net?: number
+          total_social?: number
+          total_tax?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period_month?: number
+          period_year?: number
+          posted_at?: string | null
+          posted_by?: string | null
+          status?: string
+          total_allowances?: number
+          total_deductions?: number
+          total_gross?: number
+          total_net?: number
+          total_social?: number
+          total_tax?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_runs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_runs_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -9100,6 +9487,10 @@ export type Database = {
       }
       current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
+      generate_payroll_run: {
+        Args: { _company: string; _month: number; _year: number }
+        Returns: string
+      }
       get_budget_variance: {
         Args: { _month?: number; _year: number }
         Returns: {
