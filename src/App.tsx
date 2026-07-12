@@ -97,6 +97,7 @@ import TimesheetsPage from "./pages/accounting/Timesheets";
 import ExpenseApprovalsPage from "./pages/accounting/ExpenseApprovals";
 import CreditDebitNotesPage from "./pages/accounting/CreditDebitNotes";
 import AllocationDriversPage from "./pages/accounting/AllocationDrivers";
+import FxRevaluationSchedulesPage from "./pages/accounting/FxRevaluationSchedules";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -248,6 +249,7 @@ function AppRoutes() {
       <Route path="/accounting/expense-approvals" element={<ProtectedRoute><AppLayout><ExpenseApprovalsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/credit-debit-notes" element={<ProtectedRoute><AppLayout><CreditDebitNotesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/allocation-drivers" element={<ProtectedRoute><AppLayout><AllocationDriversPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/fx-revaluation-schedules" element={<ProtectedRoute><AppLayout><FxRevaluationSchedulesPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
