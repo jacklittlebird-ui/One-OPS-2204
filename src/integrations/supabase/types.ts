@@ -2567,6 +2567,83 @@ export type Database = {
           },
         ]
       }
+      cost_allocation_driver_values: {
+        Row: {
+          cost_center: string
+          created_at: string
+          driver_id: string
+          id: string
+          notes: string | null
+          period_month: number
+          period_year: number
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          cost_center: string
+          created_at?: string
+          driver_id: string
+          id?: string
+          notes?: string | null
+          period_month: number
+          period_year: number
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          cost_center?: string
+          created_at?: string
+          driver_id?: string
+          id?: string
+          notes?: string | null
+          period_month?: number
+          period_year?: number
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_allocation_driver_values_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "cost_allocation_drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_allocation_drivers: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cost_allocation_rule_lines: {
         Row: {
           created_at: string
@@ -2660,6 +2737,9 @@ export type Database = {
           journal_entry_id: string | null
           notes: string | null
           period: string
+          reversal_of: string | null
+          reversed_at: string | null
+          reversed_by: string | null
           rule_id: string
           source_amount: number
           status: string
@@ -2674,6 +2754,9 @@ export type Database = {
           journal_entry_id?: string | null
           notes?: string | null
           period: string
+          reversal_of?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
           rule_id: string
           source_amount?: number
           status?: string
@@ -2688,6 +2771,9 @@ export type Database = {
           journal_entry_id?: string | null
           notes?: string | null
           period?: string
+          reversal_of?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
           rule_id?: string
           source_amount?: number
           status?: string
@@ -2699,6 +2785,13 @@ export type Database = {
             columns: ["journal_entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_allocation_runs_reversal_of_fkey"
+            columns: ["reversal_of"]
+            isOneToOne: false
+            referencedRelation: "cost_allocation_runs"
             referencedColumns: ["id"]
           },
           {
@@ -11344,6 +11437,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reverse_allocation_run: { Args: { _run_id: string }; Returns: string }
+      run_cost_allocation: {
+        Args: {
+          _amount: number
+          _month: number
+          _rule_id: string
+          _year: number
+        }
+        Returns: string
       }
       submit_expense_report_for_approval: {
         Args: { _report_id: string }
