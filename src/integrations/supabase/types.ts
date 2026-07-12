@@ -4025,6 +4025,103 @@ export type Database = {
         }
         Relationships: []
       }
+      dunning_run_items: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          customer_name: string | null
+          days_overdue: number | null
+          id: string
+          invoice_id: string | null
+          reminder_id: string | null
+          run_id: string
+          stage: number | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          customer_name?: string | null
+          days_overdue?: number | null
+          id?: string
+          invoice_id?: string | null
+          reminder_id?: string | null
+          run_id: string
+          stage?: number | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          customer_name?: string | null
+          days_overdue?: number | null
+          id?: string
+          invoice_id?: string | null
+          reminder_id?: string | null
+          run_id?: string
+          stage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_run_items_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "dunning_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dunning_runs: {
+        Row: {
+          created_at: string
+          executed_at: string | null
+          executed_by: string | null
+          id: string
+          invoices_scanned: number
+          notes: string | null
+          policy_id: string | null
+          reminders_created: number
+          run_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          invoices_scanned?: number
+          notes?: string | null
+          policy_id?: string | null
+          reminders_created?: number
+          run_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          invoices_scanned?: number
+          notes?: string | null
+          policy_id?: string | null
+          reminders_created?: number
+          run_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_runs_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "dunning_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elimination_entries: {
         Row: {
           amount: number
@@ -11369,6 +11466,7 @@ export type Database = {
       }
       current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
+      execute_dunning_run: { Args: { p_policy_id: string }; Returns: string }
       generate_amortization_entries: {
         Args: { _schedule_id: string }
         Returns: number
