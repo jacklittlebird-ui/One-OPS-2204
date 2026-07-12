@@ -103,6 +103,7 @@ import WhtYearEndStatementsPage from "./pages/accounting/WhtYearEndStatements";
 import DunningRunsPage from "./pages/accounting/DunningRuns";
 import SalesCommissionsPage from "./pages/accounting/SalesCommissions";
 import PurchaseApprovalMatrixPage from "./pages/accounting/PurchaseApprovalMatrix";
+import VendorScorecardsPage from "./pages/accounting/VendorScorecards";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
