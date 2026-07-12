@@ -4039,6 +4039,131 @@ export type Database = {
           },
         ]
       }
+      deferred_tax_items: {
+        Row: {
+          accounting_base: number
+          category: string
+          created_at: string
+          deferred_tax_amount: number
+          dt_type: string
+          id: string
+          item_name: string
+          notes: string | null
+          period_id: string | null
+          run_id: string | null
+          tax_base: number
+          tax_rate: number
+          temporary_difference: number | null
+          updated_at: string
+        }
+        Insert: {
+          accounting_base?: number
+          category?: string
+          created_at?: string
+          deferred_tax_amount?: number
+          dt_type?: string
+          id?: string
+          item_name: string
+          notes?: string | null
+          period_id?: string | null
+          run_id?: string | null
+          tax_base?: number
+          tax_rate?: number
+          temporary_difference?: number | null
+          updated_at?: string
+        }
+        Update: {
+          accounting_base?: number
+          category?: string
+          created_at?: string
+          deferred_tax_amount?: number
+          dt_type?: string
+          id?: string
+          item_name?: string
+          notes?: string | null
+          period_id?: string | null
+          run_id?: string | null
+          tax_base?: number
+          tax_rate?: number
+          temporary_difference?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deferred_tax_items_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deferred_tax_items_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "deferred_tax_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deferred_tax_runs: {
+        Row: {
+          closing_dta: number
+          closing_dtl: number
+          created_at: string
+          created_by: string | null
+          id: string
+          movement_pnl: number
+          notes: string | null
+          opening_dta: number
+          opening_dtl: number
+          period_id: string | null
+          posted_journal_id: string | null
+          run_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closing_dta?: number
+          closing_dtl?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_pnl?: number
+          notes?: string | null
+          opening_dta?: number
+          opening_dtl?: number
+          period_id?: string | null
+          posted_journal_id?: string | null
+          run_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closing_dta?: number
+          closing_dtl?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_pnl?: number
+          notes?: string | null
+          opening_dta?: number
+          opening_dtl?: number
+          period_id?: string | null
+          posted_journal_id?: string | null
+          run_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deferred_tax_runs_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delay_codes: {
         Row: {
           active: boolean
@@ -12423,6 +12548,31 @@ export type Database = {
         }[]
       }
       compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
+      compute_deferred_tax_run: {
+        Args: { p_run_id: string }
+        Returns: {
+          closing_dta: number
+          closing_dtl: number
+          created_at: string
+          created_by: string | null
+          id: string
+          movement_pnl: number
+          notes: string | null
+          opening_dta: number
+          opening_dtl: number
+          period_id: string | null
+          posted_journal_id: string | null
+          run_date: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deferred_tax_runs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       compute_impairment: {
         Args: { _carrying: number; _fair_value: number; _value_in_use: number }
         Returns: {
@@ -12607,6 +12757,7 @@ export type Database = {
         Returns: undefined
       }
       post_amortization_entry: { Args: { _entry_id: string }; Returns: string }
+      post_deferred_tax_run: { Args: { p_run_id: string }; Returns: string }
       post_impairment_test: { Args: { _test_id: string }; Returns: string }
       post_lease_period: { Args: { p_schedule_id: string }; Returns: string }
       post_loan_period: { Args: { p_schedule_id: string }; Returns: string }

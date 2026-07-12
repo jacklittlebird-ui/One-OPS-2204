@@ -111,6 +111,7 @@ import LoanAmortizationPage from "./pages/accounting/LoanAmortization";
 import BankGuaranteesPage from "./pages/accounting/BankGuarantees";
 import AssetImpairmentPage from "./pages/accounting/AssetImpairment";
 import RelatedPartiesPage from "./pages/accounting/RelatedParties";
+import DeferredTaxPage from "./pages/accounting/DeferredTax";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -276,6 +277,7 @@ function AppRoutes() {
       <Route path="/accounting/bank-guarantees" element={<ProtectedRoute><AppLayout><BankGuaranteesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/asset-impairment" element={<ProtectedRoute><AppLayout><AssetImpairmentPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/related-parties" element={<ProtectedRoute><AppLayout><RelatedPartiesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/deferred-tax" element={<ProtectedRoute><AppLayout><DeferredTaxPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
