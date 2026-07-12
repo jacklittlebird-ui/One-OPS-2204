@@ -3944,6 +3944,95 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_approval_chains: {
+        Row: {
+          approver_role: string
+          created_at: string
+          currency: string
+          id: string
+          is_active: boolean
+          level: number
+          max_amount: number | null
+          min_amount: number
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          approver_role: string
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          level: number
+          max_amount?: number | null
+          min_amount?: number
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approver_role?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          level?: number
+          max_amount?: number | null
+          min_amount?: number
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expense_approval_steps: {
+        Row: {
+          approver_id: string | null
+          approver_role: string
+          comments: string | null
+          created_at: string
+          decided_at: string | null
+          id: string
+          level: number
+          report_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approver_id?: string | null
+          approver_role: string
+          comments?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          level: number
+          report_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approver_id?: string | null
+          approver_role?: string
+          comments?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          level?: number
+          report_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_approval_steps_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "expense_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_report_lines: {
         Row: {
           amount: number
@@ -10847,6 +10936,10 @@ export type Database = {
       }
     }
     Functions: {
+      approve_expense_step: {
+        Args: { _comments?: string; _step_id: string }
+        Returns: string
+      }
       auto_match_statement_lines: { Args: { _import: string }; Returns: number }
       check_credit_before_invoice: {
         Args: { _airline_id: string; _amount: number }
@@ -11058,6 +11151,10 @@ export type Database = {
       }
       refresh_collection_cases_aging: { Args: never; Returns: number }
       refresh_invoice_monthly_summary: { Args: never; Returns: undefined }
+      reject_expense_step: {
+        Args: { _comments?: string; _step_id: string }
+        Returns: string
+      }
       return_flight_to_clearance: {
         Args: { _id: string; _stamp: string }
         Returns: {
@@ -11105,6 +11202,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      submit_expense_report_for_approval: {
+        Args: { _report_id: string }
+        Returns: number
       }
       suggest_ic_eliminations: {
         Args: { _from: string; _to: string }
