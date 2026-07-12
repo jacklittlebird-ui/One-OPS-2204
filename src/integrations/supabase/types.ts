@@ -9436,6 +9436,150 @@ export type Database = {
           },
         ]
       }
+      timesheet_entries: {
+        Row: {
+          bill_amount: number
+          cost_amount: number
+          created_at: string
+          description: string | null
+          entry_date: string
+          hourly_bill_rate: number
+          hourly_cost_rate: number
+          hours: number
+          id: string
+          is_billable: boolean
+          project_id: string | null
+          task_id: string | null
+          timesheet_id: string
+          updated_at: string
+        }
+        Insert: {
+          bill_amount?: number
+          cost_amount?: number
+          created_at?: string
+          description?: string | null
+          entry_date: string
+          hourly_bill_rate?: number
+          hourly_cost_rate?: number
+          hours?: number
+          id?: string
+          is_billable?: boolean
+          project_id?: string | null
+          task_id?: string | null
+          timesheet_id: string
+          updated_at?: string
+        }
+        Update: {
+          bill_amount?: number
+          cost_amount?: number
+          created_at?: string
+          description?: string | null
+          entry_date?: string
+          hourly_bill_rate?: number
+          hourly_cost_rate?: number
+          hours?: number
+          id?: string
+          is_billable?: boolean
+          project_id?: string | null
+          task_id?: string | null
+          timesheet_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_timesheet_id_fkey"
+            columns: ["timesheet_id"]
+            isOneToOne: false
+            referencedRelation: "timesheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timesheets: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          billable_amount: number
+          billable_hours: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          employee_id: string | null
+          employee_name: string
+          id: string
+          notes: string | null
+          status: string
+          submitted_at: string | null
+          total_cost: number
+          total_hours: number
+          updated_at: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          billable_amount?: number
+          billable_hours?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_id?: string | null
+          employee_name: string
+          id?: string
+          notes?: string | null
+          status?: string
+          submitted_at?: string | null
+          total_cost?: number
+          total_hours?: number
+          updated_at?: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          billable_amount?: number
+          billable_hours?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_id?: string | null
+          employee_name?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          submitted_at?: string | null
+          total_cost?: number
+          total_hours?: number
+          updated_at?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheets_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       traffic_rights: {
         Row: {
           created_at: string
@@ -10863,6 +11007,10 @@ export type Database = {
           _title: string
         }
         Returns: undefined
+      }
+      post_timesheet_to_project: {
+        Args: { _timesheet_id: string }
+        Returns: number
       }
       recalc_bank_reconciliation: {
         Args: { _id: string }
