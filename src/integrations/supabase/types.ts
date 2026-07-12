@@ -11202,6 +11202,121 @@ export type Database = {
         }
         Relationships: []
       }
+      transfer_pricing_adjustments: {
+        Row: {
+          adjustment_amount: number
+          adjustment_date: string
+          created_at: string
+          direction: string
+          id: string
+          posted_journal_id: string | null
+          rationale: string | null
+          status: string
+          study_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          adjustment_amount?: number
+          adjustment_date?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          posted_journal_id?: string | null
+          rationale?: string | null
+          status?: string
+          study_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adjustment_amount?: number
+          adjustment_date?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          posted_journal_id?: string | null
+          rationale?: string | null
+          status?: string
+          study_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_pricing_adjustments_study_id_fkey"
+            columns: ["study_id"]
+            isOneToOne: false
+            referencedRelation: "transfer_pricing_studies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transfer_pricing_studies: {
+        Row: {
+          arms_length_conclusion: string | null
+          benchmarking_range_high: number | null
+          benchmarking_range_low: number | null
+          comparables_source: string | null
+          created_at: string
+          created_by: string | null
+          functional_analysis: string | null
+          id: string
+          method: string
+          notes: string | null
+          related_party_id: string | null
+          status: string
+          study_year: number
+          tested_margin: number | null
+          tested_party: string | null
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          arms_length_conclusion?: string | null
+          benchmarking_range_high?: number | null
+          benchmarking_range_low?: number | null
+          comparables_source?: string | null
+          created_at?: string
+          created_by?: string | null
+          functional_analysis?: string | null
+          id?: string
+          method?: string
+          notes?: string | null
+          related_party_id?: string | null
+          status?: string
+          study_year: number
+          tested_margin?: number | null
+          tested_party?: string | null
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          arms_length_conclusion?: string | null
+          benchmarking_range_high?: number | null
+          benchmarking_range_low?: number | null
+          comparables_source?: string | null
+          created_at?: string
+          created_by?: string | null
+          functional_analysis?: string | null
+          id?: string
+          method?: string
+          notes?: string | null
+          related_party_id?: string | null
+          status?: string
+          study_year?: number
+          tested_margin?: number | null
+          tested_party?: string | null
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_pricing_studies_related_party_id_fkey"
+            columns: ["related_party_id"]
+            isOneToOne: false
+            referencedRelation: "related_parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       treasury_vouchers: {
         Row: {
           account_id: string | null
