@@ -107,6 +107,7 @@ import PurchaseApprovalMatrixPage from "./pages/accounting/PurchaseApprovalMatri
 import VendorScorecardsPage from "./pages/accounting/VendorScorecards";
 import ContractLifecycleAutomationPage from "./pages/accounting/ContractLifecycleAutomation";
 import LeaseAccountingPage from "./pages/accounting/LeaseAccounting";
+import LoanAmortizationPage from "./pages/accounting/LoanAmortization";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
