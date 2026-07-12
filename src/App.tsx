@@ -95,6 +95,7 @@ import InventoryPage from "./pages/accounting/Inventory";
 import ProjectCostingPage from "./pages/accounting/ProjectCosting";
 import TimesheetsPage from "./pages/accounting/Timesheets";
 import ExpenseApprovalsPage from "./pages/accounting/ExpenseApprovals";
+import CreditDebitNotesPage from "./pages/accounting/CreditDebitNotes";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -244,6 +245,7 @@ function AppRoutes() {
       <Route path="/accounting/project-costing" element={<ProtectedRoute><AppLayout><ProjectCostingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/timesheets" element={<ProtectedRoute><AppLayout><TimesheetsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/expense-approvals" element={<ProtectedRoute><AppLayout><ExpenseApprovalsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/credit-debit-notes" element={<ProtectedRoute><AppLayout><CreditDebitNotesPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
