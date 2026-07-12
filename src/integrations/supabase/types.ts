@@ -579,6 +579,115 @@ export type Database = {
           },
         ]
       }
+      amortization_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          journal_entry_id: string | null
+          period_date: string
+          posted_at: string | null
+          schedule_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          period_date: string
+          posted_at?: string | null
+          schedule_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          journal_entry_id?: string | null
+          period_date?: string
+          posted_at?: string | null
+          schedule_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amortization_entries_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "amortization_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      amortization_schedules: {
+        Row: {
+          balance_account_id: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string
+          end_date: string
+          id: string
+          method: string
+          recognition_account_id: string | null
+          reference_no: string | null
+          schedule_type: string
+          start_date: string
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          balance_account_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description: string
+          end_date: string
+          id?: string
+          method?: string
+          recognition_account_id?: string | null
+          reference_no?: string | null
+          schedule_type: string
+          start_date: string
+          status?: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          balance_account_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string
+          end_date?: string
+          id?: string
+          method?: string
+          recognition_account_id?: string | null
+          reference_no?: string | null
+          schedule_type?: string
+          start_date?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amortization_schedules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_actions: {
         Row: {
           acted_at: string
@@ -11260,6 +11369,10 @@ export type Database = {
       }
       current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
+      generate_amortization_entries: {
+        Args: { _schedule_id: string }
+        Returns: number
+      }
       generate_payroll_run: {
         Args: { _company: string; _month: number; _year: number }
         Returns: string
@@ -11389,6 +11502,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      post_amortization_entry: { Args: { _entry_id: string }; Returns: string }
       post_timesheet_to_project: {
         Args: { _timesheet_id: string }
         Returns: number
