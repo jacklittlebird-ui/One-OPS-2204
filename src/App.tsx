@@ -108,6 +108,7 @@ import VendorScorecardsPage from "./pages/accounting/VendorScorecards";
 import ContractLifecycleAutomationPage from "./pages/accounting/ContractLifecycleAutomation";
 import LeaseAccountingPage from "./pages/accounting/LeaseAccounting";
 import LoanAmortizationPage from "./pages/accounting/LoanAmortization";
+import BankGuaranteesPage from "./pages/accounting/BankGuarantees";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
