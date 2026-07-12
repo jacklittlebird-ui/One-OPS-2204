@@ -88,6 +88,7 @@ import CashFlowForecast from "./pages/accounting/CashFlowForecast";
 import TaxCompliance from "./pages/accounting/TaxCompliance";
 import PayrollExpenses from "./pages/accounting/PayrollExpenses";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
+import SegmentPnLPage from "./pages/accounting/SegmentPnL";
 import CustomerCredit from "./pages/accounting/CustomerCredit";
 import SalesOrders from "./pages/accounting/SalesOrders";
 import PurchaseOrders from "./pages/accounting/PurchaseOrders";
@@ -266,6 +267,7 @@ function AppRoutes() {
       <Route path="/accounting/vendor-scorecards" element={<ProtectedRoute><AppLayout><VendorScorecardsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/contract-lifecycle-automation" element={<ProtectedRoute><AppLayout><ContractLifecycleAutomationPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/lease-accounting" element={<ProtectedRoute><AppLayout><LeaseAccountingPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/segment-pnl" element={<ProtectedRoute><AppLayout><SegmentPnLPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
