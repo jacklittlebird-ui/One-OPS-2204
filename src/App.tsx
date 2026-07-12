@@ -94,6 +94,7 @@ import PurchaseOrders from "./pages/accounting/PurchaseOrders";
 import InventoryPage from "./pages/accounting/Inventory";
 import ProjectCostingPage from "./pages/accounting/ProjectCosting";
 import TimesheetsPage from "./pages/accounting/Timesheets";
+import ExpenseApprovalsPage from "./pages/accounting/ExpenseApprovals";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
