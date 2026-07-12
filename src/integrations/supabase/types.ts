@@ -2908,6 +2908,78 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_notes: {
+        Row: {
+          airline_iata: string | null
+          airline_id: string | null
+          amount: number
+          applied_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          invoice_id: string | null
+          note_date: string
+          note_no: string
+          reason: string | null
+          status: string
+          tax: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          airline_iata?: string | null
+          airline_id?: string | null
+          amount?: number
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          note_date?: string
+          note_no: string
+          reason?: string | null
+          status?: string
+          tax?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          airline_iata?: string | null
+          airline_id?: string | null
+          amount?: number
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          note_date?: string
+          note_no?: string
+          reason?: string | null
+          status?: string
+          tax?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_notes_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_report_definitions: {
         Row: {
           chart_config: Json | null
@@ -3220,6 +3292,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      debit_notes: {
+        Row: {
+          amount: number
+          applied_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          note_date: string
+          note_no: string
+          reason: string | null
+          status: string
+          tax: number
+          total: number
+          updated_at: string
+          vendor_id: string | null
+          vendor_invoice_id: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          amount?: number
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          note_date?: string
+          note_no: string
+          reason?: string | null
+          status?: string
+          tax?: number
+          total?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_invoice_id?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          note_date?: string
+          note_no?: string
+          reason?: string | null
+          status?: string
+          tax?: number
+          total?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_invoice_id?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debit_notes_vendor_invoice_id_fkey"
+            columns: ["vendor_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delay_codes: {
         Row: {
@@ -10936,6 +11073,11 @@ export type Database = {
       }
     }
     Functions: {
+      apply_credit_note_to_invoice: { Args: { _id: string }; Returns: string }
+      apply_debit_note_to_vendor_invoice: {
+        Args: { _id: string }
+        Returns: string
+      }
       approve_expense_step: {
         Args: { _comments?: string; _step_id: string }
         Returns: string
