@@ -10973,6 +10973,87 @@ export type Database = {
           },
         ]
       }
+      vendor_scorecard_kpis: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      vendor_scorecards: {
+        Row: {
+          communication_score: number
+          compliance_score: number
+          created_at: string
+          delivery_score: number
+          evaluator_id: string | null
+          grade: string | null
+          id: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          price_score: number
+          quality_score: number
+          total_score: number
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          communication_score?: number
+          compliance_score?: number
+          created_at?: string
+          delivery_score?: number
+          evaluator_id?: string | null
+          grade?: string | null
+          id?: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          price_score?: number
+          quality_score?: number
+          total_score?: number
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          communication_score?: number
+          compliance_score?: number
+          created_at?: string
+          delivery_score?: number
+          evaluator_id?: string | null
+          grade?: string | null
+          id?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          price_score?: number
+          quality_score?: number
+          total_score?: number
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
       vendor_users: {
         Row: {
           created_at: string
@@ -11695,6 +11776,7 @@ export type Database = {
           total_sales: number
         }[]
       }
+      compute_vendor_scorecard: { Args: { _id: string }; Returns: number }
       convert_order_to_invoice: { Args: { _order_id: string }; Returns: string }
       convert_quotation_to_order: {
         Args: { _quote_id: string }
