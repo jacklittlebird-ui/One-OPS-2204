@@ -928,6 +928,81 @@ export type Database = {
           },
         ]
       }
+      asset_impairment_tests: {
+        Row: {
+          asset_id: string
+          carrying_amount: number
+          created_at: string
+          fair_value_less_costs: number | null
+          id: string
+          impairment_loss: number
+          method: string
+          notes: string | null
+          posted_at: string | null
+          posted_journal_entry_id: string | null
+          recoverable_amount: number
+          status: string
+          test_date: string
+          tested_by: string | null
+          triggering_event: string | null
+          updated_at: string
+          value_in_use: number | null
+        }
+        Insert: {
+          asset_id: string
+          carrying_amount?: number
+          created_at?: string
+          fair_value_less_costs?: number | null
+          id?: string
+          impairment_loss?: number
+          method?: string
+          notes?: string | null
+          posted_at?: string | null
+          posted_journal_entry_id?: string | null
+          recoverable_amount?: number
+          status?: string
+          test_date: string
+          tested_by?: string | null
+          triggering_event?: string | null
+          updated_at?: string
+          value_in_use?: number | null
+        }
+        Update: {
+          asset_id?: string
+          carrying_amount?: number
+          created_at?: string
+          fair_value_less_costs?: number | null
+          id?: string
+          impairment_loss?: number
+          method?: string
+          notes?: string | null
+          posted_at?: string | null
+          posted_journal_entry_id?: string | null
+          recoverable_amount?: number
+          status?: string
+          test_date?: string
+          tested_by?: string | null
+          triggering_event?: string | null
+          updated_at?: string
+          value_in_use?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_impairment_tests_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_impairment_tests_posted_journal_entry_id_fkey"
+            columns: ["posted_journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_physical_count_lines: {
         Row: {
           actual_location: string | null
@@ -12226,6 +12301,13 @@ export type Database = {
         }[]
       }
       compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
+      compute_impairment: {
+        Args: { _carrying: number; _fair_value: number; _value_in_use: number }
+        Returns: {
+          loss: number
+          recoverable: number
+        }[]
+      }
       compute_vat_return: {
         Args: { _company?: string; _month: number; _year: number }
         Returns: {
@@ -12403,6 +12485,7 @@ export type Database = {
         Returns: undefined
       }
       post_amortization_entry: { Args: { _entry_id: string }; Returns: string }
+      post_impairment_test: { Args: { _test_id: string }; Returns: string }
       post_lease_period: { Args: { p_schedule_id: string }; Returns: string }
       post_loan_period: { Args: { p_schedule_id: string }; Returns: string }
       post_timesheet_to_project: {
