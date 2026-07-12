@@ -6665,6 +6665,255 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_order_lines: {
+        Row: {
+          created_at: string
+          description: string
+          discount_pct: number
+          id: string
+          line_total: number
+          order_id: string
+          quantity: number
+          service_code: string | null
+          sort_order: number
+          tax_pct: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_pct?: number
+          id?: string
+          line_total?: number
+          order_id: string
+          quantity?: number
+          service_code?: string | null
+          sort_order?: number
+          tax_pct?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_pct?: number
+          id?: string
+          line_total?: number
+          order_id?: string
+          quantity?: number
+          service_code?: string | null
+          sort_order?: number
+          tax_pct?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_orders: {
+        Row: {
+          airline_id: string | null
+          company: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          discount_total: number
+          expected_delivery: string | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          order_date: string
+          order_number: string
+          source_quotation_id: string | null
+          station: string | null
+          status: string
+          subtotal: number
+          tax_total: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          airline_id?: string | null
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_total?: number
+          expected_delivery?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          order_date?: string
+          order_number: string
+          source_quotation_id?: string | null
+          station?: string | null
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          airline_id?: string | null
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_total?: number
+          expected_delivery?: string | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          order_date?: string
+          order_number?: string
+          source_quotation_id?: string | null
+          station?: string | null
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_orders_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_source_quotation_id_fkey"
+            columns: ["source_quotation_id"]
+            isOneToOne: false
+            referencedRelation: "sales_quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_quotation_lines: {
+        Row: {
+          created_at: string
+          description: string
+          discount_pct: number
+          id: string
+          line_total: number
+          quantity: number
+          quotation_id: string
+          service_code: string | null
+          sort_order: number
+          tax_pct: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_pct?: number
+          id?: string
+          line_total?: number
+          quantity?: number
+          quotation_id: string
+          service_code?: string | null
+          sort_order?: number
+          tax_pct?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_pct?: number
+          id?: string
+          line_total?: number
+          quantity?: number
+          quotation_id?: string
+          service_code?: string | null
+          sort_order?: number
+          tax_pct?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_quotation_lines_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "sales_quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_quotations: {
+        Row: {
+          airline_id: string | null
+          company: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          discount_total: number
+          id: string
+          notes: string | null
+          quote_date: string
+          quote_number: string
+          station: string | null
+          status: string
+          subtotal: number
+          tax_total: number
+          total_amount: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          airline_id?: string | null
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_total?: number
+          id?: string
+          notes?: string | null
+          quote_date?: string
+          quote_number: string
+          station?: string | null
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          airline_id?: string | null
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_total?: number
+          id?: string
+          notes?: string | null
+          quote_date?: string
+          quote_number?: string
+          station?: string | null
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_quotations_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_check_runs: {
         Row: {
           checks: Json
@@ -9782,6 +10031,11 @@ export type Database = {
           total_purchases: number
           total_sales: number
         }[]
+      }
+      convert_order_to_invoice: { Args: { _order_id: string }; Returns: string }
+      convert_quotation_to_order: {
+        Args: { _quote_id: string }
+        Returns: string
       }
       current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
