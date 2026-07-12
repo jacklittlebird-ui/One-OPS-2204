@@ -271,6 +271,7 @@ function AppRoutes() {
       <Route path="/accounting/lease-accounting" element={<ProtectedRoute><AppLayout><LeaseAccountingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/segment-pnl" element={<ProtectedRoute><AppLayout><SegmentPnLPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/loan-amortization" element={<ProtectedRoute><AppLayout><LoanAmortizationPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/bank-guarantees" element={<ProtectedRoute><AppLayout><BankGuaranteesPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
