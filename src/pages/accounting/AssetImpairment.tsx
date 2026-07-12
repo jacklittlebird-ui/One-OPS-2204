@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Loader2, Plus, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 
-type Asset = { id: string; asset_code: string; asset_name: string; current_value: number; currency?: string | null };
+type Asset = { id: string; asset_code: string; asset_name: string; purchase_cost: number; accumulated_depreciation: number; currency?: string | null };
 type Test = {
   id: string; asset_id: string; test_date: string; carrying_amount: number;
   fair_value_less_costs: number | null; value_in_use: number | null;
@@ -23,6 +23,7 @@ type Test = {
 };
 
 const fmt = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const carryingOf = (a?: Asset | null) => a ? Number(a.purchase_cost || 0) - Number(a.accumulated_depreciation || 0) : 0;
 
 export default function AssetImpairmentPage() {
   const qc = useQueryClient();
@@ -41,7 +42,7 @@ export default function AssetImpairmentPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fixed_assets")
-        .select("id,asset_code,asset_name,current_value,currency")
+        .select("id,asset_code,asset_name,purchase_cost,accumulated_depreciation,currency")
         .order("asset_code");
       if (error) throw error;
       return (data ?? []) as Asset[];
