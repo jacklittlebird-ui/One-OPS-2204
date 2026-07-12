@@ -6183,6 +6183,128 @@ export type Database = {
           },
         ]
       }
+      lease_payment_schedule: {
+        Row: {
+          closing_liability: number
+          created_at: string
+          id: string
+          interest_expense: number
+          lease_id: string
+          opening_liability: number
+          payment_amount: number
+          period_date: string
+          period_no: number
+          posted: boolean
+          posted_at: string | null
+          principal: number
+          rou_depreciation: number
+        }
+        Insert: {
+          closing_liability?: number
+          created_at?: string
+          id?: string
+          interest_expense?: number
+          lease_id: string
+          opening_liability?: number
+          payment_amount?: number
+          period_date: string
+          period_no: number
+          posted?: boolean
+          posted_at?: string | null
+          principal?: number
+          rou_depreciation?: number
+        }
+        Update: {
+          closing_liability?: number
+          created_at?: string
+          id?: string
+          interest_expense?: number
+          lease_id?: string
+          opening_liability?: number
+          payment_amount?: number
+          period_date?: string
+          period_no?: number
+          posted?: boolean
+          posted_at?: string | null
+          principal?: number
+          rou_depreciation?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_payment_schedule_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leases: {
+        Row: {
+          asset_description: string
+          classification: string
+          company_id: string | null
+          created_at: string
+          currency: string
+          discount_rate_pct: number
+          end_date: string
+          id: string
+          initial_liability: number
+          lease_no: string
+          lessor_name: string
+          notes: string | null
+          payment_amount: number
+          payment_frequency: string
+          rou_asset_value: number
+          start_date: string
+          status: string
+          term_months: number
+          updated_at: string
+        }
+        Insert: {
+          asset_description: string
+          classification?: string
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_rate_pct?: number
+          end_date: string
+          id?: string
+          initial_liability?: number
+          lease_no: string
+          lessor_name: string
+          notes?: string | null
+          payment_amount: number
+          payment_frequency?: string
+          rou_asset_value?: number
+          start_date: string
+          status?: string
+          term_months: number
+          updated_at?: string
+        }
+        Update: {
+          asset_description?: string
+          classification?: string
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_rate_pct?: number
+          end_date?: string
+          id?: string
+          initial_liability?: number
+          lease_no?: string
+          lessor_name?: string
+          notes?: string | null
+          payment_amount?: number
+          payment_frequency?: string
+          rou_asset_value?: number
+          start_date?: string
+          status?: string
+          term_months?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lost_found: {
         Row: {
           airline: string
@@ -11803,6 +11925,7 @@ export type Database = {
         Args: { _schedule_id: string }
         Returns: number
       }
+      generate_lease_schedule: { Args: { p_lease_id: string }; Returns: number }
       generate_payroll_run: {
         Args: { _company: string; _month: number; _year: number }
         Returns: string
@@ -11937,6 +12060,7 @@ export type Database = {
         Returns: undefined
       }
       post_amortization_entry: { Args: { _entry_id: string }; Returns: string }
+      post_lease_period: { Args: { p_schedule_id: string }; Returns: string }
       post_timesheet_to_project: {
         Args: { _timesheet_id: string }
         Returns: number
