@@ -91,6 +91,7 @@ import BankStatementImport from "./pages/accounting/BankStatementImport";
 import CustomerCredit from "./pages/accounting/CustomerCredit";
 import SalesOrders from "./pages/accounting/SalesOrders";
 import PurchaseOrders from "./pages/accounting/PurchaseOrders";
+import InventoryPage from "./pages/accounting/Inventory";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -236,6 +237,7 @@ function AppRoutes() {
       <Route path="/accounting/customer-credit" element={<ProtectedRoute><AppLayout><CustomerCredit /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/sales-orders" element={<ProtectedRoute><AppLayout><SalesOrders /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/purchase-orders" element={<ProtectedRoute><AppLayout><PurchaseOrders /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/inventory" element={<ProtectedRoute><AppLayout><InventoryPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
