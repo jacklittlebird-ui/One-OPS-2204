@@ -90,6 +90,7 @@ import PayrollExpenses from "./pages/accounting/PayrollExpenses";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
 import CustomerCredit from "./pages/accounting/CustomerCredit";
 import SalesOrders from "./pages/accounting/SalesOrders";
+import PurchaseOrders from "./pages/accounting/PurchaseOrders";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
