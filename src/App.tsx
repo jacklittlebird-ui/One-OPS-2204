@@ -99,6 +99,7 @@ import CreditDebitNotesPage from "./pages/accounting/CreditDebitNotes";
 import AllocationDriversPage from "./pages/accounting/AllocationDrivers";
 import FxRevaluationSchedulesPage from "./pages/accounting/FxRevaluationSchedules";
 import AmortizationSchedulesPage from "./pages/accounting/AmortizationSchedules";
+import WhtYearEndStatementsPage from "./pages/accounting/WhtYearEndStatements";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -252,6 +253,7 @@ function AppRoutes() {
       <Route path="/accounting/allocation-drivers" element={<ProtectedRoute><AppLayout><AllocationDriversPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/fx-revaluation-schedules" element={<ProtectedRoute><AppLayout><FxRevaluationSchedulesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/amortization-schedules" element={<ProtectedRoute><AppLayout><AmortizationSchedulesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/wht-year-end" element={<ProtectedRoute><AppLayout><WhtYearEndStatementsPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
