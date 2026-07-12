@@ -99,6 +99,7 @@ import CreditDebitNotesPage from "./pages/accounting/CreditDebitNotes";
 import AllocationDriversPage from "./pages/accounting/AllocationDrivers";
 import FxRevaluationSchedulesPage from "./pages/accounting/FxRevaluationSchedules";
 import AmortizationSchedulesPage from "./pages/accounting/AmortizationSchedules";
+import WhtYearEndStatementsPage from "./pages/accounting/WhtYearEndStatements";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
