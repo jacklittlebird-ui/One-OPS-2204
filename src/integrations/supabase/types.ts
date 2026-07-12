@@ -3155,6 +3155,124 @@ export type Database = {
           },
         ]
       }
+      corporate_tax_adjustments: {
+        Row: {
+          adjustment_type: string
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          reference: string | null
+          return_id: string | null
+        }
+        Insert: {
+          adjustment_type?: string
+          amount?: number
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference?: string | null
+          return_id?: string | null
+        }
+        Update: {
+          adjustment_type?: string
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference?: string | null
+          return_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corporate_tax_adjustments_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "corporate_tax_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      corporate_tax_returns: {
+        Row: {
+          accounting_profit: number
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          filing_date: string | null
+          id: string
+          net_tax_payable: number
+          non_deductible_expenses: number
+          non_taxable_income: number
+          notes: string | null
+          other_adjustments: number
+          status: string
+          tax_depreciation_adjustment: number
+          tax_liability: number
+          tax_paid_installments: number
+          tax_rate: number
+          tax_year: number
+          taxable_income: number
+          updated_at: string
+          withholding_credits: number
+        }
+        Insert: {
+          accounting_profit?: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          filing_date?: string | null
+          id?: string
+          net_tax_payable?: number
+          non_deductible_expenses?: number
+          non_taxable_income?: number
+          notes?: string | null
+          other_adjustments?: number
+          status?: string
+          tax_depreciation_adjustment?: number
+          tax_liability?: number
+          tax_paid_installments?: number
+          tax_rate?: number
+          tax_year: number
+          taxable_income?: number
+          updated_at?: string
+          withholding_credits?: number
+        }
+        Update: {
+          accounting_profit?: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          filing_date?: string | null
+          id?: string
+          net_tax_payable?: number
+          non_deductible_expenses?: number
+          non_taxable_income?: number
+          notes?: string | null
+          other_adjustments?: number
+          status?: string
+          tax_depreciation_adjustment?: number
+          tax_liability?: number
+          tax_paid_installments?: number
+          tax_rate?: number
+          tax_year?: number
+          taxable_income?: number
+          updated_at?: string
+          withholding_credits?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corporate_tax_returns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_allocation_driver_values: {
         Row: {
           cost_center: string
@@ -12909,6 +13027,37 @@ export type Database = {
           _received_by?: string
         }
         Returns: string
+      }
+      recompute_corporate_tax: {
+        Args: { p_return_id: string }
+        Returns: {
+          accounting_profit: number
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          filing_date: string | null
+          id: string
+          net_tax_payable: number
+          non_deductible_expenses: number
+          non_taxable_income: number
+          notes: string | null
+          other_adjustments: number
+          status: string
+          tax_depreciation_adjustment: number
+          tax_liability: number
+          tax_paid_installments: number
+          tax_rate: number
+          tax_year: number
+          taxable_income: number
+          updated_at: string
+          withholding_credits: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "corporate_tax_returns"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       record_bg_event: {
         Args: {
