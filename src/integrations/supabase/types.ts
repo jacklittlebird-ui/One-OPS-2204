@@ -6322,6 +6322,335 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_order_lines: {
+        Row: {
+          created_at: string
+          discount_pct: number
+          id: string
+          item_description: string
+          line_total: number
+          notes: string | null
+          po_id: string
+          quantity: number
+          received_qty: number
+          tax_pct: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          discount_pct?: number
+          id?: string
+          item_description: string
+          line_total?: number
+          notes?: string | null
+          po_id: string
+          quantity?: number
+          received_qty?: number
+          tax_pct?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          discount_pct?: number
+          id?: string
+          item_description?: string
+          line_total?: number
+          notes?: string | null
+          po_id?: string
+          quantity?: number
+          received_qty?: number
+          tax_pct?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_lines_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          currency: string
+          discount_total: number
+          expected_delivery: string | null
+          grand_total: number
+          id: string
+          invoiced_total: number
+          notes: string | null
+          order_date: string
+          payment_terms: string | null
+          po_no: string
+          received_total: number
+          requisition_id: string | null
+          status: string
+          subtotal: number
+          tax_total: number
+          updated_at: string
+          vendor_id: string | null
+          vendor_name: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_total?: number
+          expected_delivery?: string | null
+          grand_total?: number
+          id?: string
+          invoiced_total?: number
+          notes?: string | null
+          order_date?: string
+          payment_terms?: string | null
+          po_no: string
+          received_total?: number
+          requisition_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_total?: number
+          expected_delivery?: string | null
+          grand_total?: number
+          id?: string
+          invoiced_total?: number
+          notes?: string | null
+          order_date?: string
+          payment_terms?: string | null
+          po_no?: string
+          received_total?: number
+          requisition_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_receipt_lines: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          po_line_id: string
+          receipt_id: string
+          received_qty: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          po_line_id: string
+          receipt_id: string
+          received_qty?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          po_line_id?: string
+          receipt_id?: string
+          received_qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_receipt_lines_po_line_id_fkey"
+            columns: ["po_line_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_receipt_lines_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_receipts: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          po_id: string
+          receipt_no: string
+          received_by: string | null
+          received_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          po_id: string
+          receipt_no: string
+          received_by?: string | null
+          received_date?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          po_id?: string
+          receipt_no?: string
+          received_by?: string | null
+          received_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_receipts_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requisition_lines: {
+        Row: {
+          created_at: string
+          discount_pct: number
+          id: string
+          item_description: string
+          line_total: number
+          notes: string | null
+          quantity: number
+          requisition_id: string
+          tax_pct: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          discount_pct?: number
+          id?: string
+          item_description: string
+          line_total?: number
+          notes?: string | null
+          quantity?: number
+          requisition_id: string
+          tax_pct?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          discount_pct?: number
+          id?: string
+          item_description?: string
+          line_total?: number
+          notes?: string | null
+          quantity?: number
+          requisition_id?: string
+          tax_pct?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requisition_lines_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requisitions: {
+        Row: {
+          approved_at: string | null
+          company_id: string | null
+          converted_po_id: string | null
+          created_at: string
+          currency: string
+          department: string | null
+          grand_total: number
+          id: string
+          needed_by: string | null
+          notes: string | null
+          request_date: string
+          requested_by: string | null
+          requisition_no: string
+          status: string
+          subtotal: number
+          tax_total: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          company_id?: string | null
+          converted_po_id?: string | null
+          created_at?: string
+          currency?: string
+          department?: string | null
+          grand_total?: number
+          id?: string
+          needed_by?: string | null
+          notes?: string | null
+          request_date?: string
+          requested_by?: string | null
+          requisition_no: string
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          company_id?: string | null
+          converted_po_id?: string | null
+          created_at?: string
+          currency?: string
+          department?: string | null
+          grand_total?: number
+          id?: string
+          needed_by?: string | null
+          notes?: string | null
+          request_date?: string
+          requested_by?: string | null
+          requisition_no?: string
+          status?: string
+          subtotal?: number
+          tax_total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requisitions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receipts: {
         Row: {
           amount: number
@@ -10037,6 +10366,10 @@ export type Database = {
         Args: { _quote_id: string }
         Returns: string
       }
+      convert_requisition_to_po: {
+        Args: { _req_id: string; _vendor_name: string }
+        Returns: string
+      }
       current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
       generate_payroll_run: {
@@ -10159,6 +10492,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      receive_purchase_order: {
+        Args: {
+          _lines: Json
+          _notes?: string
+          _po_id: string
+          _received_by?: string
+        }
+        Returns: string
+      }
       refresh_collection_cases_aging: { Args: never; Returns: number }
       refresh_invoice_monthly_summary: { Args: never; Returns: undefined }
       return_flight_to_clearance: {
@@ -10222,6 +10564,15 @@ export type Database = {
           reconciled: boolean
           to_company_id: string
           transaction_date: string
+        }[]
+      }
+      three_way_match_po: {
+        Args: { _po_id: string }
+        Returns: {
+          invoiced_total: number
+          match_status: string
+          po_total: number
+          received_total: number
         }[]
       }
       update_flight_master_from_station: {
