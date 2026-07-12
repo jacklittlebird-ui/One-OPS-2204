@@ -88,6 +88,7 @@ import CashFlowForecast from "./pages/accounting/CashFlowForecast";
 import TaxCompliance from "./pages/accounting/TaxCompliance";
 import PayrollExpenses from "./pages/accounting/PayrollExpenses";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
+import SegmentPnLPage from "./pages/accounting/SegmentPnL";
 import CustomerCredit from "./pages/accounting/CustomerCredit";
 import SalesOrders from "./pages/accounting/SalesOrders";
 import PurchaseOrders from "./pages/accounting/PurchaseOrders";
