@@ -267,6 +267,7 @@ function AppRoutes() {
       <Route path="/accounting/vendor-scorecards" element={<ProtectedRoute><AppLayout><VendorScorecardsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/contract-lifecycle-automation" element={<ProtectedRoute><AppLayout><ContractLifecycleAutomationPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/lease-accounting" element={<ProtectedRoute><AppLayout><LeaseAccountingPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/segment-pnl" element={<ProtectedRoute><AppLayout><SegmentPnLPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
