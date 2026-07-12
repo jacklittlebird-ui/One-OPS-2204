@@ -109,6 +109,7 @@ import ContractLifecycleAutomationPage from "./pages/accounting/ContractLifecycl
 import LeaseAccountingPage from "./pages/accounting/LeaseAccounting";
 import LoanAmortizationPage from "./pages/accounting/LoanAmortization";
 import BankGuaranteesPage from "./pages/accounting/BankGuarantees";
+import AssetImpairmentPage from "./pages/accounting/AssetImpairment";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
