@@ -4707,6 +4707,217 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          reorder_level: number
+          reorder_qty: number
+          sku: string
+          standard_cost: number
+          uom: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          reorder_level?: number
+          reorder_qty?: number
+          sku: string
+          standard_cost?: number
+          uom?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          reorder_level?: number
+          reorder_qty?: number
+          sku?: string
+          standard_cost?: number
+          uom?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_movements: {
+        Row: {
+          counterparty_warehouse_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string
+          movement_date: string
+          movement_no: string | null
+          movement_type: string
+          notes: string | null
+          qty: number
+          reference_id: string | null
+          reference_type: string | null
+          total_cost: number
+          unit_cost: number
+          warehouse_id: string
+        }
+        Insert: {
+          counterparty_warehouse_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id: string
+          movement_date?: string
+          movement_no?: string | null
+          movement_type: string
+          notes?: string | null
+          qty: number
+          reference_id?: string | null
+          reference_type?: string | null
+          total_cost?: number
+          unit_cost?: number
+          warehouse_id: string
+        }
+        Update: {
+          counterparty_warehouse_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          movement_date?: string
+          movement_no?: string | null
+          movement_type?: string
+          notes?: string | null
+          qty?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          total_cost?: number
+          unit_cost?: number
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_counterparty_warehouse_id_fkey"
+            columns: ["counterparty_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_stock: {
+        Row: {
+          avg_cost: number
+          created_at: string
+          id: string
+          item_id: string
+          last_movement_at: string | null
+          qty_on_hand: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          avg_cost?: number
+          created_at?: string
+          id?: string
+          item_id: string
+          last_movement_at?: string | null
+          qty_on_hand?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          avg_cost?: number
+          created_at?: string
+          id?: string
+          item_id?: string
+          last_movement_at?: string | null
+          qty_on_hand?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_stock_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_stock_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_warehouses: {
+        Row: {
+          address: string | null
+          code: string
+          company_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          station_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          station_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          station_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoice_variance_reports: {
         Row: {
           created_at: string
@@ -10451,6 +10662,19 @@ export type Database = {
           total: number
         }[]
       }
+      get_stock_valuation: {
+        Args: { _warehouse_id?: string }
+        Returns: {
+          avg_cost: number
+          item_id: string
+          item_name: string
+          qty_on_hand: number
+          sku: string
+          stock_value: number
+          warehouse_code: string
+          warehouse_id: string
+        }[]
+      }
       has_finance_access: { Args: { _user_id: string }; Returns: boolean }
       has_ops_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
@@ -10498,6 +10722,20 @@ export type Database = {
           _notes?: string
           _po_id: string
           _received_by?: string
+        }
+        Returns: string
+      }
+      record_inventory_movement: {
+        Args: {
+          _counterparty_warehouse_id?: string
+          _item_id: string
+          _movement_type: string
+          _notes?: string
+          _qty: number
+          _reference_id?: string
+          _reference_type?: string
+          _unit_cost?: number
+          _warehouse_id: string
         }
         Returns: string
       }
