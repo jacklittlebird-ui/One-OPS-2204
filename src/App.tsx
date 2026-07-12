@@ -88,6 +88,7 @@ import CashFlowForecast from "./pages/accounting/CashFlowForecast";
 import TaxCompliance from "./pages/accounting/TaxCompliance";
 import PayrollExpenses from "./pages/accounting/PayrollExpenses";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
+import CustomerCredit from "./pages/accounting/CustomerCredit";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
