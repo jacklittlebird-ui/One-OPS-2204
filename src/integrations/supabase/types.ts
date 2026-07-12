@@ -1888,6 +1888,107 @@ export type Database = {
           },
         ]
       }
+      cash_flow_forecast_lines: {
+        Row: {
+          ap_outflow: number
+          ar_inflow: number
+          closing_balance: number
+          created_at: string
+          forecast_id: string
+          id: string
+          loan_outflow: number
+          net_movement: number
+          other_inflow: number
+          other_outflow: number
+          payroll_outflow: number
+          week_end: string
+          week_no: number
+          week_start: string
+        }
+        Insert: {
+          ap_outflow?: number
+          ar_inflow?: number
+          closing_balance?: number
+          created_at?: string
+          forecast_id: string
+          id?: string
+          loan_outflow?: number
+          net_movement?: number
+          other_inflow?: number
+          other_outflow?: number
+          payroll_outflow?: number
+          week_end: string
+          week_no: number
+          week_start: string
+        }
+        Update: {
+          ap_outflow?: number
+          ar_inflow?: number
+          closing_balance?: number
+          created_at?: string
+          forecast_id?: string
+          id?: string
+          loan_outflow?: number
+          net_movement?: number
+          other_inflow?: number
+          other_outflow?: number
+          payroll_outflow?: number
+          week_end?: string
+          week_no?: number
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_flow_forecast_lines_forecast_id_fkey"
+            columns: ["forecast_id"]
+            isOneToOne: false
+            referencedRelation: "cash_flow_forecasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_flow_forecasts: {
+        Row: {
+          as_of_date: string
+          base_currency: string
+          created_at: string
+          created_by: string | null
+          forecast_no: string
+          horizon_weeks: number
+          id: string
+          notes: string | null
+          opening_cash: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          as_of_date?: string
+          base_currency?: string
+          created_at?: string
+          created_by?: string | null
+          forecast_no: string
+          horizon_weeks?: number
+          id?: string
+          notes?: string | null
+          opening_cash?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          as_of_date?: string
+          base_currency?: string
+          created_at?: string
+          created_by?: string | null
+          forecast_no?: string
+          horizon_weeks?: number
+          id?: string
+          notes?: string | null
+          opening_cash?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catering_items: {
         Row: {
           category: string
@@ -11923,6 +12024,10 @@ export type Database = {
       execute_dunning_run: { Args: { p_policy_id: string }; Returns: string }
       generate_amortization_entries: {
         Args: { _schedule_id: string }
+        Returns: number
+      }
+      generate_cash_flow_forecast: {
+        Args: { p_forecast_id: string }
         Returns: number
       }
       generate_lease_schedule: { Args: { p_lease_id: string }; Returns: number }
