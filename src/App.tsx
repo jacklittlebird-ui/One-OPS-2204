@@ -96,6 +96,7 @@ import ProjectCostingPage from "./pages/accounting/ProjectCosting";
 import TimesheetsPage from "./pages/accounting/Timesheets";
 import ExpenseApprovalsPage from "./pages/accounting/ExpenseApprovals";
 import CreditDebitNotesPage from "./pages/accounting/CreditDebitNotes";
+import AllocationDriversPage from "./pages/accounting/AllocationDrivers";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
