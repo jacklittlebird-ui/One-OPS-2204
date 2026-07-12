@@ -4887,6 +4887,59 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_revaluation_schedules: {
+        Row: {
+          account_scope: string
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          name: string
+          next_run_at: string | null
+          target_currency: string
+          updated_at: string
+        }
+        Insert: {
+          account_scope?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          name: string
+          next_run_at?: string | null
+          target_currency?: string
+          updated_at?: string
+        }
+        Update: {
+          account_scope?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          target_currency?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fx_revaluation_schedules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hall_vvip: {
         Row: {
           created_at: string
@@ -11446,6 +11499,10 @@ export type Database = {
           _rule_id: string
           _year: number
         }
+        Returns: string
+      }
+      run_scheduled_fx_revaluation: {
+        Args: { _as_of?: string; _schedule_id: string }
         Returns: string
       }
       submit_expense_report_for_approval: {
