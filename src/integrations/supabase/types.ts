@@ -6406,6 +6406,130 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_payment_schedule: {
+        Row: {
+          closing_balance: number
+          created_at: string
+          due_date: string
+          id: string
+          interest_amount: number
+          loan_id: string
+          opening_balance: number
+          payment_amount: number
+          period_number: number
+          posted_at: string | null
+          posted_by: string | null
+          principal_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closing_balance: number
+          created_at?: string
+          due_date: string
+          id?: string
+          interest_amount: number
+          loan_id: string
+          opening_balance: number
+          payment_amount: number
+          period_number: number
+          posted_at?: string | null
+          posted_by?: string | null
+          principal_amount: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closing_balance?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          interest_amount?: number
+          loan_id?: string
+          opening_balance?: number
+          payment_amount?: number
+          period_number?: number
+          posted_at?: string | null
+          posted_by?: string | null
+          principal_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_payment_schedule_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loans: {
+        Row: {
+          annual_interest_rate: number
+          company_id: string | null
+          created_at: string
+          currency: string
+          first_payment_date: string
+          id: string
+          lender_name: string
+          loan_number: string
+          notes: string | null
+          outstanding_balance: number
+          payment_frequency: string
+          principal_amount: number
+          start_date: string
+          status: string
+          term_months: number
+          updated_at: string
+        }
+        Insert: {
+          annual_interest_rate: number
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          first_payment_date: string
+          id?: string
+          lender_name: string
+          loan_number: string
+          notes?: string | null
+          outstanding_balance?: number
+          payment_frequency?: string
+          principal_amount: number
+          start_date: string
+          status?: string
+          term_months: number
+          updated_at?: string
+        }
+        Update: {
+          annual_interest_rate?: number
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          first_payment_date?: string
+          id?: string
+          lender_name?: string
+          loan_number?: string
+          notes?: string | null
+          outstanding_balance?: number
+          payment_frequency?: string
+          principal_amount?: number
+          start_date?: string
+          status?: string
+          term_months?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lost_found: {
         Row: {
           airline: string
@@ -12031,6 +12155,7 @@ export type Database = {
         Returns: number
       }
       generate_lease_schedule: { Args: { p_lease_id: string }; Returns: number }
+      generate_loan_schedule: { Args: { p_loan_id: string }; Returns: number }
       generate_payroll_run: {
         Args: { _company: string; _month: number; _year: number }
         Returns: string
@@ -12166,6 +12291,7 @@ export type Database = {
       }
       post_amortization_entry: { Args: { _entry_id: string }; Returns: string }
       post_lease_period: { Args: { p_schedule_id: string }; Returns: string }
+      post_loan_period: { Args: { p_schedule_id: string }; Returns: string }
       post_timesheet_to_project: {
         Args: { _timesheet_id: string }
         Returns: number

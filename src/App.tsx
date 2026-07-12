@@ -107,6 +107,7 @@ import PurchaseApprovalMatrixPage from "./pages/accounting/PurchaseApprovalMatri
 import VendorScorecardsPage from "./pages/accounting/VendorScorecards";
 import ContractLifecycleAutomationPage from "./pages/accounting/ContractLifecycleAutomation";
 import LeaseAccountingPage from "./pages/accounting/LeaseAccounting";
+import LoanAmortizationPage from "./pages/accounting/LoanAmortization";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -268,6 +269,7 @@ function AppRoutes() {
       <Route path="/accounting/contract-lifecycle-automation" element={<ProtectedRoute><AppLayout><ContractLifecycleAutomationPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/lease-accounting" element={<ProtectedRoute><AppLayout><LeaseAccountingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/segment-pnl" element={<ProtectedRoute><AppLayout><SegmentPnLPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/loan-amortization" element={<ProtectedRoute><AppLayout><LoanAmortizationPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
