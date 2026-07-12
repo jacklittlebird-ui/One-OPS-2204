@@ -104,6 +104,7 @@ import DunningRunsPage from "./pages/accounting/DunningRuns";
 import SalesCommissionsPage from "./pages/accounting/SalesCommissions";
 import PurchaseApprovalMatrixPage from "./pages/accounting/PurchaseApprovalMatrix";
 import VendorScorecardsPage from "./pages/accounting/VendorScorecards";
+import ContractLifecycleAutomationPage from "./pages/accounting/ContractLifecycleAutomation";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -262,6 +263,7 @@ function AppRoutes() {
       <Route path="/accounting/sales-commissions" element={<ProtectedRoute><AppLayout><SalesCommissionsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/purchase-approval-matrix" element={<ProtectedRoute><AppLayout><PurchaseApprovalMatrixPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/vendor-scorecards" element={<ProtectedRoute><AppLayout><VendorScorecardsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/contract-lifecycle-automation" element={<ProtectedRoute><AppLayout><ContractLifecycleAutomationPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />

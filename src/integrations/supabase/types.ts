@@ -11756,6 +11756,7 @@ export type Database = {
         Returns: string
       }
       auto_match_statement_lines: { Args: { _import: string }; Returns: number }
+      auto_renew_contracts: { Args: never; Returns: number }
       check_credit_before_invoice: {
         Args: { _airline_id: string; _amount: number }
         Returns: {
@@ -12064,6 +12065,15 @@ export type Database = {
       run_scheduled_fx_revaluation: {
         Args: { _as_of?: string; _schedule_id: string }
         Returns: string
+      }
+      scan_contract_renewals: {
+        Args: never
+        Returns: {
+          contract_id: string
+          contract_no: string
+          days_remaining: number
+          end_date: string
+        }[]
       }
       submit_expense_report_for_approval: {
         Args: { _report_id: string }
