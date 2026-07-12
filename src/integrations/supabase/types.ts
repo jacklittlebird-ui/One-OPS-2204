@@ -1232,6 +1232,118 @@ export type Database = {
           },
         ]
       }
+      bank_guarantee_events: {
+        Row: {
+          amount_delta: number
+          created_at: string
+          created_by: string | null
+          event_date: string
+          event_type: string
+          guarantee_id: string
+          id: string
+          new_expiry_date: string | null
+          notes: string | null
+        }
+        Insert: {
+          amount_delta?: number
+          created_at?: string
+          created_by?: string | null
+          event_date: string
+          event_type: string
+          guarantee_id: string
+          id?: string
+          new_expiry_date?: string | null
+          notes?: string | null
+        }
+        Update: {
+          amount_delta?: number
+          created_at?: string
+          created_by?: string | null
+          event_date?: string
+          event_type?: string
+          guarantee_id?: string
+          id?: string
+          new_expiry_date?: string | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_guarantee_events_guarantee_id_fkey"
+            columns: ["guarantee_id"]
+            isOneToOne: false
+            referencedRelation: "bank_guarantees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_guarantees: {
+        Row: {
+          amount: number
+          applicant_company_id: string | null
+          beneficiary: string
+          commission_rate: number
+          created_at: string
+          currency: string
+          expiry_date: string
+          guarantee_type: string
+          id: string
+          issue_date: string
+          issuing_bank: string
+          margin_held: number
+          notes: string | null
+          purpose: string | null
+          reference_number: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          applicant_company_id?: string | null
+          beneficiary: string
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          expiry_date: string
+          guarantee_type: string
+          id?: string
+          issue_date: string
+          issuing_bank: string
+          margin_held?: number
+          notes?: string | null
+          purpose?: string | null
+          reference_number: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          applicant_company_id?: string | null
+          beneficiary?: string
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          expiry_date?: string
+          guarantee_type?: string
+          id?: string
+          issue_date?: string
+          issuing_bank?: string
+          margin_held?: number
+          notes?: string | null
+          purpose?: string | null
+          reference_number?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_guarantees_applicant_company_id_fkey"
+            columns: ["applicant_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_match_rules: {
         Row: {
           amount_tolerance: number | null
@@ -12146,6 +12258,7 @@ export type Database = {
       current_customer_airline_iata: { Args: never; Returns: string }
       current_vendor_id: { Args: never; Returns: string }
       execute_dunning_run: { Args: { p_policy_id: string }; Returns: string }
+      expire_bank_guarantees: { Args: never; Returns: number }
       generate_amortization_entries: {
         Args: { _schedule_id: string }
         Returns: number
@@ -12323,6 +12436,17 @@ export type Database = {
           _notes?: string
           _po_id: string
           _received_by?: string
+        }
+        Returns: string
+      }
+      record_bg_event: {
+        Args: {
+          p_amount_delta?: number
+          p_event_date: string
+          p_event_type: string
+          p_guarantee_id: string
+          p_new_expiry_date?: string
+          p_notes?: string
         }
         Returns: string
       }
