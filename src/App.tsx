@@ -92,6 +92,7 @@ import CustomerCredit from "./pages/accounting/CustomerCredit";
 import SalesOrders from "./pages/accounting/SalesOrders";
 import PurchaseOrders from "./pages/accounting/PurchaseOrders";
 import InventoryPage from "./pages/accounting/Inventory";
+import ProjectCostingPage from "./pages/accounting/ProjectCosting";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
