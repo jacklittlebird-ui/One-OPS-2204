@@ -6533,6 +6533,158 @@ export type Database = {
         }
         Relationships: []
       }
+      project_tasks: {
+        Row: {
+          budget_amount: number
+          code: string | null
+          created_at: string
+          id: string
+          name: string
+          progress_pct: number
+          project_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          budget_amount?: number
+          code?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          progress_pct?: number
+          project_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          budget_amount?: number
+          code?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          progress_pct?: number
+          project_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          id: string
+          project_id: string
+          reference_id: string | null
+          reference_type: string | null
+          task_id: string | null
+          txn_date: string
+          txn_type: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          project_id: string
+          reference_id?: string | null
+          reference_type?: string | null
+          task_id?: string | null
+          txn_date?: string
+          txn_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          project_id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          task_id?: string | null
+          txn_date?: string
+          txn_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_transactions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_transactions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          budget_amount: number
+          code: string
+          created_at: string
+          currency: string
+          customer_name: string | null
+          end_date: string | null
+          id: string
+          manager: string | null
+          name: string
+          notes: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          budget_amount?: number
+          code: string
+          created_at?: string
+          currency?: string
+          customer_name?: string | null
+          end_date?: string | null
+          id?: string
+          manager?: string | null
+          name: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          budget_amount?: number
+          code?: string
+          created_at?: string
+          currency?: string
+          customer_name?: string | null
+          end_date?: string | null
+          id?: string
+          manager?: string | null
+          name?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       purchase_order_lines: {
         Row: {
           created_at: string
@@ -10660,6 +10812,23 @@ export type Database = {
           next_level_name: string
           operator: string
           total: number
+        }[]
+      }
+      get_project_pnl: {
+        Args: { _project_id?: string }
+        Returns: {
+          actual_cost: number
+          billed: number
+          budget_amount: number
+          code: string
+          currency: string
+          margin: number
+          margin_pct: number
+          name: string
+          project_id: string
+          revenue: number
+          status: string
+          wip: number
         }[]
       }
       get_stock_valuation: {
