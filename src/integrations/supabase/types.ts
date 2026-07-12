@@ -3012,6 +3012,109 @@ export type Database = {
           },
         ]
       }
+      customer_credit_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          new_value: string | null
+          performed_by: string | null
+          previous_value: string | null
+          profile_id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string
+          event_type: string
+          id?: string
+          new_value?: string | null
+          performed_by?: string | null
+          previous_value?: string | null
+          profile_id: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          new_value?: string | null
+          performed_by?: string | null
+          previous_value?: string | null
+          profile_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_credit_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "customer_credit_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_credit_profiles: {
+        Row: {
+          airline_id: string
+          created_at: string
+          credit_limit: number
+          credit_rating: string
+          currency: string
+          hold_reason: string | null
+          id: string
+          last_review_date: string | null
+          next_review_date: string | null
+          notes: string | null
+          on_hold: boolean
+          payment_terms_days: number
+          risk_category: string
+          updated_at: string
+        }
+        Insert: {
+          airline_id: string
+          created_at?: string
+          credit_limit?: number
+          credit_rating?: string
+          currency?: string
+          hold_reason?: string | null
+          id?: string
+          last_review_date?: string | null
+          next_review_date?: string | null
+          notes?: string | null
+          on_hold?: boolean
+          payment_terms_days?: number
+          risk_category?: string
+          updated_at?: string
+        }
+        Update: {
+          airline_id?: string
+          created_at?: string
+          credit_limit?: number
+          credit_rating?: string
+          currency?: string
+          hold_reason?: string | null
+          id?: string
+          last_review_date?: string | null
+          next_review_date?: string | null
+          notes?: string | null
+          on_hold?: boolean
+          payment_terms_days?: number
+          risk_category?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_credit_profiles_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: true
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_price_list: {
         Row: {
           airline_iata: string | null
@@ -9660,6 +9763,15 @@ export type Database = {
     }
     Functions: {
       auto_match_statement_lines: { Args: { _import: string }; Returns: number }
+      check_credit_before_invoice: {
+        Args: { _airline_id: string; _amount: number }
+        Returns: {
+          allowed: boolean
+          available: number
+          credit_limit: number
+          reason: string
+        }[]
+      }
       compute_aging_bucket: { Args: { _days_overdue: number }; Returns: string }
       compute_vat_return: {
         Args: { _company?: string; _month: number; _year: number }
@@ -9706,6 +9818,19 @@ export type Database = {
           week_end: string
           week_index: number
           week_start: string
+        }[]
+      }
+      get_customer_credit_exposure: {
+        Args: { _airline_id: string }
+        Returns: {
+          airline_id: string
+          available: number
+          credit_limit: number
+          currency: string
+          on_hold: boolean
+          outstanding: number
+          overdue: number
+          utilization_pct: number
         }[]
       }
       get_customer_statement: {
