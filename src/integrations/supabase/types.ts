@@ -8705,6 +8705,128 @@ export type Database = {
         }
         Relationships: []
       }
+      related_parties: {
+        Row: {
+          contact_email: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          party_name: string
+          related_company_id: string | null
+          relationship_type: string
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          party_name: string
+          related_company_id?: string | null
+          relationship_type: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          party_name?: string
+          related_company_id?: string | null
+          relationship_type?: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "related_parties_related_company_id_fkey"
+            columns: ["related_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      related_party_transactions: {
+        Row: {
+          amount: number
+          arms_length: boolean
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string
+          disclosure_period: string | null
+          id: string
+          notes: string | null
+          reference_document: string | null
+          related_party_id: string
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          arms_length?: boolean
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description: string
+          disclosure_period?: string | null
+          id?: string
+          notes?: string | null
+          reference_document?: string | null
+          related_party_id: string
+          transaction_date: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          arms_length?: boolean
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string
+          disclosure_period?: string | null
+          id?: string
+          notes?: string | null
+          reference_document?: string | null
+          related_party_id?: string
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "related_party_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "related_party_transactions_related_party_id_fkey"
+            columns: ["related_party_id"]
+            isOneToOne: false
+            referencedRelation: "related_parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_order_lines: {
         Row: {
           created_at: string
