@@ -2317,6 +2317,158 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_accruals: {
+        Row: {
+          accrual_date: string
+          basis_amount: number
+          commission_amount: number
+          created_at: string
+          currency: string
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_id: string | null
+          payout_id: string | null
+          plan_id: string | null
+          rate_percent: number
+          salesperson_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accrual_date?: string
+          basis_amount?: number
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_id?: string | null
+          payout_id?: string | null
+          plan_id?: string | null
+          rate_percent?: number
+          salesperson_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accrual_date?: string
+          basis_amount?: number
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_id?: string | null
+          payout_id?: string | null
+          plan_id?: string | null
+          rate_percent?: number
+          salesperson_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_accruals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "commission_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_payouts: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          paid_date: string | null
+          period_end: string
+          period_start: string
+          salesperson_id: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_date?: string | null
+          period_end: string
+          period_start: string
+          salesperson_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_date?: string | null
+          period_end?: string
+          period_start?: string
+          salesperson_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      commission_plans: {
+        Row: {
+          active: boolean
+          basis: string
+          company_id: string | null
+          created_at: string
+          currency: string
+          effective_from: string | null
+          effective_to: string | null
+          id: string
+          name: string
+          notes: string | null
+          rate_percent: number
+          salesperson_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          basis?: string
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          rate_percent?: number
+          salesperson_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          basis?: string
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          rate_percent?: number
+          salesperson_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           base_currency: Database["public"]["Enums"]["finance_currency"]
@@ -11425,6 +11577,10 @@ export type Database = {
       }
     }
     Functions: {
+      accrue_commissions_for_invoice: {
+        Args: { _invoice_id: string; _salesperson_id: string }
+        Returns: number
+      }
       apply_credit_note_to_invoice: { Args: { _id: string }; Returns: string }
       apply_debit_note_to_vendor_invoice: {
         Args: { _id: string }
@@ -11462,6 +11618,15 @@ export type Database = {
       }
       convert_requisition_to_po: {
         Args: { _req_id: string; _vendor_name: string }
+        Returns: string
+      }
+      create_commission_payout: {
+        Args: {
+          _currency?: string
+          _period_end: string
+          _period_start: string
+          _salesperson_id: string
+        }
         Returns: string
       }
       current_customer_airline_iata: { Args: never; Returns: string }
@@ -11591,6 +11756,10 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_period_locked: { Args: { _d: string }; Returns: boolean }
+      mark_commission_payout_paid: {
+        Args: { _paid_date?: string; _payout_id: string }
+        Returns: undefined
+      }
       notify_finance_users: {
         Args: {
           _category: string
