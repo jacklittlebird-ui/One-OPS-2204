@@ -111,6 +111,7 @@ import LoanAmortizationPage from "./pages/accounting/LoanAmortization";
 import BankGuaranteesPage from "./pages/accounting/BankGuarantees";
 import AssetImpairmentPage from "./pages/accounting/AssetImpairment";
 import RelatedPartiesPage from "./pages/accounting/RelatedParties";
+import DeferredTaxPage from "./pages/accounting/DeferredTax";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
