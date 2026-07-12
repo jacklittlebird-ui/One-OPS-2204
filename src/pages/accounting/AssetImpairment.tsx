@@ -63,7 +63,7 @@ export default function AssetImpairmentPage() {
 
   const assetMap = useMemo(() => new Map(assets.map(a => [a.id, a])), [assets]);
   const selectedAsset = assetMap.get(form.asset_id);
-  const carrying = selectedAsset?.current_value ?? 0;
+  const carrying = carryingOf(selectedAsset);
   const fv = parseFloat(form.fair_value_less_costs) || 0;
   const viu = parseFloat(form.value_in_use) || 0;
   const recoverable = Math.max(fv, viu);
@@ -137,7 +137,7 @@ export default function AssetImpairmentPage() {
                   <SelectTrigger><SelectValue placeholder="Select asset" /></SelectTrigger>
                   <SelectContent>
                     {assets.map(a => (
-                      <SelectItem key={a.id} value={a.id}>{a.asset_code} — {a.asset_name} (carrying {fmt(a.current_value)})</SelectItem>
+                      <SelectItem key={a.id} value={a.id}>{a.asset_code} — {a.asset_name} (carrying {fmt(carryingOf(a))})</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
