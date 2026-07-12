@@ -1131,6 +1131,45 @@ export type Database = {
         }
         Relationships: []
       }
+      authority_delegations: {
+        Row: {
+          active: boolean
+          created_at: string
+          end_date: string
+          from_user_id: string
+          id: string
+          reason: string | null
+          scope: string
+          start_date: string
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          end_date: string
+          from_user_id: string
+          id?: string
+          reason?: string | null
+          scope?: string
+          start_date: string
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          end_date?: string
+          from_user_id?: string
+          id?: string
+          reason?: string | null
+          scope?: string
+          start_date?: string
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bank_accounts: {
         Row: {
           account_name: string
@@ -7415,6 +7454,51 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_approval_matrix: {
+        Row: {
+          active: boolean
+          approver_role: string | null
+          approver_user_id: string | null
+          category: string | null
+          company_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          level: number
+          max_amount: number | null
+          min_amount: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          approver_role?: string | null
+          approver_user_id?: string | null
+          category?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          level?: number
+          max_amount?: number | null
+          min_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          approver_role?: string | null
+          approver_user_id?: string | null
+          category?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          level?: number
+          max_amount?: number | null
+          min_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       purchase_order_lines: {
         Row: {
           created_at: string
@@ -11823,6 +11907,19 @@ export type Database = {
       reject_expense_step: {
         Args: { _comments?: string; _step_id: string }
         Returns: string
+      }
+      resolve_purchase_approver: {
+        Args: {
+          _amount: number
+          _category?: string
+          _company_id?: string
+          _currency?: string
+        }
+        Returns: {
+          approver_role: string
+          approver_user_id: string
+          level: number
+        }[]
       }
       return_flight_to_clearance: {
         Args: { _id: string; _stamp: string }

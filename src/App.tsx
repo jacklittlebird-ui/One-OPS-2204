@@ -102,6 +102,7 @@ import AmortizationSchedulesPage from "./pages/accounting/AmortizationSchedules"
 import WhtYearEndStatementsPage from "./pages/accounting/WhtYearEndStatements";
 import DunningRunsPage from "./pages/accounting/DunningRuns";
 import SalesCommissionsPage from "./pages/accounting/SalesCommissions";
+import PurchaseApprovalMatrixPage from "./pages/accounting/PurchaseApprovalMatrix";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -258,6 +259,7 @@ function AppRoutes() {
       <Route path="/accounting/wht-year-end" element={<ProtectedRoute><AppLayout><WhtYearEndStatementsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/dunning-runs" element={<ProtectedRoute><AppLayout><DunningRunsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/sales-commissions" element={<ProtectedRoute><AppLayout><SalesCommissionsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/purchase-approval-matrix" element={<ProtectedRoute><AppLayout><PurchaseApprovalMatrixPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
