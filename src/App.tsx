@@ -123,6 +123,7 @@ import EarningsPerSharePage from "./pages/accounting/EarningsPerShare";
 import RevenueRecognitionPage from "./pages/accounting/RevenueRecognition";
 import ExpectedCreditLossPage from "./pages/accounting/ExpectedCreditLoss";
 import EndOfServiceBenefitsPage from "./pages/accounting/EndOfServiceBenefits";
+import FairValueHierarchyPage from "./pages/accounting/FairValueHierarchy";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -300,6 +301,7 @@ function AppRoutes() {
       <Route path="/accounting/revenue-recognition" element={<ProtectedRoute><AppLayout><RevenueRecognitionPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/ecl" element={<ProtectedRoute><AppLayout><ExpectedCreditLossPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/eosb" element={<ProtectedRoute><AppLayout><EndOfServiceBenefitsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/fair-value-hierarchy" element={<ProtectedRoute><AppLayout><FairValueHierarchyPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
