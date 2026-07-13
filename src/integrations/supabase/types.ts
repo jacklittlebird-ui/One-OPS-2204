@@ -4541,6 +4541,130 @@ export type Database = {
           },
         ]
       }
+      dividend_declarations: {
+        Row: {
+          board_resolution_ref: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          declaration_date: string
+          dividend_type: string
+          fiscal_year: number
+          id: string
+          net_amount: number | null
+          notes: string | null
+          payment_date: string | null
+          per_share_amount: number | null
+          record_date: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+          wht_amount: number | null
+          wht_rate: number | null
+        }
+        Insert: {
+          board_resolution_ref?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          declaration_date: string
+          dividend_type?: string
+          fiscal_year: number
+          id?: string
+          net_amount?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          per_share_amount?: number | null
+          record_date?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          wht_amount?: number | null
+          wht_rate?: number | null
+        }
+        Update: {
+          board_resolution_ref?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          declaration_date?: string
+          dividend_type?: string
+          fiscal_year?: number
+          id?: string
+          net_amount?: number | null
+          notes?: string | null
+          payment_date?: string | null
+          per_share_amount?: number | null
+          record_date?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          wht_amount?: number | null
+          wht_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dividend_declarations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dividend_payments: {
+        Row: {
+          created_at: string
+          declaration_id: string
+          gross_amount: number
+          id: string
+          net_amount: number
+          payment_date: string | null
+          payment_reference: string | null
+          shareholder_name: string
+          shareholding_pct: number | null
+          status: string
+          wht_amount: number
+        }
+        Insert: {
+          created_at?: string
+          declaration_id: string
+          gross_amount: number
+          id?: string
+          net_amount: number
+          payment_date?: string | null
+          payment_reference?: string | null
+          shareholder_name: string
+          shareholding_pct?: number | null
+          status?: string
+          wht_amount?: number
+        }
+        Update: {
+          created_at?: string
+          declaration_id?: string
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          payment_date?: string | null
+          payment_reference?: string | null
+          shareholder_name?: string
+          shareholding_pct?: number | null
+          status?: string
+          wht_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dividend_payments_declaration_id_fkey"
+            columns: ["declaration_id"]
+            isOneToOne: false
+            referencedRelation: "dividend_declarations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_signatures: {
         Row: {
           created_at: string
@@ -13058,6 +13182,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      recompute_dividend_totals: {
+        Args: { p_declaration_id: string }
+        Returns: undefined
       }
       record_bg_event: {
         Args: {
