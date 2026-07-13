@@ -126,6 +126,7 @@ import EndOfServiceBenefitsPage from "./pages/accounting/EndOfServiceBenefits";
 import FairValueHierarchyPage from "./pages/accounting/FairValueHierarchy";
 import ShareBasedPaymentsPage from "./pages/accounting/ShareBasedPayments";
 import GovernmentGrantsPage from "./pages/accounting/GovernmentGrants";
+import HeldForSalePage from "./pages/accounting/HeldForSale";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
