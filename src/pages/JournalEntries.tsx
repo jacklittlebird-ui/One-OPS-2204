@@ -236,7 +236,7 @@ export default function JournalEntriesPage() {
           <Button variant="outline" size="sm" onClick={handleExportPdf}><Download size={14} className="mr-1" /> PDF</Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild><Button onClick={openAdd}><Plus size={16} className="mr-1" /> New Entry</Button></DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editEntry ? "Edit Journal Entry" : "New Journal Entry"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-4 gap-2">
