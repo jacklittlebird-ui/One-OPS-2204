@@ -338,8 +338,7 @@ export default function JournalEntriesPage() {
                           </div>
                         </div>
 
-                        {/* Optional note */}
-                        <Input placeholder="ملاحظة على السطر (اختياري)" value={line.description || ""} onChange={e => updateLine(i, "description", e.target.value)} className="text-xs" />
+
 
                         {/* Account-8 rule: auto-open flight-data panel binding flight + airline + 4 cost centres */}
                         {isAccount8 && (
