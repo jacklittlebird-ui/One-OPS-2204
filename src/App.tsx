@@ -325,6 +325,7 @@ function AppRoutes() {
       <Route path="/accounting/interim-reporting" element={<ProtectedRoute><AppLayout><InterimReportingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/operating-segments" element={<ProtectedRoute><AppLayout><OperatingSegmentsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/hub" element={<ProtectedRoute><AppLayout><AccountingHubPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/financial-dashboard" element={<ProtectedRoute><AppLayout><FinancialDashboardPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/business-combinations" element={<ProtectedRoute><AppLayout><BusinessCombinationsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/hedge-accounting" element={<ProtectedRoute><AppLayout><HedgeAccountingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/investment-property" element={<ProtectedRoute><AppLayout><InvestmentPropertyPage /></AppLayout></ProtectedRoute>} />
