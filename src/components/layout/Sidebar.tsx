@@ -77,7 +77,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                         <span className="font-semibold text-xs mb-1">{tSection(section.label)}</span>
                         {section.children?.map((child) => (
                           <Link
-                            key={tItem(child.label)}
+                            key={child.label}
                             to={child.path}
                             onClick={onNavigate}
                             className={`text-xs px-2 py-1 rounded transition-colors ${
@@ -107,7 +107,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                         <div className="ml-4 space-y-0.5">
                           {section.children.map((child) => (
                             <Link
-                              key={tItem(child.label)}
+                              key={child.label}
                               to={child.path}
                               onClick={onNavigate}
                               className={`block px-3 py-1.5 rounded text-base transition-colors ${
