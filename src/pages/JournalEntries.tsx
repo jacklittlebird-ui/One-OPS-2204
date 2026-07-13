@@ -112,6 +112,11 @@ export default function JournalEntriesPage() {
   const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
   const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+  const missingFlightLink = lines.some(l => {
+    if (!l.account_id) return false;
+    const acc = accountMap[l.account_id];
+    return acc && String(acc.code || "").startsWith("8") && !l.flight_schedule_id;
+  });
 
   const addLine = () => setLines([...lines, { account_id: "", debit: 0, credit: 0, description: "" }]);
   const removeLine = (i: number) => setLines(lines.filter((_, idx) => idx !== i));
@@ -161,12 +166,12 @@ export default function JournalEntriesPage() {
       const validLines = lines.filter(l => l.account_id && ((Number(l.debit) || 0) + (Number(l.credit) || 0) > 0));
       if (validLines.length < 2) throw new Error("At least 2 lines required");
 
-      // Account-8 rule: any account whose code starts with 8 must have flight + service_type + airline
+      // Account-8 rule: any account whose code starts with 8 must be linked to a flight
       for (const l of validLines) {
         const acc = accountMap[l.account_id!];
         if (acc && String(acc.code || "").startsWith("8")) {
-          if (!l.flight_schedule_id || !l.service_type || !l.airline_id) {
-            throw new Error(`Account ${acc.code} (${acc.name}) requires Flight, Service Type & Airline (account-8 rule).`);
+          if (!l.flight_schedule_id) {
+            throw new Error(`Account ${acc.code} (${acc.name}) requires a Flight Link (account-8 rule).`);
           }
         }
       }
@@ -319,9 +324,9 @@ export default function JournalEntriesPage() {
                               {/* Account-8 rule (spec §3 rule): reveal flight linking */}
                               {isAccount8 && (
                                 <>
-                                  <div className="col-span-12 mt-1 rounded-md bg-amber-50 border border-amber-200 p-2">
-                                    <div className="text-[11px] font-medium text-amber-700 mb-1">
-                                      Account starts with "8" — flight link required (auto-generates flight cost report).
+                                  <div className={`col-span-12 mt-1 rounded-md p-2 border ${!line.flight_schedule_id ? "bg-red-50 border-red-300" : "bg-amber-50 border-amber-200"}`}>
+                                    <div className={`text-[11px] font-medium mb-1 ${!line.flight_schedule_id ? "text-red-700" : "text-amber-700"}`}>
+                                      Account starts with "8" — Flight Link is required <span className="text-red-600">*</span>
                                     </div>
                                     <SmartDropdown
                                       options={flightOptions}
@@ -355,7 +360,10 @@ export default function JournalEntriesPage() {
                 </table>
               </div>
 
-              <Button className="w-full" onClick={() => saveMutation.mutate()} disabled={!isBalanced || saveMutation.isPending}>
+              {missingFlightLink && (
+                <div className="text-xs text-red-600 text-center">One or more Account-8 lines are missing a Flight Link.</div>
+              )}
+              <Button className="w-full" onClick={() => saveMutation.mutate()} disabled={!isBalanced || missingFlightLink || saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving…" : editEntry ? "Update Entry" : "Save Entry"}
               </Button>
             </div>
