@@ -8,6 +8,7 @@ import {
   Receipt, PiggyBank, ShieldCheck, LineChart, Coins, Scale, Layers, Globe, CalendarClock,
   CalendarRange, Boxes, HandCoins, ClipboardList, Briefcase, Banknote, RefreshCw, Search,
   ArrowLeftRight, GitBranch, FileBarChart, HeartHandshake, PackageX, Puzzle, Waypoints,
+  Shield, Building,
 } from "lucide-react";
 
 type Module = {
@@ -44,11 +45,15 @@ const MODULES: Module[] = [
   { title: "Leases", path: "/accounting/leases", standard: "IFRS 16", description: "ROU asset and lease liability schedules", icon: Landmark, group: "Assets" },
   { title: "Held-for-Sale", path: "/accounting/held-for-sale", standard: "IFRS 5", description: "Discontinued operations disclosure", icon: PackageX, group: "Assets" },
   { title: "Government Grants", path: "/accounting/government-grants", standard: "IAS 20", description: "Asset/income-related grant recognition", icon: HeartHandshake, group: "Assets" },
+  { title: "Investment Property", path: "/accounting/investment-property", standard: "IAS 40", description: "Cost or fair-value model with net rental", icon: Building, group: "Assets" },
+  { title: "Borrowing Costs", path: "/accounting/borrowing-costs", standard: "IAS 23", description: "Capitalisation on qualifying assets", icon: Percent, group: "Assets" },
+  { title: "Business Combinations", path: "/accounting/business-combinations", standard: "IFRS 3", description: "Acquisition method with goodwill/NCI", icon: Building2, group: "Group Reporting" },
 
   // Financial instruments
   { title: "Financial Instruments", path: "/accounting/financial-instruments", standard: "IFRS 9", description: "Classification & measurement (AC/FVOCI/FVTPL)", icon: Coins, group: "Financial Instruments" },
   { title: "Fair Value Hierarchy", path: "/accounting/fair-value-hierarchy", standard: "IFRS 13", description: "Level 1/2/3 with Level 3 reconciliation", icon: LineChart, group: "Financial Instruments" },
   { title: "Foreign Exchange", path: "/accounting/foreign-exchange", standard: "IAS 21", description: "Functional/presentation currency translation", icon: Globe, group: "Financial Instruments" },
+  { title: "Hedge Accounting", path: "/accounting/hedge-accounting", standard: "IFRS 9", description: "Cash-flow/fair-value/net-investment hedges", icon: Shield, group: "Financial Instruments" },
 
   // Provisions & tax
   { title: "Provisions & Contingencies", path: "/accounting/provisions", standard: "IAS 37", description: "Present obligation with probability weighting", icon: Briefcase, group: "Provisions & Tax" },
