@@ -126,6 +126,7 @@ import EndOfServiceBenefitsPage from "./pages/accounting/EndOfServiceBenefits";
 import FairValueHierarchyPage from "./pages/accounting/FairValueHierarchy";
 import ShareBasedPaymentsPage from "./pages/accounting/ShareBasedPayments";
 import GovernmentGrantsPage from "./pages/accounting/GovernmentGrants";
+import HeldForSalePage from "./pages/accounting/HeldForSale";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -306,6 +307,7 @@ function AppRoutes() {
       <Route path="/accounting/fair-value-hierarchy" element={<ProtectedRoute><AppLayout><FairValueHierarchyPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/share-based-payments" element={<ProtectedRoute><AppLayout><ShareBasedPaymentsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/government-grants" element={<ProtectedRoute><AppLayout><GovernmentGrantsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/held-for-sale" element={<ProtectedRoute><AppLayout><HeldForSalePage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
