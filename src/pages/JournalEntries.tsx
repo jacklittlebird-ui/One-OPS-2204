@@ -15,10 +15,21 @@ import { logAudit } from "@/lib/auditLogger";
 import { exportToExcel } from "@/lib/exportExcel";
 import { exportToPdf } from "@/lib/exportPdf";
 import { usePagination, TablePagination } from "@/components/ui/table-pagination";
+import { SmartDropdown, type SmartOption } from "@/components/ui/smart-dropdown";
 
 type JournalEntry = { id: string; entry_no: string; entry_date: string; description: string; reference: string; reference_type: string; status: string; total_debit: number; total_credit: number; created_by: string; };
-type JournalLine = { id: string; entry_id: string; account_id: string; debit: number; credit: number; description: string; sort_order: number; };
+type JournalLine = {
+  id?: string; entry_id?: string; account_id: string;
+  debit: number; credit: number; description: string; sort_order?: number;
+  company_id?: string | null; station_id?: string | null; service_type?: string | null;
+  airline_id?: string | null; supplier_id?: string | null; flight_schedule_id?: string | null;
+  transaction_currency?: string | null; transaction_amount?: number | null;
+  exchange_rate?: number | null; base_amount?: number | null;
+};
 type AccountRow = { id: string; code: string; name: string; account_type: string; is_group: boolean; };
+
+const SERVICE_TYPES = ["Ground Handling", "Catering", "Hotels", "Fuel", "Transportation", "Hospitality", "Documentation"];
+const EGYPT_COMPANY_NAMES = ["Link Egypt", "لينك مصر"];
 
 const STATUS_COLORS: Record<string, string> = { Draft: "bg-yellow-100 text-yellow-800", Posted: "bg-green-100 text-green-800", Void: "bg-red-100 text-red-800" };
 
