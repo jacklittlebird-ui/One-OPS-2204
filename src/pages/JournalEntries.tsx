@@ -45,7 +45,7 @@ export default function JournalEntriesPage() {
   });
   const { data: companies = [] } = useQuery({
     queryKey: ["companies-mini"],
-    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,name,currency").order("name"); return (data || []) as any[]; },
+    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,code,name,name_ar,base_currency,status").eq("status", "Active").order("code"); return (data || []) as any[]; },
   });
   const { data: stations = [] } = useQuery({
     queryKey: ["finance-stations-mini"],
@@ -67,7 +67,7 @@ export default function JournalEntriesPage() {
   const leafAccounts = accounts.filter(a => !a.is_group);
   const accountMap = Object.fromEntries(accounts.map(a => [a.id, a]));
 
-  const companyOptions: SmartOption[] = companies.map((c: any) => ({ value: c.id, label: c.name, sub: c.currency }));
+  const companyOptions: SmartOption[] = companies.map((c: any) => ({ value: c.id, label: c.name_ar ? `${c.code} — ${c.name} / ${c.name_ar}` : `${c.code} — ${c.name}`, sub: c.base_currency }));
   const stationOptions: SmartOption[] = stations.map((s: any) => ({ value: s.id, label: `${s.code || ""} — ${s.name}`.replace(/^ — /, ""), sub: s.code }));
   const airlineOptions: SmartOption[] = airlinesRef.map((a: any) => ({ value: a.id, label: a.name, sub: a.iata_code }));
   const supplierOptions: SmartOption[] = suppliers.map((s: any) => ({ value: s.id, label: s.name }));
@@ -244,14 +244,9 @@ export default function JournalEntriesPage() {
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 bg-slate-50">
             <DialogHeader className="sr-only"><DialogTitle>{editEntry ? "Edit Journal Entry" : "New Journal Entry"}</DialogTitle></DialogHeader>
 
-            {/* Screen title */}
-            <div className="px-6 pt-5 pb-2 flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">Accounting · Journal Entries</div>
-              <div className="text-lg font-bold text-slate-800">شاشة إدخال القيد المحاسبي</div>
-            </div>
-
             {/* Window card */}
-            <div className="mx-6 mb-6 rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm">
+            <div className="mx-6 my-6 rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm">
+
               {/* Title bar */}
               <div className="flex items-center justify-between bg-[#1e3a5f] text-white px-4 py-2">
                 <div className="flex gap-1.5">
@@ -343,8 +338,7 @@ export default function JournalEntriesPage() {
                           </div>
                         </div>
 
-                        {/* Optional note */}
-                        <Input placeholder="ملاحظة على السطر (اختياري)" value={line.description || ""} onChange={e => updateLine(i, "description", e.target.value)} className="text-xs" />
+
 
                         {/* Account-8 rule: auto-open flight-data panel binding flight + airline + 4 cost centres */}
                         {isAccount8 && (
