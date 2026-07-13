@@ -180,7 +180,7 @@ export default function JournalEntriesPage() {
         const { data: entry, error } = await supabase.from("journal_entries" as any).insert({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).select().single();
         if (error) throw error;
         const entryId = (entry as any).id;
-        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => ({ entry_id: entryId, account_id: l.account_id, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description || "", sort_order: i })) as any);
+        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => buildLinePayload(l, i, entryId)) as any);
         logAudit({ action: "create", entity_type: "journal_entry", entity_id: entryId, details: { entry_no: form.entry_no, total_debit: totalDebit, total_credit: totalCredit, status: form.status } });
       }
     },
