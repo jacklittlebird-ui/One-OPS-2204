@@ -137,6 +137,7 @@ import BusinessCombinationsPage from "./pages/accounting/BusinessCombinations";
 import HedgeAccountingPage from "./pages/accounting/HedgeAccounting";
 import InvestmentPropertyPage from "./pages/accounting/InvestmentProperty";
 import BorrowingCostsPage from "./pages/accounting/BorrowingCosts";
+import FinancialDashboardPage from "./pages/accounting/FinancialDashboard";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
