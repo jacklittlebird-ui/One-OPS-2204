@@ -120,6 +120,7 @@ import CountryByCountryPage from "./pages/accounting/CountryByCountry";
 import GlobeMinimumTaxPage from "./pages/accounting/GlobeMinimumTax";
 import StatementOfEquityPage from "./pages/accounting/StatementOfEquity";
 import EarningsPerSharePage from "./pages/accounting/EarningsPerShare";
+import RevenueRecognitionPage from "./pages/accounting/RevenueRecognition";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
