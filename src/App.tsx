@@ -301,6 +301,7 @@ function AppRoutes() {
       <Route path="/accounting/revenue-recognition" element={<ProtectedRoute><AppLayout><RevenueRecognitionPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/ecl" element={<ProtectedRoute><AppLayout><ExpectedCreditLossPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/eosb" element={<ProtectedRoute><AppLayout><EndOfServiceBenefitsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/fair-value-hierarchy" element={<ProtectedRoute><AppLayout><FairValueHierarchyPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
