@@ -40,8 +40,27 @@ export default function JournalEntriesPage() {
     queryFn: async () => { const { data, error } = await supabase.from("journal_entries" as any).select("*").order("entry_date", { ascending: false }); if (error) throw error; return (data || []) as unknown as JournalEntry[]; },
   });
   const { data: accounts = [] } = useQuery({
-    queryKey: ["chart_of_accounts"],
-    queryFn: async () => { const { data } = await supabase.from("chart_of_accounts" as any).select("id,code,name,account_type,is_group").order("code"); return (data || []) as unknown as AccountRow[]; },
+    queryKey: ["chart_of_accounts", "all"],
+    queryFn: async () => {
+      // Paginate: PostgREST caps rows at 1000 per request; COA has >1000 leaves.
+      const PAGE = 1000;
+      let from = 0;
+      let all: any[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("chart_of_accounts" as any)
+          .select("id,code,name,account_type,is_group")
+          .order("code")
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = (data || []) as any[];
+        all = all.concat(rows);
+        if (rows.length < PAGE) break;
+        from += PAGE;
+      }
+      return all as unknown as AccountRow[];
+    },
   });
   const { data: companies = [] } = useQuery({
     queryKey: ["companies-mini"],
@@ -130,7 +149,7 @@ export default function JournalEntriesPage() {
     setEditEntry(null);
     const nextNo = `JE-${String(entries.length + 1).padStart(4, "0")}`;
     setForm({ entry_no: nextNo, entry_date: new Date().toISOString().slice(0, 10), description: "", reference: "", reference_type: "", status: "Draft", created_by: "" });
-    setLines([{ account_id: "", debit: 0, credit: 0, description: "" }, { account_id: "", debit: 0, credit: 0, description: "" }]);
+    setLines([{ account_id: "", debit: 0, credit: 0, description: "" }]);
     setDialogOpen(true);
   };
 
