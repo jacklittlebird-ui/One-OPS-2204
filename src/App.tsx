@@ -309,6 +309,7 @@ function AppRoutes() {
       <Route path="/accounting/share-based-payments" element={<ProtectedRoute><AppLayout><ShareBasedPaymentsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/government-grants" element={<ProtectedRoute><AppLayout><GovernmentGrantsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/held-for-sale" element={<ProtectedRoute><AppLayout><HeldForSalePage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/policies-changes" element={<ProtectedRoute><AppLayout><AccountingPoliciesChangesPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
