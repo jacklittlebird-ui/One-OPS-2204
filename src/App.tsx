@@ -295,6 +295,7 @@ function AppRoutes() {
       <Route path="/accounting/globe" element={<ProtectedRoute><AppLayout><GlobeMinimumTaxPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/statement-of-equity" element={<ProtectedRoute><AppLayout><StatementOfEquityPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/eps" element={<ProtectedRoute><AppLayout><EarningsPerSharePage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/revenue-recognition" element={<ProtectedRoute><AppLayout><RevenueRecognitionPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
