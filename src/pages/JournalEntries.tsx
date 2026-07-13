@@ -112,6 +112,11 @@ export default function JournalEntriesPage() {
   const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
   const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+  const missingFlightLink = lines.some(l => {
+    if (!l.account_id) return false;
+    const acc = accountMap[l.account_id];
+    return acc && String(acc.code || "").startsWith("8") && !l.flight_schedule_id;
+  });
 
   const addLine = () => setLines([...lines, { account_id: "", debit: 0, credit: 0, description: "" }]);
   const removeLine = (i: number) => setLines(lines.filter((_, idx) => idx !== i));
