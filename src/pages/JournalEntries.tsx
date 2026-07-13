@@ -97,7 +97,19 @@ export default function JournalEntriesPage() {
   const stationOptions: SmartOption[] = stations.map((s: any) => ({ value: s.id, label: `${s.code || ""} — ${s.name}`.replace(/^ — /, ""), sub: s.code }));
   const airlineOptions: SmartOption[] = airlinesRef.map((a: any) => ({ value: a.id, label: a.name, sub: a.iata_code }));
   const supplierOptions: SmartOption[] = suppliers.map((s: any) => ({ value: s.id, label: s.name }));
-  const flightOptions: SmartOption[] = flightsRef.map((f: any) => ({ value: f.id, label: `${f.flight_no} — ${f.std_date || ""}`, sub: f.airline }));
+  const airlineNameById: Record<string, string> = Object.fromEntries(airlinesRef.map((a: any) => [a.id, a.name]));
+  const stationCodeById: Record<string, string> = Object.fromEntries(stations.map((s: any) => [s.id, (s.code || "").toUpperCase()]));
+  const buildFlightOptions = (stationId?: string | null): SmartOption[] => {
+    const code = stationId ? stationCodeById[stationId] : "";
+    const list = code
+      ? flightsRef.filter((f: any) => String(f.authority || "").toUpperCase() === code)
+      : flightsRef;
+    return list.map((f: any) => ({
+      value: f.id,
+      label: `${f.flight_no || "—"} · ${f.departure_date || f.arrival_date || ""}${f.route ? " · " + f.route : ""}`,
+      sub: airlineNameById[f.airline_id] || "",
+    }));
+  };
   const serviceTypeOptions: SmartOption[] = SERVICE_TYPES.map(s => ({ value: s, label: s }));
   const CURRENCIES = ["EGP", "USD", "EUR", "AED", "MAD", "JOD", "SAR", "GBP"];
 
