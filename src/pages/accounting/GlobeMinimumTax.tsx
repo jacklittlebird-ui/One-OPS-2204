@@ -117,7 +117,7 @@ export default function GlobeMinimumTaxPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>New GloBE Report</DialogTitle></DialogHeader>
-            <form action={createReport} className="space-y-3">
+            <form onSubmit={createReport} className="space-y-3">
               <div><Label>Report Name</Label><Input name="report_name" required /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Fiscal Year</Label><Input name="fiscal_year" type="number" defaultValue={new Date().getFullYear()} required /></div>
@@ -176,7 +176,7 @@ export default function GlobeMinimumTaxPage() {
               <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-2" />Add Jurisdiction</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Add Jurisdiction</DialogTitle></DialogHeader>
-                <form action={createLine} className="space-y-3">
+                <form onSubmit={createLine} className="space-y-3">
                   <div><Label>Jurisdiction</Label><Input name="jurisdiction" required /></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>GloBE Income</Label><Input name="globe_income" type="number" step="0.01" defaultValue={0} /></div>
