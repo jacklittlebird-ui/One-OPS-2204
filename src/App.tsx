@@ -135,6 +135,8 @@ import OperatingSegmentsPage from "./pages/accounting/OperatingSegments";
 import AccountingHubPage from "./pages/accounting/AccountingHub";
 import BusinessCombinationsPage from "./pages/accounting/BusinessCombinations";
 import HedgeAccountingPage from "./pages/accounting/HedgeAccounting";
+import InvestmentPropertyPage from "./pages/accounting/InvestmentProperty";
+import BorrowingCostsPage from "./pages/accounting/BorrowingCosts";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
