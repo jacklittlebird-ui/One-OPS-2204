@@ -45,7 +45,7 @@ export default function JournalEntriesPage() {
   });
   const { data: companies = [] } = useQuery({
     queryKey: ["companies-mini"],
-    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,name,currency").order("name"); return (data || []) as any[]; },
+    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,code,name,name_ar,base_currency,status").eq("status", "Active").order("code"); return (data || []) as any[]; },
   });
   const { data: stations = [] } = useQuery({
     queryKey: ["finance-stations-mini"],
