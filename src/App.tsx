@@ -137,6 +137,7 @@ import BusinessCombinationsPage from "./pages/accounting/BusinessCombinations";
 import HedgeAccountingPage from "./pages/accounting/HedgeAccounting";
 import InvestmentPropertyPage from "./pages/accounting/InvestmentProperty";
 import BorrowingCostsPage from "./pages/accounting/BorrowingCosts";
+import FinancialDashboardPage from "./pages/accounting/FinancialDashboard";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -324,6 +325,7 @@ function AppRoutes() {
       <Route path="/accounting/interim-reporting" element={<ProtectedRoute><AppLayout><InterimReportingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/operating-segments" element={<ProtectedRoute><AppLayout><OperatingSegmentsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/hub" element={<ProtectedRoute><AppLayout><AccountingHubPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/financial-dashboard" element={<ProtectedRoute><AppLayout><FinancialDashboardPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/business-combinations" element={<ProtectedRoute><AppLayout><BusinessCombinationsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/hedge-accounting" element={<ProtectedRoute><AppLayout><HedgeAccountingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/investment-property" element={<ProtectedRoute><AppLayout><InvestmentPropertyPage /></AppLayout></ProtectedRoute>} />

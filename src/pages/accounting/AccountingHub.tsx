@@ -21,6 +21,8 @@ type Module = {
 };
 
 const MODULES: Module[] = [
+  // Overview
+  { title: "Financial Dashboard", path: "/accounting/financial-dashboard", standard: "Overview", description: "KPIs, banks, treasury, petty cash, FX — consolidated view", icon: LineChart, group: "Core Ledger" },
   // Core ledger
   { title: "Chart of Accounts", path: "/accounting/chart-of-accounts", standard: "Core", description: "5-company chart with account classifications", icon: BookOpen, group: "Core Ledger" },
   { title: "Journal Entries", path: "/accounting/journal-entries", standard: "Core", description: "Double-entry manual and automated postings", icon: FileText, group: "Core Ledger" },
