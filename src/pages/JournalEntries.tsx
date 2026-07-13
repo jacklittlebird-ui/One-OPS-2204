@@ -161,12 +161,12 @@ export default function JournalEntriesPage() {
       const validLines = lines.filter(l => l.account_id && ((Number(l.debit) || 0) + (Number(l.credit) || 0) > 0));
       if (validLines.length < 2) throw new Error("At least 2 lines required");
 
-      // Account-8 rule: any account whose code starts with 8 must have flight + service_type + airline
+      // Account-8 rule: any account whose code starts with 8 must be linked to a flight
       for (const l of validLines) {
         const acc = accountMap[l.account_id!];
         if (acc && String(acc.code || "").startsWith("8")) {
-          if (!l.flight_schedule_id || !l.service_type || !l.airline_id) {
-            throw new Error(`Account ${acc.code} (${acc.name}) requires Flight, Service Type & Airline (account-8 rule).`);
+          if (!l.flight_schedule_id) {
+            throw new Error(`Account ${acc.code} (${acc.name}) requires a Flight Link (account-8 rule).`);
           }
         }
       }
