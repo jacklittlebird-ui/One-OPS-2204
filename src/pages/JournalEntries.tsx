@@ -79,8 +79,15 @@ export default function JournalEntriesPage() {
     queryFn: async () => { const { data } = await supabase.from("service_providers" as any).select("id,name").order("name"); return (data || []) as any[]; },
   });
   const { data: flightsRef = [] } = useQuery({
-    queryKey: ["flights-mini"],
-    queryFn: async () => { const { data } = await supabase.from("flight_schedules" as any).select("id,flight_no,std_date,airline").order("std_date", { ascending: false }).limit(500); return (data || []) as any[]; },
+    queryKey: ["flights-mini-je"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("flight_schedules" as any)
+        .select("id,flight_no,departure_date,arrival_date,authority,airline_id,route")
+        .order("departure_date", { ascending: false })
+        .limit(2000);
+      return (data || []) as any[];
+    },
   });
 
   const leafAccounts = accounts.filter(a => !a.is_group);
