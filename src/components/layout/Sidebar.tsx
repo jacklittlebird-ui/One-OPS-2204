@@ -19,6 +19,9 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
   const location = useLocation();
   const currentPath = location.pathname;
   const { activeChannel } = useChannel();
+  const { t } = useTranslation();
+  const tSection = (label: string) => t(`nav.sections.${label}`, label);
+  const tItem = (label: string) => t(`nav.items.${label}`, label);
 
   const navSections = getNavForChannel(activeChannel);
 
