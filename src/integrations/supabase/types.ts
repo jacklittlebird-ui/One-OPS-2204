@@ -8355,6 +8355,119 @@ export type Database = {
         }
         Relationships: []
       }
+      provision_movements: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          memo: string | null
+          movement_date: string
+          movement_type: string
+          provision_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          memo?: string | null
+          movement_date?: string
+          movement_type: string
+          provision_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          memo?: string | null
+          movement_date?: string
+          movement_type?: string
+          provision_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provision_movements_provision_id_fkey"
+            columns: ["provision_id"]
+            isOneToOne: false
+            referencedRelation: "provisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provisions: {
+        Row: {
+          additions: number
+          classification: string
+          closing_balance: number
+          company_code: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          discount_rate: number | null
+          expected_settlement_date: string | null
+          id: string
+          notes: string | null
+          opening_balance: number
+          probability: string
+          provision_ref: string
+          provision_type: string
+          recognition_date: string
+          reversals: number
+          status: string
+          unwinding_of_discount: number
+          updated_at: string
+          utilizations: number
+        }
+        Insert: {
+          additions?: number
+          classification?: string
+          closing_balance?: number
+          company_code: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          discount_rate?: number | null
+          expected_settlement_date?: string | null
+          id?: string
+          notes?: string | null
+          opening_balance?: number
+          probability?: string
+          provision_ref: string
+          provision_type: string
+          recognition_date: string
+          reversals?: number
+          status?: string
+          unwinding_of_discount?: number
+          updated_at?: string
+          utilizations?: number
+        }
+        Update: {
+          additions?: number
+          classification?: string
+          closing_balance?: number
+          company_code?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          discount_rate?: number | null
+          expected_settlement_date?: string | null
+          id?: string
+          notes?: string | null
+          opening_balance?: number
+          probability?: string
+          provision_ref?: string
+          provision_type?: string
+          recognition_date?: string
+          reversals?: number
+          status?: string
+          unwinding_of_discount?: number
+          updated_at?: string
+          utilizations?: number
+        }
+        Relationships: []
+      }
       purchase_approval_matrix: {
         Row: {
           active: boolean
@@ -13185,6 +13298,10 @@ export type Database = {
       }
       recompute_dividend_totals: {
         Args: { p_declaration_id: string }
+        Returns: undefined
+      }
+      recompute_provision: {
+        Args: { _provision_id: string }
         Returns: undefined
       }
       record_bg_event: {
