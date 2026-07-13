@@ -54,7 +54,7 @@ export default function FinancialStatementsPage() {
         .select("id")
         .gte("entry_date", from)
         .lte("entry_date", to)
-        .eq("status", "posted");
+        .eq("status", "Posted");
       if (e1) throw e1;
       const ids = (entries || []).map((e: any) => e.id);
       if (ids.length === 0) return [] as Line[];
