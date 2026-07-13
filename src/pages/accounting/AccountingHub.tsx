@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import "@/i18n";
 import {
   BookOpen, Calculator, FileText, TrendingUp, Wallet, Landmark, Building2, Users, Percent,
   Receipt, PiggyBank, ShieldCheck, LineChart, Coins, Scale, Layers, Globe, CalendarClock,
@@ -86,6 +88,7 @@ const GROUPS = [
 ];
 
 export default function AccountingHubPage() {
+  const { t } = useTranslation();
   const [q, setQ] = useState("");
 
   const filtered = useMemo(() => {
@@ -95,9 +98,11 @@ export default function AccountingHubPage() {
       m.title.toLowerCase().includes(needle) ||
       m.standard.toLowerCase().includes(needle) ||
       m.description.toLowerCase().includes(needle) ||
-      m.group.toLowerCase().includes(needle),
+      m.group.toLowerCase().includes(needle) ||
+      t(`accounting.titles.${m.title}`, m.title).toLowerCase().includes(needle) ||
+      t(`accounting.groups.${m.group}`, m.group).toLowerCase().includes(needle),
     );
-  }, [q]);
+  }, [q, t]);
 
   return (
     <div className="p-6 space-y-6">
@@ -105,19 +110,19 @@ export default function AccountingHubPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Calculator className="w-7 h-7 text-primary" />
-            Accounting Hub
+            {t("accounting.hubTitle", "Accounting Hub")}
           </h1>
-          <p className="text-muted-foreground">IFRS-aligned accounting suite across Link Aero group entities</p>
+          <p className="text-muted-foreground">{t("accounting.hubSubtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">{MODULES.length} modules</Badge>
+          <Badge variant="secondary">{MODULES.length} {t("accounting.modules", "modules")}</Badge>
           <Badge className="bg-primary">IFRS · IAS</Badge>
         </div>
       </div>
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search modules, standards, keywords..." className="pl-9" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("accounting.searchPlaceholder")} className="pl-9" />
       </div>
 
       {GROUPS.map((group) => {
@@ -125,7 +130,7 @@ export default function AccountingHubPage() {
         if (groupModules.length === 0) return null;
         return (
           <div key={group} className="space-y-3">
-            <h2 className="text-lg font-semibold text-muted-foreground uppercase tracking-wide">{group}</h2>
+            <h2 className="text-lg font-semibold text-muted-foreground uppercase tracking-wide">{t(`accounting.groups.${group}`, group)}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {groupModules.map((m) => {
                 const Icon = m.icon;
@@ -139,7 +144,7 @@ export default function AccountingHubPage() {
                           </div>
                           <Badge variant="outline" className="text-xs">{m.standard}</Badge>
                         </div>
-                        <CardTitle className="text-base pt-2">{m.title}</CardTitle>
+                        <CardTitle className="text-base pt-2">{t(`accounting.titles.${m.title}`, m.title)}</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <p className="text-xs text-muted-foreground">{m.description}</p>
@@ -154,7 +159,7 @@ export default function AccountingHubPage() {
       })}
 
       {filtered.length === 0 && (
-        <div className="text-center text-muted-foreground py-10">No modules match "{q}"</div>
+        <div className="text-center text-muted-foreground py-10">{t("accounting.noResults")} "{q}"</div>
       )}
     </div>
   );
