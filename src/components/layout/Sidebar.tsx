@@ -1,6 +1,8 @@
 import { useLocation, Link } from "react-router-dom";
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import "@/i18n";
 import { useChannel } from "@/contexts/ChannelContext";
 import { getNavForChannel, type NavChild } from "@/config/channelNavConfig";
 import { ChannelSwitcher } from "./ChannelSwitcher";
@@ -17,6 +19,9 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
   const location = useLocation();
   const currentPath = location.pathname;
   const { activeChannel } = useChannel();
+  const { t } = useTranslation();
+  const tSection = (label: string) => t(`nav.sections.${label}`, label);
+  const tItem = (label: string) => t(`nav.items.${label}`, label);
 
   const navSections = getNavForChannel(activeChannel);
 
@@ -69,7 +74,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="flex flex-col gap-1 p-2">
-                        <span className="font-semibold text-xs mb-1">{section.label}</span>
+                        <span className="font-semibold text-xs mb-1">{tSection(section.label)}</span>
                         {section.children?.map((child) => (
                           <Link
                             key={child.label}
@@ -79,7 +84,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                               isActive(child.path) ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted"
                             }`}
                           >
-                            {child.label}
+                            {tItem(child.label)}
                           </Link>
                         ))}
                       </TooltipContent>
@@ -94,7 +99,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                       >
                         {section.icon}
                         <span className="flex-1 text-left font-medium text-sm uppercase tracking-wider">
-                          {section.label}
+                          {tSection(section.label)}
                         </span>
                         {expanded[section.label] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </button>
@@ -111,7 +116,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                                   : "text-sidebar-foreground hover:bg-sidebar-accent"
                               }`}
                             >
-                              {child.label}
+                              {tItem(child.label)}
                             </Link>
                           ))}
                         </div>
@@ -134,7 +139,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                       {section.icon}
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent side="right">{section.label}</TooltipContent>
+                  <TooltipContent side="right">{tSection(section.label)}</TooltipContent>
                 </Tooltip>
               ) : (
                 <Link
@@ -147,7 +152,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                   }`}
                 >
                   {section.icon}
-                  <span className="text-sm uppercase tracking-wider font-medium">{section.label}</span>
+                  <span className="text-sm uppercase tracking-wider font-medium">{tSection(section.label)}</span>
                 </Link>
               )}
             </div>
