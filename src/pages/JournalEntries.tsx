@@ -15,10 +15,21 @@ import { logAudit } from "@/lib/auditLogger";
 import { exportToExcel } from "@/lib/exportExcel";
 import { exportToPdf } from "@/lib/exportPdf";
 import { usePagination, TablePagination } from "@/components/ui/table-pagination";
+import { SmartDropdown, type SmartOption } from "@/components/ui/smart-dropdown";
 
 type JournalEntry = { id: string; entry_no: string; entry_date: string; description: string; reference: string; reference_type: string; status: string; total_debit: number; total_credit: number; created_by: string; };
-type JournalLine = { id: string; entry_id: string; account_id: string; debit: number; credit: number; description: string; sort_order: number; };
+type JournalLine = {
+  id?: string; entry_id?: string; account_id: string;
+  debit: number; credit: number; description: string; sort_order?: number;
+  company_id?: string | null; station_id?: string | null; service_type?: string | null;
+  airline_id?: string | null; supplier_id?: string | null; flight_schedule_id?: string | null;
+  transaction_currency?: string | null; transaction_amount?: number | null;
+  exchange_rate?: number | null; base_amount?: number | null;
+};
 type AccountRow = { id: string; code: string; name: string; account_type: string; is_group: boolean; };
+
+const SERVICE_TYPES = ["Ground Handling", "Catering", "Hotels", "Fuel", "Transportation", "Hospitality", "Documentation"];
+const EGYPT_COMPANY_NAMES = ["Link Egypt", "لينك مصر"];
 
 const STATUS_COLORS: Record<string, string> = { Draft: "bg-yellow-100 text-yellow-800", Posted: "bg-green-100 text-green-800", Void: "bg-red-100 text-red-800" };
 
@@ -32,9 +43,37 @@ export default function JournalEntriesPage() {
     queryKey: ["chart_of_accounts"],
     queryFn: async () => { const { data } = await supabase.from("chart_of_accounts" as any).select("id,code,name,account_type,is_group").order("code"); return (data || []) as unknown as AccountRow[]; },
   });
+  const { data: companies = [] } = useQuery({
+    queryKey: ["companies-mini"],
+    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,name,currency").order("name"); return (data || []) as any[]; },
+  });
+  const { data: stations = [] } = useQuery({
+    queryKey: ["finance-stations-mini"],
+    queryFn: async () => { const { data } = await supabase.from("finance_stations" as any).select("id,name,code").order("code"); return (data || []) as any[]; },
+  });
+  const { data: airlinesRef = [] } = useQuery({
+    queryKey: ["airlines-mini"],
+    queryFn: async () => { const { data } = await supabase.from("airlines" as any).select("id,name,iata_code").order("name"); return (data || []) as any[]; },
+  });
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["service-providers-mini"],
+    queryFn: async () => { const { data } = await supabase.from("service_providers" as any).select("id,name").order("name"); return (data || []) as any[]; },
+  });
+  const { data: flightsRef = [] } = useQuery({
+    queryKey: ["flights-mini"],
+    queryFn: async () => { const { data } = await supabase.from("flight_schedules" as any).select("id,flight_no,std_date,airline").order("std_date", { ascending: false }).limit(500); return (data || []) as any[]; },
+  });
 
   const leafAccounts = accounts.filter(a => !a.is_group);
   const accountMap = Object.fromEntries(accounts.map(a => [a.id, a]));
+
+  const companyOptions: SmartOption[] = companies.map((c: any) => ({ value: c.id, label: c.name, sub: c.currency }));
+  const stationOptions: SmartOption[] = stations.map((s: any) => ({ value: s.id, label: `${s.code || ""} — ${s.name}`.replace(/^ — /, ""), sub: s.code }));
+  const airlineOptions: SmartOption[] = airlinesRef.map((a: any) => ({ value: a.id, label: a.name, sub: a.iata_code }));
+  const supplierOptions: SmartOption[] = suppliers.map((s: any) => ({ value: s.id, label: s.name }));
+  const flightOptions: SmartOption[] = flightsRef.map((f: any) => ({ value: f.id, label: `${f.flight_no} — ${f.std_date || ""}`, sub: f.airline }));
+  const serviceTypeOptions: SmartOption[] = SERVICE_TYPES.map(s => ({ value: s, label: s }));
+  const CURRENCIES = ["EGP", "USD", "EUR", "AED", "MAD", "JOD", "SAR", "GBP"];
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -97,22 +136,51 @@ export default function JournalEntriesPage() {
     setDialogOpen(true);
   };
 
+  const buildLinePayload = (l: Partial<JournalLine>, i: number, entryId: string) => ({
+    entry_id: entryId,
+    account_id: l.account_id,
+    debit: Number(l.debit) || 0,
+    credit: Number(l.credit) || 0,
+    description: l.description || "",
+    sort_order: i,
+    company_id: l.company_id || null,
+    station_id: l.station_id || null,
+    service_type: l.service_type || null,
+    airline_id: l.airline_id || null,
+    supplier_id: l.supplier_id || null,
+    flight_schedule_id: l.flight_schedule_id || null,
+    transaction_currency: l.transaction_currency || null,
+    transaction_amount: l.transaction_amount ?? null,
+    exchange_rate: l.exchange_rate ?? null,
+    base_amount: l.base_amount ?? null,
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!form.entry_no || !isBalanced) throw new Error("Entry must be balanced");
       const validLines = lines.filter(l => l.account_id && ((Number(l.debit) || 0) + (Number(l.credit) || 0) > 0));
       if (validLines.length < 2) throw new Error("At least 2 lines required");
 
+      // Account-8 rule: any account whose code starts with 8 must have flight + service_type + airline
+      for (const l of validLines) {
+        const acc = accountMap[l.account_id!];
+        if (acc && String(acc.code || "").startsWith("8")) {
+          if (!l.flight_schedule_id || !l.service_type || !l.airline_id) {
+            throw new Error(`Account ${acc.code} (${acc.name}) requires Flight, Service Type & Airline (account-8 rule).`);
+          }
+        }
+      }
+
       if (editEntry) {
         await supabase.from("journal_entries" as any).update({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).eq("id", editEntry.id);
         await supabase.from("journal_entry_lines" as any).delete().eq("entry_id", editEntry.id);
-        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => ({ entry_id: editEntry.id, account_id: l.account_id, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description || "", sort_order: i })) as any);
+        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => buildLinePayload(l, i, editEntry.id)) as any);
         logAudit({ action: "update", entity_type: "journal_entry", entity_id: editEntry.id, details: { entry_no: form.entry_no, total_debit: totalDebit, total_credit: totalCredit, status: form.status } });
       } else {
         const { data: entry, error } = await supabase.from("journal_entries" as any).insert({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).select().single();
         if (error) throw error;
         const entryId = (entry as any).id;
-        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => ({ entry_id: entryId, account_id: l.account_id, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description || "", sort_order: i })) as any);
+        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => buildLinePayload(l, i, entryId)) as any);
         logAudit({ action: "create", entity_type: "journal_entry", entity_id: entryId, details: { entry_no: form.entry_no, total_debit: totalDebit, total_credit: totalCredit, status: form.status } });
       }
     },
@@ -168,7 +236,7 @@ export default function JournalEntriesPage() {
           <Button variant="outline" size="sm" onClick={handleExportPdf}><Download size={14} className="mr-1" /> PDF</Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild><Button onClick={openAdd}><Plus size={16} className="mr-1" /> New Entry</Button></DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editEntry ? "Edit Journal Entry" : "New Journal Entry"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-4 gap-2">
@@ -194,20 +262,81 @@ export default function JournalEntriesPage() {
                 <table className="w-full text-sm">
                   <thead><tr className="text-left text-muted-foreground"><th className="pb-1">Account</th><th className="pb-1 w-28">Debit</th><th className="pb-1 w-28">Credit</th><th className="pb-1">Note</th><th className="w-8"></th></tr></thead>
                   <tbody>
-                    {lines.map((line, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="py-1 pr-1">
-                          <Select value={line.account_id || ""} onValueChange={v => updateLine(i, "account_id", v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select account" /></SelectTrigger>
-                            <SelectContent>{leafAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} - {a.name}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </td>
-                        <td className="py-1 pr-1"><Input type="number" className="h-8 text-xs" value={line.debit || ""} onChange={e => updateLine(i, "debit", e.target.value)} /></td>
-                        <td className="py-1 pr-1"><Input type="number" className="h-8 text-xs" value={line.credit || ""} onChange={e => updateLine(i, "credit", e.target.value)} /></td>
-                        <td className="py-1 pr-1"><Input className="h-8 text-xs" value={line.description || ""} onChange={e => updateLine(i, "description", e.target.value)} /></td>
-                        <td><Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeLine(i)}><X size={12} /></Button></td>
-                      </tr>
-                    ))}
+                    {lines.map((line, i) => {
+                      const acc = line.account_id ? accountMap[line.account_id] : null;
+                      const isAccount8 = !!acc && String(acc.code || "").startsWith("8");
+                      const isEgyptCompany = line.company_id
+                        ? EGYPT_COMPANY_NAMES.some(n => (companies.find((c: any) => c.id === line.company_id)?.name || "").toLowerCase().includes(n.toLowerCase()))
+                        : false;
+                      return (
+                        <tr key={i} className="border-t align-top">
+                          <td colSpan={5} className="py-2">
+                            <div className="grid grid-cols-12 gap-1 items-start">
+                              <div className="col-span-4">
+                                <Select value={line.account_id || ""} onValueChange={v => updateLine(i, "account_id", v)}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select account" /></SelectTrigger>
+                                  <SelectContent>{leafAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} - {a.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </div>
+                              <div className="col-span-2"><Input type="number" placeholder="Debit" className="h-8 text-xs" value={line.debit || ""} onChange={e => updateLine(i, "debit", e.target.value)} /></div>
+                              <div className="col-span-2"><Input type="number" placeholder="Credit" className="h-8 text-xs" value={line.credit || ""} onChange={e => updateLine(i, "credit", e.target.value)} /></div>
+                              <div className="col-span-3"><Input placeholder="Note" className="h-8 text-xs" value={line.description || ""} onChange={e => updateLine(i, "description", e.target.value)} /></div>
+                              <div className="col-span-1"><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeLine(i)}><X size={12} /></Button></div>
+
+                              {/* Cost centres (spec §3): mandatory on every line */}
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Company</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">{isEgyptCompany ? "Station" : "Service Type"}</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Service Type</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Airline / Customer</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Supplier</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Currency / FX</div>
+
+                              <div className="col-span-2">
+                                <SmartDropdown options={companyOptions} value={line.company_id || ""} onChange={v => updateLine(i, "company_id", v)} placeholder="Company" />
+                              </div>
+                              <div className="col-span-2">
+                                {isEgyptCompany
+                                  ? <SmartDropdown options={stationOptions} value={line.station_id || ""} onChange={v => updateLine(i, "station_id", v)} placeholder="Station" />
+                                  : <div className="text-[11px] text-muted-foreground italic h-8 flex items-center px-2">—</div>}
+                              </div>
+                              <div className="col-span-2">
+                                <SmartDropdown options={serviceTypeOptions} value={line.service_type || ""} onChange={v => updateLine(i, "service_type", v)} placeholder="Service type" />
+                              </div>
+                              <div className="col-span-2">
+                                <SmartDropdown options={airlineOptions} value={line.airline_id || ""} onChange={v => updateLine(i, "airline_id", v)} placeholder="Airline" />
+                              </div>
+                              <div className="col-span-2">
+                                <SmartDropdown options={supplierOptions} value={line.supplier_id || ""} onChange={v => updateLine(i, "supplier_id", v)} placeholder="Supplier" />
+                              </div>
+                              <div className="col-span-2 flex gap-1">
+                                <Select value={line.transaction_currency || ""} onValueChange={v => updateLine(i, "transaction_currency", v)}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Cur" /></SelectTrigger>
+                                  <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <Input type="number" placeholder="FX" className="h-8 text-xs" value={line.exchange_rate || ""} onChange={e => updateLine(i, "exchange_rate", e.target.value ? Number(e.target.value) : null)} />
+                              </div>
+
+                              {/* Account-8 rule (spec §3 rule): reveal flight linking */}
+                              {isAccount8 && (
+                                <>
+                                  <div className="col-span-12 mt-1 rounded-md bg-amber-50 border border-amber-200 p-2">
+                                    <div className="text-[11px] font-medium text-amber-700 mb-1">
+                                      Account starts with "8" — flight link required (auto-generates flight cost report).
+                                    </div>
+                                    <SmartDropdown
+                                      options={flightOptions}
+                                      value={line.flight_schedule_id || ""}
+                                      onChange={v => updateLine(i, "flight_schedule_id", v)}
+                                      placeholder="Select flight (search by flight no / date)"
+                                    />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t font-medium">
