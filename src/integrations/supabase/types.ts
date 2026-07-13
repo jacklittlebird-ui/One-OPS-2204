@@ -6131,6 +6131,101 @@ export type Database = {
           },
         ]
       }
+      globe_jurisdiction_lines: {
+        Row: {
+          covered_taxes: number
+          created_at: string
+          effective_tax_rate: number | null
+          globe_income: number
+          id: string
+          jurisdiction: string
+          notes: string | null
+          payroll_carveout: number
+          report_id: string
+          tangible_carveout: number
+          top_up_tax: number | null
+          updated_at: string
+        }
+        Insert: {
+          covered_taxes?: number
+          created_at?: string
+          effective_tax_rate?: number | null
+          globe_income?: number
+          id?: string
+          jurisdiction: string
+          notes?: string | null
+          payroll_carveout?: number
+          report_id: string
+          tangible_carveout?: number
+          top_up_tax?: number | null
+          updated_at?: string
+        }
+        Update: {
+          covered_taxes?: number
+          created_at?: string
+          effective_tax_rate?: number | null
+          globe_income?: number
+          id?: string
+          jurisdiction?: string
+          notes?: string | null
+          payroll_carveout?: number
+          report_id?: string
+          tangible_carveout?: number
+          top_up_tax?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "globe_jurisdiction_lines_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "globe_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      globe_reports: {
+        Row: {
+          created_at: string
+          currency: string
+          filed_at: string | null
+          fiscal_year: number
+          id: string
+          minimum_rate: number
+          notes: string | null
+          report_name: string
+          status: string
+          ultimate_parent: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          filed_at?: string | null
+          fiscal_year: number
+          id?: string
+          minimum_rate?: number
+          notes?: string | null
+          report_name: string
+          status?: string
+          ultimate_parent?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          filed_at?: string | null
+          fiscal_year?: number
+          id?: string
+          minimum_rate?: number
+          notes?: string | null
+          report_name?: string
+          status?: string
+          ultimate_parent?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hall_vvip: {
         Row: {
           created_at: string
