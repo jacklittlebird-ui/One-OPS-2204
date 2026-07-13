@@ -79,8 +79,15 @@ export default function JournalEntriesPage() {
     queryFn: async () => { const { data } = await supabase.from("service_providers" as any).select("id,name").order("name"); return (data || []) as any[]; },
   });
   const { data: flightsRef = [] } = useQuery({
-    queryKey: ["flights-mini"],
-    queryFn: async () => { const { data } = await supabase.from("flight_schedules" as any).select("id,flight_no,std_date,airline").order("std_date", { ascending: false }).limit(500); return (data || []) as any[]; },
+    queryKey: ["flights-mini-je"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("flight_schedules" as any)
+        .select("id,flight_no,departure_date,arrival_date,authority,airline_id,route")
+        .order("departure_date", { ascending: false })
+        .limit(2000);
+      return (data || []) as any[];
+    },
   });
 
   const leafAccounts = accounts.filter(a => !a.is_group);
@@ -90,7 +97,19 @@ export default function JournalEntriesPage() {
   const stationOptions: SmartOption[] = stations.map((s: any) => ({ value: s.id, label: `${s.code || ""} — ${s.name}`.replace(/^ — /, ""), sub: s.code }));
   const airlineOptions: SmartOption[] = airlinesRef.map((a: any) => ({ value: a.id, label: a.name, sub: a.iata_code }));
   const supplierOptions: SmartOption[] = suppliers.map((s: any) => ({ value: s.id, label: s.name }));
-  const flightOptions: SmartOption[] = flightsRef.map((f: any) => ({ value: f.id, label: `${f.flight_no} — ${f.std_date || ""}`, sub: f.airline }));
+  const airlineNameById: Record<string, string> = Object.fromEntries(airlinesRef.map((a: any) => [a.id, a.name]));
+  const stationCodeById: Record<string, string> = Object.fromEntries(stations.map((s: any) => [s.id, (s.code || "").toUpperCase()]));
+  const buildFlightOptions = (stationId?: string | null): SmartOption[] => {
+    const code = stationId ? stationCodeById[stationId] : "";
+    const list = code
+      ? flightsRef.filter((f: any) => String(f.authority || "").toUpperCase() === code)
+      : flightsRef;
+    return list.map((f: any) => ({
+      value: f.id,
+      label: `${f.flight_no || "—"} · ${f.departure_date || f.arrival_date || ""}${f.route ? " · " + f.route : ""}`,
+      sub: airlineNameById[f.airline_id] || "",
+    }));
+  };
   const serviceTypeOptions: SmartOption[] = SERVICE_TYPES.map(s => ({ value: s, label: s }));
   const CURRENCIES = ["EGP", "USD", "EUR", "AED", "MAD", "JOD", "SAR", "GBP"];
 
@@ -360,15 +379,33 @@ export default function JournalEntriesPage() {
 
 
                         {/* Account-8 rule: auto-open flight-data panel binding flight + airline + 4 cost centres */}
-                        {isAccount8 && (
+                        {isAccount8 && (() => {
+                          const headerStationId = (lines[0]?.station_id as string) || null;
+                          const stationCode = headerStationId ? stationCodeById[headerStationId] : "";
+                          const flightOpts = buildFlightOptions(headerStationId);
+                          return (
                           <div className={`rounded-md border p-3 ${!line.flight_schedule_id ? "bg-red-50 border-red-300" : "bg-amber-50 border-amber-200"}`}>
                             <div className={`text-xs font-semibold mb-2 flex items-center gap-2 ${!line.flight_schedule_id ? "text-red-700" : "text-amber-800"}`}>
                               ⚡ حساب يبدأ بـ 8 — يجب ربط القيد ببيانات الرحلة ومراكز التكلفة الأربعة
                             </div>
+                            {!headerStationId && (
+                              <div className="text-[11px] text-red-700 mb-2">اختر المحطة أولاً في رأس القيد لعرض رحلات تلك المحطة.</div>
+                            )}
                             <div className="grid grid-cols-12 gap-2">
                               <div className="col-span-6">
-                                <label className="text-[11px] text-slate-600 mb-1 block">رقم الرحلة</label>
-                                <SmartDropdown options={flightOptions} value={line.flight_schedule_id || ""} onChange={v => updateLine(i, "flight_schedule_id", v)} placeholder="ابحث برقم الرحلة / التاريخ" />
+                                <label className="text-[11px] text-slate-600 mb-1 block">
+                                  رقم الرحلة {stationCode && <span className="text-slate-500">— محطة {stationCode} ({flightOpts.length})</span>}
+                                </label>
+                                <SmartDropdown
+                                  options={flightOpts}
+                                  value={line.flight_schedule_id || ""}
+                                  onChange={v => {
+                                    updateLine(i, "flight_schedule_id", v);
+                                    const f = flightsRef.find((x: any) => x.id === v);
+                                    if (f?.airline_id) updateLine(i, "airline_id", f.airline_id);
+                                  }}
+                                  placeholder={headerStationId ? "ابحث برقم الرحلة / التاريخ" : "اختر المحطة أولاً"}
+                                />
                               </div>
                               <div className="col-span-6">
                                 <label className="text-[11px] text-slate-600 mb-1 block">المورد</label>
@@ -379,7 +416,8 @@ export default function JournalEntriesPage() {
                               </div>
                             </div>
                           </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     );
                   })}
