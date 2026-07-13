@@ -289,6 +289,7 @@ function AppRoutes() {
       <Route path="/accounting/dividends" element={<ProtectedRoute><AppLayout><DividendsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/provisions" element={<ProtectedRoute><AppLayout><ProvisionsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/cbcr" element={<ProtectedRoute><AppLayout><CountryByCountryPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/globe" element={<ProtectedRoute><AppLayout><GlobeMinimumTaxPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
