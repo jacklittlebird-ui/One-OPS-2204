@@ -1,6 +1,8 @@
 import { useLocation, Link } from "react-router-dom";
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import "@/i18n";
 import { useChannel } from "@/contexts/ChannelContext";
 import { getNavForChannel, type NavChild } from "@/config/channelNavConfig";
 import { ChannelSwitcher } from "./ChannelSwitcher";
