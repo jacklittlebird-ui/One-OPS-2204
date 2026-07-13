@@ -136,16 +136,45 @@ export default function JournalEntriesPage() {
     setDialogOpen(true);
   };
 
+  const buildLinePayload = (l: Partial<JournalLine>, i: number, entryId: string) => ({
+    entry_id: entryId,
+    account_id: l.account_id,
+    debit: Number(l.debit) || 0,
+    credit: Number(l.credit) || 0,
+    description: l.description || "",
+    sort_order: i,
+    company_id: l.company_id || null,
+    station_id: l.station_id || null,
+    service_type: l.service_type || null,
+    airline_id: l.airline_id || null,
+    supplier_id: l.supplier_id || null,
+    flight_schedule_id: l.flight_schedule_id || null,
+    transaction_currency: l.transaction_currency || null,
+    transaction_amount: l.transaction_amount ?? null,
+    exchange_rate: l.exchange_rate ?? null,
+    base_amount: l.base_amount ?? null,
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!form.entry_no || !isBalanced) throw new Error("Entry must be balanced");
       const validLines = lines.filter(l => l.account_id && ((Number(l.debit) || 0) + (Number(l.credit) || 0) > 0));
       if (validLines.length < 2) throw new Error("At least 2 lines required");
 
+      // Account-8 rule: any account whose code starts with 8 must have flight + service_type + airline
+      for (const l of validLines) {
+        const acc = accountMap[l.account_id!];
+        if (acc && String(acc.code || "").startsWith("8")) {
+          if (!l.flight_schedule_id || !l.service_type || !l.airline_id) {
+            throw new Error(`Account ${acc.code} (${acc.name}) requires Flight, Service Type & Airline (account-8 rule).`);
+          }
+        }
+      }
+
       if (editEntry) {
         await supabase.from("journal_entries" as any).update({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).eq("id", editEntry.id);
         await supabase.from("journal_entry_lines" as any).delete().eq("entry_id", editEntry.id);
-        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => ({ entry_id: editEntry.id, account_id: l.account_id, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description || "", sort_order: i })) as any);
+        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => buildLinePayload(l, i, editEntry.id)) as any);
         logAudit({ action: "update", entity_type: "journal_entry", entity_id: editEntry.id, details: { entry_no: form.entry_no, total_debit: totalDebit, total_credit: totalCredit, status: form.status } });
       } else {
         const { data: entry, error } = await supabase.from("journal_entries" as any).insert({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).select().single();
