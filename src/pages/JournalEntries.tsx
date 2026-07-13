@@ -244,14 +244,9 @@ export default function JournalEntriesPage() {
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 bg-slate-50">
             <DialogHeader className="sr-only"><DialogTitle>{editEntry ? "Edit Journal Entry" : "New Journal Entry"}</DialogTitle></DialogHeader>
 
-            {/* Screen title */}
-            <div className="px-6 pt-5 pb-2 flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">Accounting · Journal Entries</div>
-              <div className="text-lg font-bold text-slate-800">شاشة إدخال القيد المحاسبي</div>
-            </div>
-
             {/* Window card */}
-            <div className="mx-6 mb-6 rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm">
+            <div className="mx-6 my-6 rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm">
+
               {/* Title bar */}
               <div className="flex items-center justify-between bg-[#1e3a5f] text-white px-4 py-2">
                 <div className="flex gap-1.5">
