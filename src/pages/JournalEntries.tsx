@@ -262,20 +262,81 @@ export default function JournalEntriesPage() {
                 <table className="w-full text-sm">
                   <thead><tr className="text-left text-muted-foreground"><th className="pb-1">Account</th><th className="pb-1 w-28">Debit</th><th className="pb-1 w-28">Credit</th><th className="pb-1">Note</th><th className="w-8"></th></tr></thead>
                   <tbody>
-                    {lines.map((line, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="py-1 pr-1">
-                          <Select value={line.account_id || ""} onValueChange={v => updateLine(i, "account_id", v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select account" /></SelectTrigger>
-                            <SelectContent>{leafAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} - {a.name}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </td>
-                        <td className="py-1 pr-1"><Input type="number" className="h-8 text-xs" value={line.debit || ""} onChange={e => updateLine(i, "debit", e.target.value)} /></td>
-                        <td className="py-1 pr-1"><Input type="number" className="h-8 text-xs" value={line.credit || ""} onChange={e => updateLine(i, "credit", e.target.value)} /></td>
-                        <td className="py-1 pr-1"><Input className="h-8 text-xs" value={line.description || ""} onChange={e => updateLine(i, "description", e.target.value)} /></td>
-                        <td><Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeLine(i)}><X size={12} /></Button></td>
-                      </tr>
-                    ))}
+                    {lines.map((line, i) => {
+                      const acc = line.account_id ? accountMap[line.account_id] : null;
+                      const isAccount8 = !!acc && String(acc.code || "").startsWith("8");
+                      const isEgyptCompany = line.company_id
+                        ? EGYPT_COMPANY_NAMES.some(n => (companies.find((c: any) => c.id === line.company_id)?.name || "").toLowerCase().includes(n.toLowerCase()))
+                        : false;
+                      return (
+                        <tr key={i} className="border-t align-top">
+                          <td colSpan={5} className="py-2">
+                            <div className="grid grid-cols-12 gap-1 items-start">
+                              <div className="col-span-4">
+                                <Select value={line.account_id || ""} onValueChange={v => updateLine(i, "account_id", v)}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select account" /></SelectTrigger>
+                                  <SelectContent>{leafAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} - {a.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </div>
+                              <div className="col-span-2"><Input type="number" placeholder="Debit" className="h-8 text-xs" value={line.debit || ""} onChange={e => updateLine(i, "debit", e.target.value)} /></div>
+                              <div className="col-span-2"><Input type="number" placeholder="Credit" className="h-8 text-xs" value={line.credit || ""} onChange={e => updateLine(i, "credit", e.target.value)} /></div>
+                              <div className="col-span-3"><Input placeholder="Note" className="h-8 text-xs" value={line.description || ""} onChange={e => updateLine(i, "description", e.target.value)} /></div>
+                              <div className="col-span-1"><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeLine(i)}><X size={12} /></Button></div>
+
+                              {/* Cost centres (spec §3): mandatory on every line */}
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Company</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">{isEgyptCompany ? "Station" : "Service Type"}</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Service Type</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Airline / Customer</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Supplier</div>
+                              <div className="col-span-2 text-[10px] text-muted-foreground">Currency / FX</div>
+
+                              <div className="col-span-2">
+                                <SmartDropdown options={companyOptions} value={line.company_id || ""} onChange={v => updateLine(i, "company_id", v)} placeholder="Company" />
+                              </div>
+                              <div className="col-span-2">
+                                {isEgyptCompany
+                                  ? <SmartDropdown options={stationOptions} value={line.station_id || ""} onChange={v => updateLine(i, "station_id", v)} placeholder="Station" />
+                                  : <div className="text-[11px] text-muted-foreground italic h-8 flex items-center px-2">—</div>}
+                              </div>
+                              <div className="col-span-2">
+                                <SmartDropdown options={serviceTypeOptions} value={line.service_type || ""} onChange={v => updateLine(i, "service_type", v)} placeholder="Service type" />
+                              </div>
+                              <div className="col-span-2">
+                                <SmartDropdown options={airlineOptions} value={line.airline_id || ""} onChange={v => updateLine(i, "airline_id", v)} placeholder="Airline" />
+                              </div>
+                              <div className="col-span-2">
+                                <SmartDropdown options={supplierOptions} value={line.supplier_id || ""} onChange={v => updateLine(i, "supplier_id", v)} placeholder="Supplier" />
+                              </div>
+                              <div className="col-span-2 flex gap-1">
+                                <Select value={line.transaction_currency || ""} onValueChange={v => updateLine(i, "transaction_currency", v)}>
+                                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Cur" /></SelectTrigger>
+                                  <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <Input type="number" placeholder="FX" className="h-8 text-xs" value={line.exchange_rate || ""} onChange={e => updateLine(i, "exchange_rate", e.target.value ? Number(e.target.value) : null)} />
+                              </div>
+
+                              {/* Account-8 rule (spec §3 rule): reveal flight linking */}
+                              {isAccount8 && (
+                                <>
+                                  <div className="col-span-12 mt-1 rounded-md bg-amber-50 border border-amber-200 p-2">
+                                    <div className="text-[11px] font-medium text-amber-700 mb-1">
+                                      Account starts with "8" — flight link required (auto-generates flight cost report).
+                                    </div>
+                                    <SmartDropdown
+                                      options={flightOptions}
+                                      value={line.flight_schedule_id || ""}
+                                      onChange={v => updateLine(i, "flight_schedule_id", v)}
+                                      placeholder="Select flight (search by flight no / date)"
+                                    />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t font-medium">
