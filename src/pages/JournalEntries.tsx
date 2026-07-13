@@ -43,9 +43,37 @@ export default function JournalEntriesPage() {
     queryKey: ["chart_of_accounts"],
     queryFn: async () => { const { data } = await supabase.from("chart_of_accounts" as any).select("id,code,name,account_type,is_group").order("code"); return (data || []) as unknown as AccountRow[]; },
   });
+  const { data: companies = [] } = useQuery({
+    queryKey: ["companies-mini"],
+    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,name,currency").order("name"); return (data || []) as any[]; },
+  });
+  const { data: stations = [] } = useQuery({
+    queryKey: ["finance-stations-mini"],
+    queryFn: async () => { const { data } = await supabase.from("finance_stations" as any).select("id,name,code").order("code"); return (data || []) as any[]; },
+  });
+  const { data: airlinesRef = [] } = useQuery({
+    queryKey: ["airlines-mini"],
+    queryFn: async () => { const { data } = await supabase.from("airlines" as any).select("id,name,iata_code").order("name"); return (data || []) as any[]; },
+  });
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["service-providers-mini"],
+    queryFn: async () => { const { data } = await supabase.from("service_providers" as any).select("id,name").order("name"); return (data || []) as any[]; },
+  });
+  const { data: flightsRef = [] } = useQuery({
+    queryKey: ["flights-mini"],
+    queryFn: async () => { const { data } = await supabase.from("flight_schedules" as any).select("id,flight_no,std_date,airline").order("std_date", { ascending: false }).limit(500); return (data || []) as any[]; },
+  });
 
   const leafAccounts = accounts.filter(a => !a.is_group);
   const accountMap = Object.fromEntries(accounts.map(a => [a.id, a]));
+
+  const companyOptions: SmartOption[] = companies.map((c: any) => ({ value: c.id, label: c.name, sub: c.currency }));
+  const stationOptions: SmartOption[] = stations.map((s: any) => ({ value: s.id, label: `${s.code || ""} — ${s.name}`.replace(/^ — /, ""), sub: s.code }));
+  const airlineOptions: SmartOption[] = airlinesRef.map((a: any) => ({ value: a.id, label: a.name, sub: a.iata_code }));
+  const supplierOptions: SmartOption[] = suppliers.map((s: any) => ({ value: s.id, label: s.name }));
+  const flightOptions: SmartOption[] = flightsRef.map((f: any) => ({ value: f.id, label: `${f.flight_no} — ${f.std_date || ""}`, sub: f.airline }));
+  const serviceTypeOptions: SmartOption[] = SERVICE_TYPES.map(s => ({ value: s, label: s }));
+  const CURRENCIES = ["EGP", "USD", "EUR", "AED", "MAD", "JOD", "SAR", "GBP"];
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
