@@ -159,8 +159,9 @@ export default function InvoicesPage() {
   const { activeChannel } = useChannel();
   const readOnly = activeChannel === "payables";
   const { data: invoicesRaw, isLoading, add, update, remove, bulkInsert } = useInvoices<InvoiceRow>();
-  const invoices = invoicesRaw || [];
-  const { data: dispatches } = useDispatchBoardFS({ scope: "history" });
+  const invoices = Array.isArray(invoicesRaw) ? invoicesRaw : [];
+  const { data: dispatchesRaw } = useDispatchBoardFS({ scope: "history" });
+  const dispatches = Array.isArray(dispatchesRaw) ? dispatchesRaw : [];
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const { data: flightSchedules } = useFlightHistory();
   const { data: contractRates } = useContractServiceRatesRef();
@@ -261,7 +262,8 @@ export default function InvoicesPage() {
   const [securityAnnexDateTo, setSecurityAnnexDateTo] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Batch 3: narrow invoice-purpose projection (~17 cols vs full 82-col view).
-  const { data: serviceReports } = useServiceReportsForInvoicing({ scope: "history" });
+  const { data: serviceReportsRaw } = useServiceReportsForInvoicing({ scope: "history" });
+  const serviceReports = Array.isArray(serviceReportsRaw) ? serviceReportsRaw : [];
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -536,7 +538,7 @@ export default function InvoicesPage() {
     });
 
     // 2) Service Reports (handling side) — approved & in selected month/station
-    const matchedReports = includeHandling ? (serviceReports || []).filter((r: any) => {
+    const matchedReports = includeHandling ? serviceReports.filter((r: any) => {
       const dt = (r.arrival_date || r.flight_date || "").toString();
       const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || r.station === billingStation;
