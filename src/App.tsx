@@ -122,6 +122,7 @@ import StatementOfEquityPage from "./pages/accounting/StatementOfEquity";
 import EarningsPerSharePage from "./pages/accounting/EarningsPerShare";
 import RevenueRecognitionPage from "./pages/accounting/RevenueRecognition";
 import ExpectedCreditLossPage from "./pages/accounting/ExpectedCreditLoss";
+import EndOfServiceBenefitsPage from "./pages/accounting/EndOfServiceBenefits";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
