@@ -128,6 +128,7 @@ import ShareBasedPaymentsPage from "./pages/accounting/ShareBasedPayments";
 import GovernmentGrantsPage from "./pages/accounting/GovernmentGrants";
 import HeldForSalePage from "./pages/accounting/HeldForSale";
 import AccountingPoliciesChangesPage from "./pages/accounting/AccountingPoliciesChanges";
+import EventsAfterReportingPage from "./pages/accounting/EventsAfterReporting";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
