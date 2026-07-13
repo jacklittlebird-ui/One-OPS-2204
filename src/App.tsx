@@ -315,6 +315,7 @@ function AppRoutes() {
       <Route path="/accounting/policies-changes" element={<ProtectedRoute><AppLayout><AccountingPoliciesChangesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/events-after-reporting" element={<ProtectedRoute><AppLayout><EventsAfterReportingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/foreign-exchange" element={<ProtectedRoute><AppLayout><ForeignExchangeIAS21Page /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/interim-reporting" element={<ProtectedRoute><AppLayout><InterimReportingPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
