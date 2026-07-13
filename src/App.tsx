@@ -132,6 +132,7 @@ import EventsAfterReportingPage from "./pages/accounting/EventsAfterReporting";
 import ForeignExchangeIAS21Page from "./pages/accounting/ForeignExchangeIAS21";
 import InterimReportingPage from "./pages/accounting/InterimReporting";
 import OperatingSegmentsPage from "./pages/accounting/OperatingSegments";
+import AccountingHubPage from "./pages/accounting/AccountingHub";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -318,6 +319,7 @@ function AppRoutes() {
       <Route path="/accounting/foreign-exchange" element={<ProtectedRoute><AppLayout><ForeignExchangeIAS21Page /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/interim-reporting" element={<ProtectedRoute><AppLayout><InterimReportingPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/operating-segments" element={<ProtectedRoute><AppLayout><OperatingSegmentsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/hub" element={<ProtectedRoute><AppLayout><AccountingHubPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
