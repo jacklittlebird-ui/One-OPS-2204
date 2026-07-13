@@ -45,7 +45,9 @@ export default function GlobeMinimumTaxPage() {
     },
   });
 
-  const createReport = async (form: FormData) => {
+  const createReport = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
     const payload = {
       report_name: String(form.get("report_name") || ""),
       fiscal_year: Number(form.get("fiscal_year") || new Date().getFullYear()),
@@ -61,8 +63,10 @@ export default function GlobeMinimumTaxPage() {
     qc.invalidateQueries({ queryKey: ["globe_reports"] });
   };
 
-  const createLine = async (form: FormData) => {
+  const createLine = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!selected) return;
+    const form = new FormData(e.currentTarget);
     const payload = {
       report_id: selected,
       jurisdiction: String(form.get("jurisdiction") || ""),
