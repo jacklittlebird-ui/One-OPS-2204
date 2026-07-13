@@ -119,6 +119,7 @@ import ProvisionsPage from "./pages/accounting/Provisions";
 import CountryByCountryPage from "./pages/accounting/CountryByCountry";
 import GlobeMinimumTaxPage from "./pages/accounting/GlobeMinimumTax";
 import StatementOfEquityPage from "./pages/accounting/StatementOfEquity";
+import EarningsPerSharePage from "./pages/accounting/EarningsPerShare";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -292,6 +293,7 @@ function AppRoutes() {
       <Route path="/accounting/cbcr" element={<ProtectedRoute><AppLayout><CountryByCountryPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/globe" element={<ProtectedRoute><AppLayout><GlobeMinimumTaxPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/statement-of-equity" element={<ProtectedRoute><AppLayout><StatementOfEquityPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/eps" element={<ProtectedRoute><AppLayout><EarningsPerSharePage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
