@@ -129,6 +129,7 @@ import GovernmentGrantsPage from "./pages/accounting/GovernmentGrants";
 import HeldForSalePage from "./pages/accounting/HeldForSale";
 import AccountingPoliciesChangesPage from "./pages/accounting/AccountingPoliciesChanges";
 import EventsAfterReportingPage from "./pages/accounting/EventsAfterReporting";
+import ForeignExchangeIAS21Page from "./pages/accounting/ForeignExchangeIAS21";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
