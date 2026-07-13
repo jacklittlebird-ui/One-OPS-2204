@@ -131,6 +131,7 @@ import AccountingPoliciesChangesPage from "./pages/accounting/AccountingPolicies
 import EventsAfterReportingPage from "./pages/accounting/EventsAfterReporting";
 import ForeignExchangeIAS21Page from "./pages/accounting/ForeignExchangeIAS21";
 import InterimReportingPage from "./pages/accounting/InterimReporting";
+import OperatingSegmentsPage from "./pages/accounting/OperatingSegments";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
