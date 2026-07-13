@@ -241,131 +241,159 @@ export default function JournalEntriesPage() {
           <Button variant="outline" size="sm" onClick={handleExportPdf}><Download size={14} className="mr-1" /> PDF</Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild><Button onClick={openAdd}><Plus size={16} className="mr-1" /> New Entry</Button></DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{editEntry ? "Edit Journal Entry" : "New Journal Entry"}</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-4 gap-2">
-                <div><label className="text-xs text-muted-foreground">Entry No</label><Input value={form.entry_no} onChange={e => setForm({ ...form, entry_no: e.target.value })} /></div>
-                <div><label className="text-xs text-muted-foreground">Entry Date</label><Input type="date" value={form.entry_date} onChange={e => setForm({ ...form, entry_date: e.target.value })} /></div>
-                <div><label className="text-xs text-muted-foreground">Reference</label><Input value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} /></div>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 bg-slate-50">
+            <DialogHeader className="sr-only"><DialogTitle>{editEntry ? "Edit Journal Entry" : "New Journal Entry"}</DialogTitle></DialogHeader>
+
+            {/* Screen title */}
+            <div className="px-6 pt-5 pb-2 flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">Accounting · Journal Entries</div>
+              <div className="text-lg font-bold text-slate-800">شاشة إدخال القيد المحاسبي</div>
+            </div>
+
+            {/* Window card */}
+            <div className="mx-6 mb-6 rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm">
+              {/* Title bar */}
+              <div className="flex items-center justify-between bg-[#1e3a5f] text-white px-4 py-2">
+                <div className="flex gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                </div>
+                <div className="text-sm font-semibold flex items-center gap-3">
+                  <span>إدخال قيد محاسبي</span>
+                  <span className="opacity-60">—</span>
+                  <span className="opacity-90">{editEntry ? "Edit Journal Entry" : "New Journal Entry"}</span>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-5" dir="rtl">
+                {/* Header row: Company / Station / Date */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-600 mb-1 block">الشركة</label>
+                    <SmartDropdown options={companyOptions} value={(lines[0]?.company_id) || ""} onChange={v => setLines(ls => ls.map(l => ({ ...l, company_id: v })))} placeholder="اختر الشركة" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-600 mb-1 block">المحطة</label>
+                    <SmartDropdown options={stationOptions} value={(lines[0]?.station_id) || ""} onChange={v => setLines(ls => ls.map(l => ({ ...l, station_id: v })))} placeholder="اختر المحطة" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-600 mb-1 block">التاريخ</label>
+                    <Input type="date" value={form.entry_date} onChange={e => setForm({ ...form, entry_date: e.target.value })} className="bg-slate-50" />
+                  </div>
+                </div>
+
+                {/* Description */}
                 <div>
-                  <label className="text-xs text-muted-foreground">Status</label>
-                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Posted">Posted</SelectItem><SelectItem value="Void">Void</SelectItem></SelectContent>
-                  </Select>
+                  <label className="text-xs text-slate-600 mb-1 block">البيان</label>
+                  <Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="وصف القيد" />
                 </div>
-              </div>
-              <div><label className="text-xs text-muted-foreground">Description / البيان</label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
 
-              {/* Lines */}
-              <div className="border rounded-lg p-3 space-y-2">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium text-sm">Entry Lines</h3>
-                  <Button size="sm" variant="outline" onClick={addLine}><Plus size={14} className="mr-1" /> Add Line</Button>
-                </div>
-                <table className="w-full text-sm">
-                  <thead><tr className="text-left text-muted-foreground"><th className="pb-1">Account</th><th className="pb-1 w-28">Debit</th><th className="pb-1 w-28">Credit</th><th className="pb-1">Note</th><th className="w-8"></th></tr></thead>
-                  <tbody>
-                    {lines.map((line, i) => {
-                      const acc = line.account_id ? accountMap[line.account_id] : null;
-                      const isAccount8 = !!acc && String(acc.code || "").startsWith("8");
-                      const isEgyptCompany = line.company_id
-                        ? EGYPT_COMPANY_NAMES.some(n => (companies.find((c: any) => c.id === line.company_id)?.name || "").toLowerCase().includes(n.toLowerCase()))
-                        : false;
-                      return (
-                        <tr key={i} className="border-t align-top">
-                          <td colSpan={5} className="py-2">
-                            <div className="grid grid-cols-12 gap-1 items-start">
-                              <div className="col-span-4">
-                                <Select value={line.account_id || ""} onValueChange={v => updateLine(i, "account_id", v)}>
-                                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select account" /></SelectTrigger>
-                                  <SelectContent>{leafAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.code} - {a.name}</SelectItem>)}</SelectContent>
-                                </Select>
-                              </div>
-                              <div className="col-span-2"><Input type="number" placeholder="Debit" className="h-8 text-xs" value={line.debit || ""} onChange={e => updateLine(i, "debit", e.target.value)} /></div>
-                              <div className="col-span-2"><Input type="number" placeholder="Credit" className="h-8 text-xs" value={line.credit || ""} onChange={e => updateLine(i, "credit", e.target.value)} /></div>
-                              <div className="col-span-3"><Input placeholder="Note" className="h-8 text-xs" value={line.description || ""} onChange={e => updateLine(i, "description", e.target.value)} /></div>
-                              <div className="col-span-1"><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeLine(i)}><X size={12} /></Button></div>
-
-                              {/* Cost centres (spec §3): mandatory on every line */}
-                              <div className="col-span-2 text-[10px] text-muted-foreground">Company</div>
-                              <div className="col-span-2 text-[10px] text-muted-foreground">{isEgyptCompany ? "Station" : "Service Type"}</div>
-                              <div className="col-span-2 text-[10px] text-muted-foreground">Service Type</div>
-                              <div className="col-span-2 text-[10px] text-muted-foreground">Airline / Customer</div>
-                              <div className="col-span-2 text-[10px] text-muted-foreground">Supplier</div>
-                              <div className="col-span-2 text-[10px] text-muted-foreground">Currency / FX</div>
-
-                              <div className="col-span-2">
-                                <SmartDropdown options={companyOptions} value={line.company_id || ""} onChange={v => updateLine(i, "company_id", v)} placeholder="Company" />
-                              </div>
-                              <div className="col-span-2">
-                                {isEgyptCompany
-                                  ? <SmartDropdown options={stationOptions} value={line.station_id || ""} onChange={v => updateLine(i, "station_id", v)} placeholder="Station" />
-                                  : <div className="text-[11px] text-muted-foreground italic h-8 flex items-center px-2">—</div>}
-                              </div>
-                              <div className="col-span-2">
-                                <SmartDropdown options={serviceTypeOptions} value={line.service_type || ""} onChange={v => updateLine(i, "service_type", v)} placeholder="Service type" />
-                              </div>
-                              <div className="col-span-2">
-                                <SmartDropdown options={airlineOptions} value={line.airline_id || ""} onChange={v => updateLine(i, "airline_id", v)} placeholder="Airline" />
-                              </div>
-                              <div className="col-span-2">
-                                <SmartDropdown options={supplierOptions} value={line.supplier_id || ""} onChange={v => updateLine(i, "supplier_id", v)} placeholder="Supplier" />
-                              </div>
-                              <div className="col-span-2 flex gap-1">
-                                <Select value={line.transaction_currency || ""} onValueChange={v => updateLine(i, "transaction_currency", v)}>
-                                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Cur" /></SelectTrigger>
-                                  <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <Input type="number" placeholder="FX" className="h-8 text-xs" value={line.exchange_rate || ""} onChange={e => updateLine(i, "exchange_rate", e.target.value ? Number(e.target.value) : null)} />
-                              </div>
-
-                              {/* Account-8 rule (spec §3 rule): reveal flight linking */}
-                              {isAccount8 && (
-                                <>
-                                  <div className={`col-span-12 mt-1 rounded-md p-2 border ${!line.flight_schedule_id ? "bg-red-50 border-red-300" : "bg-amber-50 border-amber-200"}`}>
-                                    <div className={`text-[11px] font-medium mb-1 ${!line.flight_schedule_id ? "text-red-700" : "text-amber-700"}`}>
-                                      Account starts with "8" — Flight Link is required <span className="text-red-600">*</span>
-                                    </div>
-                                    <SmartDropdown
-                                      options={flightOptions}
-                                      value={line.flight_schedule_id || ""}
-                                      onChange={v => updateLine(i, "flight_schedule_id", v)}
-                                      placeholder="Select flight (search by flight no / date)"
-                                    />
-                                  </div>
-                                </>
-                              )}
+                {/* Lines */}
+                <div className="space-y-4">
+                  {lines.map((line, i) => {
+                    const acc = line.account_id ? accountMap[line.account_id] : null;
+                    const isAccount8 = !!acc && String(acc.code || "").startsWith("8");
+                    return (
+                      <div key={i} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3 space-y-3">
+                        {/* Row 1: Account + Service Type */}
+                        <div className="grid grid-cols-12 gap-3 items-end">
+                          <div className="col-span-8">
+                            <label className="text-xs text-slate-600 mb-1 block">البند / الحساب — رقم أو اسم</label>
+                            <div className={isAccount8 ? "ring-2 ring-amber-300 rounded-md" : ""}>
+                              <SmartDropdown
+                                options={leafAccounts.map(a => ({ value: a.id, label: `${a.code} — ${a.name}`, sub: a.account_type }))}
+                                value={line.account_id || ""}
+                                onChange={v => updateLine(i, "account_id", v)}
+                                placeholder="ابحث بالرقم أو الاسم"
+                              />
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t font-medium">
-                      <td className="py-2 text-right pr-2">Total:</td>
-                      <td className="py-2 font-mono text-sm">{totalDebit.toLocaleString()}</td>
-                      <td className="py-2 font-mono text-sm">{totalCredit.toLocaleString()}</td>
-                      <td className="py-2">
-                        {isBalanced
-                          ? <span className="text-green-600 flex items-center gap-1 text-xs"><Check size={12} /> Balanced</span>
-                          : <span className="text-red-600 text-xs">Diff: {Math.abs(totalDebit - totalCredit).toLocaleString()}</span>
-                        }
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+                          </div>
+                          <div className="col-span-4">
+                            <label className="text-xs text-slate-600 mb-1 block">نوع الخدمة</label>
+                            <SmartDropdown options={serviceTypeOptions} value={line.service_type || ""} onChange={v => updateLine(i, "service_type", v)} placeholder="اختر الخدمة" />
+                          </div>
+                        </div>
 
-              {missingFlightLink && (
-                <div className="text-xs text-red-600 text-center">One or more Account-8 lines are missing a Flight Link.</div>
-              )}
-              <Button className="w-full" onClick={() => saveMutation.mutate()} disabled={!isBalanced || missingFlightLink || saveMutation.isPending}>
-                {saveMutation.isPending ? "Saving…" : editEntry ? "Update Entry" : "Save Entry"}
-              </Button>
+                        {/* Row 2: Airline / Currency / Debit / Credit */}
+                        <div className="grid grid-cols-12 gap-3 items-end">
+                          <div className="col-span-3">
+                            <label className="text-xs text-slate-600 mb-1 block">شركة الطيران</label>
+                            <SmartDropdown options={airlineOptions} value={line.airline_id || ""} onChange={v => updateLine(i, "airline_id", v)} placeholder="اختر الشركة" />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-xs text-slate-600 mb-1 block">العملة</label>
+                            <Select value={line.transaction_currency || "EGP"} onValueChange={v => updateLine(i, "transaction_currency", v)}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div className="col-span-3">
+                            <label className="text-xs text-slate-600 mb-1 block">مدين</label>
+                            <Input type="number" className="text-right" value={line.debit || ""} onChange={e => updateLine(i, "debit", e.target.value)} placeholder="0.00" />
+                          </div>
+                          <div className="col-span-3">
+                            <label className="text-xs text-slate-600 mb-1 block">دائن</label>
+                            <Input type="number" className="text-right" value={line.credit || ""} onChange={e => updateLine(i, "credit", e.target.value)} placeholder="0.00" />
+                          </div>
+                          <div className="col-span-1 flex justify-end">
+                            {lines.length > 1 && (
+                              <Button size="icon" variant="ghost" className="text-red-500" onClick={() => removeLine(i)}><X size={16} /></Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Optional note */}
+                        <Input placeholder="ملاحظة على السطر (اختياري)" value={line.description || ""} onChange={e => updateLine(i, "description", e.target.value)} className="text-xs" />
+
+                        {/* Account-8 rule: auto-open flight-data panel binding flight + airline + 4 cost centres */}
+                        {isAccount8 && (
+                          <div className={`rounded-md border p-3 ${!line.flight_schedule_id ? "bg-red-50 border-red-300" : "bg-amber-50 border-amber-200"}`}>
+                            <div className={`text-xs font-semibold mb-2 flex items-center gap-2 ${!line.flight_schedule_id ? "text-red-700" : "text-amber-800"}`}>
+                              ⚡ حساب يبدأ بـ 8 — يجب ربط القيد ببيانات الرحلة ومراكز التكلفة الأربعة
+                            </div>
+                            <div className="grid grid-cols-12 gap-2">
+                              <div className="col-span-6">
+                                <label className="text-[11px] text-slate-600 mb-1 block">رقم الرحلة</label>
+                                <SmartDropdown options={flightOptions} value={line.flight_schedule_id || ""} onChange={v => updateLine(i, "flight_schedule_id", v)} placeholder="ابحث برقم الرحلة / التاريخ" />
+                              </div>
+                              <div className="col-span-6">
+                                <label className="text-[11px] text-slate-600 mb-1 block">المورد</label>
+                                <SmartDropdown options={supplierOptions} value={line.supplier_id || ""} onChange={v => updateLine(i, "supplier_id", v)} placeholder="اختر المورد (اختياري)" />
+                              </div>
+                              <div className="col-span-12 text-[11px] text-slate-600 mt-1">
+                                مراكز التكلفة: <b>الشركة</b> · <b>المحطة</b> · <b>نوع الخدمة</b> · <b>شركة الطيران</b> — تُعبّأ من الحقول أعلاه.
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-2">
+                  <Button variant="outline" size="sm" onClick={addLine}>+ سطر جديد</Button>
+                  <div className="flex items-center gap-4">
+                    <div className="text-xs font-mono">
+                      مدين: <b>{totalDebit.toLocaleString()}</b> · دائن: <b>{totalCredit.toLocaleString()}</b>{" "}
+                      {isBalanced ? <span className="text-green-600">✓ متوازن</span> : <span className="text-red-600">فرق: {Math.abs(totalDebit - totalCredit).toLocaleString()}</span>}
+                    </div>
+                    <Button className="bg-[#1e3a5f] hover:bg-[#264a76]" onClick={() => { setForm(f => ({ ...f, status: "Posted" })); saveMutation.mutate(); }} disabled={!isBalanced || missingFlightLink || saveMutation.isPending}>
+                      {saveMutation.isPending ? "جاري الحفظ…" : "حفظ وترحيل"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Important rule banner */}
+            <div className="mx-6 mb-6 rounded-md bg-amber-50 border border-amber-300 px-4 py-2 flex items-center gap-2" dir="rtl">
+              <span className="text-amber-600 text-lg">⚡</span>
+              <div className="text-xs text-amber-900">
+                <b>قاعدة مهمة:</b> أي حساب يبدأ بـ <b>8</b> (تكاليف أو إيرادات) ← يفتح النظام تلقائياً نموذج بيانات الرحلة لربط التكلفة برقم الرحلة وشركة الطيران وكل مراكز التكلفة الأربعة.
+              </div>
             </div>
           </DialogContent>
         </Dialog>
