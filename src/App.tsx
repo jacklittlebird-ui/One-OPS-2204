@@ -129,6 +129,7 @@ import GovernmentGrantsPage from "./pages/accounting/GovernmentGrants";
 import HeldForSalePage from "./pages/accounting/HeldForSale";
 import AccountingPoliciesChangesPage from "./pages/accounting/AccountingPoliciesChanges";
 import EventsAfterReportingPage from "./pages/accounting/EventsAfterReporting";
+import ForeignExchangeIAS21Page from "./pages/accounting/ForeignExchangeIAS21";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -312,6 +313,7 @@ function AppRoutes() {
       <Route path="/accounting/held-for-sale" element={<ProtectedRoute><AppLayout><HeldForSalePage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/policies-changes" element={<ProtectedRoute><AppLayout><AccountingPoliciesChangesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/events-after-reporting" element={<ProtectedRoute><AppLayout><EventsAfterReportingPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/foreign-exchange" element={<ProtectedRoute><AppLayout><ForeignExchangeIAS21Page /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
