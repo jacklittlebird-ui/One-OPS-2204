@@ -2203,6 +2203,145 @@ export type Database = {
         }
         Relationships: []
       }
+      cbcr_entity_lines: {
+        Row: {
+          created_at: string
+          entity_name: string
+          id: string
+          jurisdiction: string
+          main_activities: string | null
+          report_id: string
+          tax_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_name: string
+          id?: string
+          jurisdiction: string
+          main_activities?: string | null
+          report_id: string
+          tax_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_name?: string
+          id?: string
+          jurisdiction?: string
+          main_activities?: string | null
+          report_id?: string
+          tax_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cbcr_entity_lines_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "cbcr_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cbcr_jurisdiction_lines: {
+        Row: {
+          accumulated_earnings: number
+          created_at: string
+          employees: number
+          id: string
+          jurisdiction: string
+          profit_before_tax: number
+          report_id: string
+          revenue_related: number
+          revenue_total: number
+          revenue_unrelated: number
+          stated_capital: number
+          tangible_assets: number
+          tax_accrued: number
+          tax_paid_cash: number
+        }
+        Insert: {
+          accumulated_earnings?: number
+          created_at?: string
+          employees?: number
+          id?: string
+          jurisdiction: string
+          profit_before_tax?: number
+          report_id: string
+          revenue_related?: number
+          revenue_total?: number
+          revenue_unrelated?: number
+          stated_capital?: number
+          tangible_assets?: number
+          tax_accrued?: number
+          tax_paid_cash?: number
+        }
+        Update: {
+          accumulated_earnings?: number
+          created_at?: string
+          employees?: number
+          id?: string
+          jurisdiction?: string
+          profit_before_tax?: number
+          report_id?: string
+          revenue_related?: number
+          revenue_total?: number
+          revenue_unrelated?: number
+          stated_capital?: number
+          tangible_assets?: number
+          tax_accrued?: number
+          tax_paid_cash?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cbcr_jurisdiction_lines_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "cbcr_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cbcr_reports: {
+        Row: {
+          company_group: string
+          created_at: string
+          currency: string
+          filing_date: string | null
+          fiscal_year: number
+          id: string
+          notes: string | null
+          reporting_entity: string | null
+          status: string
+          ultimate_parent: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_group: string
+          created_at?: string
+          currency?: string
+          filing_date?: string | null
+          fiscal_year: number
+          id?: string
+          notes?: string | null
+          reporting_entity?: string | null
+          status?: string
+          ultimate_parent?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_group?: string
+          created_at?: string
+          currency?: string
+          filing_date?: string | null
+          fiscal_year?: number
+          id?: string
+          notes?: string | null
+          reporting_entity?: string | null
+          status?: string
+          ultimate_parent?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chart_of_accounts: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]

@@ -116,6 +116,7 @@ import TransferPricingPage from "./pages/accounting/TransferPricing";
 import CorporateTaxPage from "./pages/accounting/CorporateTax";
 import DividendsPage from "./pages/accounting/Dividends";
 import ProvisionsPage from "./pages/accounting/Provisions";
+import CountryByCountryPage from "./pages/accounting/CountryByCountry";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
@@ -286,6 +287,7 @@ function AppRoutes() {
       <Route path="/accounting/corporate-tax" element={<ProtectedRoute><AppLayout><CorporateTaxPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/dividends" element={<ProtectedRoute><AppLayout><DividendsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/accounting/provisions" element={<ProtectedRoute><AppLayout><ProvisionsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/accounting/cbcr" element={<ProtectedRoute><AppLayout><CountryByCountryPage /></AppLayout></ProtectedRoute>} />
 
 
       <Route path="/vendor-invoices" element={<ProtectedRoute><AppLayout><VendorInvoicesPage /></AppLayout></ProtectedRoute>} />
