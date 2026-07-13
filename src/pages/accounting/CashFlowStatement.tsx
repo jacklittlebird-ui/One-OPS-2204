@@ -1,267 +1,256 @@
-// Phase 1p — Cash Flow Statement (Indirect Method)
-// Classifies posted journal-entry movements into Operating / Investing / Financing
-// activities using Chart-of-Accounts type + code prefixes, with period comparison.
-
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Download, TrendingUp, TrendingDown, Wallet, ArrowRightLeft } from "lucide-react";
-import { exportToExcel } from "@/lib/exportExcel";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Waves, Download } from "lucide-react";
 
-interface Account { id: string; code: string; name: string; account_type: string; }
-interface JournalEntry { id: string; status: string; entry_date: string; }
-interface JournalLine { account_id: string; debit: number; credit: number; entry_id: string; company_id: string | null; station_id: string | null; }
-interface Company { id: string; name: string; }
-interface Station { id: string; name: string; company_id: string | null; }
+type Account = {
+  id: string; code: string; name: string; account_type: string;
+  opening_balance: number | null;
+};
+type Line = { account_id: string; debit: number | null; credit: number | null };
 
-type CFCategory = "operating" | "investing" | "financing" | "cash" | "ignore";
+const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** Classify an account into a cash-flow category. Cash accounts (11xx) are excluded from movement — they ARE the cash. */
-function classifyAccount(a: Account): CFCategory {
+// Classify accounts into cash flow sections using account code prefixes / name keywords.
+const classify = (a: Account): "cash" | "operating_wc" | "investing" | "financing" | "other" => {
+  const name = (a.name || "").toLowerCase();
   const code = a.code || "";
-  const type = (a.account_type || "").toLowerCase();
-  if (code.startsWith("11")) return "cash";                 // Cash & Bank
-  if (code.startsWith("15") || code.startsWith("16")) return "investing"; // Fixed assets
-  if (code.startsWith("25") || code.startsWith("26") || code.startsWith("27")) return "financing"; // Loans/Notes
-  if (type === "equity" || code.startsWith("3")) return "financing";
-  // Everything else touching P&L or working capital → operating
-  if (["asset", "liability", "revenue", "expense"].includes(type)) return "operating";
-  return "ignore";
-}
-
-/** Sign of the movement contribution to CASH.
- *  Asset ↑ (debit) → cash ↓  (except cash itself).
- *  Liability/Equity/Revenue ↑ (credit) → cash ↑.
- *  Expense ↑ (debit) → cash ↓ (part of net income).
- */
-function cashSign(a: Account): 1 | -1 {
-  const type = (a.account_type || "").toLowerCase();
-  if (type === "asset") return -1;      // debit-normal, uses cash
-  if (type === "expense") return -1;
-  return +1;                            // liability, equity, revenue → source of cash
-}
+  if (name.includes("cash") || name.includes("bank") || code.startsWith("101") || code.startsWith("11")) return "cash";
+  const t = (a.account_type || "").toLowerCase();
+  if (t === "asset") {
+    if (name.includes("receivable") || name.includes("inventory") || name.includes("prepaid") || name.includes("advance")) return "operating_wc";
+    if (name.includes("fixed") || name.includes("equipment") || name.includes("vehicle") || name.includes("property") || name.includes("intangible") || name.includes("investment")) return "investing";
+    return "operating_wc";
+  }
+  if (t === "liability") {
+    if (name.includes("payable") || name.includes("accrual") || name.includes("accrued") || name.includes("tax") || name.includes("wages")) return "operating_wc";
+    if (name.includes("loan") || name.includes("borrow") || name.includes("note") || name.includes("bond") || name.includes("lease")) return "financing";
+    return "operating_wc";
+  }
+  if (t === "equity") return "financing";
+  return "other";
+};
 
 export default function CashFlowStatementPage() {
   const today = new Date();
-  const yearStart = `${today.getFullYear()}-01-01`;
-  const todayStr = today.toISOString().slice(0, 10);
-
-  const [dateFrom, setDateFrom] = useState(yearStart);
-  const [dateTo, setDateTo] = useState(todayStr);
-  const [compareFrom, setCompareFrom] = useState("");
-  const [compareTo, setCompareTo] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("all");
-  const [stationFilter, setStationFilter] = useState("all");
+  const firstDay = new Date(today.getFullYear(), 0, 1).toISOString().slice(0, 10);
+  const lastDay = today.toISOString().slice(0, 10);
+  const [from, setFrom] = useState(firstDay);
+  const [to, setTo] = useState(lastDay);
 
   const { data: accounts = [] } = useQuery({
-    queryKey: ["cfs_accounts"],
+    queryKey: ["coa_cf"],
     queryFn: async () => {
-      const { data } = await supabase.from("chart_of_accounts" as any).select("id,code,name,account_type").order("code");
-      return (data || []) as unknown as Account[];
+      const { data, error } = await supabase.from("chart_of_accounts").select("id,code,name,account_type,opening_balance").order("code");
+      if (error) throw error;
+      return data as Account[];
     },
-  });
-  const { data: entries = [] } = useQuery({
-    queryKey: ["cfs_entries"],
-    queryFn: async () => {
-      const { data } = await supabase.from("journal_entries" as any).select("id,status,entry_date");
-      return (data || []) as unknown as JournalEntry[];
-    },
-  });
-  const { data: lines = [] } = useQuery({
-    queryKey: ["cfs_lines"],
-    queryFn: async () => {
-      const { data } = await supabase.from("journal_entry_lines" as any).select("account_id,debit,credit,entry_id,company_id,station_id");
-      return (data || []) as unknown as JournalLine[];
-    },
-  });
-  const { data: companies = [] } = useQuery({
-    queryKey: ["cfs_companies"],
-    queryFn: async () => { const { data } = await supabase.from("companies" as any).select("id,name").order("name"); return (data || []) as unknown as Company[]; },
-  });
-  const { data: stations = [] } = useQuery({
-    queryKey: ["cfs_stations"],
-    queryFn: async () => { const { data } = await supabase.from("finance_stations" as any).select("id,name,company_id").order("name"); return (data || []) as unknown as Station[]; },
   });
 
-  const accountMap = useMemo(() => {
-    const m = new Map<string, Account>();
-    accounts.forEach(a => m.set(a.id, a));
-    return m;
-  }, [accounts]);
-  const entryDateMap = useMemo(() => {
-    const m = new Map<string, string>();
-    entries.filter(e => (e.status || "").toLowerCase() === "posted").forEach(e => m.set(e.id, e.entry_date));
-    return m;
-  }, [entries]);
+  const fetchLines = async (start: string, end: string) => {
+    const { data: entries, error: e1 } = await supabase
+      .from("journal_entries").select("id")
+      .gte("entry_date", start).lte("entry_date", end).eq("status", "Posted");
+    if (e1) throw e1;
+    const ids = (entries || []).map((e: any) => e.id);
+    if (ids.length === 0) return [] as Line[];
+    const { data, error } = await supabase.from("journal_entry_lines").select("account_id,debit,credit").in("entry_id", ids);
+    if (error) throw error;
+    return data as Line[];
+  };
 
-  function computePeriod(from: string, to: string) {
-    const byCat: Record<CFCategory, Map<string, { code: string; name: string; amount: number }>> = {
-      operating: new Map(), investing: new Map(), financing: new Map(), cash: new Map(), ignore: new Map(),
+  // Movement during the period (for depreciation, NI reconstruction)
+  const { data: periodLines = [] } = useQuery({
+    queryKey: ["jel_cf_period", from, to],
+    queryFn: () => fetchLines(from, to),
+  });
+
+  // Movement from start of time up to period start (opening) & up to period end (closing) for WC accounts
+  const { data: toStartLines = [] } = useQuery({
+    queryKey: ["jel_cf_tostart", from],
+    queryFn: () => fetchLines("1900-01-01", new Date(new Date(from).getTime() - 86400000).toISOString().slice(0, 10)),
+  });
+  const { data: toEndLines = [] } = useQuery({
+    queryKey: ["jel_cf_toend", to],
+    queryFn: () => fetchLines("1900-01-01", to),
+  });
+
+  const cf = useMemo(() => {
+    const bal = (ls: Line[]) => {
+      const m = new Map<string, number>();
+      for (const l of ls) {
+        m.set(l.account_id, (m.get(l.account_id) || 0) + Number(l.debit || 0) - Number(l.credit || 0));
+      }
+      return m;
     };
-    let netCashChange = 0;
-    for (const l of lines) {
-      const d = entryDateMap.get(l.entry_id);
-      if (!d) continue;
-      const day = d.slice(0, 10);
-      if (from && day < from) continue;
-      if (to && day > to) continue;
-      if (companyFilter !== "all" && l.company_id !== companyFilter) continue;
-      if (stationFilter !== "all" && l.station_id !== stationFilter) continue;
-      const acc = accountMap.get(l.account_id);
-      if (!acc) continue;
-      const cat = classifyAccount(acc);
-      const netDebit = (l.debit || 0) - (l.credit || 0); // asset ↑ if positive
-      const contribToCash = netDebit * cashSign(acc);
-      if (cat === "cash") { netCashChange += (l.debit || 0) - (l.credit || 0); continue; }
-      if (cat === "ignore") continue;
-      const bucket = byCat[cat];
-      const existing = bucket.get(acc.id) || { code: acc.code, name: acc.name, amount: 0 };
-      existing.amount += contribToCash;
-      bucket.set(acc.id, existing);
+    const opening = bal(toStartLines);
+    const closing = bal(toEndLines);
+    const period = bal(periodLines);
+
+    let netIncome = 0;
+    let depreciation = 0;
+    let operatingWC = 0;
+    let investing = 0;
+    let financing = 0;
+    let cashOpen = 0;
+    let cashClose = 0;
+
+    const wcRows: { name: string; change: number }[] = [];
+    const invRows: { name: string; change: number }[] = [];
+    const finRows: { name: string; change: number }[] = [];
+
+    for (const a of accounts) {
+      const openBal = Number(a.opening_balance || 0) + (opening.get(a.id) || 0);
+      const closeBal = Number(a.opening_balance || 0) + (closing.get(a.id) || 0);
+      const periodMove = period.get(a.id) || 0;
+      const cls = classify(a);
+      const t = (a.account_type || "").toLowerCase();
+
+      if (cls === "cash") {
+        cashOpen += openBal;
+        cashClose += closeBal;
+        continue;
+      }
+      // Net income: revenue (credit) - expense (debit) in period
+      if (t === "revenue") netIncome += -periodMove; // credit balance normal
+      if (t === "expense") netIncome += -periodMove; // periodMove positive = expense increased -> reduces NI
+      // Depreciation: expense accounts with "deprec"/"amort" naming
+      if (t === "expense" && /(deprec|amort)/i.test(a.name)) depreciation += periodMove;
+
+      const change = closeBal - openBal;
+      if (cls === "operating_wc") {
+        // For asset WC: increase in asset = use of cash (-)
+        // For liability WC: increase = source of cash (+); asset change already positive means -change on cash
+        const cashEffect = t === "asset" ? -change : change;
+        if (Math.abs(cashEffect) > 0.01) {
+          operatingWC += cashEffect;
+          wcRows.push({ name: `${t === "asset" ? "Change in" : "Change in"} ${a.name}`, change: cashEffect });
+        }
+      } else if (cls === "investing") {
+        const cashEffect = t === "asset" ? -change : change;
+        if (Math.abs(cashEffect) > 0.01) {
+          investing += cashEffect;
+          invRows.push({ name: a.name, change: cashEffect });
+        }
+      } else if (cls === "financing") {
+        const cashEffect = t === "asset" ? -change : change;
+        if (Math.abs(cashEffect) > 0.01) {
+          financing += cashEffect;
+          finRows.push({ name: a.name, change: cashEffect });
+        }
+      }
     }
-    const summarize = (m: Map<string, { code: string; name: string; amount: number }>) => {
-      const rows = Array.from(m.values()).filter(r => Math.abs(r.amount) > 0.005).sort((a, b) => a.code.localeCompare(b.code));
-      const total = rows.reduce((s, r) => s + r.amount, 0);
-      return { rows, total };
-    };
-    const operating = summarize(byCat.operating);
-    const investing = summarize(byCat.investing);
-    const financing = summarize(byCat.financing);
-    const netChange = operating.total + investing.total + financing.total;
-    return { operating, investing, financing, netChange, netCashMovement: netCashChange };
-  }
 
-  const current = useMemo(() => computePeriod(dateFrom, dateTo), [lines, entryDateMap, accountMap, dateFrom, dateTo, companyFilter, stationFilter]);
-  const compare = useMemo(() => (compareFrom && compareTo ? computePeriod(compareFrom, compareTo) : null), [lines, entryDateMap, accountMap, compareFrom, compareTo, companyFilter, stationFilter]);
+    const operating = netIncome + depreciation + operatingWC;
+    const netChange = operating + investing + financing;
 
-  const stationsForCompany = useMemo(() => (
-    companyFilter === "all" ? stations : stations.filter(s => s.company_id === companyFilter)
-  ), [stations, companyFilter]);
+    return { netIncome, depreciation, operatingWC, operating, investing, financing, netChange, cashOpen, cashClose, wcRows, invRows, finRows };
+  }, [accounts, periodLines, toStartLines, toEndLines]);
 
-  const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const exportCsv = () => {
+    const rows: string[][] = [
+      ["Section", "Item", "Amount"],
+      ["Operating", "Net Income", String(cf.netIncome)],
+      ["Operating", "Depreciation & Amortization", String(cf.depreciation)],
+      ...cf.wcRows.map(r => ["Operating", r.name, String(r.change)]),
+      ["Operating Total", "", String(cf.operating)],
+      ...cf.invRows.map(r => ["Investing", r.name, String(r.change)]),
+      ["Investing Total", "", String(cf.investing)],
+      ...cf.finRows.map(r => ["Financing", r.name, String(r.change)]),
+      ["Financing Total", "", String(cf.financing)],
+      ["Net Change in Cash", "", String(cf.netChange)],
+      ["Cash Opening", "", String(cf.cashOpen)],
+      ["Cash Closing", "", String(cf.cashClose)],
+    ];
+    const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "cash_flow_statement.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
 
-  function handleExport() {
-    const rows: any[] = [];
-    const push = (section: string, r: { code: string; name: string; amount: number }) =>
-      rows.push({ Section: section, Code: r.code, Account: r.name, Current: r.amount, Compare: compare ? (compare[section.toLowerCase() as "operating" | "investing" | "financing"].rows.find(x => x.code === r.code)?.amount ?? 0) : "" });
-    current.operating.rows.forEach(r => push("Operating", r));
-    rows.push({ Section: "Operating", Code: "", Account: "Total Operating", Current: current.operating.total, Compare: compare?.operating.total ?? "" });
-    current.investing.rows.forEach(r => push("Investing", r));
-    rows.push({ Section: "Investing", Code: "", Account: "Total Investing", Current: current.investing.total, Compare: compare?.investing.total ?? "" });
-    current.financing.rows.forEach(r => push("Financing", r));
-    rows.push({ Section: "Financing", Code: "", Account: "Total Financing", Current: current.financing.total, Compare: compare?.financing.total ?? "" });
-    rows.push({ Section: "Net", Code: "", Account: "Net Change in Cash", Current: current.netChange, Compare: compare?.netChange ?? "" });
-    exportToExcel(rows, "Cash Flow", `cash-flow-${dateFrom}-to-${dateTo}.xlsx`);
-  }
-
-  const Section = ({ title, data, compareData }: { title: string; data: ReturnType<typeof computePeriod>["operating"]; compareData?: ReturnType<typeof computePeriod>["operating"] }) => (
-    <Card>
-      <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-24">Code</TableHead>
-              <TableHead>Account</TableHead>
-              <TableHead className="text-right">Current</TableHead>
-              {compareData && <TableHead className="text-right">Compare</TableHead>}
+  const Section = ({ title, rows, total }: { title: string; rows: { name: string; change: number }[]; total: number }) => (
+    <div>
+      <h3 className="font-semibold mb-2">{title}</h3>
+      <Table>
+        <TableBody>
+          {rows.map((r, i) => (
+            <TableRow key={i}>
+              <TableCell>{r.name}</TableCell>
+              <TableCell className="text-right w-40">{fmt(r.change)}</TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.rows.length === 0 ? (
-              <TableRow><TableCell colSpan={compareData ? 4 : 3} className="text-center text-muted-foreground">No movements</TableCell></TableRow>
-            ) : data.rows.map(r => {
-              const cmp = compareData?.rows.find(x => x.code === r.code);
-              return (
-                <TableRow key={r.code}>
-                  <TableCell className="font-mono text-xs">{r.code}</TableCell>
-                  <TableCell>{r.name}</TableCell>
-                  <TableCell className={`text-right ${r.amount < 0 ? "text-destructive" : ""}`}>{fmt(r.amount)}</TableCell>
-                  {compareData && <TableCell className={`text-right ${(cmp?.amount ?? 0) < 0 ? "text-destructive" : ""}`}>{fmt(cmp?.amount ?? 0)}</TableCell>}
-                </TableRow>
-              );
-            })}
-            <TableRow className="font-semibold bg-muted/50">
-              <TableCell />
-              <TableCell>Total {title}</TableCell>
-              <TableCell className={`text-right ${data.total < 0 ? "text-destructive" : ""}`}>{fmt(data.total)}</TableCell>
-              {compareData && <TableCell className={`text-right ${compareData.total < 0 ? "text-destructive" : ""}`}>{fmt(compareData.total)}</TableCell>}
-            </TableRow>
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+          ))}
+          <TableRow className="font-bold border-t-2">
+            <TableCell>Net cash from {title.toLowerCase()}</TableCell>
+            <TableCell className="text-right">{fmt(total)}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
   );
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><ArrowRightLeft className="h-6 w-6" /> Cash Flow Statement</h1>
-          <p className="text-sm text-muted-foreground">Indirect method — derived from posted journal entries.</p>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Waves className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold">Statement of Cash Flows</h1>
+            <p className="text-muted-foreground">Indirect method (IAS 7)</p>
+          </div>
         </div>
-        <Button onClick={handleExport} variant="outline"><Download className="h-4 w-4 mr-2" />Export Excel</Button>
+        <Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-2" />Export CSV</Button>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Filters</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div><Label>From</Label><Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} /></div>
-          <div><Label>To</Label><Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} /></div>
-          <div><Label>Compare From</Label><Input type="date" value={compareFrom} onChange={e => setCompareFrom(e.target.value)} /></div>
-          <div><Label>Compare To</Label><Input type="date" value={compareTo} onChange={e => setCompareTo(e.target.value)} /></div>
-          <div>
-            <Label>Company</Label>
-            <Select value={companyFilter} onValueChange={v => { setCompanyFilter(v); setStationFilter("all"); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Companies</SelectItem>
-                {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Station</Label>
-            <Select value={stationFilter} onValueChange={setStationFilter}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Stations</SelectItem>
-                {stationsForCompany.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+        <CardContent className="pt-6 flex flex-wrap gap-4 items-end">
+          <div><Label>From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div><Label>To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-6"><div className="text-xs text-muted-foreground">Operating</div><div className={`text-2xl font-bold ${current.operating.total < 0 ? "text-destructive" : "text-green-600"}`}>{fmt(current.operating.total)}</div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="text-xs text-muted-foreground">Investing</div><div className={`text-2xl font-bold ${current.investing.total < 0 ? "text-destructive" : "text-green-600"}`}>{fmt(current.investing.total)}</div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="text-xs text-muted-foreground">Financing</div><div className={`text-2xl font-bold ${current.financing.total < 0 ? "text-destructive" : "text-green-600"}`}>{fmt(current.financing.total)}</div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="h-3 w-3" />Net Change in Cash</div><div className={`text-2xl font-bold ${current.netChange < 0 ? "text-destructive" : "text-green-600"}`}>{fmt(current.netChange)}</div>
-          {Math.abs(current.netChange - current.netCashMovement) > 0.5 && (
-            <Badge variant="outline" className="mt-1 text-xs">Δ vs. cash ledger: {fmt(current.netChange - current.netCashMovement)}</Badge>
-          )}
-        </CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Operating</CardTitle></CardHeader><CardContent className={`text-2xl font-bold ${cf.operating < 0 ? "text-destructive" : "text-primary"}`}>{fmt(cf.operating)}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Investing</CardTitle></CardHeader><CardContent className={`text-2xl font-bold ${cf.investing < 0 ? "text-destructive" : ""}`}>{fmt(cf.investing)}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Financing</CardTitle></CardHeader><CardContent className={`text-2xl font-bold ${cf.financing < 0 ? "text-destructive" : ""}`}>{fmt(cf.financing)}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Net Change in Cash</CardTitle></CardHeader><CardContent className={`text-2xl font-bold ${cf.netChange < 0 ? "text-destructive" : "text-primary"}`}>{fmt(cf.netChange)}</CardContent></Card>
       </div>
 
-      <Tabs defaultValue="operating" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="operating"><TrendingUp className="h-4 w-4 mr-1" />Operating</TabsTrigger>
-          <TabsTrigger value="investing"><TrendingDown className="h-4 w-4 mr-1" />Investing</TabsTrigger>
-          <TabsTrigger value="financing"><Wallet className="h-4 w-4 mr-1" />Financing</TabsTrigger>
-        </TabsList>
-        <TabsContent value="operating"><Section title="Operating" data={current.operating} compareData={compare?.operating} /></TabsContent>
-        <TabsContent value="investing"><Section title="Investing" data={current.investing} compareData={compare?.investing} /></TabsContent>
-        <TabsContent value="financing"><Section title="Financing" data={current.financing} compareData={compare?.financing} /></TabsContent>
-      </Tabs>
+      <Card>
+        <CardHeader><CardTitle>Cash Flows — {from} to {to}</CardTitle></CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="font-semibold mb-2">Operating Activities</h3>
+            <Table>
+              <TableBody>
+                <TableRow><TableCell>Net Income</TableCell><TableCell className="text-right w-40">{fmt(cf.netIncome)}</TableCell></TableRow>
+                <TableRow><TableCell>Add: Depreciation & Amortization</TableCell><TableCell className="text-right">{fmt(cf.depreciation)}</TableCell></TableRow>
+                {cf.wcRows.map((r, i) => (
+                  <TableRow key={i}><TableCell>{r.name}</TableCell><TableCell className="text-right">{fmt(r.change)}</TableCell></TableRow>
+                ))}
+                <TableRow className="font-bold border-t-2"><TableCell>Net cash from operating activities</TableCell><TableCell className="text-right">{fmt(cf.operating)}</TableCell></TableRow>
+              </TableBody>
+            </Table>
+          </div>
+          <Section title="Investing Activities" rows={cf.invRows} total={cf.investing} />
+          <Section title="Financing Activities" rows={cf.finRows} total={cf.financing} />
+
+          <div className="border-t-4 pt-3 space-y-2">
+            <div className="flex justify-between font-bold"><span>Net change in cash</span><span>{fmt(cf.netChange)}</span></div>
+            <div className="flex justify-between"><span>Cash at beginning of period</span><span>{fmt(cf.cashOpen)}</span></div>
+            <div className="flex justify-between font-bold"><span>Cash at end of period</span><span>{fmt(cf.cashClose)}</span></div>
+            {Math.abs((cf.cashOpen + cf.netChange) - cf.cashClose) > 1 && (
+              <div className="text-xs text-destructive">Reconciliation variance: {fmt((cf.cashOpen + cf.netChange) - cf.cashClose)}</div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
