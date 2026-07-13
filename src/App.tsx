@@ -118,7 +118,6 @@ import DividendsPage from "./pages/accounting/Dividends";
 import ProvisionsPage from "./pages/accounting/Provisions";
 import CountryByCountryPage from "./pages/accounting/CountryByCountry";
 import GlobeMinimumTaxPage from "./pages/accounting/GlobeMinimumTax";
-import CashFlowStatementPage from "./pages/accounting/CashFlowStatement";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
