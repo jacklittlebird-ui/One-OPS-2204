@@ -74,7 +74,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="flex flex-col gap-1 p-2">
-                        <span className="font-semibold text-xs mb-1">{section.label}</span>
+                        <span className="font-semibold text-xs mb-1">{tSection(section.label)}</span>
                         {section.children?.map((child) => (
                           <Link
                             key={child.label}
@@ -139,7 +139,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                       {section.icon}
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent side="right">{section.label}</TooltipContent>
+                  <TooltipContent side="right">{tSection(section.label)}</TooltipContent>
                 </Tooltip>
               ) : (
                 <Link
@@ -152,7 +152,7 @@ export default function Sidebar({ onNavigate, collapsed = false }: SidebarProps)
                   }`}
                 >
                   {section.icon}
-                  <span className="text-sm uppercase tracking-wider font-medium">{section.label}</span>
+                  <span className="text-sm uppercase tracking-wider font-medium">{tSection(section.label)}</span>
                 </Link>
               )}
             </div>
