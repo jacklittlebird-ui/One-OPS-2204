@@ -115,6 +115,7 @@ import DeferredTaxPage from "./pages/accounting/DeferredTax";
 import TransferPricingPage from "./pages/accounting/TransferPricing";
 import CorporateTaxPage from "./pages/accounting/CorporateTax";
 import DividendsPage from "./pages/accounting/Dividends";
+import ProvisionsPage from "./pages/accounting/Provisions";
 import VendorInvoicesPage from "./pages/VendorInvoices";
 import AgingReportsPage from "./pages/AgingReports";
 import AirlineIncentivesPage from "./pages/AirlineIncentives";
