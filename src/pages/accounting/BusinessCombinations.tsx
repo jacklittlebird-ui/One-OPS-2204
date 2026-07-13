@@ -135,7 +135,7 @@ export default function BusinessCombinationsPage() {
         "Carrying Goodwill": r.carrying,
       };
     });
-    exportToExcel(rows, "business-combinations-ifrs3");
+    exportToExcel(rows, "Combinations", "business-combinations-ifrs3");
   };
 
   return (
