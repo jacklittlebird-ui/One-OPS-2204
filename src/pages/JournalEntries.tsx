@@ -360,7 +360,10 @@ export default function JournalEntriesPage() {
                 </table>
               </div>
 
-              <Button className="w-full" onClick={() => saveMutation.mutate()} disabled={!isBalanced || saveMutation.isPending}>
+              {missingFlightLink && (
+                <div className="text-xs text-red-600 text-center">One or more Account-8 lines are missing a Flight Link.</div>
+              )}
+              <Button className="w-full" onClick={() => saveMutation.mutate()} disabled={!isBalanced || missingFlightLink || saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving…" : editEntry ? "Update Entry" : "Save Entry"}
               </Button>
             </div>
