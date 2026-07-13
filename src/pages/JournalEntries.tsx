@@ -149,7 +149,7 @@ export default function JournalEntriesPage() {
     setEditEntry(null);
     const nextNo = `JE-${String(entries.length + 1).padStart(4, "0")}`;
     setForm({ entry_no: nextNo, entry_date: new Date().toISOString().slice(0, 10), description: "", reference: "", reference_type: "", status: "Draft", created_by: "" });
-    setLines([{ account_id: "", debit: 0, credit: 0, description: "" }, { account_id: "", debit: 0, credit: 0, description: "" }]);
+    setLines([{ account_id: "", debit: 0, credit: 0, description: "" }]);
     setDialogOpen(true);
   };
 
