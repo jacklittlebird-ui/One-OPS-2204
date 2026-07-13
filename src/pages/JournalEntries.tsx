@@ -67,7 +67,7 @@ export default function JournalEntriesPage() {
   const leafAccounts = accounts.filter(a => !a.is_group);
   const accountMap = Object.fromEntries(accounts.map(a => [a.id, a]));
 
-  const companyOptions: SmartOption[] = companies.map((c: any) => ({ value: c.id, label: c.name, sub: c.currency }));
+  const companyOptions: SmartOption[] = companies.map((c: any) => ({ value: c.id, label: c.name_ar ? `${c.code} — ${c.name} / ${c.name_ar}` : `${c.code} — ${c.name}`, sub: c.base_currency }));
   const stationOptions: SmartOption[] = stations.map((s: any) => ({ value: s.id, label: `${s.code || ""} — ${s.name}`.replace(/^ — /, ""), sub: s.code }));
   const airlineOptions: SmartOption[] = airlinesRef.map((a: any) => ({ value: a.id, label: a.name, sub: a.iata_code }));
   const supplierOptions: SmartOption[] = suppliers.map((s: any) => ({ value: s.id, label: s.name }));
