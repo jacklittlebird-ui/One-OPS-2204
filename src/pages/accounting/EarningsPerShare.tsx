@@ -56,7 +56,7 @@ export default function EarningsPerSharePage() {
   const { data: accounts = [] } = useQuery<Account[]>({
     queryKey: ["eps-accounts"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("accounts").select("id, account_type");
+      const { data, error } = await supabase.from("chart_of_accounts").select("id, account_type");
       if (error) throw error;
       return (data ?? []) as Account[];
     },
