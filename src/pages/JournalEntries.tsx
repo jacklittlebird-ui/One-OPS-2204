@@ -324,9 +324,9 @@ export default function JournalEntriesPage() {
                               {/* Account-8 rule (spec §3 rule): reveal flight linking */}
                               {isAccount8 && (
                                 <>
-                                  <div className="col-span-12 mt-1 rounded-md bg-amber-50 border border-amber-200 p-2">
-                                    <div className="text-[11px] font-medium text-amber-700 mb-1">
-                                      Account starts with "8" — flight link required (auto-generates flight cost report).
+                                  <div className={`col-span-12 mt-1 rounded-md p-2 border ${!line.flight_schedule_id ? "bg-red-50 border-red-300" : "bg-amber-50 border-amber-200"}`}>
+                                    <div className={`text-[11px] font-medium mb-1 ${!line.flight_schedule_id ? "text-red-700" : "text-amber-700"}`}>
+                                      Account starts with "8" — Flight Link is required <span className="text-red-600">*</span>
                                     </div>
                                     <SmartDropdown
                                       options={flightOptions}
