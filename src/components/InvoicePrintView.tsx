@@ -283,7 +283,7 @@ export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewP
             <tbody>
               {[
                 { label: "Civil Aviation Authority Fees", amount: invoice.civilAviation },
-                { label: "Ground Handling Fee", amount: invoice.handling },
+                { label: "Security Fee", amount: invoice.handling },
                 { label: "Airport Charges", amount: invoice.airportCharges },
                 { label: "Catering", amount: invoice.catering },
                 { label: "Other Charges", amount: invoice.other },
