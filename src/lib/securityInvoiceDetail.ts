@@ -48,7 +48,6 @@ export const SECURITY_INVOICE_COLUMNS = [
   "End",
   "Duration (h)",
   "OT (h)",
-  "Staff",
   "Amount",
 ] as const;
 
