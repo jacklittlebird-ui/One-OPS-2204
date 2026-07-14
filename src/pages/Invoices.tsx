@@ -2156,6 +2156,24 @@ export default function InvoicesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {detailInvoice && (
+        <InvoiceDetailModal
+          invoice={detailInvoice as any}
+          onClose={() => setDetailInvoice(null)}
+          onEdit={(inv) => { setDetailInvoice(null); startEdit(inv as any); }}
+          onFinalize={(inv) => { setDetailInvoice(null); handleFinalize(inv as any); }}
+          onPrint={(inv) => { setDetailInvoice(null); setPrintInvoice(toPrintFormat(inv as any)); }}
+        />
+      )}
+
+      {printInvoice && (
+        printInvoice._isSecurity ? (
+          <SecurityInvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
+        ) : (
+          <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
+        )
+      )}
     </div>
   );
 }
