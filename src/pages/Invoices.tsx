@@ -1389,7 +1389,10 @@ export default function InvoicesPage() {
               <th className="data-table-header px-3 py-3 w-8">
                 <input type="checkbox" checked={pageData.length > 0 && selectedIds.size === pageData.length} onChange={toggleAll} className="rounded border-border" />
               </th>
-              {["#","INVOICE NO","DATE","DUE","OPERATOR","FLIGHT REF","REG","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"].map(h => (
+              {(categoryTab === "security"
+                ? ["#","INVOICE NO","DATE","DUE","OPERATOR","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"]
+                : ["#","INVOICE NO","DATE","DUE","OPERATOR","FLIGHT REF","REG","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"]
+              ).map(h => (
                 <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
               ))}
             </tr></thead>
@@ -1412,8 +1415,12 @@ export default function InvoicesPage() {
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(inv.date)}</td>
                   <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{formatDateDMY(inv.due_date)}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground">{inv.operator}</td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{inv.flight_ref}</td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getInvoiceReg(inv) || "—"}</td>
+                  {categoryTab !== "security" && (
+                    <>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{inv.flight_ref}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getInvoiceReg(inv) || "—"}</td>
+                    </>
+                  )}
                   <td className="px-3 py-2.5">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${inv.invoice_type === "Final" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
                       {inv.invoice_type || "Preliminary"}
@@ -2149,6 +2156,24 @@ export default function InvoicesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {detailInvoice && (
+        <InvoiceDetailModal
+          invoice={detailInvoice as any}
+          onClose={() => setDetailInvoice(null)}
+          onEdit={(inv) => { setDetailInvoice(null); startEdit(inv as any); }}
+          onFinalize={(inv) => { setDetailInvoice(null); handleFinalize(inv as any); }}
+          onPrint={(inv) => { setDetailInvoice(null); setPrintInvoice(toPrintFormat(inv as any)); }}
+        />
+      )}
+
+      {printInvoice && (
+        printInvoice._isSecurity ? (
+          <SecurityInvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
+        ) : (
+          <InvoicePrintView invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
+        )
+      )}
     </div>
   );
 }
