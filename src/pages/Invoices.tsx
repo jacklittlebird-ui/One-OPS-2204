@@ -1415,8 +1415,12 @@ export default function InvoicesPage() {
                   <td className="px-3 py-2.5 text-foreground whitespace-nowrap">{formatDateDMY(inv.date)}</td>
                   <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{formatDateDMY(inv.due_date)}</td>
                   <td className="px-3 py-2.5 font-semibold text-foreground">{inv.operator}</td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{inv.flight_ref}</td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getInvoiceReg(inv) || "—"}</td>
+                  {categoryTab !== "security" && (
+                    <>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{inv.flight_ref}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{getInvoiceReg(inv) || "—"}</td>
+                    </>
+                  )}
                   <td className="px-3 py-2.5">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${inv.invoice_type === "Final" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
                       {inv.invoice_type || "Preliminary"}
