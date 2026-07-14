@@ -53,7 +53,7 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="sticky top-0 bg-card border-b px-4 md:px-6 py-3 md:py-4 flex items-center justify-between rounded-t-xl z-10">
           <div className="flex items-center gap-3">
@@ -147,7 +147,6 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
                         <td className="border border-border px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-right font-mono">{r.durationHours != null ? Number(r.durationHours).toFixed(2) : "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-right font-mono">{r.overtimeHours != null ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
-                        <td className="border border-border px-1.5 py-1 text-center">{r.staffCount ?? "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-right font-mono">{fmtN((r.handling || 0) + (r.other || 0))}</td>
                       </tr>
                     ))}
