@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
 import { X, FileText, DollarSign, Plane, Calendar, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { parseSecurityDetail, SECURITY_INVOICE_COLUMNS, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
 
 export type InvoiceRow = {
   id: string; invoice_no: string; date: string; due_date: string;
@@ -40,68 +39,21 @@ function DetailRow({ label, value, mono }: { label: string; value: React.ReactNo
   );
 }
 
-// Charge labels mirroring the Edit Service Report form fields
-const REPORT_CHARGE_FIELDS: { key: keyof ReportLite; label: string }[] = [
-  { key: "civil_aviation_fee", label: "Civil Aviation Fee" },
-  { key: "handling_fee",       label: "Handling Fee" },
-  { key: "landing_charge",     label: "Landing Charge" },
-  { key: "parking_charge",     label: "Parking Charge" },
-  { key: "housing_charge",     label: "Housing Charge" },
-  { key: "airport_charge",     label: "Airport Charge" },
-  { key: "catering_charge",    label: "Catering" },
-  { key: "hotac_charge",       label: "HOTAC" },
-  { key: "fuel_charge",        label: "Fuel" },
-];
-
-type ReportLite = {
-  id: string;
-  flight_no: string;
-  registration: string;
-  arrival_date: string | null;
-  route: string;
-  station: string;
-  currency: string;
-  civil_aviation_fee: number;
-  handling_fee: number;
-  landing_charge: number;
-  parking_charge: number;
-  housing_charge: number;
-  airport_charge: number;
-  catering_charge: number;
-  hotac_charge: number;
-  fuel_charge: number;
-  total_cost: number;
-};
-
 export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFinalize, onPrint }: Props) {
   const st = statusStyles[inv.status] || statusStyles.Draft;
   const daysUntilDue = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000);
 
-  const [reports, setReports] = useState<ReportLite[]>([]);
-  const [loadingReports, setLoadingReports] = useState(false);
-
-  // Fetch the underlying service reports for every flight number on this invoice
-  // so we can show the same detailed charge breakdown as the Edit Service Report view.
-  useEffect(() => {
-    const flightNos = (inv.flight_ref || "")
-      .split(",").map(s => s.trim()).filter(Boolean);
-    if (flightNos.length === 0) { setReports([]); return; }
-    setLoadingReports(true);
-    (async () => {
-      const { data } = await supabase
-        .from("v_service_report_with_flight")
-        .select("id,flight_no,registration,arrival_date,route,station,currency,civil_aviation_fee,handling_fee,landing_charge,parking_charge,housing_charge,airport_charge,catering_charge,hotac_charge,fuel_charge,total_cost")
-        .in("flight_no", flightNos);
-      setReports(((data as unknown) as ReportLite[]) || []);
-      setLoadingReports(false);
-    })();
-  }, [inv.flight_ref]);
-
   const fmt = (n: number) => `${inv.currency} ${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  const fmtN = (n: number | undefined) => (n == null ? "" : (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+  // Parse the per-flight annex embedded in notes (same source as the print view).
+  const { detail } = parseSecurityDetail(inv.notes);
+  const isSecurity = (inv.invoice_no || "").toUpperCase().includes("-SEC")
+    || detail.some(r => r.serviceType || r.aircraftType || r.skdType || r.staffCount != null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-card rounded-xl border shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="sticky top-0 bg-card border-b px-4 md:px-6 py-3 md:py-4 flex items-center justify-between rounded-t-xl z-10">
           <div className="flex items-center gap-3">
@@ -122,7 +74,7 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
         </div>
 
         <div className="p-4 md:p-6 space-y-5 md:space-y-6">
-          {/* Quick Stats — Total Amount intentionally hidden on draft view */}
+          {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-info/5 rounded-lg p-3 text-center">
               <Calendar size={16} className="mx-auto text-info mb-1" />
@@ -157,57 +109,84 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
             {inv.payment_date && <DetailRow label="Payment Date" value={formatDateDMY(inv.payment_date)} />}
           </div>
 
-          {/* Charges Breakdown — mirrors Edit Service Report fields, per linked flight */}
+          {/* Charges Breakdown — mirrors the printable Annex A per-flight detail */}
           <div className="bg-muted/30 rounded-lg p-4">
             <h3 className="text-xs font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-1.5"><DollarSign size={12} /> Charges Breakdown</h3>
 
-            {loadingReports ? (
-              <div className="text-sm text-muted-foreground py-4 text-center">Loading charge details…</div>
-            ) : reports.length === 0 ? (
+            {detail.length === 0 ? (
               <div className="text-xs text-muted-foreground py-3 text-center">
-                No linked Service Report found for flight(s) <span className="font-mono">{inv.flight_ref || "—"}</span>.
+                No per-flight detail attached to this invoice.
+              </div>
+            ) : isSecurity ? (
+              <div className="overflow-x-auto border border-border rounded-lg">
+                <table className="w-full text-[11px] border-collapse">
+                  <thead>
+                    <tr className="bg-muted/60">
+                      {SECURITY_INVOICE_COLUMNS.map(h => (
+                        <th key={h} className="border border-border px-1.5 py-1 text-center font-bold text-foreground whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...detail].sort((a, b) => {
+                      const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
+                      const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
+                      return ka.localeCompare(kb);
+                    }).map((r: SecurityDetailRow, i) => (
+                      <tr key={i} className="hover:bg-muted/30">
+                        <td className="border border-border px-1.5 py-1 text-center">{i + 1}</td>
+                        <td className="border border-border px-1.5 py-1 text-center whitespace-nowrap">{r.arrDate ? formatDateDMY(r.arrDate) : (r.date ? formatDateDMY(r.date) : "—")}</td>
+                        <td className="border border-border px-1.5 py-1 text-center whitespace-nowrap">{r.depDate ? formatDateDMY(r.depDate) : "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center font-mono">{r.flight || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center font-mono">{r.reg || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.aircraftType || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.route || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.serviceType || r.type || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.skdType || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono">{r.durationHours != null ? Number(r.durationHours).toFixed(2) : "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono">{r.overtimeHours != null ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.staffCount ?? "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono">{fmtN((r.handling || 0) + (r.other || 0))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <div className="space-y-4">
-                {reports.map(r => (
-                  <div key={r.id} className="bg-card border border-border rounded-lg p-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2 mb-2 pb-2 border-b border-border/60">
-                      <div className="flex items-center gap-2">
-                        <Plane size={14} className="text-primary" />
-                        <span className="font-mono font-bold text-foreground text-sm">{r.flight_no}</span>
-                        {r.registration && <span className="text-xs text-muted-foreground font-mono">· {r.registration}</span>}
-                        {r.route && <span className="text-xs text-muted-foreground">· {r.route}</span>}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {r.arrival_date ? formatDateDMY(r.arrival_date) : ""} {r.station && `· ${r.station}`}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                      {REPORT_CHARGE_FIELDS.map(f => {
-                        const val = (r[f.key] as number) || 0;
-                        if (!val) return null;
-                        return (
-                          <div key={f.key as string} className="flex justify-between items-center py-1.5 border-b border-border/30">
-                            <span className="text-xs text-foreground">{f.label}</span>
-                            <span className="text-xs font-mono font-semibold text-foreground">
-                              {(r.currency || inv.currency)} {val.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex justify-between items-center pt-2 mt-1">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Flight Total</span>
-                      <span className="text-sm font-mono font-bold text-foreground">
-                        {(r.currency || inv.currency)} {(r.total_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto border border-border rounded-lg">
+                <table className="w-full text-[11px] border-collapse">
+                  <thead>
+                    <tr className="bg-muted/60">
+                      {["S", "Date", "Flight", "Reg.", "Route", "Station", "Service", "Civil Aviation", "Handling", "Airport", "Other", "Total"].map(h => (
+                        <th key={h} className="border border-border px-1.5 py-1 text-center font-bold text-foreground whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.map((r, i) => (
+                      <tr key={i} className="hover:bg-muted/30">
+                        <td className="border border-border px-1.5 py-1 text-center">{i + 1}</td>
+                        <td className="border border-border px-1.5 py-1 text-center whitespace-nowrap">{r.date ? formatDateDMY(r.date) : "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center font-mono">{r.flight || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center font-mono">{r.reg || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.route || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.station || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-center">{r.type || r.serviceType || "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono">{fmtN(r.civil)}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono">{fmtN(r.handling)}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono">{fmtN(r.airport)}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono">{fmtN(r.other)}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono font-semibold">{fmtN(r.total)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 
-            {/* Aggregated buckets stored on the invoice (kept for transparency) */}
+            {/* Aggregated buckets stored on the invoice */}
             <div className="mt-4 pt-3 border-t border-border/60">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Invoice Buckets</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
@@ -232,7 +211,6 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
                 <span className="text-xs text-muted-foreground">VAT</span>
                 <span className="text-xs font-mono text-foreground">{fmt(inv.vat)}</span>
               </div>
-              {/* Total amount intentionally not displayed on this view */}
             </div>
           </div>
 
@@ -245,14 +223,6 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
               {inv.finalized_by && <DetailRow label="Finalized By" value={inv.finalized_by} />}
               {inv.sent_to && <DetailRow label="Sent To" value={inv.sent_to} />}
               {inv.journal_entry_id && <DetailRow label="Journal Entry" value={<span className="flex items-center gap-1"><BookOpen size={12} className="text-success" /> Linked</span>} />}
-            </div>
-          )}
-
-          {/* Notes */}
-          {inv.notes && (
-            <div className="bg-muted/30 rounded-lg p-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Notes</h3>
-              <p className="text-sm text-foreground">{inv.notes}</p>
             </div>
           )}
         </div>
