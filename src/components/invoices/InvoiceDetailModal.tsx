@@ -190,7 +190,7 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
                 {[
                   { l: "Civil Aviation Authority Fees", v: inv.civil_aviation },
-                  { l: "Ground Handling Fee",           v: inv.handling },
+                  { l: "Security Fee",                  v: inv.handling },
                   { l: "Airport Charges",               v: inv.airport_charges },
                   { l: "Catering",                      v: inv.catering },
                   { l: "Other Charges",                 v: inv.other },
