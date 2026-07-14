@@ -268,7 +268,7 @@ export default function InvoicePrintView({ invoice, onClose }: InvoicePrintViewP
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Bill To</p>
             <p className="font-semibold text-lg">{invoice.operator}</p>
-            <p className="text-sm text-gray-600">IATA: {invoice.airlineIATA} · Flight Ref: {invoice.flightRef}</p>
+            <p className="text-sm text-gray-600">IATA: {invoice.airlineIATA} · Total Flights: {detail.length}</p>
             {invoice.description && <p className="text-sm text-gray-500 mt-1">{invoice.description}</p>}
           </div>
 

@@ -93,7 +93,7 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
             <h3 className="text-xs font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5"><Plane size={12} /> Flight & Billing</h3>
             <DetailRow label="Operator" value={inv.operator} />
             <DetailRow label="IATA Code" value={inv.airline_iata} mono />
-            <DetailRow label="Flight Ref" value={inv.flight_ref} mono />
+            <DetailRow label="Total Flights" value={detail.length} mono />
             <DetailRow label="Station" value={inv.station} mono />
             <DetailRow label="Billing Period" value={inv.billing_period} />
             <DetailRow label="Description" value={inv.description} />
