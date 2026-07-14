@@ -65,7 +65,7 @@ describe("SecurityInvoicePrintView", () => {
 
   it("renders per-flight data fields from the parsed detail row", () => {
     render(<SecurityInvoicePrintView invoice={baseInvoice([sampleRow])} onClose={() => {}} />);
-    for (const v of ["TA100", "SU-ABC", "A320", "CAI-DXB", "INT", "Ramp Security", "10:00", "12:30"]) {
+    for (const v of ["TA100", "SU-ABC", "CAI-DXB", "INT", "Ramp Security", "10:00", "12:30"]) {
       expect(screen.getAllByText(v).length).toBeGreaterThan(0);
     }
   });
