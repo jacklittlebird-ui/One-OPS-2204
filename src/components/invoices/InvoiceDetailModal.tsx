@@ -139,7 +139,6 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
                         <td className="border border-border px-1.5 py-1 text-center whitespace-nowrap">{r.depDate ? formatDateDMY(r.depDate) : "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center font-mono">{r.flight || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center font-mono">{r.reg || "—"}</td>
-                        <td className="border border-border px-1.5 py-1 text-center">{r.aircraftType || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center">{r.route || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center">{r.serviceType || r.type || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center">{r.skdType || "—"}</td>

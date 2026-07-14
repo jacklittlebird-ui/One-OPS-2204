@@ -375,7 +375,6 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                             <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.depDate ? formatDateDMY(r.depDate) : (r.date ? formatDateDMY(r.date) : "—")}</td>
                             <td className="border border-gray-800 px-1.5 py-1 text-center">{r.flight || "—"}</td>
                             <td className="border border-gray-800 px-1.5 py-1 text-center">{r.reg || "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.aircraftType || "—"}</td>
                             <td className="border border-gray-800 px-1.5 py-1 text-center">{r.route || "—"}</td>
                             <td className="border border-gray-800 px-1.5 py-1 text-left">{r.serviceType || r.type || "—"}</td>
                             <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
@@ -389,15 +388,15 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                       </tbody>
                       <tfoot>
                         <tr>
-                          <td colSpan={13} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
+                          <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(total, invoice.currency)}</td>
                         </tr>
                         <tr>
-                          <td colSpan={13} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
+                          <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
                           <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(0, invoice.currency)}</td>
                         </tr>
                         <tr className="font-bold">
-                          <td colSpan={13} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
+                          <td colSpan={12} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
                           <td className="border border-gray-800 px-1.5 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
                         </tr>
                       </tfoot>

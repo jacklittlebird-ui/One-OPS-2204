@@ -40,7 +40,6 @@ export const SECURITY_INVOICE_COLUMNS = [
   "DEP DATE",
   "Flight",
   "Reg.",
-  "A/C Type",
   "Route",
   "Service Type",
   "SKD",
