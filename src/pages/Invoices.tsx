@@ -1389,7 +1389,10 @@ export default function InvoicesPage() {
               <th className="data-table-header px-3 py-3 w-8">
                 <input type="checkbox" checked={pageData.length > 0 && selectedIds.size === pageData.length} onChange={toggleAll} className="rounded border-border" />
               </th>
-              {["#","INVOICE NO","DATE","DUE","OPERATOR","FLIGHT REF","REG","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"].map(h => (
+              {(categoryTab === "security"
+                ? ["#","INVOICE NO","DATE","DUE","OPERATOR","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"]
+                : ["#","INVOICE NO","DATE","DUE","OPERATOR","FLIGHT REF","REG","TYPE","SUBTOTAL","VAT","TOTAL","CURRENCY","STATUS","ACTIONS"]
+              ).map(h => (
                 <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
               ))}
             </tr></thead>
