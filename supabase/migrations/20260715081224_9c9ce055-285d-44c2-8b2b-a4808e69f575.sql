@@ -1,0 +1,1 @@
+UPDATE public.flight_schedules SET authority = 'SSH', updated_at = now() WHERE route LIKE 'SSH%' AND (authority IS NULL OR authority <> 'SSH');
