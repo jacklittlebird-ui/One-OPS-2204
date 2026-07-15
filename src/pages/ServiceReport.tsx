@@ -563,6 +563,7 @@ function HandlingServiceReportContent() {
   const [showAdd, setShowAdd] = useState(false);
   const [newReport, setNewReport] = useState<Partial<ReportFormData>>(emptyReport());
   const [editId, setEditId] = useState<string | null>(null);
+  const [viewData, setViewData] = useState<Partial<ReportFormData> | null>(null);
   const [editData, setEditData] = useState<Partial<ReportFormData>>({});
   const [activeClearanceStatus, setActiveClearanceStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
