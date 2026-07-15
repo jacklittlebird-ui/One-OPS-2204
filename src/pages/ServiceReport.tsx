@@ -1741,6 +1741,7 @@ function HandlingServiceReportContent() {
                               navigate(`/invoices?${params.toString()}`);
                             }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
                           )}
+                          <button onClick={() => { setViewData({ ...r } as any); setActiveClearanceStatus((r as MergedRow).clearanceStatus || ""); }} className="text-muted-foreground hover:text-foreground" title="View full record"><Eye size={13} /></button>
                           <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
                           {isAdmin && (
                             <button
