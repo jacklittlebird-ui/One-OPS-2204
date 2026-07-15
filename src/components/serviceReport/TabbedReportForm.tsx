@@ -639,7 +639,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Tab content */}
-        <div className={`flex-1 overflow-y-auto p-6 bg-muted/10 min-w-0 ${reviewMode ? "[&_input:not([data-review-editable])]:!bg-muted/40 [&_select:not([data-review-editable])]:!bg-muted/40 [&_textarea:not([data-review-editable])]:!bg-muted/40 [&_input:not([data-review-editable])]:cursor-not-allowed [&_select:not([data-review-editable])]:cursor-not-allowed [&_textarea:not([data-review-editable])]:cursor-not-allowed [&_input:not([data-review-editable])]:pointer-events-none [&_select:not([data-review-editable])]:pointer-events-none [&_textarea:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:opacity-60" : ""}`}>
+        <div className={`flex-1 overflow-y-auto p-6 bg-muted/10 min-w-0 ${isLocked ? "[&_input:not([data-review-editable])]:!bg-muted/40 [&_select:not([data-review-editable])]:!bg-muted/40 [&_textarea:not([data-review-editable])]:!bg-muted/40 [&_input:not([data-review-editable])]:cursor-not-allowed [&_select:not([data-review-editable])]:cursor-not-allowed [&_textarea:not([data-review-editable])]:cursor-not-allowed [&_input:not([data-review-editable])]:pointer-events-none [&_select:not([data-review-editable])]:pointer-events-none [&_textarea:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:opacity-60" : ""}`}>
           
           {activeTab === "flight" && (
             <div className="space-y-4">
