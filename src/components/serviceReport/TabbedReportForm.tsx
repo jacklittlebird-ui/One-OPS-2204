@@ -600,7 +600,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             <button
               key={s}
               onClick={() => set("flightStatus", s)}
-                disabled={reviewMode}
+                disabled={isLocked}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                 data.flightStatus === s
                   ? "bg-primary text-primary-foreground shadow-sm scale-[1.02]"
