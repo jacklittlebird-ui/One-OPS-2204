@@ -260,6 +260,8 @@ interface Props {
   clearanceStatus?: string;
   /** When true, all fields are read-only and Save is hidden. Used by Operations review. */
   reviewMode?: boolean;
+  /** When true, form is strictly read-only (no editable fields, no save/approve/reject). Used by Station "View" action. */
+  viewOnly?: boolean;
   /** Operations review actions */
   onApprove?: (comment: string) => void;
   onReject?: (comment: string) => void;
