@@ -969,7 +969,12 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Footer */}
-        {reviewMode ? (
+        {viewOnly ? (
+          <div className="bg-card border-t px-6 py-3 flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">Read-only view · <strong className="text-foreground">{data.currency || "USD"} {totalCostPreview}</strong> total</div>
+            <button onClick={onCancel} className="toolbar-btn-outline">Close</button>
+          </div>
+        ) : reviewMode ? (
           <div className="bg-card border-t px-6 py-4 space-y-3">
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
