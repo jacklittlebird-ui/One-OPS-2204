@@ -277,7 +277,10 @@ const tabIcons: Record<ReportTab, React.ReactNode> = {
   "fuel-handling": <Fuel size={14} />,
 };
 
-export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus, reviewMode = false, onApprove, onReject }: Props) {
+export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus, reviewMode = false, viewOnly = false, onApprove, onReject }: Props) {
+  // Any locked state disables field edits + hides Save. Review mode keeps a small allow-list (operator, skdType); view-only locks everything.
+  const isLocked = reviewMode || viewOnly;
+  const reviewEditable = reviewMode && !viewOnly;
   const { activeChannel } = useChannel();
   const { station: userStation, isStationScoped } = useUserStation();
   const lockedStationName = useMemo(() => {
