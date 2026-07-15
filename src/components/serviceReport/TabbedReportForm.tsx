@@ -260,6 +260,8 @@ interface Props {
   clearanceStatus?: string;
   /** When true, all fields are read-only and Save is hidden. Used by Operations review. */
   reviewMode?: boolean;
+  /** When true, form is strictly read-only (no editable fields, no save/approve/reject). Used by Station "View" action. */
+  viewOnly?: boolean;
   /** Operations review actions */
   onApprove?: (comment: string) => void;
   onReject?: (comment: string) => void;
@@ -275,7 +277,10 @@ const tabIcons: Record<ReportTab, React.ReactNode> = {
   "fuel-handling": <Fuel size={14} />,
 };
 
-export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus, reviewMode = false, onApprove, onReject }: Props) {
+export default function TabbedReportForm({ data, onChange, onSave, onCancel, title, clearanceStatus, reviewMode = false, viewOnly = false, onApprove, onReject }: Props) {
+  // Any locked state disables field edits + hides Save. Review mode keeps a small allow-list (operator, skdType); view-only locks everything.
+  const isLocked = reviewMode || viewOnly;
+  const reviewEditable = reviewMode && !viewOnly;
   const { activeChannel } = useChannel();
   const { station: userStation, isStationScoped } = useUserStation();
   const lockedStationName = useMemo(() => {
@@ -351,6 +356,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
   }, [data.operator, data.skdType, onSave]);
 
   const set = (key: keyof ReportFormData, val: any) => {
+    if (viewOnly) return;
     if (reviewMode && key !== "operator" && key !== "skdType") return;
     const updated = { ...data, [key]: val };
     if (key === "co" || key === "ob") {
@@ -594,7 +600,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
             <button
               key={s}
               onClick={() => set("flightStatus", s)}
-                disabled={reviewMode}
+                disabled={isLocked}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                 data.flightStatus === s
                   ? "bg-primary text-primary-foreground shadow-sm scale-[1.02]"
@@ -607,7 +613,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Review Mode Banner */}
-        {reviewMode && (
+        {reviewMode && !viewOnly && (
           <div className="px-6 py-3 bg-info/10 border-b border-info/30 flex items-center justify-between gap-2 text-sm text-info">
             <span className="flex items-center gap-2"><Clock size={16} className="shrink-0" /><strong>Review Mode:</strong> Most fields are read-only. Operations can edit <strong>Airline</strong> and <strong>SKD Type</strong> in the Flight tab, then click Save.</span>
             <button type="button" onClick={handleSave} className="toolbar-btn-primary h-8 shrink-0">Save Changes</button>
@@ -633,13 +639,13 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Tab content */}
-        <div className={`flex-1 overflow-y-auto p-6 bg-muted/10 min-w-0 ${reviewMode ? "[&_input:not([data-review-editable])]:!bg-muted/40 [&_select:not([data-review-editable])]:!bg-muted/40 [&_textarea:not([data-review-editable])]:!bg-muted/40 [&_input:not([data-review-editable])]:cursor-not-allowed [&_select:not([data-review-editable])]:cursor-not-allowed [&_textarea:not([data-review-editable])]:cursor-not-allowed [&_input:not([data-review-editable])]:pointer-events-none [&_select:not([data-review-editable])]:pointer-events-none [&_textarea:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:opacity-60" : ""}`}>
+        <div className={`flex-1 overflow-y-auto p-6 bg-muted/10 min-w-0 ${isLocked ? "[&_input:not([data-review-editable])]:!bg-muted/40 [&_select:not([data-review-editable])]:!bg-muted/40 [&_textarea:not([data-review-editable])]:!bg-muted/40 [&_input:not([data-review-editable])]:cursor-not-allowed [&_select:not([data-review-editable])]:cursor-not-allowed [&_textarea:not([data-review-editable])]:cursor-not-allowed [&_input:not([data-review-editable])]:pointer-events-none [&_select:not([data-review-editable])]:pointer-events-none [&_textarea:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:pointer-events-none [&_button:not([data-review-editable])]:opacity-60" : ""}`}>
           
           {activeTab === "flight" && (
             <div className="space-y-4">
               <Section title="Flight Info" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <FormField label={<>Account / Operator <span className="text-destructive">*</span></>}><input required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${inputCls} ${!(data.operator || "").trim() ? "border-destructive/60" : ""}`} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
+                  <FormField label={<>Account / Operator <span className="text-destructive">*</span></>}><input required aria-required="true" data-review-editable={reviewEditable ? "true" : undefined} className={`${inputCls} ${!(data.operator || "").trim() ? "border-destructive/60" : ""}`} value={data.operator || ""} onChange={e => set("operator", e.target.value)} placeholder="TRANSAVIA FRANCE" /></FormField>
                   <FormField label="Flight Number"><input className={inputCls} value={data.flightNo || ""} onChange={e => set("flightNo", e.target.value)} placeholder="TO123/4" /></FormField>
                   <FormField label="Station">
                     {lockedStationName ? (
@@ -665,7 +671,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
                     </select>
                   </FormField>
                   <FormField label={<>SKD Type <span className="text-destructive">*</span></>}>
-                    <select required aria-required="true" data-review-editable={reviewMode ? "true" : undefined} className={`${selectCls} ${!(data.skdType || "").trim() ? "border-destructive/60" : ""}`} value={data.skdType || ""} onChange={e => set("skdType", e.target.value)}>
+                    <select required aria-required="true" data-review-editable={reviewEditable ? "true" : undefined} className={`${selectCls} ${!(data.skdType || "").trim() ? "border-destructive/60" : ""}`} value={data.skdType || ""} onChange={e => set("skdType", e.target.value)}>
                       <option value="" disabled>Select SKD Type…</option>
                       {SKD_TYPES.map(s => <option key={s}>{s}</option>)}
                     </select>
@@ -963,7 +969,12 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
         </div>
 
         {/* Footer */}
-        {reviewMode ? (
+        {viewOnly ? (
+          <div className="bg-card border-t px-6 py-3 flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">Read-only view · <strong className="text-foreground">{data.currency || "USD"} {totalCostPreview}</strong> total</div>
+            <button onClick={onCancel} className="toolbar-btn-outline">Close</button>
+          </div>
+        ) : reviewMode ? (
           <div className="bg-card border-t px-6 py-4 space-y-3">
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">

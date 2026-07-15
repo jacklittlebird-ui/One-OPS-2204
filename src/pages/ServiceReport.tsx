@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { TablePagination, usePagination } from "@/components/ui/table-pagination";
 import {
   Search, Plus, Download, Upload, FileBarChart2, Plane, Building2,
-  DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Receipt,
+  DollarSign, Users, X, ChevronLeft, ChevronRight, Pencil, Trash2, Receipt, Eye,
   CheckCircle2, XCircle, Clock, MessageSquare, AlertCircle, CalendarDays, TableIcon, RefreshCw
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -563,6 +563,7 @@ function HandlingServiceReportContent() {
   const [showAdd, setShowAdd] = useState(false);
   const [newReport, setNewReport] = useState<Partial<ReportFormData>>(emptyReport());
   const [editId, setEditId] = useState<string | null>(null);
+  const [viewData, setViewData] = useState<Partial<ReportFormData> | null>(null);
   const [editData, setEditData] = useState<Partial<ReportFormData>>({});
   const [activeClearanceStatus, setActiveClearanceStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1741,6 +1742,7 @@ function HandlingServiceReportContent() {
                               navigate(`/invoices?${params.toString()}`);
                             }} className="text-success hover:text-success/80" title="Generate Invoice"><Receipt size={13} /></button>
                           )}
+                          <button onClick={() => { setViewData({ ...r } as any); setActiveClearanceStatus((r as MergedRow).clearanceStatus || ""); }} className="text-muted-foreground hover:text-foreground" title="View full record"><Eye size={13} /></button>
                           <button onClick={() => startEdit(r)} className="text-info hover:text-info/80"><Pencil size={13} /></button>
                           {isAdmin && (
                             <button
@@ -1833,6 +1835,17 @@ function HandlingServiceReportContent() {
             toast({ title: "❌ Report Rejected", description: "Sent back to Station with comments." });
             setEditId(null);
           }}
+        />
+      )}
+      {viewData && (
+        <TabbedReportForm
+          title="View Service Report"
+          data={viewData}
+          onChange={() => {}}
+          onSave={() => {}}
+          onCancel={() => setViewData(null)}
+          clearanceStatus={activeClearanceStatus}
+          viewOnly
         />
       )}
       {showUnbilled && (
