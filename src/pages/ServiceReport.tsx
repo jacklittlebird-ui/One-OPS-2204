@@ -1837,6 +1837,17 @@ function HandlingServiceReportContent() {
           }}
         />
       )}
+      {viewData && (
+        <TabbedReportForm
+          title="View Service Report"
+          data={viewData}
+          onChange={() => {}}
+          onSave={() => {}}
+          onCancel={() => setViewData(null)}
+          clearanceStatus={activeClearanceStatus}
+          viewOnly
+        />
+      )}
       {showUnbilled && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-auto" onClick={() => setShowUnbilled(false)}>
           <div className="bg-card rounded-lg shadow-2xl w-full max-w-6xl my-8" onClick={(e) => e.stopPropagation()}>
