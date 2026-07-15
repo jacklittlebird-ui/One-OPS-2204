@@ -356,6 +356,7 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
   }, [data.operator, data.skdType, onSave]);
 
   const set = (key: keyof ReportFormData, val: any) => {
+    if (viewOnly) return;
     if (reviewMode && key !== "operator" && key !== "skdType") return;
     const updated = { ...data, [key]: val };
     if (key === "co" || key === "ob") {
