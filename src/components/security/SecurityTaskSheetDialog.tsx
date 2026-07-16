@@ -493,7 +493,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     const hasLines = Array.isArray((currentRow as any)?.charges_breakdown)
       ? (currentRow as any).charges_breakdown.length > 0
       : !!(currentRow as any)?.charges_breakdown;
-    return receivablesChargesSaved || amount > 0 || hasLines;
+    const status = String((currentRow as any)?.review_status || "").trim().toLowerCase();
+    const operationsComplete = status === "approved" || status === "ready for billing";
+    return receivablesChargesSaved || (operationsComplete && (amount > 0 || hasLines));
   }, [currentRow, receivablesChargesSaved]);
 
   // Phase 6.5: source service type from FS clearance_type when available.
