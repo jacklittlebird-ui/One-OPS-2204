@@ -61,6 +61,14 @@ const isOperationsApprovedReview = (status?: string | null) => {
 const getWorkflowDispatchStatus = (row: { status?: string | null; review_status?: string | null }) =>
   isOperationsApprovedReview(row.review_status) ? "Completed" : (row.status || "Pending");
 
+const hasSavedSecurityCharges = (row: { review_status?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
+  if (!isOperationsApprovedReview(row.review_status)) return false;
+  const amount = Number(row.total_security_charges || 0);
+  const lines = row.charges_breakdown;
+  const hasLines = Array.isArray(lines) ? lines.length > 0 : !!lines;
+  return amount > 0 || hasLines;
+};
+
 interface DispatchRow {
   id: string;
   flight_schedule_id: string | null;
@@ -1204,6 +1212,7 @@ export default function SecurityServiceReportsPage() {
               (row.review_status === "Draft" || !row.review_status)
                 ? { review_status: "Pending Review" }
                 : {}),
+      ...(isReceivablesView ? { review_status: "Ready for Billing" } : {}),
     };
 
     let insertedDispatch: any = null;
@@ -1379,8 +1388,16 @@ export default function SecurityServiceReportsPage() {
       // times" symptom where the user reopened a still-stale row.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
+        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] }),
         queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
       ]);
+      if (isReceivablesView && !effectiveIsNew) {
+        setChargesSavedIds(prev => {
+          const next = new Set(prev);
+          next.add(row.id);
+          return next;
+        });
+      }
 
       // Phase 3 write-cycle verifier — runs after caches invalidate so the
       // re-fetch hits the database, not a stale cache. Result is logged and
@@ -2041,18 +2058,17 @@ export default function SecurityServiceReportsPage() {
                             </div>
                             <div className="text-[11px] text-muted-foreground mt-1 truncate">{d.route || "—"}</div>
                             {(() => {
-                              const chargesPersisted =
-                                ((r as any).total_security_charges || 0) > 0 &&
-                                ((r.review_status || "").toLowerCase().includes("billing"));
+                              const chargesPersisted = hasSavedSecurityCharges(r as any);
                               const baseInvStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(d.flightNo || r.flight_no || ""))) || "none";
                               const invStatus: "none" | "issued" | "paid" =
-                                baseInvStatus === "paid" || chargesSavedIds.has(r.id) || chargesPersisted ? "paid" : baseInvStatus;
+                                baseInvStatus === "paid" ? "paid" : baseInvStatus;
                               const pipelineOpts = {
                                 isLinked: workflowStatus === "Completed",
                                 reviewStatus: r.review_status,
                                 clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
                                 dispatchStatus: workflowStatus,
                                 invoiceStatus: invStatus,
+                                chargesSaved: chargesSavedIds.has(r.id) || chargesPersisted,
                                 createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                               };
                               return (
@@ -2299,14 +2315,11 @@ export default function SecurityServiceReportsPage() {
                             // Receivables (step 4) is marked complete as soon as
                             // Security Charges have been saved & the report is
                             // Ready for Billing — even before the invoice is paid.
-                            const chargesPersisted =
-                              ((r as any).total_security_charges || 0) > 0 &&
-                              ((r.review_status || "").toLowerCase().includes("billing"));
+                            const chargesPersisted = hasSavedSecurityCharges(r as any);
                             const baseInvStatus = invoiceStatusByFlight.get(normalizeFlightKey(String(flightNo || r.flight_no || ""))) || "none";
                             const invStatus: "none" | "issued" | "paid" =
-                              baseInvStatus === "paid" || chargesSavedIds.has(r.id) || chargesPersisted
-                                ? "paid"
-                                : baseInvStatus;
+                              baseInvStatus === "paid" ? "paid" : baseInvStatus;
+                            const chargesSaved = chargesSavedIds.has(r.id) || chargesPersisted;
                             return (
                               <PipelineStepper
                                 currentStage={derivePipelineStage({
@@ -2316,6 +2329,7 @@ export default function SecurityServiceReportsPage() {
                                   dispatchStatus: workflowStatus,
                                   channel: activeChannel,
                                   invoiceStatus: invStatus,
+                                  chargesSaved,
                                   createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                                 })}
                                 completedStages={derivePipelineCompletedStages({
@@ -2324,6 +2338,7 @@ export default function SecurityServiceReportsPage() {
                                   clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
                                   dispatchStatus: workflowStatus,
                                   invoiceStatus: invStatus,
+                                  chargesSaved,
                                   createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
                                 })}
                                 compact
