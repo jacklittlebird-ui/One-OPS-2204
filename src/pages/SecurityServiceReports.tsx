@@ -589,6 +589,42 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
   });
 
+  // Active security contracts — used to auto-resolve the contract for a
+  // dispatch row when it wasn't explicitly linked at creation (so the AMOUNT
+  // column matches what the Edit dialog computes, which auto-picks the sole
+  // active Security contract for the airline).
+  const { data: securityContractsAll = [] } = useQuery({
+    queryKey: ["security-contracts-all-for-charges"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("id, airline, service_category, status")
+        .in("service_category", ["Security", "Both"])
+        .eq("status", "Active");
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!session,
+  });
+
+  // airline (lowercased) → contract_id, only when the airline has exactly ONE
+  // active security contract. Mirrors the auto-pick behaviour in
+  // SecurityTaskSheetDialog.tsx.
+  const airlineToContractId = useMemo(() => {
+    const first = new Map<string, string>();
+    const counts = new Map<string, number>();
+    for (const c of securityContractsAll as any[]) {
+      const k = String(c.airline || "").toLowerCase().trim();
+      if (!k) continue;
+      counts.set(k, (counts.get(k) || 0) + 1);
+      if (!first.has(k)) first.set(k, c.id);
+    }
+    const out = new Map<string, string>();
+    for (const [k, id] of first) if (counts.get(k) === 1) out.set(k, id);
+    return out;
+  }, [securityContractsAll]);
+
+
   // Update mutation for editing service report details
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<DispatchRow> & { id: string }) => {
@@ -936,10 +972,21 @@ export default function SecurityServiceReportsPage() {
   // Used in the receivables view to always show an up-to-date charge even
   // when the saved record hasn't been recomputed since the contract changed.
   const computeRowCharges = useCallback((r: DispatchRow) => {
-    if (!r.contract_id) return { amount: 0, currency: "USD", lines: [] as any[] };
-    const rates = (allRates as any[]).filter(x => x.contract_id === r.contract_id);
+    // Auto-resolve contract when the row wasn't explicitly linked (matches the
+    // Edit dialog which auto-picks the sole active Security contract for the
+    // airline). This prevents the AMOUNT column from showing "—" for rows
+    // where charges DO exist as soon as you open Edit.
+    const airlineKey = String((r as any).airline || "").toLowerCase().trim();
+    const contractId = r.contract_id || airlineToContractId.get(airlineKey) || "";
+    if (!contractId) return { amount: 0, currency: "USD", lines: [] as any[] };
+    const rates = (allRates as any[]).filter(x => x.contract_id === contractId);
     if (!rates.length) return { amount: 0, currency: "USD", lines: [] as any[] };
-    const gt = r.actual_duration_hours || 0;
+    // Prefer live ground-time from actual_start/actual_end (same as the
+    // DURATION column and the Edit dialog). Falls back to the stored
+    // actual_duration_hours only when times are missing.
+    const gt = (r.actual_start && r.actual_end)
+      ? timeDiffHours(r.actual_start, r.actual_end)
+      : (r.actual_duration_hours || 0);
     // Detect ADHOC SKD type from the linked flight schedule (or merged meta).
     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
     const meta = (r as any).flightMeta;
@@ -953,7 +1000,8 @@ export default function SecurityServiceReportsPage() {
       rates: rates as any,
     });
     return { amount: result.total, currency: result.currency, lines: result.lines || [] };
-  }, [allRates, flightDetailsById]);
+  }, [allRates, airlineToContractId, flightDetailsById]);
+
 
   const saveEdit = () => {};
 
