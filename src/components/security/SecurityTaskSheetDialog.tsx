@@ -482,15 +482,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     enabled: !!dialogFlightRef && !isNew,
   });
   const dialogInvoiceStatus: "none" | "issued" | "paid" = useMemo(() => {
-    // When the Receivables user just saved Security Charges in this dialog,
-    // treat step 4 as complete immediately (mirrors the bulk "Save All Security
-    // Charges" behavior on the list page).
-    if (receivablesChargesSaved) return "paid";
     const rows = (dialogInvoiceRows as any[]) || [];
     if (rows.length === 0) return "none";
     const anyPaid = rows.some((r) => String(r.status || "").toLowerCase() === "paid");
     return anyPaid ? "paid" : "issued";
-  }, [dialogInvoiceRows, receivablesChargesSaved]);
+  }, [dialogInvoiceRows]);
 
   const dialogChargesSaved = useMemo(() => {
     const amount = Number((currentRow as any)?.total_security_charges || 0);
