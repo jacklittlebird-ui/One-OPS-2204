@@ -58,7 +58,8 @@ export function resolvePipelineCreatedVia(...inputs: unknown[]): string | undefi
  *     (dispatch.status === "Completed").
  *  3) Operations — completed when operations approves the report
  *     (review_status === "Approved" or "Ready for Billing").
- *  4) Receivables — final step (active once 1-3 are done).
+ *  4) Receivables — completed when the invoice is paid OR security charges
+ *     have been saved by Receivables.
  *
  * Form-view overrides ({ formView: true }):
  *  - In the station channel: force step 1 as done; step 2 is the active stage
@@ -74,9 +75,11 @@ export function derivePipelineStage(opts: {
   channel?: "station" | "operations" | string;
   /** True when rendering the stepper inside the open form/dialog (not the table row). */
   formView?: boolean;
-  /** Receivables progress: "none" = no invoice yet, "issued" = invoice exists but unpaid,
-   *  "paid" = invoice fully paid. Receivables is only COMPLETE when "paid". */
+   /** Receivables progress: "none" = no invoice yet, "issued" = invoice exists but unpaid,
+    *  "paid" = invoice fully paid. */
   invoiceStatus?: "none" | "issued" | "paid";
+  /** True once Receivables saved security charges for this report. */
+  chargesSaved?: boolean;
   /** Origin channel that created the record: "clearance" | "station" | "operations".
    *  When the record was NOT created via clearance, step 1 (Clearance) is never marked
    *  as completed — the pipeline starts at step 2. */
@@ -109,8 +112,8 @@ export function derivePipelineStage(opts: {
   // Step 3 (Operations) is complete when operations has approved (or marked Ready for Billing).
   let step3Done = REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any);
 
-  // Step 4 (receivables) — only complete once the invoice is PAID.
-  const step4Done = inv === "paid";
+  // Step 4 (receivables) — complete once charges are saved or the invoice is paid.
+  const step4Done = inv === "paid" || !!opts.chargesSaved;
 
   // --- Form-view overrides ---
   if (opts.formView) {
@@ -157,7 +160,7 @@ export function derivePipelineStage(opts: {
     if (ch === "station") {
       stage = reviewSubmitted ? "station" : (createdByStation ? "station" : "clearance");
     }
-    if (ch === "receivables" && inv !== "paid" && order.indexOf(stage) >= order.indexOf("receivables")) {
+    if (ch === "receivables" && !step4Done && order.indexOf(stage) >= order.indexOf("receivables")) {
       stage = "operations";
     }
   }
@@ -166,7 +169,7 @@ export function derivePipelineStage(opts: {
 
 /**
  * Returns the explicit set of completed steps for a record, independent of the
- * "current" stage. Receivables is only included when the invoice is PAID.
+ * "current" stage. Receivables is included when charges are saved or the invoice is paid.
  */
 export function derivePipelineCompletedStages(opts: {
   isLinked: boolean;
@@ -174,6 +177,7 @@ export function derivePipelineCompletedStages(opts: {
   clearanceStatus?: string;
   dispatchStatus?: string;
   invoiceStatus?: "none" | "issued" | "paid";
+  chargesSaved?: boolean;
   createdVia?: string;
 }): PipelineStage[] {
   const rsCanonical = normalizeReviewStatus(opts.reviewStatus);
@@ -197,7 +201,7 @@ export function derivePipelineCompletedStages(opts: {
     done.push("station");
   }
   if (REVIEW_STATUSES_AFTER_OPERATIONS.includes(rsCanonical as any)) done.push("operations");
-  if (inv === "paid") done.push("receivables");
+  if (inv === "paid" || !!opts.chargesSaved) done.push("receivables");
   return done;
 }
 
