@@ -939,6 +939,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 formView: true,
                 invoiceStatus: dialogInvoiceStatus,
               })}
+              completedStages={
+                receivablesChargesSaved
+                  ? ["clearance", "station", "operations", "receivables"]
+                  : undefined
+              }
+              invoiceStatus={dialogInvoiceStatus}
             />
             {!isNew && (
               <button
