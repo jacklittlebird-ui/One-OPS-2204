@@ -681,6 +681,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setSaving(true);
     try {
       await Promise.resolve(onSave(enrichedRow, sheet, { close: closeAfter }));
+      // Receivables "Save Security Charges" → mark pipeline step 4 complete
+      // immediately for this dialog session (invoice may still be unpaid).
+      if (isReceivablesView) {
+        setReceivablesChargesSaved(true);
+      }
     } finally {
       savingRef.current = false;
       setSaving(false);
