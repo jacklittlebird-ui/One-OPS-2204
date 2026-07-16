@@ -1030,7 +1030,14 @@ export default function SecurityServiceReportsPage() {
   // rows (Station + Operations done) in one click — instead of opening Edit
   // dialog per flight to press "Save Security Charges".
   const saveAllSecurityCharges = async () => {
-    let eligible = filtered.filter(r => {
+    // Source from the full merged list constrained ONLY by the selected
+    // date-from / date-to period (and station scope when applicable), so the
+    // bulk action targets every flight in the chosen period — not just what
+    // the current tab / status / service filters happen to show.
+    let scope: MergedSecurityRow[] = mergedRows;
+    if (dateFrom) scope = scope.filter(r => (r.flight_date || "") >= dateFrom);
+    if (dateTo) scope = scope.filter(r => (r.flight_date || "") <= dateTo);
+    let eligible = scope.filter(r => {
       if ((r as any).isPending) return false;
       const reviewDone = (r.review_status || "").toLowerCase() === "approved" || (r.review_status || "").toLowerCase().includes("billing");
       return getWorkflowDispatchStatus(r) === "Completed" && reviewDone && r.contract_id;
