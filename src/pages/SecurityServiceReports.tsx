@@ -589,6 +589,42 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
   });
 
+  // Active security contracts — used to auto-resolve the contract for a
+  // dispatch row when it wasn't explicitly linked at creation (so the AMOUNT
+  // column matches what the Edit dialog computes, which auto-picks the sole
+  // active Security contract for the airline).
+  const { data: securityContractsAll = [] } = useQuery({
+    queryKey: ["security-contracts-all-for-charges"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("id, airline, service_category, status")
+        .in("service_category", ["Security", "Both"])
+        .eq("status", "Active");
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!session,
+  });
+
+  // airline (lowercased) → contract_id, only when the airline has exactly ONE
+  // active security contract. Mirrors the auto-pick behaviour in
+  // SecurityTaskSheetDialog.tsx.
+  const airlineToContractId = useMemo(() => {
+    const first = new Map<string, string>();
+    const counts = new Map<string, number>();
+    for (const c of securityContractsAll as any[]) {
+      const k = String(c.airline || "").toLowerCase().trim();
+      if (!k) continue;
+      counts.set(k, (counts.get(k) || 0) + 1);
+      if (!first.has(k)) first.set(k, c.id);
+    }
+    const out = new Map<string, string>();
+    for (const [k, id] of first) if (counts.get(k) === 1) out.set(k, id);
+    return out;
+  }, [securityContractsAll]);
+
+
   // Update mutation for editing service report details
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<DispatchRow> & { id: string }) => {
