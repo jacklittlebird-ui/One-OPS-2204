@@ -1966,7 +1966,7 @@ export default function SecurityServiceReportsPage() {
               className="toolbar-btn-primary"
               title={selectedIds.size > 0
                 ? `Compute & save Security Charges for the ${selectedIds.size} selected flight(s), then mark Receivables (step 4) complete`
-                : "Compute & save Security Charges for every eligible flight, then mark Receivables (step 4) complete"}
+                : `Compute & save Security Charges for every eligible flight in the selected date range${dateFrom || dateTo ? ` (${dateFrom || "…"} → ${dateTo || "…"})` : ""}, then mark Receivables (step 4) complete`}
             >
               <DollarSign size={14} />
               {bulkSaving
