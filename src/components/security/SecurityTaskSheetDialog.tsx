@@ -275,6 +275,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [dialogRefreshing, setDialogRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Local override: once the Receivables user clicks "Save Security Charges"
+  // successfully, immediately mark pipeline step 4 (Receivables) complete —
+  // without waiting for the invoice to be issued/paid.
+  const [receivablesChargesSaved, setReceivablesChargesSaved] = useState(false);
   const savingRef = useRef(false);
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
@@ -478,11 +482,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     enabled: !!dialogFlightRef && !isNew,
   });
   const dialogInvoiceStatus: "none" | "issued" | "paid" = useMemo(() => {
+    // When the Receivables user just saved Security Charges in this dialog,
+    // treat step 4 as complete immediately (mirrors the bulk "Save All Security
+    // Charges" behavior on the list page).
+    if (receivablesChargesSaved) return "paid";
     const rows = (dialogInvoiceRows as any[]) || [];
     if (rows.length === 0) return "none";
     const anyPaid = rows.some((r) => String(r.status || "").toLowerCase() === "paid");
     return anyPaid ? "paid" : "issued";
-  }, [dialogInvoiceRows]);
+  }, [dialogInvoiceRows, receivablesChargesSaved]);
 
   // Phase 6.5: source service type from FS clearance_type when available.
   // The legacy editableRow.service_type column is being dropped in Phase 7;
@@ -673,6 +681,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     setSaving(true);
     try {
       await Promise.resolve(onSave(enrichedRow, sheet, { close: closeAfter }));
+      // Receivables "Save Security Charges" → mark pipeline step 4 complete
+      // immediately for this dialog session (invoice may still be unpaid).
+      if (isReceivablesView) {
+        setReceivablesChargesSaved(true);
+      }
     } finally {
       savingRef.current = false;
       setSaving(false);
