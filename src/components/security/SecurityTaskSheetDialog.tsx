@@ -275,6 +275,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [dialogRefreshing, setDialogRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Local override: once the Receivables user clicks "Save Security Charges"
+  // successfully, immediately mark pipeline step 4 (Receivables) complete —
+  // without waiting for the invoice to be issued/paid.
+  const [receivablesChargesSaved, setReceivablesChargesSaved] = useState(false);
   const savingRef = useRef(false);
   const [sheet, setSheet] = useState<TaskSheetData>(emptyTaskSheet());
   const [editableRow, setEditableRow] = useState<DispatchRow | null>(null);
