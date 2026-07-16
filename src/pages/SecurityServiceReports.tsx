@@ -902,16 +902,6 @@ export default function SecurityServiceReportsPage() {
   const totalReports = filtered.length;
   const completedReports = filtered.filter(r => getWorkflowDispatchStatus(r) === "Completed").length;
   const approvedReports = filtered.filter(r => r.review_status === "Approved" || r.review_status === "Ready for Billing").length;
-  // Total Charges KPI must match what the AMOUNT column shows per row:
-  // prefer live-computed charges, fall back to persisted total_security_charges,
-  // then legacy total_charge. Pending rows (no dispatch yet) contribute 0.
-  const totalRevenue = filtered.reduce((s, r) => {
-    if ((r as any).isPending) return s;
-    const live = computeRowCharges(r).amount || 0;
-    const saved = Number((r as any).total_security_charges || 0);
-    const legacy = Number(r.total_charge || 0);
-    return s + (live > 0 ? live : saved > 0 ? saved : legacy);
-  }, 0);
   const totalOvertimeHrs = filtered.reduce((s, r) => s + (r.overtime_hours || 0), 0);
   const totalStaffDeployed = filtered.reduce((s, r) => s + (r.staff_count || 0), 0);
   const pendingReview = filtered.filter(r => r.review_status === "Pending Review").length;
@@ -1018,6 +1008,17 @@ export default function SecurityServiceReportsPage() {
     });
     return { amount: result.total, currency: result.currency, lines: result.lines || [] };
   }, [allRates, airlineToContractId, flightDetailsById]);
+
+  // Total Charges KPI must match what the AMOUNT column shows per row:
+  // prefer live-computed charges, fall back to persisted total_security_charges,
+  // then legacy total_charge. Pending rows (no dispatch yet) contribute 0.
+  const totalRevenue = filtered.reduce((s, r) => {
+    if ((r as any).isPending) return s;
+    const live = computeRowCharges(r).amount || 0;
+    const saved = Number((r as any).total_security_charges || 0);
+    const legacy = Number(r.total_charge || 0);
+    return s + (live > 0 ? live : saved > 0 ? saved : legacy);
+  }, 0);
 
 
   const saveEdit = () => {};
