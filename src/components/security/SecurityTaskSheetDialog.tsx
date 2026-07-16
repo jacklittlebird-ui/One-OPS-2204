@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Shield, Printer, Download, Plane, Clock, Eye, Package, MessageSquare, UserCheck, AlertTriangle, FileText, DollarSign, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
-import PipelineStepper, { derivePipelineStage } from "@/components/serviceReport/PipelineStepper";
+import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages } from "@/components/serviceReport/PipelineStepper";
 import { SKD_TYPES, SECURITY_CLEARANCE_TYPES, getAllowedServiceTypesForSkd } from "@/components/clearances/ClearanceTypes";
 import { Json } from "@/integrations/supabase/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -482,15 +482,21 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     enabled: !!dialogFlightRef && !isNew,
   });
   const dialogInvoiceStatus: "none" | "issued" | "paid" = useMemo(() => {
-    // When the Receivables user just saved Security Charges in this dialog,
-    // treat step 4 as complete immediately (mirrors the bulk "Save All Security
-    // Charges" behavior on the list page).
-    if (receivablesChargesSaved) return "paid";
     const rows = (dialogInvoiceRows as any[]) || [];
     if (rows.length === 0) return "none";
     const anyPaid = rows.some((r) => String(r.status || "").toLowerCase() === "paid");
     return anyPaid ? "paid" : "issued";
-  }, [dialogInvoiceRows, receivablesChargesSaved]);
+  }, [dialogInvoiceRows]);
+
+  const dialogChargesSaved = useMemo(() => {
+    const amount = Number((currentRow as any)?.total_security_charges || 0);
+    const hasLines = Array.isArray((currentRow as any)?.charges_breakdown)
+      ? (currentRow as any).charges_breakdown.length > 0
+      : !!(currentRow as any)?.charges_breakdown;
+    const status = String((currentRow as any)?.review_status || "").trim().toLowerCase();
+    const operationsComplete = status === "approved" || status === "ready for billing";
+    return receivablesChargesSaved || (operationsComplete && (amount > 0 || hasLines));
+  }, [currentRow, receivablesChargesSaved]);
 
   // Phase 6.5: source service type from FS clearance_type when available.
   // The legacy editableRow.service_type column is being dropped in Phase 7;
@@ -676,6 +682,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       charges_breakdown: computedCharges?.lines || [],
       total_security_charges: computedCharges?.total || 0,
       charges_currency: computedCharges?.currency || "USD",
+      ...(isReceivablesView ? { review_status: "Ready for Billing" } : {}),
     } as any;
     savingRef.current = true;
     setSaving(true);
@@ -685,6 +692,13 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       // immediately for this dialog session (invoice may still be unpaid).
       if (isReceivablesView) {
         setReceivablesChargesSaved(true);
+        setEditableRow(prev => prev ? {
+          ...prev,
+          review_status: "Ready for Billing",
+          charges_breakdown: computedCharges?.lines || [],
+          total_security_charges: computedCharges?.total || 0,
+          charges_currency: computedCharges?.currency || "USD",
+        } as DispatchRow : prev);
       }
     } finally {
       savingRef.current = false;
@@ -938,12 +952,16 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 channel: activeChannel,
                 formView: true,
                 invoiceStatus: dialogInvoiceStatus,
+                chargesSaved: dialogChargesSaved,
               })}
-              completedStages={
-                receivablesChargesSaved
-                  ? ["clearance", "station", "operations", "receivables"]
-                  : undefined
-              }
+              completedStages={derivePipelineCompletedStages({
+                isLinked: !isNew,
+                reviewStatus: (currentRow as any)?.review_status || "pending",
+                dispatchStatus: (currentRow as any)?.status || "Pending",
+                clearanceStatus: (currentRow as any)?.clearance_status,
+                invoiceStatus: dialogInvoiceStatus,
+                chargesSaved: dialogChargesSaved,
+              })}
               invoiceStatus={dialogInvoiceStatus}
             />
             {!isNew && (

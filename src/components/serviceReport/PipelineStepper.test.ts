@@ -31,8 +31,13 @@ describe("derivePipelineCompletedStages — Receivables completion", () => {
     expect(done).not.toContain("receivables");
   });
 
-  it("MARKS receivables complete only when invoiceStatus is 'paid'", () => {
+  it("MARKS receivables complete when invoiceStatus is 'paid'", () => {
     const done = derivePipelineCompletedStages({ ...baseDone, invoiceStatus: "paid" });
+    expect(done).toEqual(["clearance", "station", "operations", "receivables"]);
+  });
+
+  it("MARKS receivables complete when security charges are saved", () => {
+    const done = derivePipelineCompletedStages({ ...baseDone, invoiceStatus: "issued", chargesSaved: true });
     expect(done).toEqual(["clearance", "station", "operations", "receivables"]);
   });
 
@@ -185,7 +190,7 @@ describe("derivePipelineStage — channel form views (create vs edit)", () => {
   });
 
   describe("receivables channel (list view)", () => {
-    it("active stage stays at operations until invoice is paid; flips to receivables only when paid", () => {
+    it("active stage stays at operations until invoice is paid or charges are saved", () => {
       const opts = {
         isLinked: true,
         reviewStatus: "approved",
@@ -196,11 +201,14 @@ describe("derivePipelineStage — channel form views (create vs edit)", () => {
       expect(derivePipelineStage({ ...opts, invoiceStatus: "none" })).toBe("operations");
       expect(derivePipelineStage({ ...opts, invoiceStatus: "issued" })).toBe("operations");
       expect(derivePipelineStage({ ...opts, invoiceStatus: "paid" })).toBe("receivables");
+      expect(derivePipelineStage({ ...opts, invoiceStatus: "issued", chargesSaved: true })).toBe("receivables");
 
       const doneIssued = derivePipelineCompletedStages({ ...opts, invoiceStatus: "issued" });
       expect(doneIssued).not.toContain("receivables");
       const donePaid = derivePipelineCompletedStages({ ...opts, invoiceStatus: "paid" });
       expect(donePaid).toContain("receivables");
+      const doneChargesSaved = derivePipelineCompletedStages({ ...opts, invoiceStatus: "issued", chargesSaved: true });
+      expect(doneChargesSaved).toContain("receivables");
     });
   });
 });
