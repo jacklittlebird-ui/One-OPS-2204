@@ -124,6 +124,7 @@ function CalendarView({ flights, month, onMonthChange, airlineMap, onView, onEdi
 
 export default function ClearancesPage() {
   const { data, isLoading, refetch, add, update, remove } = useClearanceFlights<ClearanceRow>();
+  const { isAdmin } = useChannel();
   const { data: dispatches } = useDispatchBoard();
   const { data: airlines } = useQuery({ queryKey: ["airlines"], queryFn: async () => { const { data } = await supabase.from("airlines").select("id,name,code"); return data || []; } });
   const { data: airportsList } = useQuery({ queryKey: ["airports-iata"], queryFn: async () => { const { data } = await supabase.from("airports").select("iata_code,name").order("iata_code"); return data || []; } });
@@ -145,27 +146,61 @@ export default function ClearancesPage() {
     return completed && approved;
   };
 
+  // A flight is "confirmed" once Operations has approved it OR Receivables has
+  // saved the charges (Ready for Billing). After that only admin can delete.
+  const isFlightConfirmed = (c: ClearanceRow): boolean => {
+    const match = findDispatch(c);
+    if (!match) return false;
+    const rs = String(match.review_status || "").toLowerCase();
+    const st = String(match.status || "").toLowerCase();
+    return rs === "approved" || rs === "ready for billing" || st === "completed";
+  };
+
   const safeRemove = async (c: ClearanceRow) => {
+    if (!isAdmin && isFlightConfirmed(c)) {
+      toast({
+        title: "Deletion blocked",
+        description: "This flight has been confirmed by Operations or Receivables. Only an administrator can delete it.",
+        variant: "destructive",
+      });
+      return;
+    }
     setDeleteConfirm({ open: true, mode: "single", target: c });
   };
 
   const executeSingleDelete = async () => {
     if (!deleteConfirm.target) return;
+    if (!isAdmin && isFlightConfirmed(deleteConfirm.target)) {
+      toast({ title: "Deletion blocked", description: "Confirmed flights can only be deleted by an administrator.", variant: "destructive" });
+      setDeleteConfirm({ open: false, mode: null, target: null });
+      return;
+    }
     await remove(deleteConfirm.target.id);
     setDeleteConfirm({ open: false, mode: null, target: null });
   };
 
   const executeBulkDelete = async () => {
-    const ids = Array.from(selectedRejectedIds);
+    const allIds = Array.from(selectedRejectedIds);
+    const rowsById = new Map((data || []).map((r: any) => [r.id, r]));
+    const ids = isAdmin
+      ? allIds
+      : allIds.filter((id) => {
+          const row = rowsById.get(id) as ClearanceRow | undefined;
+          return row ? !isFlightConfirmed(row) : true;
+        });
+    const skipped = allIds.length - ids.length;
     let failed = 0;
     for (const id of ids) {
       try { await remove(id); } catch { failed++; }
     }
     setSelectedRejectedIds(new Set());
     setDeleteConfirm({ open: false, mode: null, target: null });
+    if (skipped > 0) {
+      toast({ title: "Some deletions blocked", description: `${skipped} confirmed flight(s) skipped — admin only.`, variant: "destructive" });
+    }
     if (failed > 0) {
       toast({ title: "Partial failure", description: `${failed} failures out of ${ids.length}.`, variant: "destructive" });
-    } else {
+    } else if (ids.length > 0) {
       toast({ title: "Deleted", description: `${ids.length} record(s) deleted.` });
     }
   };
