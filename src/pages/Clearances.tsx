@@ -1,5 +1,6 @@
 import { Fragment, useState, useMemo } from "react";
 import { useClearanceFlights } from "@/data/clearances";
+import { useChannel } from "@/contexts/ChannelContext";
 import { useDispatchBoard } from "@/data/dispatch";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
