@@ -149,10 +149,14 @@ export default function ClearancesPage() {
   // A flight is "confirmed" once Operations has approved it OR Receivables has
   // saved the charges (Ready for Billing). After that only admin can delete.
   const isFlightConfirmed = (c: ClearanceRow): boolean => {
+    // Rejected flights (returned to Clearance) are always deletable by Clearance,
+    // regardless of any prior Operations approval / Completed dispatch status.
+    if (String(c.status || "").toLowerCase() === "rejected") return false;
     const match = findDispatch(c);
     if (!match) return false;
     const rs = String(match.review_status || "").toLowerCase();
     const st = String(match.status || "").toLowerCase();
+    if (rs === "rejected") return false;
     return rs === "approved" || rs === "ready for billing" || st === "completed";
   };
 
