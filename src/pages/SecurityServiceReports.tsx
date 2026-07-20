@@ -62,7 +62,12 @@ const getWorkflowDispatchStatus = (row: { status?: string | null; review_status?
   isOperationsApprovedReview(row.review_status) ? "Completed" : (row.status || "Pending");
 
 const hasSavedSecurityCharges = (row: { review_status?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
-  if (!isOperationsApprovedReview(row.review_status)) return false;
+  // Step 4 (Receivables) only completes when Receivables explicitly saves the
+  // security charges — that action sets review_status to "Ready for Billing".
+  // Operations "Approved" alone must NOT complete step 4, even when a computed
+  // total_security_charges value is already present on the row.
+  const value = String(row.review_status || "").trim().toLowerCase();
+  if (value !== "ready for billing") return false;
   const amount = Number(row.total_security_charges || 0);
   const lines = row.charges_breakdown;
   const hasLines = Array.isArray(lines) ? lines.length > 0 : !!lines;
