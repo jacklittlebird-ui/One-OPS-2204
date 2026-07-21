@@ -203,6 +203,17 @@ export default function SecurityServiceReportsPage() {
   const [serviceFilter, setServiceFilter] = useState(_initParams.get("type") || "All Types");
   const [dateFrom, setDateFrom] = useState(_initParams.get("date_from") || "");
   const [dateTo, setDateTo] = useState(_initParams.get("date_to") || "");
+
+  // Perf: when the user hasn't picked a date window, cap server-side reads
+  // to the last 180 days so opening this page doesn't pull full history.
+  // The client-side row filters (line 859+) still honor the explicit
+  // dateFrom/dateTo values the user typed.
+  const effectiveDateFrom = useMemo(() => {
+    if (dateFrom) return dateFrom;
+    const d = new Date();
+    d.setDate(d.getDate() - 180);
+    return d.toISOString().slice(0, 10);
+  }, [dateFrom]);
   
   const [recordsView, setRecordsView] = useState<"table" | "calendar">("table");
   const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
