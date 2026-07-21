@@ -13437,6 +13437,7 @@ export type Database = {
         }[]
       }
       has_finance_access: { Args: { _user_id: string }; Returns: boolean }
+      has_internal_access: { Args: { _user_id: string }; Returns: boolean }
       has_ops_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
