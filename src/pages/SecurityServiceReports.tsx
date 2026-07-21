@@ -262,7 +262,7 @@ export default function SecurityServiceReportsPage() {
   // (station/airline/flight_no/service_type). Read through the FS-driven
   // view so display fields resolve from flight_schedules + airlines.
   const { data: dispatches = [], isLoading } = useQuery({
-    queryKey: ["v_dispatch_with_flight", "service-reports", session?.user?.id, isStationScoped ? userStation : null, dateFrom || null, dateTo || null],
+    queryKey: ["v_dispatch_with_flight", "service-reports", session?.user?.id, isStationScoped ? userStation : null, effectiveDateFrom, dateTo || null],
     queryFn: async () => {
       const all: any[] = [];
       const PAGE_SIZE = 1000;
@@ -274,7 +274,7 @@ export default function SecurityServiceReportsPage() {
           .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = q.eq("station", userStation);
-        if (dateFrom) q = q.gte("flight_date", dateFrom);
+        q = q.gte("flight_date", effectiveDateFrom);
         if (dateTo) q = q.lte("flight_date", dateTo);
         const { data, error } = await q;
         if (error) throw error;
@@ -284,6 +284,10 @@ export default function SecurityServiceReportsPage() {
       return all as DispatchRow[];
     },
     enabled: !!session,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
 
@@ -299,6 +303,10 @@ export default function SecurityServiceReportsPage() {
       return data;
     },
     enabled: !!session,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Pipeline: load invoices to mark Receivables step complete only when paid.
