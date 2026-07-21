@@ -321,6 +321,10 @@ export default function SecurityServiceReportsPage() {
       return data || [];
     },
     enabled: !!session,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const invoiceStatusByFlight = useMemo(() => {
     const m = new Map<string, "issued" | "paid">();
