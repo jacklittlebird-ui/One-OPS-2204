@@ -203,6 +203,17 @@ export default function SecurityServiceReportsPage() {
   const [serviceFilter, setServiceFilter] = useState(_initParams.get("type") || "All Types");
   const [dateFrom, setDateFrom] = useState(_initParams.get("date_from") || "");
   const [dateTo, setDateTo] = useState(_initParams.get("date_to") || "");
+
+  // Perf: when the user hasn't picked a date window, cap server-side reads
+  // to the last 180 days so opening this page doesn't pull full history.
+  // The client-side row filters (line 859+) still honor the explicit
+  // dateFrom/dateTo values the user typed.
+  const effectiveDateFrom = useMemo(() => {
+    if (dateFrom) return dateFrom;
+    const d = new Date();
+    d.setDate(d.getDate() - 180);
+    return d.toISOString().slice(0, 10);
+  }, [dateFrom]);
   
   const [recordsView, setRecordsView] = useState<"table" | "calendar">("table");
   const [expandedDeleteIds, setExpandedDeleteIds] = useState<Set<string>>(new Set());
@@ -251,7 +262,7 @@ export default function SecurityServiceReportsPage() {
   // (station/airline/flight_no/service_type). Read through the FS-driven
   // view so display fields resolve from flight_schedules + airlines.
   const { data: dispatches = [], isLoading } = useQuery({
-    queryKey: ["v_dispatch_with_flight", "service-reports", session?.user?.id, isStationScoped ? userStation : null, dateFrom || null, dateTo || null],
+    queryKey: ["v_dispatch_with_flight", "service-reports", session?.user?.id, isStationScoped ? userStation : null, effectiveDateFrom, dateTo || null],
     queryFn: async () => {
       const all: any[] = [];
       const PAGE_SIZE = 1000;
@@ -263,7 +274,7 @@ export default function SecurityServiceReportsPage() {
           .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = q.eq("station", userStation);
-        if (dateFrom) q = q.gte("flight_date", dateFrom);
+        q = q.gte("flight_date", effectiveDateFrom);
         if (dateTo) q = q.lte("flight_date", dateTo);
         const { data, error } = await q;
         if (error) throw error;
@@ -273,6 +284,10 @@ export default function SecurityServiceReportsPage() {
       return all as DispatchRow[];
     },
     enabled: !!session,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
 
@@ -288,6 +303,10 @@ export default function SecurityServiceReportsPage() {
       return data;
     },
     enabled: !!session,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Pipeline: load invoices to mark Receivables step complete only when paid.
@@ -302,6 +321,10 @@ export default function SecurityServiceReportsPage() {
       return data || [];
     },
     enabled: !!session,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const invoiceStatusByFlight = useMemo(() => {
     const m = new Map<string, "issued" | "paid">();
@@ -324,7 +347,7 @@ export default function SecurityServiceReportsPage() {
   const includeAllFlights = (isStationScoped && !!userStation) || isOperationsView;
   const [securityLoadedRows, setSecurityLoadedRows] = useState(0);
   const { data: securityFlights = [], isFetching: securityFlightsFetching } = useQuery({
-    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, dateFrom || null, dateTo || null],
+    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, effectiveDateFrom, dateTo || null],
     queryFn: async () => {
       setSecurityLoadedRows(0);
       // Shared filter layer → identical totals to the Clearance Security tab.
@@ -333,13 +356,17 @@ export default function SecurityServiceReportsPage() {
         station: isStationScoped && userStation ? userStation : null,
         includeAllForStation: includeAllFlights,
         includeRejected: true,
-        dateFrom: dateFrom || null,
+        dateFrom: effectiveDateFrom,
         dateTo: dateTo || null,
         select: "*, airlines:airline_id(name, iata_code)",
         onPage: ({ loaded }) => setSecurityLoadedRows(loaded),
       });
     },
     enabled: !!session,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
 
@@ -354,6 +381,7 @@ export default function SecurityServiceReportsPage() {
           .from("flight_schedules")
           .select("*, airlines:airline_id(name, iata_code)")
           .neq("status", "Completed")
+          .eq("created_via", "station")
           .order("arrival_date", { ascending: true, nullsFirst: false })
           .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
@@ -363,13 +391,7 @@ export default function SecurityServiceReportsPage() {
         allPending.push(...(data || []));
         if (!data || data.length < PAGE_SIZE) break;
       }
-      // Surface every station-created flight that Operations has not yet
-      // approved (status !== "Completed"). Approval flips the flight status to
-      // "Completed", so this filter cleanly excludes already-approved rows.
-      const flights = allPending.filter((f: any) => {
-        const origin = String(f.created_via || "").toLowerCase();
-        return origin === "station";
-      });
+      const flights = allPending;
       if (flights.length === 0) return [] as any[];
 
       // Enrich each pending flight with its latest dispatch_assignments row so
@@ -397,6 +419,10 @@ export default function SecurityServiceReportsPage() {
       return flights.map((f: any) => ({ ...f, dispatch: byFs.get(f.id) || null })) as any[];
     },
     enabled: !!session && isOperationsView,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const approvePendingFlight = async (flightId: string) => {
