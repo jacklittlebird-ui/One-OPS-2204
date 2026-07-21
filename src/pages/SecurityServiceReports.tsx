@@ -381,6 +381,7 @@ export default function SecurityServiceReportsPage() {
           .from("flight_schedules")
           .select("*, airlines:airline_id(name, iata_code)")
           .neq("status", "Completed")
+          .eq("created_via", "station")
           .order("arrival_date", { ascending: true, nullsFirst: false })
           .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
@@ -390,13 +391,7 @@ export default function SecurityServiceReportsPage() {
         allPending.push(...(data || []));
         if (!data || data.length < PAGE_SIZE) break;
       }
-      // Surface every station-created flight that Operations has not yet
-      // approved (status !== "Completed"). Approval flips the flight status to
-      // "Completed", so this filter cleanly excludes already-approved rows.
-      const flights = allPending.filter((f: any) => {
-        const origin = String(f.created_via || "").toLowerCase();
-        return origin === "station";
-      });
+      const flights = allPending;
       if (flights.length === 0) return [] as any[];
 
       // Enrich each pending flight with its latest dispatch_assignments row so
@@ -424,6 +419,10 @@ export default function SecurityServiceReportsPage() {
       return flights.map((f: any) => ({ ...f, dispatch: byFs.get(f.id) || null })) as any[];
     },
     enabled: !!session && isOperationsView,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const approvePendingFlight = async (flightId: string) => {
