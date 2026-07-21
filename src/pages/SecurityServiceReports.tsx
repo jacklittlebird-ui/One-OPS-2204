@@ -347,7 +347,7 @@ export default function SecurityServiceReportsPage() {
   const includeAllFlights = (isStationScoped && !!userStation) || isOperationsView;
   const [securityLoadedRows, setSecurityLoadedRows] = useState(0);
   const { data: securityFlights = [], isFetching: securityFlightsFetching } = useQuery({
-    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, dateFrom || null, dateTo || null],
+    queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, effectiveDateFrom, dateTo || null],
     queryFn: async () => {
       setSecurityLoadedRows(0);
       // Shared filter layer → identical totals to the Clearance Security tab.
@@ -356,13 +356,17 @@ export default function SecurityServiceReportsPage() {
         station: isStationScoped && userStation ? userStation : null,
         includeAllForStation: includeAllFlights,
         includeRejected: true,
-        dateFrom: dateFrom || null,
+        dateFrom: effectiveDateFrom,
         dateTo: dateTo || null,
         select: "*, airlines:airline_id(name, iata_code)",
         onPage: ({ loaded }) => setSecurityLoadedRows(loaded),
       });
     },
     enabled: !!session,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
 
