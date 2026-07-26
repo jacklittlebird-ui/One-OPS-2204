@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
+import { startSaveTimer } from "@/lib/saveTiming";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -339,21 +340,32 @@ export default function TabbedReportForm({ data, onChange, onSave, onCancel, tit
     }
   }, [data, onChange]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
+    const timer = startSaveTimer(`ServiceReport${reviewMode ? ":Review" : ":Full"}`);
+    timer.markClick();
     const op = (data.operator || "").trim();
     const skd = (data.skdType || "").trim();
     if (!op) {
       toast.error("Airline (Account / Operator) is required");
       setActiveTab("flight");
+      timer.finish("validation_error");
       return;
     }
     if (!skd) {
       toast.error("SKD Type is required");
       setActiveTab("flight");
+      timer.finish("validation_error");
       return;
     }
-    onSave();
-  }, [data.operator, data.skdType, onSave]);
+    timer.markRequestSent();
+    try {
+      await timer.timeDb("onSave (parent persist)", () => Promise.resolve(onSave()));
+      timer.finish("success");
+    } catch (e) {
+      timer.finish("error", { message: (e as any)?.message });
+      throw e;
+    }
+  }, [data.operator, data.skdType, onSave, reviewMode]);
 
   const set = (key: keyof ReportFormData, val: any) => {
     if (viewOnly) return;
