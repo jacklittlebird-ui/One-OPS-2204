@@ -14,6 +14,7 @@ import { calculateSecurityCharges, groundTimeHours, type ChargeLine } from "@/li
 import type { SecurityRateRow } from "@/components/contracts/ContractTypes";
 import { formatDateDMY } from "@/lib/utils";
 import { getMasterFields } from "@/lib/flightMaster";
+import { startSaveTimer } from "@/lib/saveTiming";
 import {
   subscribeWriteCycle,
   getLastWriteCycleResult,
@@ -631,6 +632,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const handleSave = async (closeAfter: boolean = true) => {
     // Guard against double-clicks / re-entry while a save is in flight.
     if (savingRef.current) return;
+    const timer = startSaveTimer(
+      `SecurityTaskSheet${isReceivablesView ? ":ReceivablesCharges" : isNew ? ":New" : ":Edit"}`,
+    );
+    timer.markClick();
     // In receivables view the task sheet is read-only — only the Security
     // Charges panel is editable. Skip task-sheet field validation so the
     // billing user can save contract/charges updates without re-entering
@@ -663,6 +668,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           description: `Please fill: ${missing.join(", ")}`,
           variant: "destructive",
         });
+        timer.finish("validation_error");
         return;
       }
     }
@@ -686,8 +692,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     } as any;
     savingRef.current = true;
     setSaving(true);
+    timer.markRequestSent();
     try {
-      await Promise.resolve(onSave(enrichedRow, sheet, { close: closeAfter }));
+      await timer.timeDb("onSave (parent persist)", () =>
+        Promise.resolve(onSave(enrichedRow, sheet, { close: closeAfter })),
+      );
       // Receivables "Save Security Charges" → mark pipeline step 4 complete
       // immediately for this dialog session (invoice may still be unpaid).
       if (isReceivablesView) {
@@ -700,6 +709,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           charges_currency: computedCharges?.currency || "USD",
         } as DispatchRow : prev);
       }
+      timer.finish("success");
+    } catch (e) {
+      timer.finish("error", { message: (e as any)?.message });
+      throw e;
     } finally {
       savingRef.current = false;
       setSaving(false);

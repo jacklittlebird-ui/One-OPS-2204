@@ -16,6 +16,7 @@ import { exportToExcel } from "@/lib/exportExcel";
 import { exportToPdf } from "@/lib/exportPdf";
 import { usePagination, TablePagination } from "@/components/ui/table-pagination";
 import { SmartDropdown, type SmartOption } from "@/components/ui/smart-dropdown";
+import { startSaveTimer, type SaveTimer } from "@/lib/saveTiming";
 
 type JournalEntry = { id: string; entry_no: string; entry_date: string; description: string; reference: string; reference_type: string; status: string; total_debit: number; total_credit: number; created_by: string; };
 type JournalLine = {
