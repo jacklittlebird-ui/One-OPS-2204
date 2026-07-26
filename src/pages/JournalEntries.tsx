@@ -125,6 +125,7 @@ export default function JournalEntriesPage() {
   const [editEntry, setEditEntry] = useState<JournalEntry | null>(null);
   const [lines, setLines] = useState<Partial<JournalLine>[]>([{ account_id: "", debit: 0, credit: 0, description: "" }]);
   const [form, setForm] = useState({ entry_no: "", entry_date: new Date().toISOString().slice(0, 10), description: "", reference: "", reference_type: "", status: "Draft", created_by: "" });
+  const saveTimerRef = useState<{ current: SaveTimer | null }>(() => ({ current: null }))[0];
 
   // Load lines for edit
   const loadLines = async (entryId: string) => {
@@ -201,6 +202,8 @@ export default function JournalEntriesPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const timer = saveTimerRef.current ?? startSaveTimer("JournalEntry");
+      saveTimerRef.current = timer;
       if (!form.entry_no || !isBalanced) throw new Error("Entry must be balanced");
       const validLines = lines.filter(l => l.account_id && ((Number(l.debit) || 0) + (Number(l.credit) || 0) > 0));
       if (validLines.length < 2) throw new Error("At least 2 lines required");
@@ -215,16 +218,28 @@ export default function JournalEntriesPage() {
         }
       }
 
+      timer.markRequestSent();
+
       if (editEntry) {
-        await supabase.from("journal_entries" as any).update({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).eq("id", editEntry.id);
-        await supabase.from("journal_entry_lines" as any).delete().eq("entry_id", editEntry.id);
-        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => buildLinePayload(l, i, editEntry.id)) as any);
+        await timer.timeDb("update journal_entries", () =>
+          supabase.from("journal_entries" as any).update({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).eq("id", editEntry.id),
+        );
+        await timer.timeDb("delete old lines", () =>
+          supabase.from("journal_entry_lines" as any).delete().eq("entry_id", editEntry.id),
+        );
+        await timer.timeDb("insert lines", () =>
+          supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => buildLinePayload(l, i, editEntry.id)) as any),
+        );
         logAudit({ action: "update", entity_type: "journal_entry", entity_id: editEntry.id, details: { entry_no: form.entry_no, total_debit: totalDebit, total_credit: totalCredit, status: form.status } });
       } else {
-        const { data: entry, error } = await supabase.from("journal_entries" as any).insert({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).select().single();
-        if (error) throw error;
-        const entryId = (entry as any).id;
-        await supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => buildLinePayload(l, i, entryId)) as any);
+        const entryId = await timer.timeDb("insert journal_entry", async () => {
+          const { data: entry, error } = await supabase.from("journal_entries" as any).insert({ ...form, total_debit: totalDebit, total_credit: totalCredit } as any).select().single();
+          if (error) throw error;
+          return (entry as any).id as string;
+        });
+        await timer.timeDb("insert lines", () =>
+          supabase.from("journal_entry_lines" as any).insert(validLines.map((l, i) => buildLinePayload(l, i, entryId)) as any),
+        );
         logAudit({ action: "create", entity_type: "journal_entry", entity_id: entryId, details: { entry_no: form.entry_no, total_debit: totalDebit, total_credit: totalCredit, status: form.status } });
       }
     },
@@ -232,8 +247,14 @@ export default function JournalEntriesPage() {
       queryClient.invalidateQueries({ queryKey: ["journal_entries"] });
       toast({ title: "Saved", description: "Journal entry saved." });
       setDialogOpen(false);
+      saveTimerRef.current?.finish("success");
+      saveTimerRef.current = null;
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+      saveTimerRef.current?.finish("error", { message: e?.message });
+      saveTimerRef.current = null;
+    },
   });
 
   const deleteMutation = useMutation({
@@ -432,7 +453,13 @@ export default function JournalEntriesPage() {
                       مدين: <b>{totalDebit.toLocaleString()}</b> · دائن: <b>{totalCredit.toLocaleString()}</b>{" "}
                       {isBalanced ? <span className="text-green-600">✓ متوازن</span> : <span className="text-red-600">فرق: {Math.abs(totalDebit - totalCredit).toLocaleString()}</span>}
                     </div>
-                    <Button className="bg-[#1e3a5f] hover:bg-[#264a76]" onClick={() => { setForm(f => ({ ...f, status: "Posted" })); saveMutation.mutate(); }} disabled={!isBalanced || missingFlightLink || saveMutation.isPending}>
+                    <Button className="bg-[#1e3a5f] hover:bg-[#264a76]" onClick={() => {
+                      const t = startSaveTimer(editEntry ? "JournalEntry:Update" : "JournalEntry:Create");
+                      t.markClick();
+                      saveTimerRef.current = t;
+                      setForm(f => ({ ...f, status: "Posted" }));
+                      saveMutation.mutate();
+                    }} disabled={!isBalanced || missingFlightLink || saveMutation.isPending}>
                       {saveMutation.isPending ? "جاري الحفظ…" : "حفظ وترحيل"}
                     </Button>
                   </div>
