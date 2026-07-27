@@ -523,28 +523,28 @@ export default function SecurityServiceReportsPage() {
       const byId = new Map<string, any>();
       const loadPending = async (useDepartureFallback: boolean) => {
         for (let from = 0; ; from += PAGE_SIZE) {
-        let q = supabase
-          .from("flight_schedules")
-          .select(SECURITY_FLIGHT_LIST_COLUMNS)
-          .neq("status", "Completed")
-          .eq("created_via", "station")
-          .order(useDepartureFallback ? "departure_date" : "arrival_date", { ascending: true, nullsFirst: false })
-          .order("id", { ascending: true })
-          .range(from, from + PAGE_SIZE - 1);
-        if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
-        if (useDepartureFallback) {
-          q = (q as any).is("arrival_date", null).gte("departure_date", pendingEffectiveDateFrom);
-          if (pendingDateTo || dateTo) q = (q as any).lte("departure_date", pendingDateTo || dateTo);
-        } else {
-          q = (q as any).gte("arrival_date", pendingEffectiveDateFrom);
-          if (pendingDateTo || dateTo) q = (q as any).lte("arrival_date", pendingDateTo || dateTo);
+          let q = supabase
+            .from("flight_schedules")
+            .select(SECURITY_FLIGHT_LIST_COLUMNS)
+            .neq("status", "Completed")
+            .eq("created_via", "station")
+            .order(useDepartureFallback ? "departure_date" : "arrival_date", { ascending: true, nullsFirst: false })
+            .order("id", { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+          if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
+          if (useDepartureFallback) {
+            q = (q as any).is("arrival_date", null).gte("departure_date", pendingEffectiveDateFrom);
+            if (pendingDateTo || dateTo) q = (q as any).lte("departure_date", pendingDateTo || dateTo);
+          } else {
+            q = (q as any).gte("arrival_date", pendingEffectiveDateFrom);
+            if (pendingDateTo || dateTo) q = (q as any).lte("arrival_date", pendingDateTo || dateTo);
+          }
+          const { data, error } = await q;
+          if (error) throw error;
+          (data || []).forEach((row: any) => byId.set(row.id, row));
+          if (!data || data.length < PAGE_SIZE) break;
         }
-        const { data, error } = await q;
-        if (error) throw error;
-        (data || []).forEach((row: any) => byId.set(row.id, row));
-        if (!data || data.length < PAGE_SIZE) break;
-        }
-      }
+      };
       await loadPending(false);
       await loadPending(true);
       const flights = Array.from(byId.values()).sort((a: any, b: any) => {
