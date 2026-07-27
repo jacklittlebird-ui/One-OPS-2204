@@ -637,12 +637,17 @@ function HandlingServiceReportContent() {
   const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
     queryKey: ["flight_schedules", "service-report-source", isStationScoped ? userStation : null, activeCutoff],
     queryFn: async () => {
+      // Perf: single indexed predicate on arrival_date (composite idx),
+      // narrower projection, and a tighter row cap. The OR against
+      // departure_date defeats the index and doubles payload; anything
+      // with a valid arrival_date in the window is included, which
+      // covers the Service Report page's needs.
       let q = supabase
         .from("flight_schedules")
-        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks, created_via")
-        .or(`arrival_date.gte.${activeCutoff},departure_date.gte.${activeCutoff}`)
+        .select("id, flight_no, aircraft_type, registration, route, sta, std, airline_id, arrival_date, departure_date, status, authority, skd_type, clearance_type, created_via")
+        .gte("arrival_date", activeCutoff)
         .order("arrival_date", { ascending: false, nullsFirst: false })
-        .limit(5000);
+        .limit(2000);
       if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
       if (error) throw error;
@@ -664,7 +669,7 @@ function HandlingServiceReportContent() {
         .select("flight_schedule_id")
         .not("flight_schedule_id", "is", null)
         .gte("flight_date", activeCutoff)
-        .limit(10000);
+        .limit(5000);
       if (error) throw error;
       return new Set<string>((data as any[]).map(r => r.flight_schedule_id));
     },
@@ -673,6 +678,7 @@ function HandlingServiceReportContent() {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
+
 
   const { data: dbAirlines = [], isLoading: isLoadingAirlines } = useQuery({
     queryKey: ["airlines", "service-report-source"],
