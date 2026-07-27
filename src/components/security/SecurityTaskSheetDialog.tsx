@@ -1529,18 +1529,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 size="sm"
                 disabled={reviewSubmitting}
                 className="bg-success hover:bg-success/90 text-success-foreground shrink-0"
-                onClick={async () => {
+                onClick={() => {
                   setReviewSubmitting(true);
                   const reviewedAt = new Date().toISOString();
-                  const { error } = await supabase.from("dispatch_assignments").update({
-                    status: "Completed",
-                    review_status: "Approved",
-                    review_comment: reviewComment || "",
-                    reviewed_by: "Operations",
-                    reviewed_at: reviewedAt,
-                  } as any).eq("id", currentRow.id);
-                  setReviewSubmitting(false);
-                  if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
                   const patchApprovedRow = (old: any) => {
                     if (!Array.isArray(old)) return old;
                     return old.map((r: any) => r?.id === currentRow.id ? {
@@ -1569,13 +1560,27 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                       return old.map((f: any) => f?.id === (currentRow as any).flight_schedule_id ? { ...f, status: "Completed" } : f);
                     });
                   }
-                  await Promise.all([
-                    queryClient.refetchQueries({ queryKey: ["v_dispatch_with_flight"], type: "active" }),
-                    queryClient.refetchQueries({ queryKey: ["dispatch_assignments"], type: "active" }),
-                    queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" }),
-                  ]);
-                  toast({ title: "✅ Approved", description: "Report approved." });
                   onClose();
+                  void (async () => {
+                    try {
+                      const { error } = await (supabase as any).rpc("approve_security_service_report", {
+                        _dispatch_id: currentRow.id,
+                        _flight_schedule_id: (currentRow as any).flight_schedule_id || null,
+                        _review_comment: reviewComment || "",
+                        _reviewed_by: "Operations",
+                      });
+                      if (error) throw error;
+                      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"], refetchType: "none" as any });
+                      queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"], refetchType: "none" as any });
+                      queryClient.invalidateQueries({ queryKey: ["flight_schedules"], refetchType: "none" as any });
+                      toast({ title: "✅ Approved", description: "Report approved." });
+                    } catch (e: any) {
+                      toast({ title: "Error", description: e?.message || "Approval failed", variant: "destructive" });
+                      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+                      queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+                      queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+                    }
+                  })();
                 }}
               >
                 <CheckCircle2 size={14} className="mr-1" /> Approve
