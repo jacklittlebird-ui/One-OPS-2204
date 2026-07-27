@@ -1306,6 +1306,9 @@ export default function SecurityServiceReportsPage() {
         if (taskSheet.std !== undefined) fsSync.std = taskSheet.std || "";
         if (taskSheet.flight_type) fsSync.skd_type = taskSheet.flight_type;
         if (row.service_type) fsSync.clearance_type = row.service_type;
+        // Station-scoped users: force authority to the user's station so the
+        // flight appears under that station in every portal's station filter.
+        if (isStationScoped && userStation) fsSync.authority = userStation;
         const { error: fsSyncErr } = await supabase
           .from("flight_schedules")
           .update(fsSync as any)
