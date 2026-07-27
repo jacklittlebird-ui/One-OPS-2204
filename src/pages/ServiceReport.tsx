@@ -591,7 +591,7 @@ function HandlingServiceReportContent() {
     return d.toISOString().slice(0, 10);
   }, []);
 
-  const { data: dbDelays = [], isLoading: isLoadingDelays } = useQuery({
+  const { data: dbDelays = [] } = useQuery({
     queryKey: ["service_report_delays", "by-report-ids", reportIds],
     queryFn: async () => {
       if (reportIds.length === 0) return [];
@@ -654,21 +654,35 @@ function HandlingServiceReportContent() {
   const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
     queryKey: ["flight_schedules", "service-report-source", isStationScoped ? userStation : null, activeCutoff],
     queryFn: async () => {
-      // Perf: single indexed predicate on arrival_date (composite idx),
-      // narrower projection, and a tighter row cap. The OR against
-      // departure_date defeats the index and doubles payload; anything
-      // with a valid arrival_date in the window is included, which
-      // covers the Service Report page's needs.
-      let q = supabase
-        .from("flight_schedules")
-        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks, created_via")
-        .gte("arrival_date", activeCutoff)
-        .order("arrival_date", { ascending: false, nullsFirst: false })
-        .limit(2000);
-      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
+      // Two indexed reads instead of `arrival_date OR departure_date`: normal
+      // arrival rows plus departure-only rows where arrival_date is null.
+      const cols = "id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks, created_via";
+      const makeBase = () => {
+        let q = supabase.from("flight_schedules").select(cols);
+        if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
+        return q;
+      };
+      const [arrivalRows, departureRows] = await Promise.all([
+        makeBase()
+          .gte("arrival_date", activeCutoff)
+          .order("arrival_date", { ascending: false, nullsFirst: false })
+          .limit(2000),
+        makeBase()
+          .is("arrival_date", null)
+          .gte("departure_date", activeCutoff)
+          .order("departure_date", { ascending: false, nullsFirst: false })
+          .limit(1000),
+      ]);
+      if (arrivalRows.error) throw arrivalRows.error;
+      if (departureRows.error) throw departureRows.error;
+      const byId = new Map<string, any>();
+      [...(arrivalRows.data || []), ...(departureRows.data || [])].forEach((row: any) => byId.set(row.id, row));
+      return Array.from(byId.values()).sort((a: any, b: any) => {
+        const ad = a.arrival_date || a.departure_date || "";
+        const bd = b.arrival_date || b.departure_date || "";
+        if (ad !== bd) return bd.localeCompare(ad);
+        return String(a.id || "").localeCompare(String(b.id || ""));
+      });
     },
     staleTime: 60_000,
     gcTime: 5 * 60_000,

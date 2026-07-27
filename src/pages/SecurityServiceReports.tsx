@@ -120,6 +120,60 @@ const DISPATCH_LIST_COLUMNS = [
   "fs_status",
 ].join(",");
 
+const DISPATCH_TABLE_LIST_COLUMNS = [
+  "id",
+  "flight_schedule_id",
+  "contract_id",
+  "flight_date",
+  "staff_names",
+  "staff_count",
+  "scheduled_start",
+  "scheduled_end",
+  "actual_start",
+  "actual_end",
+  "contract_duration_hours",
+  "actual_duration_hours",
+  "overtime_hours",
+  "overtime_rate",
+  "base_fee",
+  "service_rate",
+  "overtime_charge",
+  "total_charge",
+  "status",
+  "notes",
+  "dispatched_by",
+  "created_at",
+  "updated_at",
+  "review_status",
+  "review_comment",
+  "reviewed_by",
+  "reviewed_at",
+  "irregularity_id",
+  "task_sheet_data",
+  "charges_breakdown",
+  "total_security_charges",
+  "short_notice",
+  "extra_manpower_count",
+  "ramp_vehicle_trips",
+  "return_to_ramp_with_load",
+  "charges_currency",
+  "created_via",
+].join(",");
+
+const SECURITY_RATE_LIST_COLUMNS = [
+  "id",
+  "contract_id",
+  "airport",
+  "flight_type",
+  "rate",
+  "included_hours",
+  "overtime_rate",
+  "currency",
+  "unit",
+  "notes",
+  "sort_order",
+].join(",");
+
 const reviewStatusConfig: Record<string, { icon: React.ReactNode; cls: string }> = {
   "Draft": { icon: <Pencil size={11} />, cls: "bg-muted text-muted-foreground" },
   "Pending Review": { icon: <Clock size={11} />, cls: "bg-warning/15 text-warning" },
@@ -436,6 +490,7 @@ export default function SecurityServiceReportsPage() {
   // every station's flights), so skip the clearance_type filter.
   const includeAllFlights = (isStationScoped && !!userStation) || isOperationsView;
   const [securityLoadedRows, setSecurityLoadedRows] = useState(0);
+  const pendingEffectiveDateFrom = useMemo(() => pendingDateFrom || effectiveDateFrom, [pendingDateFrom, effectiveDateFrom]);
   const { data: securityFlights = [], isFetching: securityFlightsFetching } = useQuery({
     queryKey: ["flight_schedules", "security-types", isStationScoped ? userStation : null, isOperationsView, effectiveDateFrom, dateTo || null],
     queryFn: async () => {
@@ -452,7 +507,7 @@ export default function SecurityServiceReportsPage() {
         onPage: ({ loaded }) => setSecurityLoadedRows(loaded),
       });
     },
-    enabled: !!session,
+    enabled: !!session && isStationScoped,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     refetchOnMount: false,
@@ -462,28 +517,42 @@ export default function SecurityServiceReportsPage() {
 
   // Fetch flight schedules awaiting Operations approval (created by Station/Security service reports).
   const { data: pendingApprovalFlights = [] } = useQuery({
-    queryKey: ["flight_schedules", "station-dispatch-pending", isStationScoped ? userStation : null, effectiveDateFrom, dateTo || null],
+    queryKey: ["flight_schedules", "station-dispatch-pending", isStationScoped ? userStation : null, pendingEffectiveDateFrom, pendingDateTo || dateTo || null],
     queryFn: async () => {
-      const allPending: any[] = [];
       const PAGE_SIZE = 1000;
-      for (let from = 0; ; from += PAGE_SIZE) {
+      const byId = new Map<string, any>();
+      const loadPending = async (useDepartureFallback: boolean) => {
+        for (let from = 0; ; from += PAGE_SIZE) {
         let q = supabase
           .from("flight_schedules")
           .select(SECURITY_FLIGHT_LIST_COLUMNS)
           .neq("status", "Completed")
           .eq("created_via", "station")
-          .gte("arrival_date", effectiveDateFrom)
-          .order("arrival_date", { ascending: true, nullsFirst: false })
+          .order(useDepartureFallback ? "departure_date" : "arrival_date", { ascending: true, nullsFirst: false })
           .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
-        if (dateTo) q = (q as any).lte("arrival_date", dateTo);
+        if (useDepartureFallback) {
+          q = (q as any).is("arrival_date", null).gte("departure_date", pendingEffectiveDateFrom);
+          if (pendingDateTo || dateTo) q = (q as any).lte("departure_date", pendingDateTo || dateTo);
+        } else {
+          q = (q as any).gte("arrival_date", pendingEffectiveDateFrom);
+          if (pendingDateTo || dateTo) q = (q as any).lte("arrival_date", pendingDateTo || dateTo);
+        }
         const { data, error } = await q;
         if (error) throw error;
-        allPending.push(...(data || []));
+        (data || []).forEach((row: any) => byId.set(row.id, row));
         if (!data || data.length < PAGE_SIZE) break;
+        }
       }
-      const flights = allPending;
+      await loadPending(false);
+      await loadPending(true);
+      const flights = Array.from(byId.values()).sort((a: any, b: any) => {
+        const ad = a.arrival_date || a.departure_date || "";
+        const bd = b.arrival_date || b.departure_date || "";
+        if (ad !== bd) return ad.localeCompare(bd);
+        return String(a.id || "").localeCompare(String(b.id || ""));
+      });
       if (flights.length === 0) return [] as any[];
 
       // Enrich each pending flight with its latest dispatch_assignments row so
@@ -499,7 +568,7 @@ export default function SecurityServiceReportsPage() {
         const slice = ids.slice(i, i + CHUNK);
         const { data: dispatches } = await supabase
           .from("dispatch_assignments")
-          .select("*")
+          .select(DISPATCH_TABLE_LIST_COLUMNS)
           .in("flight_schedule_id", slice);
         (dispatches || []).forEach((d: any) => {
           const prev = byFs.get(d.flight_schedule_id);
@@ -679,7 +748,7 @@ export default function SecurityServiceReportsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contract_service_rates")
-        .select("*");
+        .select(SECURITY_RATE_LIST_COLUMNS);
       if (error) throw error;
       return data as any[];
     },
@@ -825,15 +894,23 @@ export default function SecurityServiceReportsPage() {
 
   const flightStatusById = useMemo(() => {
     const map = new Map<string, string>();
+    (dispatches as any[]).forEach((d: any) => {
+      const id = d.flight_schedule_id || d.fs_id;
+      if (id) map.set(id, d.fs_status || "Pending");
+    });
     securityFlights.forEach((f: any) => map.set(f.id, f.status || "Pending"));
     return map;
-  }, [securityFlights]);
+  }, [dispatches, securityFlights]);
 
   const flightCreatedViaById = useMemo(() => {
     const map = new Map<string, string>();
+    (dispatches as any[]).forEach((d: any) => {
+      const id = d.flight_schedule_id || d.fs_id;
+      if (id) map.set(id, resolvePipelineCreatedVia(d, d.created_via) || "");
+    });
     [...securityFlights, ...pendingApprovalFlights].forEach((f: any) => map.set(f.id, resolvePipelineCreatedVia(f) || ""));
     return map;
-  }, [securityFlights, pendingApprovalFlights]);
+  }, [dispatches, securityFlights, pendingApprovalFlights]);
 
   // Build lookup for flight schedule details (flight no, registration, route, sta, std, dates, aircraft type)
   const flightDetailsById = useMemo(() => {
@@ -910,7 +987,7 @@ export default function SecurityServiceReportsPage() {
     // For station-scoped users AND Operations view, also surface flights that
     // don't yet have a dispatch_assignment as Pending security rows so ops can
     // see every station's flights (ASW, RMF, HBE, etc.).
-    const shouldSurfacePending = (isStationScoped && !!userStation) || isOperationsView;
+    const shouldSurfacePending = isStationScoped && !!userStation;
     if (!shouldSurfacePending) return deduped;
     const dispatchedFlightIds = new Set(
       deduped.map(r => r.flight_schedule_id).filter(Boolean) as string[]
