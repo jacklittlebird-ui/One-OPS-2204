@@ -1494,36 +1494,30 @@ export default function SecurityServiceReportsPage() {
     setReviewRow(null);
     setReviewComment("");
 
-    // Fire-and-forget: single combined UPDATE on dispatch_assignments,
-    // plus (on approval) a parallel flight_schedules update. Refetches are
-    // invalidated in the background so they only re-run when a consumer is
-    // still mounted and their staleTime elapses.
+    // Fire-and-forget: approval uses one atomic backend action. Refetches are
+    // invalidated in the background without forcing the heavy lists to reload.
     (async () => {
       try {
-        const dispatchPatch: Record<string, any> = {
-          review_status: finalStatus,
-          review_comment: reviewComment,
-          reviewed_by: reviewer,
-          reviewed_at: reviewedAt,
-        };
-        if (action === "Approved") dispatchPatch.status = "Completed";
-
-        const dispatchUpdate = supabase
-          .from("dispatch_assignments")
-          .update(dispatchPatch as any)
-          .eq("id", targetRow.id);
-
-        const flightUpdate =
-          action === "Approved" && targetFlightId
-            ? supabase
-                .from("flight_schedules")
-                .update({ status: "Completed" } as any)
-                .eq("id", targetFlightId)
-            : Promise.resolve({ error: null } as any);
-
-        const [{ error: dErr }, { error: fErr }] = await Promise.all([dispatchUpdate, flightUpdate]);
-        if (dErr) throw dErr;
-        if (fErr) throw fErr;
+        if (action === "Approved") {
+          const { error } = await (supabase as any).rpc("approve_security_service_report", {
+            _dispatch_id: targetRow.id,
+            _flight_schedule_id: targetFlightId || null,
+            _review_comment: reviewComment,
+            _reviewed_by: reviewer,
+          });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("dispatch_assignments")
+            .update({
+              review_status: finalStatus,
+              review_comment: reviewComment,
+              reviewed_by: reviewer,
+              reviewed_at: reviewedAt,
+            } as any)
+            .eq("id", targetRow.id);
+          if (error) throw error;
+        }
 
         toast({
           title: action === "Approved" ? "Approved" : "Rejected",
