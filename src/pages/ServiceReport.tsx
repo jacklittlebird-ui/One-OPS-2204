@@ -578,6 +578,13 @@ function HandlingServiceReportContent() {
     station: isStationScoped ? userStation : null,
   });
 
+  // 180d active window — matches useServiceReportsFS scope so joins stay aligned.
+  const activeCutoff = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 180);
+    return d.toISOString().slice(0, 10);
+  }, []);
+
   const { data: dbDelays = [], isLoading: isLoadingDelays } = useQuery({
     queryKey: ["service_report_delays"],
     queryFn: async () => {
@@ -585,16 +592,28 @@ function HandlingServiceReportContent() {
       if (error) throw error;
       return data;
     },
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Receivables / pipeline: load invoices to detect billed & paid flights (matched by flight_ref ↔ flight_no)
   const { data: dbInvoices = [] } = useQuery({
     queryKey: ["invoices_for_receivables_panel"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("invoices").select("id,invoice_no,flight_ref,operator,status").neq("status", "Cancelled");
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("id,invoice_no,flight_ref,operator,status")
+        .neq("status", "Cancelled")
+        .limit(5000);
       if (error) throw error;
       return data || [];
     },
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Map flight_ref (uppercased) -> invoice progress so the pipeline can mark
@@ -616,31 +635,43 @@ function HandlingServiceReportContent() {
   }, [dbInvoices]);
 
   const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
-    queryKey: ["flight_schedules", isStationScoped ? userStation : null],
+    queryKey: ["flight_schedules", "service-report-source", isStationScoped ? userStation : null, activeCutoff],
     queryFn: async () => {
       let q = supabase
         .from("flight_schedules")
         .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks, created_via")
-        .order("arrival_date", { ascending: false, nullsFirst: false });
+        .or(`arrival_date.gte.${activeCutoff},departure_date.gte.${activeCutoff}`)
+        .order("arrival_date", { ascending: false, nullsFirst: false })
+        .limit(5000);
       if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
       const { data, error } = await q;
       if (error) throw error;
       return data;
     },
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Any flight_schedule that has a dispatch_assignment is a Security flight —
   // it must be excluded from the Handling tab regardless of purpose/remarks markers.
   const { data: securityFlightIds = new Set<string>() } = useQuery({
-    queryKey: ["dispatch_assignments", "flight_schedule_ids"],
+    queryKey: ["dispatch_assignments", "flight_schedule_ids", activeCutoff],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dispatch_assignments")
         .select("flight_schedule_id")
-        .not("flight_schedule_id", "is", null);
+        .not("flight_schedule_id", "is", null)
+        .gte("flight_date", activeCutoff)
+        .limit(10000);
       if (error) throw error;
       return new Set<string>((data as any[]).map(r => r.flight_schedule_id));
     },
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const { data: dbAirlines = [], isLoading: isLoadingAirlines } = useQuery({
@@ -650,6 +681,10 @@ function HandlingServiceReportContent() {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const { data: dbAircrafts = [] } = useQuery({
@@ -659,7 +694,12 @@ function HandlingServiceReportContent() {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
+
 
   const isLoading = isLoadingReports || isLoadingDelays || isLoadingFlights || isLoadingAirlines;
 
