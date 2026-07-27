@@ -421,7 +421,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       route:        master.route        ?? route        ?? "",
       sta:          master.sta          ?? sta          ?? "",
       std:          master.std          ?? std          ?? "",
-      skd_type:     master.skd_type     ?? skdType      ?? "",
+      // Prefer the freshly-passed skdType prop (sourced from flight_schedules
+      // via flightDetailsById) over master.skd_type — the latter can pull the
+      // stale snapshot on dispatch_assignments.skd_type when the row isn't
+      // joined to a live flight_schedules payload. This ensures Clearance SKD
+      // amendments (e.g. Military → Schedule) appear immediately.
+      skd_type:     (skdType && String(skdType).trim()) || master.skd_type || "",
     };
     if (saved && typeof saved === "object") {
       const restored = { ...emptyTaskSheet(), ...saved } as TaskSheetData;
