@@ -1141,6 +1141,12 @@ export default function SecurityServiceReportsPage() {
       row = { ...row, id: "new" } as DispatchRow;
       if (!isNewReport) setIsNewReport(true);
     }
+    // Station-scoped users: the station on the report is ALWAYS the user's
+    // own station, regardless of what the flight route says. This ensures the
+    // saved row shows under this station in the station filter.
+    if (isStationScoped && userStation) {
+      row = { ...row, station: userStation } as DispatchRow;
+    }
     // Use a local flag so the branch logic below works on the first call even
     // before the setIsNewReport above flushes to state.
     const effectiveIsNew = isNewReport || isSyntheticPending;
@@ -1300,6 +1306,9 @@ export default function SecurityServiceReportsPage() {
         if (taskSheet.std !== undefined) fsSync.std = taskSheet.std || "";
         if (taskSheet.flight_type) fsSync.skd_type = taskSheet.flight_type;
         if (row.service_type) fsSync.clearance_type = row.service_type;
+        // Station-scoped users: force authority to the user's station so the
+        // flight appears under that station in every portal's station filter.
+        if (isStationScoped && userStation) fsSync.authority = userStation;
         const { error: fsSyncErr } = await supabase
           .from("flight_schedules")
           .update(fsSync as any)
