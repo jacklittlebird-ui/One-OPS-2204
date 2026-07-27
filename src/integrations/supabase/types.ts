@@ -13240,6 +13240,15 @@ export type Database = {
         Args: { _comments?: string; _step_id: string }
         Returns: string
       }
+      approve_security_service_report: {
+        Args: {
+          _dispatch_id?: string
+          _flight_schedule_id?: string
+          _review_comment?: string
+          _reviewed_by?: string
+        }
+        Returns: Json
+      }
       auto_match_statement_lines: { Args: { _import: string }; Returns: number }
       auto_renew_contracts: { Args: never; Returns: number }
       check_credit_before_invoice: {
