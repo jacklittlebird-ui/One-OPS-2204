@@ -58,33 +58,33 @@ export async function fetchSecurityFlights(
   const byId = new Map<string, any>();
   const loadPageSet = async (useDepartureFallback: boolean) => {
     for (let from = 0; ; from += SECURITY_FLIGHT_PAGE_SIZE) {
-    let q: any = supabase
-      .from("flight_schedules")
-      .select(select)
-      // Deterministic order: primary by arrival date (most recent first),
-      // tie-broken by id so paginated results never drift between refreshes.
-      .order(useDepartureFallback ? "departure_date" : "arrival_date", { ascending: false, nullsFirst: false })
-      .order("id", { ascending: true })
-      .range(from, from + SECURITY_FLIGHT_PAGE_SIZE - 1);
+      let q: any = supabase
+        .from("flight_schedules")
+        .select(select)
+        // Deterministic order: primary by service date (most recent first),
+        // tie-broken by id so paginated results never drift between refreshes.
+        .order(useDepartureFallback ? "departure_date" : "arrival_date", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: true })
+        .range(from, from + SECURITY_FLIGHT_PAGE_SIZE - 1);
 
-    if (station) q = q.eq("authority", station);
-    if (!includeAllForStation) q = q.in("clearance_type", SECURITY_CLEARANCE_TYPES);
-    q = q.not("status", "in", includeRejected ? "(Cancelled)" : "(Cancelled,Rejected)");
-    if (useDepartureFallback) {
-      q = q.is("arrival_date", null);
-      if (dateFrom) q = q.gte("departure_date", dateFrom);
-      if (dateTo) q = q.lte("departure_date", dateTo);
-    } else {
-      if (dateFrom) q = q.gte("arrival_date", dateFrom);
-      if (dateTo) q = q.lte("arrival_date", dateTo);
-    }
+      if (station) q = q.eq("authority", station);
+      if (!includeAllForStation) q = q.in("clearance_type", SECURITY_CLEARANCE_TYPES);
+      q = q.not("status", "in", includeRejected ? "(Cancelled)" : "(Cancelled,Rejected)");
+      if (useDepartureFallback) {
+        q = q.is("arrival_date", null);
+        if (dateFrom) q = q.gte("departure_date", dateFrom);
+        if (dateTo) q = q.lte("departure_date", dateTo);
+      } else {
+        if (dateFrom) q = q.gte("arrival_date", dateFrom);
+        if (dateTo) q = q.lte("arrival_date", dateTo);
+      }
 
-    const { data, error } = await q;
-    if (error) throw error;
-    const rows = data || [];
-    rows.forEach((row: any) => byId.set(row.id, row));
-    onPage?.({ loaded: byId.size, pageRows: rows.length });
-    if (rows.length < SECURITY_FLIGHT_PAGE_SIZE) break;
+      const { data, error } = await q;
+      if (error) throw error;
+      const rows = data || [];
+      rows.forEach((row: any) => byId.set(row.id, row));
+      onPage?.({ loaded: byId.size, pageRows: rows.length });
+      if (rows.length < SECURITY_FLIGHT_PAGE_SIZE) break;
     }
   };
 
@@ -97,6 +97,6 @@ export async function fetchSecurityFlights(
     const bd = b.arrival_date || b.departure_date || "";
     if (ad !== bd) return bd.localeCompare(ad);
     return String(a.id || "").localeCompare(String(b.id || ""));
-  }
+  });
   return out;
 }
