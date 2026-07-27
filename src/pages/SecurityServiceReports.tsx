@@ -1500,47 +1500,73 @@ export default function SecurityServiceReportsPage() {
     // Approving a "Modified" report (resubmitted after rejection) goes straight to Ready for Billing.
     const finalStatus =
       action === "Approved" && reviewRow.review_status === "Modified" ? "Ready for Billing" : action;
-    await updateMutation.mutateAsync({
-      id: reviewRow.id,
-      review_status: finalStatus,
-      review_comment: reviewComment,
-      reviewed_by: session?.user?.email || "Reviewer",
-      reviewed_at: new Date().toISOString(),
-    });
-    // On approval, mark the linked flight schedule as Completed so Clearance/Station
-    // portals reflect the finished operational cycle.
+    const reviewer = session?.user?.email || "Reviewer";
+    const reviewedAt = new Date().toISOString();
+    const targetRow = reviewRow;
+    const targetFlightId = reviewRow.flight_schedule_id;
+
+    // Close the dialog + patch the cache immediately so the UI feels instant.
+    // All DB writes and refetches happen in the background — the previous
+    // implementation awaited three sequential UPDATEs plus three heavy
+    // refetches, which took ~20s on large datasets.
     if (action === "Approved") {
-      try {
-        const reviewedAt = new Date().toISOString();
-        syncApprovedStatusCache({
-          dispatchId: reviewRow.id,
-          flightId: reviewRow.flight_schedule_id,
-          reviewStatus: finalStatus,
-          reviewedBy: session?.user?.email || "Reviewer",
-          reviewedAt,
-        });
-        // Mark the dispatch itself as Completed so the STATUS column flips.
-        await supabase
-          .from("dispatch_assignments")
-          .update({ status: "Completed" } as any)
-          .eq("id", reviewRow.id);
-        if (reviewRow.flight_schedule_id) {
-          await supabase
-            .from("flight_schedules")
-            .update({ status: "Completed" } as any)
-            .eq("id", reviewRow.flight_schedule_id);
-        }
-        await Promise.all([
-          queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" }),
-          queryClient.refetchQueries({ queryKey: ["dispatch_assignments"], type: "active" }),
-          queryClient.refetchQueries({ queryKey: ["v_dispatch_with_flight"], type: "active" }),
-        ]);
-      } catch (e) {
-        // non-fatal — review status already saved
-      }
+      syncApprovedStatusCache({
+        dispatchId: targetRow.id,
+        flightId: targetFlightId,
+        reviewStatus: finalStatus,
+        reviewedBy: reviewer,
+        reviewedAt,
+      });
     }
     setReviewRow(null);
     setReviewComment("");
+
+    // Fire-and-forget: single combined UPDATE on dispatch_assignments,
+    // plus (on approval) a parallel flight_schedules update. Refetches are
+    // invalidated in the background so they only re-run when a consumer is
+    // still mounted and their staleTime elapses.
+    (async () => {
+      try {
+        const dispatchPatch: Record<string, any> = {
+          review_status: finalStatus,
+          review_comment: reviewComment,
+          reviewed_by: reviewer,
+          reviewed_at: reviewedAt,
+        };
+        if (action === "Approved") dispatchPatch.status = "Completed";
+
+        const dispatchUpdate = supabase
+          .from("dispatch_assignments")
+          .update(dispatchPatch as any)
+          .eq("id", targetRow.id);
+
+        const flightUpdate =
+          action === "Approved" && targetFlightId
+            ? supabase
+                .from("flight_schedules")
+                .update({ status: "Completed" } as any)
+                .eq("id", targetFlightId)
+            : Promise.resolve({ error: null } as any);
+
+        const [{ error: dErr }, { error: fErr }] = await Promise.all([dispatchUpdate, flightUpdate]);
+        if (dErr) throw dErr;
+        if (fErr) throw fErr;
+
+        toast({
+          title: action === "Approved" ? "Approved" : "Rejected",
+          description: "Review saved.",
+        });
+
+        // Background invalidation — no await, no forced refetch.
+        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
+        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+        if (action === "Approved") {
+          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+        }
+      } catch (e: any) {
+        toast({ title: "Error", description: e?.message || "Save failed", variant: "destructive" });
+      }
+    })();
   };
 
   const markReadyForBilling = (row: DispatchRow) => {
