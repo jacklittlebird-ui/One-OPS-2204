@@ -1116,7 +1116,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                     {FLIGHT_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
                   </select>
                 ) : (
-                  <input className={readOnlyCls} value={sheet.flight_type || skdType || "—"} readOnly disabled />
+                  <input className={readOnlyCls} value={skdType || sheet.flight_type || "—"} readOnly disabled />
                 )}
               </div>
             </div>
