@@ -77,8 +77,10 @@ function autoDayNight(td: string, arrivalDate: string): "D" | "N" {
   return (!td || !arrivalDate) ? "D" : isNightTime(td, arrivalDate) ? "N" : "D";
 }
 
-// Convert DB row to form data
-function dbToForm(row: any, delays: any[]): ReportFormData {
+// Convert DB row to form data. Delays are pre-grouped by report_id so the list
+// load stays O(reports + delays), not O(reports × delays).
+function dbToForm(row: any, delaysByReport: Map<string, any[]>): ReportFormData {
+  const rowDelays = row?.id ? (delaysByReport.get(row.id) || []) : [];
   return {
     id: row.id,
     flightScheduleId: row.flight_schedule_id || row.fs_id,
@@ -103,8 +105,7 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
     ata: row.ata || "",
     atd: row.atd || "",
     groundTime: row.ground_time || "",
-    delays: delays
-      .filter(d => d.report_id === row.id)
+    delays: rowDelays
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(d => ({ code: d.code, timing: d.timing, explanation: d.explanation })),
     paxInAdultI: row.pax_in_adult_i,
@@ -578,6 +579,11 @@ function HandlingServiceReportContent() {
     station: isStationScoped ? userStation : null,
   });
 
+  const reportIds = useMemo(
+    () => (dbReports as any[]).map((r: any) => r.id).filter(Boolean),
+    [dbReports]
+  );
+
   // 180d active window — matches useServiceReportsFS scope so joins stay aligned.
   const activeCutoff = useMemo(() => {
     const d = new Date();
@@ -585,13 +591,24 @@ function HandlingServiceReportContent() {
     return d.toISOString().slice(0, 10);
   }, []);
 
-  const { data: dbDelays = [], isLoading: isLoadingDelays } = useQuery({
-    queryKey: ["service_report_delays"],
+  const { data: dbDelays = [] } = useQuery({
+    queryKey: ["service_report_delays", "by-report-ids", reportIds],
     queryFn: async () => {
-      const { data, error } = await supabase.from("service_report_delays").select("*");
-      if (error) throw error;
-      return data;
+      if (reportIds.length === 0) return [];
+      const rows: any[] = [];
+      const CHUNK = 100;
+      for (let i = 0; i < reportIds.length; i += CHUNK) {
+        const slice = reportIds.slice(i, i + CHUNK);
+        const { data, error } = await supabase
+          .from("service_report_delays")
+          .select("report_id,code,timing,explanation,sort_order")
+          .in("report_id", slice);
+        if (error) throw error;
+        rows.push(...(data || []));
+      }
+      return rows;
     },
+    enabled: reportIds.length > 0,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     refetchOnMount: false,
@@ -637,21 +654,35 @@ function HandlingServiceReportContent() {
   const { data: dbFlights = [], isLoading: isLoadingFlights } = useQuery({
     queryKey: ["flight_schedules", "service-report-source", isStationScoped ? userStation : null, activeCutoff],
     queryFn: async () => {
-      // Perf: single indexed predicate on arrival_date (composite idx),
-      // narrower projection, and a tighter row cap. The OR against
-      // departure_date defeats the index and doubles payload; anything
-      // with a valid arrival_date in the window is included, which
-      // covers the Service Report page's needs.
-      let q = supabase
-        .from("flight_schedules")
-        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks, created_via")
-        .gte("arrival_date", activeCutoff)
-        .order("arrival_date", { ascending: false, nullsFirst: false })
-        .limit(2000);
-      if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
+      // Two indexed reads instead of `arrival_date OR departure_date`: normal
+      // arrival rows plus departure-only rows where arrival_date is null.
+      const cols = "id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks, created_via";
+      const makeBase = () => {
+        let q = supabase.from("flight_schedules").select(cols);
+        if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
+        return q;
+      };
+      const [arrivalRows, departureRows] = await Promise.all([
+        makeBase()
+          .gte("arrival_date", activeCutoff)
+          .order("arrival_date", { ascending: false, nullsFirst: false })
+          .limit(2000),
+        makeBase()
+          .is("arrival_date", null)
+          .gte("departure_date", activeCutoff)
+          .order("departure_date", { ascending: false, nullsFirst: false })
+          .limit(1000),
+      ]);
+      if (arrivalRows.error) throw arrivalRows.error;
+      if (departureRows.error) throw departureRows.error;
+      const byId = new Map<string, any>();
+      [...(arrivalRows.data || []), ...(departureRows.data || [])].forEach((row: any) => byId.set(row.id, row));
+      return Array.from(byId.values()).sort((a: any, b: any) => {
+        const ad = a.arrival_date || a.departure_date || "";
+        const bd = b.arrival_date || b.departure_date || "";
+        if (ad !== bd) return bd.localeCompare(ad);
+        return String(a.id || "").localeCompare(String(b.id || ""));
+      });
     },
     staleTime: 60_000,
     gcTime: 5 * 60_000,
@@ -707,7 +738,9 @@ function HandlingServiceReportContent() {
   });
 
 
-  const isLoading = isLoadingReports || isLoadingDelays || isLoadingFlights || isLoadingAirlines;
+  // Do not block first paint on delay-code enrichment; rows render immediately
+  // and the delay column fills when the small by-ID query returns.
+  const isLoading = isLoadingReports || isLoadingFlights || isLoadingAirlines;
 
   const airlineById = useMemo(
     () => new Map(dbAirlines.map((airline: { id: string; name: string; code: string }) => [airline.id, airline])),
@@ -719,9 +752,21 @@ function HandlingServiceReportContent() {
     [dbAircrafts]
   );
 
+  const delaysByReport = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const delay of dbDelays as any[]) {
+      const reportId = delay.report_id;
+      if (!reportId) continue;
+      const bucket = map.get(reportId) || [];
+      bucket.push(delay);
+      map.set(reportId, bucket);
+    }
+    return map;
+  }, [dbDelays]);
+
   const reports: ReportFormData[] = useMemo(
-    () => dbReports.map(r => dbToForm(r, dbDelays)),
-    [dbReports, dbDelays]
+    () => dbReports.map(r => dbToForm(r, delaysByReport)),
+    [dbReports, delaysByReport]
   );
 
   // Flight numbers belonging to Security (any flight_schedule with a dispatch_assignment).
