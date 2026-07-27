@@ -77,8 +77,10 @@ function autoDayNight(td: string, arrivalDate: string): "D" | "N" {
   return (!td || !arrivalDate) ? "D" : isNightTime(td, arrivalDate) ? "N" : "D";
 }
 
-// Convert DB row to form data
-function dbToForm(row: any, delays: any[]): ReportFormData {
+// Convert DB row to form data. Delays are pre-grouped by report_id so the list
+// load stays O(reports + delays), not O(reports × delays).
+function dbToForm(row: any, delaysByReport: Map<string, any[]>): ReportFormData {
+  const rowDelays = row?.id ? (delaysByReport.get(row.id) || []) : [];
   return {
     id: row.id,
     flightScheduleId: row.flight_schedule_id || row.fs_id,
@@ -103,8 +105,7 @@ function dbToForm(row: any, delays: any[]): ReportFormData {
     ata: row.ata || "",
     atd: row.atd || "",
     groundTime: row.ground_time || "",
-    delays: delays
-      .filter(d => d.report_id === row.id)
+    delays: rowDelays
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(d => ({ code: d.code, timing: d.timing, explanation: d.explanation })),
     paxInAdultI: row.pax_in_adult_i,
@@ -578,6 +579,11 @@ function HandlingServiceReportContent() {
     station: isStationScoped ? userStation : null,
   });
 
+  const reportIds = useMemo(
+    () => (dbReports as any[]).map((r: any) => r.id).filter(Boolean),
+    [dbReports]
+  );
+
   // 180d active window — matches useServiceReportsFS scope so joins stay aligned.
   const activeCutoff = useMemo(() => {
     const d = new Date();
@@ -586,12 +592,23 @@ function HandlingServiceReportContent() {
   }, []);
 
   const { data: dbDelays = [], isLoading: isLoadingDelays } = useQuery({
-    queryKey: ["service_report_delays"],
+    queryKey: ["service_report_delays", "by-report-ids", reportIds],
     queryFn: async () => {
-      const { data, error } = await supabase.from("service_report_delays").select("*");
-      if (error) throw error;
-      return data;
+      if (reportIds.length === 0) return [];
+      const rows: any[] = [];
+      const CHUNK = 100;
+      for (let i = 0; i < reportIds.length; i += CHUNK) {
+        const slice = reportIds.slice(i, i + CHUNK);
+        const { data, error } = await supabase
+          .from("service_report_delays")
+          .select("report_id,code,timing,explanation,sort_order")
+          .in("report_id", slice);
+        if (error) throw error;
+        rows.push(...(data || []));
+      }
+      return rows;
     },
+    enabled: reportIds.length > 0,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     refetchOnMount: false,
@@ -707,7 +724,9 @@ function HandlingServiceReportContent() {
   });
 
 
-  const isLoading = isLoadingReports || isLoadingDelays || isLoadingFlights || isLoadingAirlines;
+  // Do not block first paint on delay-code enrichment; rows render immediately
+  // and the delay column fills when the small by-ID query returns.
+  const isLoading = isLoadingReports || isLoadingFlights || isLoadingAirlines;
 
   const airlineById = useMemo(
     () => new Map(dbAirlines.map((airline: { id: string; name: string; code: string }) => [airline.id, airline])),
@@ -719,9 +738,21 @@ function HandlingServiceReportContent() {
     [dbAircrafts]
   );
 
+  const delaysByReport = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const delay of dbDelays as any[]) {
+      const reportId = delay.report_id;
+      if (!reportId) continue;
+      const bucket = map.get(reportId) || [];
+      bucket.push(delay);
+      map.set(reportId, bucket);
+    }
+    return map;
+  }, [dbDelays]);
+
   const reports: ReportFormData[] = useMemo(
-    () => dbReports.map(r => dbToForm(r, dbDelays)),
-    [dbReports, dbDelays]
+    () => dbReports.map(r => dbToForm(r, delaysByReport)),
+    [dbReports, delaysByReport]
   );
 
   // Flight numbers belonging to Security (any flight_schedule with a dispatch_assignment).

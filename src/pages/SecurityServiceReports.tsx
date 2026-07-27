@@ -38,6 +38,88 @@ import { parseDeletionRequests } from "@/lib/statusRouting";
 
 const WORKFLOW_STATUSES = ["Pending", "In Progress", "Completed"] as const;
 
+const SECURITY_FLIGHT_LIST_COLUMNS = [
+  "id",
+  "flight_no",
+  "arrival_flight",
+  "departure_flight",
+  "registration",
+  "route",
+  "aircraft_type",
+  "sta",
+  "std",
+  "skd_type",
+  "clearance_type",
+  "arrival_date",
+  "departure_date",
+  "authority",
+  "status",
+  "remarks",
+  "created_via",
+  "created_at",
+  "updated_at",
+  "handling_agent",
+  "airline_id",
+  "airlines:airline_id(name,iata_code)",
+].join(",");
+
+const DISPATCH_LIST_COLUMNS = [
+  "id",
+  "flight_schedule_id",
+  "contract_id",
+  "station",
+  "airline",
+  "flight_no",
+  "flight_date",
+  "service_type",
+  "staff_names",
+  "staff_count",
+  "scheduled_start",
+  "scheduled_end",
+  "actual_start",
+  "actual_end",
+  "contract_duration_hours",
+  "actual_duration_hours",
+  "overtime_hours",
+  "overtime_rate",
+  "base_fee",
+  "service_rate",
+  "overtime_charge",
+  "total_charge",
+  "status",
+  "notes",
+  "dispatched_by",
+  "created_at",
+  "updated_at",
+  "review_status",
+  "review_comment",
+  "reviewed_by",
+  "reviewed_at",
+  "irregularity_id",
+  "task_sheet_data",
+  "charges_breakdown",
+  "total_security_charges",
+  "short_notice",
+  "extra_manpower_count",
+  "ramp_vehicle_trips",
+  "return_to_ramp_with_load",
+  "charges_currency",
+  "created_via",
+  "fs_id",
+  "fs_flight_no",
+  "fs_registration",
+  "fs_aircraft_type",
+  "fs_route",
+  "fs_sta",
+  "fs_std",
+  "fs_skd_type",
+  "fs_clearance_type",
+  "fs_arrival_date",
+  "fs_departure_date",
+  "fs_authority",
+  "fs_status",
+].join(",");
+
 const reviewStatusConfig: Record<string, { icon: React.ReactNode; cls: string }> = {
   "Draft": { icon: <Pencil size={11} />, cls: "bg-muted text-muted-foreground" },
   "Pending Review": { icon: <Clock size={11} />, cls: "bg-warning/15 text-warning" },
@@ -269,7 +351,7 @@ export default function SecurityServiceReportsPage() {
       for (let from = 0; ; from += PAGE_SIZE) {
         let q: any = (supabase as any)
           .from("v_dispatch_with_flight")
-          .select("*")
+          .select(DISPATCH_LIST_COLUMNS)
           .order("flight_date", { ascending: false, nullsFirst: false })
           .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
@@ -291,18 +373,25 @@ export default function SecurityServiceReportsPage() {
   });
 
 
-  // Fetch irregularity reports for linking
+  const irregularityIds = useMemo(
+    () => Array.from(new Set((dispatches as any[]).map((d: any) => d.irregularity_id).filter(Boolean))),
+    [dispatches]
+  );
+
+  // Fetch only irregularities linked to visible dispatch rows; the old query
+  // scanned the whole irregularity table on every open just to draw one icon.
   const { data: irregularities = [] } = useQuery({
-    queryKey: ["irregularity_reports", "for-service-reports"],
+    queryKey: ["irregularity_reports", "for-service-reports", irregularityIds],
     queryFn: async () => {
+      if (irregularityIds.length === 0) return [];
       const { data, error } = await supabase
         .from("irregularity_reports")
         .select("id, report_id, flight_no, station, severity, status")
-        .order("created_at", { ascending: false });
+        .in("id", irregularityIds);
       if (error) throw error;
       return data;
     },
-    enabled: !!session,
+    enabled: !!session && irregularityIds.length > 0,
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
     refetchOnMount: false,
@@ -311,12 +400,13 @@ export default function SecurityServiceReportsPage() {
 
   // Pipeline: load invoices to mark Receivables step complete only when paid.
   const { data: dbInvoicesForPipeline = [] } = useQuery({
-    queryKey: ["invoices_for_security_pipeline"],
+    queryKey: ["invoices_for_security_pipeline", effectiveDateFrom, dateTo || null],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
         .select("flight_ref,status")
-        .neq("status", "Cancelled");
+        .neq("status", "Cancelled")
+        .limit(5000);
       if (error) throw error;
       return data || [];
     },
@@ -358,7 +448,7 @@ export default function SecurityServiceReportsPage() {
         includeRejected: true,
         dateFrom: effectiveDateFrom,
         dateTo: dateTo || null,
-        select: "*, airlines:airline_id(name, iata_code)",
+        select: SECURITY_FLIGHT_LIST_COLUMNS,
         onPage: ({ loaded }) => setSecurityLoadedRows(loaded),
       });
     },
@@ -372,20 +462,22 @@ export default function SecurityServiceReportsPage() {
 
   // Fetch flight schedules awaiting Operations approval (created by Station/Security service reports).
   const { data: pendingApprovalFlights = [] } = useQuery({
-    queryKey: ["flight_schedules", "station-dispatch-pending", isStationScoped ? userStation : null],
+    queryKey: ["flight_schedules", "station-dispatch-pending", isStationScoped ? userStation : null, effectiveDateFrom, dateTo || null],
     queryFn: async () => {
       const allPending: any[] = [];
       const PAGE_SIZE = 1000;
       for (let from = 0; ; from += PAGE_SIZE) {
         let q = supabase
           .from("flight_schedules")
-          .select("*, airlines:airline_id(name, iata_code)")
+          .select(SECURITY_FLIGHT_LIST_COLUMNS)
           .neq("status", "Completed")
           .eq("created_via", "station")
+          .gte("arrival_date", effectiveDateFrom)
           .order("arrival_date", { ascending: true, nullsFirst: false })
           .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
+        if (dateTo) q = (q as any).lte("arrival_date", dateTo);
         const { data, error } = await q;
         if (error) throw error;
         allPending.push(...(data || []));
@@ -418,7 +510,7 @@ export default function SecurityServiceReportsPage() {
       }
       return flights.map((f: any) => ({ ...f, dispatch: byFs.get(f.id) || null })) as any[];
     },
-    enabled: !!session && isOperationsView,
+    enabled: !!session && isOperationsView && opsTab === "pending-approval",
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     refetchOnMount: false,
@@ -591,7 +683,11 @@ export default function SecurityServiceReportsPage() {
       if (error) throw error;
       return data as any[];
     },
-    enabled: !!session,
+    enabled: !!session && isReceivablesView,
+    staleTime: 5 * 60_000,
+    gcTime: 20 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Active security contracts — used to auto-resolve the contract for a
@@ -609,7 +705,11 @@ export default function SecurityServiceReportsPage() {
       if (error) throw error;
       return (data || []) as any[];
     },
-    enabled: !!session,
+    enabled: !!session && isReceivablesView,
+    staleTime: 5 * 60_000,
+    gcTime: 20 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // airline (lowercased) → contract_id, only when the airline has exactly ONE
@@ -628,6 +728,18 @@ export default function SecurityServiceReportsPage() {
     for (const [k, id] of first) if (counts.get(k) === 1) out.set(k, id);
     return out;
   }, [securityContractsAll]);
+
+  const ratesByContractId = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const rate of allRates as any[]) {
+      const contractId = String(rate.contract_id || "");
+      if (!contractId) continue;
+      const bucket = map.get(contractId) || [];
+      bucket.push(rate);
+      map.set(contractId, bucket);
+    }
+    return map;
+  }, [allRates]);
 
 
   // Update mutation for editing service report details
@@ -740,10 +852,28 @@ export default function SecurityServiceReportsPage() {
       departure_date: f.departure_date || "",
       aircraft_type: f.aircraft_type || "",
     });
+    (dispatches as any[]).forEach((d: any) => {
+      const id = d.flight_schedule_id || d.fs_id;
+      if (!id) return;
+      map.set(id, {
+        flight_no: d.fs_flight_no || d.flight_no || "",
+        registration: d.fs_registration || "",
+        route: d.fs_route || "",
+        sta: d.fs_sta || "",
+        std: d.fs_std || "",
+        ata: "",
+        atd: "",
+        skd_type: d.fs_skd_type || "",
+        clearance_type: d.fs_clearance_type || d.service_type || "",
+        arrival_date: d.fs_arrival_date || d.flight_date || "",
+        departure_date: d.fs_departure_date || "",
+        aircraft_type: d.fs_aircraft_type || "",
+      });
+    });
     securityFlights.forEach(addFlight);
     pendingApprovalFlights.forEach(addFlight);
     return map;
-  }, [securityFlights, pendingApprovalFlights]);
+  }, [dispatches, securityFlights, pendingApprovalFlights]);
 
   // Filters
   const { data: dbAirports = [] } = useQuery({
@@ -983,7 +1113,7 @@ export default function SecurityServiceReportsPage() {
     const airlineKey = String((r as any).airline || "").toLowerCase().trim();
     const contractId = r.contract_id || airlineToContractId.get(airlineKey) || "";
     if (!contractId) return { amount: 0, currency: "USD", lines: [] as any[] };
-    const rates = (allRates as any[]).filter(x => x.contract_id === contractId);
+    const rates = ratesByContractId.get(contractId) || [];
     if (!rates.length) return { amount: 0, currency: "USD", lines: [] as any[] };
     // Prefer live ground-time from actual_start/actual_end (same as the
     // DURATION column and the Edit dialog). Falls back to the stored
@@ -1004,7 +1134,7 @@ export default function SecurityServiceReportsPage() {
       rates: rates as any,
     });
     return { amount: result.total, currency: result.currency, lines: result.lines || [] };
-  }, [allRates, airlineToContractId, flightDetailsById]);
+  }, [ratesByContractId, airlineToContractId, flightDetailsById]);
 
   // Total Charges KPI must match what the AMOUNT column shows per row:
   // prefer live-computed charges, fall back to persisted total_security_charges,
