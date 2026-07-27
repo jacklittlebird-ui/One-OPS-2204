@@ -1141,6 +1141,12 @@ export default function SecurityServiceReportsPage() {
       row = { ...row, id: "new" } as DispatchRow;
       if (!isNewReport) setIsNewReport(true);
     }
+    // Station-scoped users: the station on the report is ALWAYS the user's
+    // own station, regardless of what the flight route says. This ensures the
+    // saved row shows under this station in the station filter.
+    if (isStationScoped && userStation) {
+      row = { ...row, station: userStation } as DispatchRow;
+    }
     // Use a local flag so the branch logic below works on the first call even
     // before the setIsNewReport above flushes to state.
     const effectiveIsNew = isNewReport || isSyntheticPending;
