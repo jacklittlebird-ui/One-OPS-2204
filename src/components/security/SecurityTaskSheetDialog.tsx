@@ -799,7 +799,10 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     const ataVal = pick(v.ata);
     const atdVal = pick(v.atd);
     const svcType = pick(baseRow.service_type, dbFlight?.clearance_type) || "—";
-    const skdVal = pick(v.flight_type, dbFlight?.skd_type, (baseRow as any).skd_type) || "—";
+    // SSoT: flight_schedules.skd_type is authoritative. Prefer it over the
+    // frozen task_sheet_data snapshot so Clearance amendments (Military → Schedule)
+    // propagate to the printable task sheet and the readonly view.
+    const skdVal = pick(skdType, dbFlight?.skd_type, v.flight_type, (baseRow as any).skd_type) || "—";
 
     const ftChecks = FLIGHT_TYPES.map(ft =>
       `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === skdVal ? "☒" : "☐"} ${ft}</td>`
@@ -1113,7 +1116,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                     {FLIGHT_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
                   </select>
                 ) : (
-                  <input className={readOnlyCls} value={sheet.flight_type || skdType || "—"} readOnly disabled />
+                  <input className={readOnlyCls} value={skdType || sheet.flight_type || "—"} readOnly disabled />
                 )}
               </div>
             </div>
