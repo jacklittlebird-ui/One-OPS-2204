@@ -425,91 +425,57 @@ export default function SecurityServiceReportsPage() {
     refetchOnWindowFocus: false,
   });
 
-  const approvePendingFlight = async (flightId: string) => {
-    const { error } = await supabase
-      .from("flight_schedules")
-      .update({ status: "Completed" } as any)
-      .eq("id", flightId);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return;
-    }
-
+  const approvePendingFlight = (flightId: string) => {
     const reviewer = session?.user?.email || "Operations";
     const reviewedAt = new Date().toISOString();
+    const pendingFlight = (pendingApprovalFlights as any[]).find((f: any) => f?.id === flightId);
+    const cachedDispatch =
+      pendingFlight?.dispatch || (dispatches as any[]).find((d: any) => d?.flight_schedule_id === flightId);
+    const dispatchId = cachedDispatch?.id || null;
 
-    // Find any existing dispatch_assignments rows for this flight
-    const { data: existingDispatches } = await supabase
-      .from("dispatch_assignments")
-      .select("id")
-      .eq("flight_schedule_id", flightId);
-
-    if (existingDispatches && existingDispatches.length > 0) {
-      const { error: dispatchErr } = await supabase
-        .from("dispatch_assignments")
-        .update({
-          status: "Completed",
-          review_status: "Approved",
-          reviewed_by: reviewer,
-          reviewed_at: reviewedAt,
-        } as any)
-        .eq("flight_schedule_id", flightId);
-      if (dispatchErr) {
-        toast({ title: "Error", description: dispatchErr.message, variant: "destructive" });
-        return;
-      }
-    } else {
-      // No task sheet was filed yet — create a minimal dispatch row so the
-      // pipeline reflects the Operations approval (steps 1, 2 and 3 complete).
-      const { data: fs } = await supabase
-        .from("flight_schedules")
-        .select("flight_no, authority, airlines(name), handling_agent, clearance_type, arrival_date, departure_date, sta, std, remarks")
-        .eq("id", flightId)
-        .maybeSingle();
-      if (fs) {
-        const f: any = fs;
-        // Phase 3B.0.6: dispatch_assignments writes are FS-linked only.
-        // Mirror columns (station/airline/flight_no/service_type) are
-        // resolved at read time via v_dispatch_with_flight.
-        const { error: insertErr } = await supabase.from("dispatch_assignments").insert({
-          flight_schedule_id: flightId,
-          flight_date: f.arrival_date || f.departure_date || new Date().toISOString().slice(0, 10),
-          scheduled_start: f.sta || f.std || "",
-          scheduled_end: f.std || f.sta || "",
-          status: "Completed",
-          review_status: "Approved",
-          reviewed_by: reviewer,
-          reviewed_at: reviewedAt,
-          dispatched_by: reviewer,
-          notes: f.remarks || "",
-        } as any);
-        if (insertErr) {
-          toast({ title: "Error", description: insertErr.message, variant: "destructive" });
-          return;
-        }
-      }
-    }
-
-    // Optimistically remove this flight from every cached pending-approval list
-    // so the row vanishes from the tab immediately, without waiting for refetch.
+    // Optimistic UI first: close the dialog / remove the row immediately. The
+    // backend approval is one RPC and runs in the background, so large list
+    // refetches never block the click.
     queryClient.setQueriesData({ queryKey: ["flight_schedules", "station-dispatch-pending"] }, (old: any) => {
       if (!Array.isArray(old)) return old;
       return old.filter((f: any) => f?.id !== flightId);
     });
-    syncApprovedStatusCache({ flightId, reviewedBy: reviewer, reviewedAt });
+    syncApprovedStatusCache({ dispatchId, flightId, reviewedBy: reviewer, reviewedAt });
 
-    // Refresh every downstream surface that consumes this flight / dispatch / invoice data
-    // so the pipeline shows step 3 complete and the row appears in all reports.
-    await Promise.all([
-      queryClient.refetchQueries({ queryKey: ["flight_schedules"], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["dispatch_assignments"], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["v_dispatch_with_flight"], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["service_reports"], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["v_service_report_with_flight"], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["invoices"], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["invoices_for_security_pipeline"], type: "active" }),
-    ]);
-    toast({ title: "Approved", description: "Flight approved by Operations — removed from Pending Approval and advanced to Receivables." });
+    void (async () => {
+      try {
+        const { data, error } = await (supabase as any).rpc("approve_security_service_report", {
+          _dispatch_id: dispatchId,
+          _flight_schedule_id: flightId,
+          _review_comment: "",
+          _reviewed_by: reviewer,
+        });
+        if (error) throw error;
+        const approvedDispatch = data?.dispatch;
+        const approvedFlight = data?.flight;
+        if (approvedDispatch?.id) {
+          syncApprovedStatusCache({
+            dispatchId: approvedDispatch.id,
+            flightId: approvedDispatch.flight_schedule_id || flightId,
+            reviewedBy: approvedDispatch.reviewed_by || reviewer,
+            reviewedAt: approvedDispatch.reviewed_at || reviewedAt,
+          });
+        }
+        if (approvedFlight?.id) {
+          queryClient.setQueriesData({ queryKey: ["flight_schedules"] }, (old: any) => {
+            if (!Array.isArray(old)) return old;
+            return old.map((f: any) => f?.id === approvedFlight.id ? { ...f, ...approvedFlight } : f);
+          });
+        }
+        toast({ title: "Approved", description: "Flight approved by Operations." });
+        queryClient.invalidateQueries({ queryKey: ["flight_schedules"], refetchType: "none" as any });
+        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"], refetchType: "none" as any });
+        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"], refetchType: "none" as any });
+      } catch (e: any) {
+        toast({ title: "Error", description: e?.message || "Approval failed", variant: "destructive" });
+        queryClient.invalidateQueries({ queryKey: ["flight_schedules", "station-dispatch-pending"] });
+      }
+    })();
   };
 
   const rejectPendingFlight = async (flightId: string, reason?: string) => {
@@ -1440,14 +1406,21 @@ export default function SecurityServiceReportsPage() {
         }
       }
 
-      // Refresh caches and wait so the parent list reflects the saved values
-      // BEFORE we close the dialog. This prevents the "had to click save 2-3
-      // times" symptom where the user reopened a still-stale row.
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] }),
-        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] }),
-        queryClient.invalidateQueries({ queryKey: ["flight_schedules"] }),
-      ]);
+      // Patch local caches and mark them stale without forcing a heavy refetch
+      // before close. Awaiting invalidations here was blocking save/approve on
+      // the full Operations data set.
+      const savedDispatch = insertedDispatch || { ...row, ...payload, id: row.id, flight_schedule_id: linkedFsId };
+      const patchSavedDispatch = (old: any) => {
+        if (!Array.isArray(old) || !savedDispatch?.id) return old;
+        const exists = old.some((item: any) => item?.id === savedDispatch.id);
+        const next = old.map((item: any) => item?.id === savedDispatch.id ? { ...item, ...savedDispatch } : item);
+        return exists ? next : [savedDispatch, ...next];
+      };
+      queryClient.setQueriesData({ queryKey: ["dispatch_assignments"] }, patchSavedDispatch);
+      queryClient.setQueriesData({ queryKey: ["v_dispatch_with_flight"] }, patchSavedDispatch);
+      queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"], refetchType: "none" as any });
+      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"], refetchType: "none" as any });
+      queryClient.invalidateQueries({ queryKey: ["flight_schedules"], refetchType: "none" as any });
       if (isReceivablesView && !effectiveIsNew) {
         setChargesSavedIds(prev => {
           const next = new Set(prev);
@@ -1557,11 +1530,11 @@ export default function SecurityServiceReportsPage() {
           description: "Review saved.",
         });
 
-        // Background invalidation — no await, no forced refetch.
-        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"] });
-        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+        // Background invalidation — no forced refetch on the heavy lists.
+        queryClient.invalidateQueries({ queryKey: ["dispatch_assignments"], refetchType: "none" as any });
+        queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"], refetchType: "none" as any });
         if (action === "Approved") {
-          queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
+          queryClient.invalidateQueries({ queryKey: ["flight_schedules"], refetchType: "none" as any });
         }
       } catch (e: any) {
         toast({ title: "Error", description: e?.message || "Save failed", variant: "destructive" });
