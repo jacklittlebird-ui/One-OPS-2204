@@ -644,7 +644,7 @@ function HandlingServiceReportContent() {
       // covers the Service Report page's needs.
       let q = supabase
         .from("flight_schedules")
-        .select("id, flight_no, aircraft_type, registration, route, sta, std, airline_id, arrival_date, departure_date, status, authority, skd_type, clearance_type, created_via")
+        .select("id, flight_no, arrival_flight, departure_flight, aircraft_type, registration, route, sta, std, airline_id, handling_agent, arrival_date, departure_date, status, authority, skd_type, clearance_type, purpose, remarks, created_via")
         .gte("arrival_date", activeCutoff)
         .order("arrival_date", { ascending: false, nullsFirst: false })
         .limit(2000);
