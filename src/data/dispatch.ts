@@ -41,15 +41,31 @@ export function useDispatchBoardFS<T extends Record<string, any> = any>(
   return useQuery({
     queryKey: ["v_dispatch_with_flight", "board", scope],
     queryFn: async (): Promise<T[]> => {
-      let q: any = (supabase as any).from("v_dispatch_with_flight").select("*");
-      if (scope === "active") {
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 180);
-        q = q.gte("flight_date", cutoff.toISOString().slice(0, 10));
+      // PostgREST caps a single response at 1000 rows. History scope commonly
+      // exceeds that (e.g. Invoices "Generate from Dispatches" needs all of a
+      // past month), so page through the view in 1000-row chunks.
+      const PAGE = 1000;
+      const all: any[] = [];
+      let from = 0;
+      // Guard against runaway loops.
+      for (let i = 0; i < 50; i++) {
+        let q: any = (supabase as any).from("v_dispatch_with_flight").select("*");
+        if (scope === "active") {
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - 180);
+          q = q.gte("flight_date", cutoff.toISOString().slice(0, 10));
+        }
+        const { data, error } = await q
+          .order("flight_date", { ascending: false, nullsFirst: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const chunk = (data || []) as any[];
+        all.push(...chunk);
+        if (chunk.length < PAGE) break;
+        from += PAGE;
+        if (scope === "active") break; // active window rarely exceeds PAGE
       }
-      const { data, error } = await q.order("flight_date", { ascending: false, nullsFirst: false });
-      if (error) throw error;
-      return (data || []) as T[];
+      return all as T[];
     },
     enabled: !!session,
     // Batch 2: 60s TTL aligns with global default; dedupes cross-page reads
