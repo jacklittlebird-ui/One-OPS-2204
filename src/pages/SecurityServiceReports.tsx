@@ -1276,13 +1276,14 @@ export default function SecurityServiceReportsPage() {
     for (const r of eligible) {
       const c = computeRowCharges(r);
       if (!c.amount) { skipped++; continue; }
-      const { error } = await supabase.from("dispatch_assignments").update({
+      const { data, error } = await supabase.from("dispatch_assignments").update({
         charges_breakdown: c.lines,
         total_security_charges: c.amount,
         charges_currency: c.currency,
         review_status: "Ready for Billing",
-      } as any).eq("id", r.id);
-      if (error) failed++; else { ok++; savedIds.push(r.id); }
+      } as any).eq("id", r.id).select("id");
+      if (error || !data || data.length === 0) failed++;
+      else { ok++; savedIds.push(r.id); }
     }
     setBulkSaving(false);
     // Mark these rows as receivables-complete locally so the pipeline shows

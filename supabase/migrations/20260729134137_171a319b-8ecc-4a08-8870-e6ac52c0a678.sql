@@ -1,0 +1,1 @@
+CREATE POLICY "Finance can update dispatch charges" ON public.dispatch_assignments FOR UPDATE TO authenticated USING (public.has_finance_access(auth.uid())) WITH CHECK (public.has_finance_access(auth.uid()));
