@@ -435,6 +435,18 @@ export default function InvoicesPage() {
       const totalFlights = detail.length;
       const sum = (k: keyof SecurityDetailRow) =>
         detail.reduce((s, r) => s + (Number(r[k] as any) || 0), 0);
+      // Match the record view: security invoices show Security Fee =
+      // sum(handling + other) across detail rows; other buckets fall back to
+      // detail sums when the aggregated invoice field is 0.
+      const detHandling = detail.reduce((s, r) => s + (Number(r.handling) || 0) + (Number(r.other) || 0), 0);
+      const detTotal = detail.reduce((s, r) => s + (Number(r.total) || 0), 0);
+      const secFee = Number(i.handling) || detHandling;
+      const civil = Number(i.civil_aviation) || sum("civil");
+      const airport = Number(i.airport_charges) || sum("airport");
+      const other = Number(i.other) || 0;
+      const vat = Number(i.vat) || 0;
+      const subtotal = Number(i.subtotal) || (secFee + civil + airport + other);
+      const total = Number(i.total) || (subtotal + vat) || detTotal;
       return {
         "Invoice No": i.invoice_no,
         Date: i.date,
@@ -448,14 +460,14 @@ export default function InvoicesPage() {
         Currency: i.currency,
         Description: i.description,
         "Total Flights": totalFlights,
-        "Security Fee": Number(i.handling) || 0,
-        "Civil Aviation": Number(i.civil_aviation) || 0,
-        "Airport Charges": Number(i.airport_charges) || 0,
+        "Security Fee": secFee,
+        "Civil Aviation": civil,
+        "Airport Charges": airport,
         Catering: Number(i.catering) || 0,
-        Other: Number(i.other) || 0,
-        VAT: Number(i.vat) || 0,
-        Subtotal: Number(i.subtotal) || 0,
-        Total: Number(i.total) || 0,
+        Other: other,
+        VAT: vat,
+        Subtotal: subtotal,
+        Total: total,
         "Duration (h)": sum("durationHours"),
         "Overtime (h)": sum("overtimeHours"),
         Notes: parseSecurityDetail(i.notes).cleanNotes,
