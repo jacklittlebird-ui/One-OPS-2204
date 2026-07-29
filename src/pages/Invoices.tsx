@@ -30,7 +30,7 @@ import InvoicePrintView from "@/components/InvoicePrintView";
 import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
-import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail } from "@/lib/securityInvoiceDetail";
+import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -427,16 +427,90 @@ export default function InvoicesPage() {
   };
 
   const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(filtered.map(i => ({
-      "Invoice No": i.invoice_no, Date: i.date, "Due Date": i.due_date,
-      Operator: i.operator, IATA: i.airline_iata, "Flight Ref": i.flight_ref,
-      Description: i.description, "Civil Aviation": i.civil_aviation,
-      Handling: i.handling, "Airport Charges": i.airport_charges,
-      Catering: i.catering, Other: i.other, VAT: i.vat,
-      Subtotal: i.subtotal, Total: i.total, Currency: i.currency, Status: i.status,
-      Type: i.invoice_type, Station: i.station, "Billing Period": i.billing_period, Notes: i.notes,
-    })));
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Invoices"); XLSX.writeFile(wb, "Link_Invoices_Export.xlsx");
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Invoices summary (all record fields)
+    const summaryRows = filtered.map(i => {
+      const { detail } = parseSecurityDetail(i.notes);
+      const totalFlights = detail.length;
+      const sum = (k: keyof SecurityDetailRow) =>
+        detail.reduce((s, r) => s + (Number(r[k] as any) || 0), 0);
+      return {
+        "Invoice No": i.invoice_no,
+        Date: i.date,
+        "Due Date": i.due_date,
+        Operator: i.operator,
+        IATA: i.airline_iata,
+        Station: i.station,
+        "Billing Period": i.billing_period,
+        Type: i.invoice_type,
+        Status: i.status,
+        Currency: i.currency,
+        Description: i.description,
+        "Total Flights": totalFlights,
+        "Security Fee": Number(i.handling) || sum("handling"),
+        "Civil Aviation": Number(i.civil_aviation) || sum("civil"),
+        "Airport Charges": Number(i.airport_charges) || sum("airport"),
+        Catering: Number(i.catering) || 0,
+        Other: Number(i.other) || sum("other"),
+        VAT: Number(i.vat) || 0,
+        Subtotal: Number(i.subtotal) || 0,
+        Total: Number(i.total) || 0,
+        "Duration (h)": sum("durationHours"),
+        "Overtime (h)": sum("overtimeHours"),
+        Notes: parseSecurityDetail(i.notes).cleanNotes,
+      };
+    });
+    const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+    wsSummary["!cols"] = [
+      { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 24 }, { wch: 8 },
+      { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 9 },
+      { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 16 },
+      { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, { wch: 40 },
+    ];
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Invoices");
+
+    // Sheet 2: Charges breakdown (per-flight detail, mirrors record preview)
+    const detailRows: any[] = [];
+    filtered.forEach(i => {
+      const { detail } = parseSecurityDetail(i.notes);
+      detail.forEach((r, idx) => {
+        detailRows.push({
+          "Invoice No": i.invoice_no,
+          Operator: i.operator,
+          IATA: i.airline_iata,
+          Station: i.station,
+          Currency: i.currency,
+          "#": idx + 1,
+          "Arr Date": r.arrDate || r.date || "",
+          "Dep Date": r.depDate || "",
+          Flight: r.flight || "",
+          Reg: r.reg || "",
+          Route: r.route || "",
+          "Service Type": r.serviceType || r.type || "",
+          SKD: r.skdType || "",
+          Start: r.actualStart || "",
+          End: r.actualEnd || "",
+          "Duration (h)": Number(r.durationHours) || 0,
+          "OT (h)": Number(r.overtimeHours) || 0,
+          Staff: Number(r.staffCount) || 0,
+          Amount: Number(r.total) || 0,
+        });
+      });
+    });
+    if (detailRows.length) {
+      const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+      wsDetail["!cols"] = [
+        { wch: 14 }, { wch: 24 }, { wch: 8 }, { wch: 10 }, { wch: 9 },
+        { wch: 5 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 },
+        { wch: 14 }, { wch: 20 }, { wch: 12 }, { wch: 8 }, { wch: 8 },
+        { wch: 12 }, { wch: 8 }, { wch: 7 }, { wch: 12 },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsDetail, "Charges Breakdown");
+    }
+
+    XLSX.writeFile(wb, "Link_Invoices_Export.xlsx");
   };
 
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
