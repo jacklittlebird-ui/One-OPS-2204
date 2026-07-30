@@ -5,7 +5,9 @@ import ighcLogo from "@/assets/ighc-logo.jpg";
 import { formatDateDMY } from "@/lib/utils";
 import {
   parseSecurityDetail,
-  SECURITY_INVOICE_COLUMNS,
+  resolveDetailOvertimeHours,
+  SECURITY_ANNEX_COLUMNS,
+  EXTRA_ANNEX_COLUMNS,
   type SecurityDetailRow,
 } from "@/lib/securityInvoiceDetail";
 
@@ -379,7 +381,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                         <table className="w-full text-[10px] border border-gray-800 border-collapse">
                           <thead>
                             <tr className="bg-gray-100">
-                              {SECURITY_INVOICE_COLUMNS.map(h => (
+                              {columns.map(h => (
                                 <th key={h} className="border border-gray-800 px-1.5 py-1 text-center font-bold">{h}</th>
                               ))}
                             </tr>
@@ -394,11 +396,10 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                                 <td className="border border-gray-800 px-1.5 py-1 text-center">{r.reg || "—"}</td>
                                 <td className="border border-gray-800 px-1.5 py-1 text-center">{r.route || "—"}</td>
                                 <td className="border border-gray-800 px-1.5 py-1 text-left">{r.serviceType || r.type || "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.durationHours ? Number(r.durationHours).toFixed(2) : "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.overtimeHours ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
+                                {showSkd && (
+                                  <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
+                                )}
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{resolveDetailOvertimeHours(r).toFixed(2)}</td>
                                 <td className="border border-gray-800 px-1.5 py-1 text-right whitespace-nowrap">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
                               </tr>
                             ))}
@@ -407,21 +408,21 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                             {isLast ? (
                               <>
                                 <tr>
-                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
+                                  <td colSpan={columns.length - 1} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
                                   <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(total, invoice.currency)}</td>
                                 </tr>
                                 <tr>
-                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
+                                  <td colSpan={columns.length - 1} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
                                   <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(0, invoice.currency)}</td>
                                 </tr>
                                 <tr className="font-bold">
-                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
+                                  <td colSpan={columns.length - 1} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
                                   <td className="border border-gray-800 px-1.5 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
                                 </tr>
                               </>
                             ) : (
                               <tr>
-                                <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Subtotal (carried forward)</td>
+                                <td colSpan={columns.length - 1} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Subtotal (carried forward)</td>
                                 <td className="border border-gray-800 px-1.5 py-1 text-right">
                                   {fmtMoney(
                                     sorted.slice(0, offset + chunk.length).reduce((s, r) => s + (Number(r[amountKey]) || 0), 0),
