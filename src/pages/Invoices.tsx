@@ -896,35 +896,32 @@ export default function InvoicesPage() {
   // ============================================================
   // SECURITY: monthly airline invoice (sourced from dispatch_assignments)
   // ============================================================
-  // Map dispatch service_type → contract flight_type (mirrors SecurityServiceReports)
-  const mapServiceTypeToFlightType = useCallback((st: string): string => {
-    const s = (st || "").toLowerCase();
-    if (s.includes("turnaround")) return "Turnaround";
-    if (s.includes("maintenance")) return "Maintenance Security";
-    if (s.includes("departure")) return "Departure Security";
-    if (s.includes("arrival")) return "Arrival Security";
-    return st || "Turnaround";
-  }, []);
+  // Shared charge maps — identical precedence to the Service Report page so
+  // station/monthly totals can never drift between the two screens.
+  const securityRatesByContract = useMemo(
+    () => buildRatesByContract((contractRates || []) as any[]),
+    [contractRates],
+  );
+  const securityAirlineToContract = useMemo(
+    () => buildAirlineContractMap(
+      ((contracts || []) as any[]).filter((c: any) =>
+        ["Security", "Both"].includes(String(c?.service_category || "")) &&
+        String(c?.status || "") === "Active"
+      ),
+    ),
+    [contracts],
+  );
 
-  // Compute live charge from contract rates when stored values are zero/missing.
-  const computeLiveCharge = useCallback((d: any): { base: number; overtime: number; total: number } => {
-    if (!d?.contract_id) return { base: 0, overtime: 0, total: 0 };
-    const rates = (contractRates || []).filter((x: any) => x.contract_id === d.contract_id);
-    if (!rates.length) return { base: 0, overtime: 0, total: 0 };
+  /** Effective billable amount for a dispatch row (live > stored > legacy). */
+  const effectiveDispatchCharge = useCallback((d: any) => {
     const fi = lookupFlightInfo(d);
-    const skd = (fi.skdType || "").toString().trim().toUpperCase();
-    const result = calculateSecurityCharges({
-      airport: d.station || "CAI",
-      flightType: mapServiceTypeToFlightType(d.service_type),
-      groundTimeHours: Number(d.actual_duration_hours) || 0,
-      isAdhoc: skd === "ADHOC",
-      rates: rates as any,
+    return resolveEffectiveSecurityCharge(d, {
+      ratesByContractId: securityRatesByContract,
+      airlineToContractId: securityAirlineToContract,
+      skdType: fi.skdType,
     });
-    const lines = result.lines || [];
-    const base = lines.filter((l: any) => !/overtime/i.test(l.label)).reduce((s: number, l: any) => s + (Number(l.amount) || 0), 0);
-    const overtime = lines.filter((l: any) => /overtime/i.test(l.label)).reduce((s: number, l: any) => s + (Number(l.amount) || 0), 0);
-    return { base, overtime, total: result.total || 0 };
-  }, [contractRates, lookupFlightInfo, mapServiceTypeToFlightType]);
+  }, [securityRatesByContract, securityAirlineToContract, lookupFlightInfo]);
+
 
   const monthlySecurityPreview = useMemo(() => {
     const baseRows = (dispatches || []).filter((d: any) => {
