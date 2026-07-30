@@ -4,7 +4,7 @@ import {
   Search, Plus, Download, Upload, FileText, DollarSign,
   Pencil, Trash2, X, ChevronLeft, ChevronRight, CheckCircle,
   Clock, XCircle, AlertCircle, Printer, ShieldCheck, Eye,
-  TrendingUp, Filter, Calendar, BarChart3, Zap, RefreshCw
+  TrendingUp, Filter, Calendar, BarChart3, Zap, RefreshCw, Hash
 } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -339,6 +339,17 @@ export default function InvoicesPage() {
     setShowAdd(false); setNewInvoice(emptyInvoice());
   };
   const startEdit = (inv: InvoiceRow) => { setEditId(inv.id); setEditData({ ...inv }); };
+  const editInvoiceNo = async (inv: InvoiceRow) => {
+    const next = window.prompt("Invoice No.", inv.invoice_no || "");
+    if (next === null) return;
+    const trimmed = next.trim();
+    if (!trimmed || trimmed === inv.invoice_no) return;
+    await update({ id: inv.id, invoice_no: trimmed } as any);
+    setDetailInvoice(prev => (prev && prev.id === inv.id ? { ...prev, invoice_no: trimmed } : prev));
+    setPrintInvoice(prev => (prev && (prev as any).id === inv.id ? { ...(prev as any), invoiceNo: trimmed } : prev));
+    toast({ title: "Invoice number updated", description: trimmed });
+  };
+
   const saveEdit = async () => {
     if (!editId) return;
     const { id, ...rest } = editData;
@@ -1588,7 +1599,9 @@ export default function InvoicesPage() {
                       )}
                       {!readOnly && (
                         <>
+                          <button onClick={() => editInvoiceNo(inv)} className="text-primary hover:text-primary/80" title="Edit invoice number"><Hash size={13} /></button>
                           <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
+
                           <button onClick={() => requestDeleteSingle(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
                         </>
                       )}
