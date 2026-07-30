@@ -665,14 +665,18 @@ export default function InvoicesPage() {
     completedDispatches.forEach((d: any) => {
       const key = `${d.airline}__${d.station}`;
       if (!grouped[key]) grouped[key] = { airline: d.airline, station: d.station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
+      // Same resolver as the Service Report AMOUNT column — live contract math
+      // first, stored values only as a fallback.
+      const eff = effectiveDispatchCharge(d);
       grouped[key].flights++;
       grouped[key].sources.dispatches++;
-      grouped[key].baseFees += d.base_fee || 0;
-      grouped[key].serviceCharges += (d.total_security_charges || d.service_rate || 0);
-      grouped[key].overtime += d.overtime_charge || 0;
-      grouped[key].total += (d.total_security_charges || d.total_charge || 0);
-      grouped[key].items.push({ ...d, _source: "dispatch" });
+      grouped[key].baseFees += eff.base;
+      grouped[key].serviceCharges += eff.base;
+      grouped[key].overtime += eff.overtime;
+      grouped[key].total += eff.amount;
+      grouped[key].items.push({ ...d, _source: "dispatch", _effBase: eff.base, _effOvertime: eff.overtime, _effTotal: eff.amount });
     });
+
 
     // 2) Service Reports (handling side) — approved & in selected month/station
     const matchedReports = includeHandling ? serviceReports.filter((r: any) => {
