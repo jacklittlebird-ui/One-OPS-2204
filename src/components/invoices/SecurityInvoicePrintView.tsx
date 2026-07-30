@@ -126,17 +126,32 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
       const right = A4_W_MM - margin - 6;
 
       // ---- Cover page ----
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(15);
-      pdf.text("LINK AVIATION SERVICES", left, 20);
-      pdf.setFontSize(11);
-      pdf.text("SECURITY INVOICE", left, 27);
+      // Logo replaces the company/title text block.
+      try {
+        const res = await fetch(linkAeroLogo);
+        const blob = await res.blob();
+        const dataUrl: string = await new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(String(fr.result));
+          fr.onerror = reject;
+          fr.readAsDataURL(blob);
+        });
+        const props = pdf.getImageProperties(dataUrl);
+        const logoW = 45;
+        const logoH = (props.height / props.width) * logoW;
+        pdf.addImage(dataUrl, "PNG", left, 10, logoW, logoH);
+      } catch {
+        /* logo optional */
+      }
+
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
       const meta: [string, string][] = [
         ["Invoice #", invoice.invoiceNo || "—"],
         ["Issued On", invoice.date ? formatDateDMY(invoice.date) : "—"],
-        ["Bill To", invoice.operator || "—"],
+        ["Tax ID", "215-137-108"],
+        ["Reg. No", "19511 Kasr El Nile"],
+        ["Bill To", invoice.operator || "Air Cairo"],
         ["Period", invoice.billingPeriod || `${periodFrom} – ${periodTo}`],
         ["Currency", invoice.currency || "USD"],
       ];
@@ -144,6 +159,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
         pdf.text(`${k}:`, left, 38 + i * 6);
         pdf.text(String(v), left + 28, 38 + i * 6);
       });
+
 
       const coverBody: (string | number)[][] = [];
       for (const [st, g] of stations) {
@@ -153,7 +169,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
       coverBody.push(["", "VAT (Zero%)", fmtMoney(invoice.vat || 0, invoice.currency)]);
       coverBody.push(["", "Total", fmtMoney(invoice.total || 0, invoice.currency)]);
       autoTable(pdf, {
-        startY: 74,
+        startY: 86,
         head: [["Station", "Details", "Amount"]],
         body: coverBody,
         styles: { fontSize: 9, cellPadding: 2 },
