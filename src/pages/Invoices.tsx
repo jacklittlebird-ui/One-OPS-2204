@@ -603,6 +603,34 @@ export default function InvoicesPage() {
 
   const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
 
+  // Shared charge maps — identical precedence to the Service Report page so
+  // station/monthly totals can never drift between the two screens.
+  const securityRatesByContract = useMemo(
+    () => buildRatesByContract((contractRates || []) as any[]),
+    [contractRates],
+  );
+  const securityAirlineToContract = useMemo(
+    () => buildAirlineContractMap(
+      ((contracts || []) as any[]).filter((c: any) =>
+        ["Security", "Both"].includes(String(c?.service_category || "")) &&
+        String(c?.status || "") === "Active"
+      ),
+    ),
+    [contracts],
+  );
+
+  /** Effective billable amount for a dispatch row (live > stored > legacy). */
+  const effectiveDispatchCharge = useCallback((d: any) => {
+    const fi = lookupFlightInfo(d);
+    return resolveEffectiveSecurityCharge(d, {
+      ratesByContractId: securityRatesByContract,
+      airlineToContractId: securityAirlineToContract,
+      skdType: fi.skdType,
+    });
+  }, [securityRatesByContract, securityAirlineToContract, lookupFlightInfo]);
+
+
+
   // Billing preview: group completed dispatches by airline+station for the month
   const _rollupReport = (r: any) => {
     const civil = Number(r.civil_aviation_fee) || 0;
