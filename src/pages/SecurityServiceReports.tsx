@@ -1117,7 +1117,7 @@ export default function SecurityServiceReportsPage() {
       }
       return (a.flight_no || "").localeCompare(b.flight_no || "") || (a.id || "").localeCompare(b.id || "");
     });
-  }, [mergedRows, stationFilter, statusFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
+  }, [mergedRows, stationFilter, statusFilter, stepFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter, invoiceStatusByFlight, flightStatusById, flightCreatedViaById, activeChannel]);
 
   
   
