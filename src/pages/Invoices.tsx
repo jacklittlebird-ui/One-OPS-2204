@@ -810,7 +810,7 @@ export default function InvoicesPage() {
       currency: "USD" as InvoiceCurrency, status: "Draft" as InvoiceStatus,
       invoice_type: "Preliminary" as InvoiceType,
       description: `${isSecurityGroup ? "Security" : "Handling"} — ${group.flights} flights — ${group.station} — ${billingMonth}`,
-      flight_ref: group.items.map((d: any) => d.flight_no).filter(Boolean).join(", "),
+      flight_ref: `${group.flights} flights`,
       notes: `${headerNote}\n__DETAIL__:${JSON.stringify(detailRows)}`,
     };
     await add(inv as any);
