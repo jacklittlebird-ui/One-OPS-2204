@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Printer, Download, FileText } from "lucide-react";
+import { X, Printer, Download, FileText, Sheet } from "lucide-react";
 import linkAeroLogo from "@/assets/linkaero-logo.png";
 import ighcLogo from "@/assets/ighc-logo.jpg";
 import { formatDateDMY } from "@/lib/utils";
@@ -125,9 +125,14 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
         // Temporarily clear any preview-only scale transform.
         const prev = el.style.transform;
         el.style.transform = "none";
-        const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        const canvas = await html2canvas(el, {
+          scale: 3,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          windowWidth: el.scrollWidth,
+        });
         el.style.transform = prev;
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const imgData = canvas.toDataURL("image/png");
         const availW = A4_W_MM - margin * 2;
         const availH = A4_H_MM - margin * 2;
         const ratio = canvas.width / canvas.height;
@@ -137,7 +142,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
         const x = margin + (availW - w) / 2;
         const y = margin;
         if (addPage) pdf.addPage("a4", "landscape");
-        pdf.addImage(imgData, "JPEG", x, y, w, h);
+        pdf.addImage(imgData, "PNG", x, y, w, h, undefined, "FAST");
       };
 
       if (coverRef.current) await renderToPdf(coverRef.current, false);
@@ -262,6 +267,12 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                 className="w-16 px-2 py-1 border border-gray-300 rounded text-xs"
               />
             </label>
+            <button
+              onClick={handleExportExcel}
+              className="toolbar-btn-primary inline-flex items-center gap-1.5"
+            >
+              <Sheet size={14} /> Export Excel
+            </button>
             <button
               onClick={handleDownloadPdf}
               disabled={isDownloading}
