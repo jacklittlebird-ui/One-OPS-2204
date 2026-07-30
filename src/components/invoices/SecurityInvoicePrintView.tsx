@@ -328,92 +328,122 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                 amountKey: "handling" | "other",
                 total: number,
                 key: string,
-              ) => (
-                <div key={key} data-annex-id={key} className="annex-block mt-10 print:mt-0">
-                  <div className="border-2 border-gray-800 p-6">
-                    <div className="flex items-start justify-between mb-4 pb-3 border-b border-gray-400">
-                      <div className="border border-gray-400 p-1.5">
-                        <img src={linkAeroLogo} alt="Link Aero" className="h-16 w-auto object-contain" />
-                      </div>
-                      <div className="text-right">
-                        <img src={ighcLogo} alt="IGHC" className="h-10 w-auto object-contain ml-auto mb-1" />
-                        <p className="text-xs text-gray-600">Tax ID : 215-137-108</p>
+              ) => {
+                const sorted = [...rows].sort((a, b) => {
+                  const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
+                  const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
+                  return ka.localeCompare(kb);
+                });
+                const chunks: DetailRow[][] = [];
+                for (let i = 0; i < sorted.length; i += ROWS_PER_PAGE) {
+                  chunks.push(sorted.slice(i, i + ROWS_PER_PAGE));
+                }
+                if (chunks.length === 0) chunks.push([]);
+
+                return chunks.map((chunk, pageIdx) => {
+                  const isLast = pageIdx === chunks.length - 1;
+                  const offset = pageIdx * ROWS_PER_PAGE;
+                  return (
+                    <div key={`${key}-p${pageIdx}`} data-annex-id={`${key}-p${pageIdx}`} className="annex-block mt-10 print:mt-0">
+                      <div className="border-2 border-gray-800 p-6">
+                        <div className="flex items-start justify-between mb-4 pb-3 border-b border-gray-400">
+                          <div className="border border-gray-400 p-1.5">
+                            <img src={linkAeroLogo} alt="Link Aero" className="h-16 w-auto object-contain" />
+                          </div>
+                          <div className="text-right">
+                            <img src={ighcLogo} alt="IGHC" className="h-10 w-auto object-contain ml-auto mb-1" />
+                            <p className="text-xs text-gray-600">Tax ID : 215-137-108</p>
+                          </div>
+                        </div>
+
+                        <div className="text-center mb-4">
+                          <h2 className="text-xl font-bold tracking-wide uppercase">{title}</h2>
+                          <p className="text-base font-semibold mt-1">{invoice.operator}</p>
+                          {chunks.length > 1 && (
+                            <p className="text-xs text-gray-600 mt-1">Page {pageIdx + 1} of {chunks.length}</p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-3 text-sm mb-4 border border-gray-500 rounded-sm overflow-hidden">
+                          <div className="px-3 py-1.5 border-r border-gray-500">
+                            <span className="font-semibold">Station :</span> {st}
+                          </div>
+                          <div className="px-3 py-1.5 border-r border-gray-500">
+                            <span className="font-semibold">From :</span> {periodFrom || "—"}
+                          </div>
+                          <div className="px-3 py-1.5">
+                            <span className="font-semibold">To :</span> {periodTo || "—"}
+                          </div>
+                        </div>
+
+                        <table className="w-full text-[10px] border border-gray-800 border-collapse">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              {SECURITY_INVOICE_COLUMNS.map(h => (
+                                <th key={h} className="border border-gray-800 px-1.5 py-1 text-center font-bold">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {chunk.map((r, i) => (
+                              <tr key={i}>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{offset + i + 1}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.arrDate ? formatDateDMY(r.arrDate) : (r.date ? formatDateDMY(r.date) : "—")}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.depDate ? formatDateDMY(r.depDate) : (r.date ? formatDateDMY(r.date) : "—")}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.flight || "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.reg || "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.route || "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-left">{r.serviceType || r.type || "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.durationHours ? Number(r.durationHours).toFixed(2) : "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.overtimeHours ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-right whitespace-nowrap">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            {isLast ? (
+                              <>
+                                <tr>
+                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
+                                  <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(total, invoice.currency)}</td>
+                                </tr>
+                                <tr>
+                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
+                                  <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(0, invoice.currency)}</td>
+                                </tr>
+                                <tr className="font-bold">
+                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
+                                  <td className="border border-gray-800 px-1.5 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
+                                </tr>
+                              </>
+                            ) : (
+                              <tr>
+                                <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Subtotal (carried forward)</td>
+                                <td className="border border-gray-800 px-1.5 py-1 text-right">
+                                  {fmtMoney(
+                                    sorted.slice(0, offset + chunk.length).reduce((s, r) => s + (Number(r[amountKey]) || 0), 0),
+                                    invoice.currency,
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                          </tfoot>
+                        </table>
+
+                        <div className="mt-6 pt-3 border-t border-gray-400 text-center text-[10px] text-gray-700">
+                          P.O.BOX 203,-ZAMALEK, CAIRO, EGYPT&nbsp;&nbsp;
+                          <strong>TEL</strong>: +202-27351555&nbsp;&nbsp;
+                          <strong>Email</strong>: acc.receivables@linkagency.com&nbsp;&nbsp;
+                          <strong>Website</strong>: www.linkagency.com
+                        </div>
                       </div>
                     </div>
-
-                    <div className="text-center mb-4">
-                      <h2 className="text-xl font-bold tracking-wide uppercase">{title}</h2>
-                      <p className="text-base font-semibold mt-1">{invoice.operator}</p>
-                    </div>
-
-                    <div className="grid grid-cols-3 text-sm mb-4 border border-gray-500 rounded-sm overflow-hidden">
-                      <div className="px-3 py-1.5 border-r border-gray-500">
-                        <span className="font-semibold">Station :</span> {st}
-                      </div>
-                      <div className="px-3 py-1.5 border-r border-gray-500">
-                        <span className="font-semibold">From :</span> {periodFrom || "—"}
-                      </div>
-                      <div className="px-3 py-1.5">
-                        <span className="font-semibold">To :</span> {periodTo || "—"}
-                      </div>
-                    </div>
-
-                    <table className="w-full text-[10px] border border-gray-800 border-collapse">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          {SECURITY_INVOICE_COLUMNS.map(h => (
-                            <th key={h} className="border border-gray-800 px-1.5 py-1 text-center font-bold">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...rows].sort((a, b) => {
-                          const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
-                          const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
-                          return ka.localeCompare(kb);
-                        }).map((r, i) => (
-                          <tr key={i}>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{i + 1}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.arrDate ? formatDateDMY(r.arrDate) : (r.date ? formatDateDMY(r.date) : "—")}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center whitespace-nowrap">{r.depDate ? formatDateDMY(r.depDate) : (r.date ? formatDateDMY(r.date) : "—")}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.flight || "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.reg || "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.route || "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-left">{r.serviceType || r.type || "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.durationHours ? Number(r.durationHours).toFixed(2) : "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-center">{r.overtimeHours ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
-                            <td className="border border-gray-800 px-1.5 py-1 text-right whitespace-nowrap">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
-                          <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(total, invoice.currency)}</td>
-                        </tr>
-                        <tr>
-                          <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
-                          <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(0, invoice.currency)}</td>
-                        </tr>
-                        <tr className="font-bold">
-                          <td colSpan={12} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
-                          <td className="border border-gray-800 px-1.5 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-
-                    <div className="mt-6 pt-3 border-t border-gray-400 text-center text-[10px] text-gray-700">
-                      P.O.BOX 203,-ZAMALEK, CAIRO, EGYPT&nbsp;&nbsp;
-                      <strong>TEL</strong>: +202-27351555&nbsp;&nbsp;
-                      <strong>Email</strong>: acc.receivables@linkagency.com&nbsp;&nbsp;
-                      <strong>Website</strong>: www.linkagency.com
-                    </div>
-                  </div>
-                </div>
-              );
+                  );
+                });
+              };
 
               return (
                 <div key={`annex-${st}`}>
@@ -422,6 +452,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                 </div>
               );
             })}
+
           </div>
         </div>
       </div>
