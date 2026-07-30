@@ -228,6 +228,7 @@ export function backfillSecurityDetail(
       fill("durationHours", Number(d.actual_duration_hours) || 0);
       fill("overtimeHours", Number(d.overtime_hours) || 0);
       fill("staffCount", Number(d.staff_count) || 0);
+      fill("contractHours", Number(d.contract_duration_hours) || 0);
       fill("reg", d.registration);
       fill("route", d.route);
       fill("station", d.station);
