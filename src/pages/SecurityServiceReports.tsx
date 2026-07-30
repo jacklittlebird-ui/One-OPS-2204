@@ -336,6 +336,7 @@ export default function SecurityServiceReportsPage() {
   const [search, setSearch] = useState(_initParams.get("search") || "");
   const [stationFilter, setStationFilter] = useState(_initParams.get("station") || "All Stations");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [stepFilter, setStepFilter] = useState("All Steps");
   const [serviceFilter, setServiceFilter] = useState(_initParams.get("type") || "All Types");
   const [dateFrom, setDateFrom] = useState(_initParams.get("date_from") || "");
   const [dateTo, setDateTo] = useState(_initParams.get("date_to") || "");
