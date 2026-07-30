@@ -112,49 +112,128 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
 
   const handlePrint = () => window.print();
 
+  // Vector PDF (text + tables) instead of html2canvas images: a few hundred KB
+  // and a second or two, versus 200+ full-page bitmaps.
   const handleDownloadPdf = async () => {
     setIsDownloading(true);
     try {
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import("html2canvas"),
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
         import("jspdf"),
+        import("jspdf-autotable"),
       ]);
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+      const left = margin + 6;
+      const right = A4_W_MM - margin - 6;
 
-      const renderToPdf = async (el: HTMLElement, addPage: boolean) => {
-        // Temporarily clear any preview-only scale transform.
-        const prev = el.style.transform;
-        el.style.transform = "none";
-        const canvas = await html2canvas(el, {
-          scale: 3,
-          backgroundColor: "#ffffff",
-          useCORS: true,
-          windowWidth: el.scrollWidth,
+      // ---- Cover page ----
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(15);
+      pdf.text("LINK AVIATION SERVICES", left, 20);
+      pdf.setFontSize(11);
+      pdf.text("SECURITY INVOICE", left, 27);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      const meta: [string, string][] = [
+        ["Invoice #", invoice.invoiceNo || "—"],
+        ["Issued On", invoice.date ? formatDateDMY(invoice.date) : "—"],
+        ["Bill To", invoice.operator || "—"],
+        ["Period", invoice.billingPeriod || `${periodFrom} – ${periodTo}`],
+        ["Currency", invoice.currency || "USD"],
+      ];
+      meta.forEach(([k, v], i) => {
+        pdf.text(`${k}:`, left, 38 + i * 6);
+        pdf.text(String(v), left + 28, 38 + i * 6);
+      });
+
+      const coverBody: (string | number)[][] = [];
+      for (const [st, g] of stations) {
+        if (g.security > 0) coverBody.push([st, `${st}-Ramp Security Service`, fmtMoney(g.security, invoice.currency)]);
+        if (g.extra > 0) coverBody.push([st, `${st}-Ramp Extra Service`, fmtMoney(g.extra, invoice.currency)]);
+      }
+      coverBody.push(["", "VAT (Zero%)", fmtMoney(invoice.vat || 0, invoice.currency)]);
+      coverBody.push(["", "Total", fmtMoney(invoice.total || 0, invoice.currency)]);
+      autoTable(pdf, {
+        startY: 74,
+        head: [["Station", "Details", "Amount"]],
+        body: coverBody,
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+        columnStyles: { 2: { halign: "right" } },
+        margin: { left, right: A4_W_MM - right },
+      });
+
+      // ---- Annex pages (auto-paginated by autoTable) ----
+      const addAnnex = (
+        st: string,
+        title: string,
+        rows: DetailRow[],
+        amountKey: "handling" | "other",
+        total: number,
+      ) => {
+        if (!rows.length) return;
+        const showSkd = amountKey === "handling";
+        const cols: readonly string[] = showSkd ? SECURITY_ANNEX_COLUMNS : EXTRA_ANNEX_COLUMNS;
+        const sorted = [...rows].sort((a, b) => {
+          const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
+          const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
+          return ka.localeCompare(kb);
         });
-        el.style.transform = prev;
-        const imgData = canvas.toDataURL("image/png");
-        const availW = A4_W_MM - margin * 2;
-        const availH = A4_H_MM - margin * 2;
-        const ratio = canvas.width / canvas.height;
-        let w = availW;
-        let h = w / ratio;
-        if (h > availH) { h = availH; w = h * ratio; }
-        const x = margin + (availW - w) / 2;
-        const y = margin;
-        if (addPage) pdf.addPage("a4", "landscape");
-        pdf.addImage(imgData, "PNG", x, y, w, h, undefined, "FAST");
+        const body = sorted.map((r, i) => {
+          const row: (string | number)[] = [
+            i + 1,
+            r.arrDate ? formatDateDMY(r.arrDate) : (r.date ? formatDateDMY(r.date) : "—"),
+            r.depDate ? formatDateDMY(r.depDate) : (r.date ? formatDateDMY(r.date) : "—"),
+            r.flight || "—",
+            r.reg || "—",
+            r.route || "—",
+            r.serviceType || r.type || "—",
+          ];
+          if (showSkd) row.push(r.skdType || "—");
+          row.push(resolveDetailOvertimeHours(r).toFixed(2));
+          row.push((Number(r[amountKey]) || 0).toFixed(2));
+          return row;
+        });
+        const lastIdx = cols.length - 1;
+        pdf.addPage("a4", "landscape");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text(`${title.toUpperCase()} — ${invoice.operator || ""}`, left, 14);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.text(`Station: ${st}    From: ${periodFrom || "—"}    To: ${periodTo || "—"}`, left, 20);
+        autoTable(pdf, {
+          startY: 24,
+          head: [[...cols]],
+          body,
+          foot: [[...new Array(lastIdx - 1).fill(""), "Grand total", (total || 0).toFixed(2)]],
+          styles: { fontSize: 7, cellPadding: 1.4, overflow: "linebreak" },
+          headStyles: { fillColor: [30, 64, 175], textColor: 255, fontSize: 7 },
+          footStyles: { fillColor: [241, 245, 249], textColor: 20, fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: { 0: { halign: "center", cellWidth: 10 }, [lastIdx]: { halign: "right" }, [lastIdx - 1]: { halign: "right" } },
+          margin: { left, right: A4_W_MM - right, top: 14, bottom: 12 },
+        });
       };
 
-      if (coverRef.current) await renderToPdf(coverRef.current, false);
-      const blocks = detailsRef.current?.querySelectorAll<HTMLElement>(".annex-block") ?? [];
-      for (const el of Array.from(blocks)) {
-        await renderToPdf(el, true);
+      for (const [st, g] of stations) {
+        addAnnex(st, "Security Service", g.rows.filter(r => (r.handling || 0) > 0), "handling", g.security);
+        addAnnex(st, "Extra Service", g.rows.filter(r => (r.other || 0) > 0), "other", g.extra);
       }
+
+      // Page numbers
+      const total = pdf.getNumberOfPages();
+      pdf.setFontSize(7);
+      for (let p = 1; p <= total; p++) {
+        pdf.setPage(p);
+        pdf.text(`Page ${p} of ${total}`, right, A4_H_MM - 6, { align: "right" });
+      }
+
       pdf.save(`${invoice.invoiceNo || "security-invoice"}.pdf`);
     } finally {
       setIsDownloading(false);
     }
   };
+
 
   // Excel export mirroring the printed layout: a cover sheet plus one sheet
   // per station annex, using the exact same columns/values as the PDF.
