@@ -29,6 +29,8 @@ import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
 import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
+import { buildAirlineContractMap, buildRatesByContract, resolveEffectiveSecurityCharge } from "@/lib/securityRowCharges";
+
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -601,6 +603,34 @@ export default function InvoicesPage() {
 
   const clearFilters = () => { setStatusFilter("All"); setTypeFilter("All"); setCurrencyFilter("All"); setOperatorFilter("All"); setDateFrom(""); setDateTo(""); setDueFrom(""); setDueTo(""); setMinTotal(""); setMaxTotal(""); };
 
+  // Shared charge maps — identical precedence to the Service Report page so
+  // station/monthly totals can never drift between the two screens.
+  const securityRatesByContract = useMemo(
+    () => buildRatesByContract((contractRates || []) as any[]),
+    [contractRates],
+  );
+  const securityAirlineToContract = useMemo(
+    () => buildAirlineContractMap(
+      ((contracts || []) as any[]).filter((c: any) =>
+        ["Security", "Both"].includes(String(c?.service_category || "")) &&
+        String(c?.status || "") === "Active"
+      ),
+    ),
+    [contracts],
+  );
+
+  /** Effective billable amount for a dispatch row (live > stored > legacy). */
+  const effectiveDispatchCharge = useCallback((d: any) => {
+    const fi = lookupFlightInfo(d);
+    return resolveEffectiveSecurityCharge(d, {
+      ratesByContractId: securityRatesByContract,
+      airlineToContractId: securityAirlineToContract,
+      skdType: fi.skdType,
+    });
+  }, [securityRatesByContract, securityAirlineToContract, lookupFlightInfo]);
+
+
+
   // Billing preview: group completed dispatches by airline+station for the month
   const _rollupReport = (r: any) => {
     const civil = Number(r.civil_aviation_fee) || 0;
@@ -635,14 +665,18 @@ export default function InvoicesPage() {
     completedDispatches.forEach((d: any) => {
       const key = `${d.airline}__${d.station}`;
       if (!grouped[key]) grouped[key] = { airline: d.airline, station: d.station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
+      // Same resolver as the Service Report AMOUNT column — live contract math
+      // first, stored values only as a fallback.
+      const eff = effectiveDispatchCharge(d);
       grouped[key].flights++;
       grouped[key].sources.dispatches++;
-      grouped[key].baseFees += d.base_fee || 0;
-      grouped[key].serviceCharges += (d.total_security_charges || d.service_rate || 0);
-      grouped[key].overtime += d.overtime_charge || 0;
-      grouped[key].total += (d.total_security_charges || d.total_charge || 0);
-      grouped[key].items.push({ ...d, _source: "dispatch" });
+      grouped[key].baseFees += eff.base;
+      grouped[key].serviceCharges += eff.base;
+      grouped[key].overtime += eff.overtime;
+      grouped[key].total += eff.amount;
+      grouped[key].items.push({ ...d, _source: "dispatch", _effBase: eff.base, _effOvertime: eff.overtime, _effTotal: eff.amount });
     });
+
 
     // 2) Service Reports (handling side) — approved & in selected month/station
     const matchedReports = includeHandling ? serviceReports.filter((r: any) => {
@@ -671,7 +705,7 @@ export default function InvoicesPage() {
     });
 
     return Object.values(grouped);
-  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab]);
+  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab, effectiveDispatchCharge]);
 
   // Guard: only allow "Generate from Dispatches" when every dispatch in the selected
   // month/station is marked Completed. Pending/in-progress dispatches block generation.
@@ -703,9 +737,12 @@ export default function InvoicesPage() {
           category: "Handling", civil: m.civil, handling: m.handling, airport: m.airport, other: m.other, total: m.total,
         });
       } else {
-        const base = (it.total_security_charges || it.service_rate || 0) + (it.base_fee || 0);
-        const ot = (it.overtime_charge || 0);
+        // Use the same effective amounts the preview grouped on.
+        const eff = it._effTotal !== undefined ? { base: it._effBase || 0, overtime: it._effOvertime || 0, amount: it._effTotal || 0 } : effectiveDispatchCharge(it);
+        const base = eff.base;
+        const ot = eff.overtime;
         handling += base; other += ot;
+
         const fi = lookupFlightInfo(it);
         detailRows.push({
           date: it.flight_date || "", flight: it.flight_no || "",
@@ -896,35 +933,9 @@ export default function InvoicesPage() {
   // ============================================================
   // SECURITY: monthly airline invoice (sourced from dispatch_assignments)
   // ============================================================
-  // Map dispatch service_type → contract flight_type (mirrors SecurityServiceReports)
-  const mapServiceTypeToFlightType = useCallback((st: string): string => {
-    const s = (st || "").toLowerCase();
-    if (s.includes("turnaround")) return "Turnaround";
-    if (s.includes("maintenance")) return "Maintenance Security";
-    if (s.includes("departure")) return "Departure Security";
-    if (s.includes("arrival")) return "Arrival Security";
-    return st || "Turnaround";
-  }, []);
+  // (charge maps + effectiveDispatchCharge are defined above, near the billing preview)
 
-  // Compute live charge from contract rates when stored values are zero/missing.
-  const computeLiveCharge = useCallback((d: any): { base: number; overtime: number; total: number } => {
-    if (!d?.contract_id) return { base: 0, overtime: 0, total: 0 };
-    const rates = (contractRates || []).filter((x: any) => x.contract_id === d.contract_id);
-    if (!rates.length) return { base: 0, overtime: 0, total: 0 };
-    const fi = lookupFlightInfo(d);
-    const skd = (fi.skdType || "").toString().trim().toUpperCase();
-    const result = calculateSecurityCharges({
-      airport: d.station || "CAI",
-      flightType: mapServiceTypeToFlightType(d.service_type),
-      groundTimeHours: Number(d.actual_duration_hours) || 0,
-      isAdhoc: skd === "ADHOC",
-      rates: rates as any,
-    });
-    const lines = result.lines || [];
-    const base = lines.filter((l: any) => !/overtime/i.test(l.label)).reduce((s: number, l: any) => s + (Number(l.amount) || 0), 0);
-    const overtime = lines.filter((l: any) => /overtime/i.test(l.label)).reduce((s: number, l: any) => s + (Number(l.amount) || 0), 0);
-    return { base, overtime, total: result.total || 0 };
-  }, [contractRates, lookupFlightInfo, mapServiceTypeToFlightType]);
+
 
   const monthlySecurityPreview = useMemo(() => {
     const baseRows = (dispatches || []).filter((d: any) => {
@@ -933,17 +944,10 @@ export default function InvoicesPage() {
         d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
         (d.flight_date || "").startsWith(monthlyAirlineMonth);
     });
-    // Enrich each row with effective charges (stored or live-computed fallback).
+    // Enrich each row with effective charges (live-computed wins over stored).
     const rows = baseRows.map((d: any) => {
-      const storedBase = Number(d.base_fee) || 0;
-      const storedOt = Number(d.overtime_charge) || 0;
-      const storedTotal = Number(d.total_charge) || 0;
-      let base = storedBase, overtime = storedOt, total = storedTotal || (storedBase + storedOt);
-      if (total <= 0) {
-        const live = computeLiveCharge(d);
-        if (live.total > 0) { base = live.base; overtime = live.overtime; total = live.total; }
-      }
-      return { ...d, _effBase: base, _effOvertime: overtime, _effTotal: total };
+      const eff = effectiveDispatchCharge(d);
+      return { ...d, _effBase: eff.base, _effOvertime: eff.overtime, _effTotal: eff.amount };
     });
     const totals = rows.reduce(
       (acc: any, d: any) => { acc.base += d._effBase; acc.overtime += d._effOvertime; acc.total += d._effTotal; return acc; },
@@ -957,7 +961,8 @@ export default function InvoicesPage() {
       byStationType[key].total += d._effTotal;
     });
     return { rows, totals, breakdown: Object.values(byStationType) };
-  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, computeLiveCharge]);
+  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, effectiveDispatchCharge]);
+
 
   type SecIssue = { id: string; flight: string; date: string; station: string; severity: "error" | "warning"; issues: string[] };
   const monthlySecurityValidation = useMemo(() => {

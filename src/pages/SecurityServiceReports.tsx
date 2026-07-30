@@ -28,6 +28,8 @@ import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes
 const SecurityTaskSheetDialog = lazy(() => import("@/components/security/SecurityTaskSheetDialog"));
 import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
+import { computeLiveSecurityCharge } from "@/lib/securityRowCharges";
+
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
 import { snapshotBeforeSave, verifyAfterSave } from "@/lib/phase3WriteCycleVerifier";
 import { resolveDownloadFields } from "@/lib/securityDownloadFields";
@@ -1203,35 +1205,19 @@ export default function SecurityServiceReportsPage() {
   // Used in the receivables view to always show an up-to-date charge even
   // when the saved record hasn't been recomputed since the contract changed.
   const computeRowCharges = useCallback((r: DispatchRow) => {
-    // Auto-resolve contract when the row wasn't explicitly linked (matches the
-    // Edit dialog which auto-picks the sole active Security contract for the
-    // airline). This prevents the AMOUNT column from showing "—" for rows
-    // where charges DO exist as soon as you open Edit.
-    const airlineKey = String((r as any).airline || "").toLowerCase().trim();
-    const contractId = r.contract_id || airlineToContractId.get(airlineKey) || "";
-    if (!contractId) return { amount: 0, currency: "USD", lines: [] as any[] };
-    const rates = ratesByContractId.get(contractId) || [];
-    if (!rates.length) return { amount: 0, currency: "USD", lines: [] as any[] };
-    // Prefer live ground-time from actual_start/actual_end (same as the
-    // DURATION column and the Edit dialog). Falls back to the stored
-    // actual_duration_hours only when times are missing.
-    const gt = (r.actual_start && r.actual_end)
-      ? timeDiffHours(r.actual_start, r.actual_end)
-      : (r.actual_duration_hours || 0);
-    // Detect ADHOC SKD type from the linked flight schedule (or merged meta).
+    // Delegates to the shared resolver in @/lib/securityRowCharges so the
+    // Invoices billing previews compute the exact same amount.
     const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
     const meta = (r as any).flightMeta;
-    const skd = (fd?.skd_type || meta?.skd_type || "").toString().trim().toUpperCase();
-    const isAdhoc = skd === "ADHOC";
-    const result = calculateSecurityCharges({
-      airport: r.station || "CAI",
-      flightType: mapServiceTypeToFlightType(r.service_type),
-      groundTimeHours: gt,
-      isAdhoc,
-      rates: rates as any,
+    const skd = (fd?.skd_type || meta?.skd_type || "") as string;
+    const res = computeLiveSecurityCharge(r as any, {
+      ratesByContractId,
+      airlineToContractId,
+      skdType: skd,
     });
-    return { amount: result.total, currency: result.currency, lines: result.lines || [] };
+    return { amount: res.amount, currency: res.currency, lines: res.lines };
   }, [ratesByContractId, airlineToContractId, flightDetailsById]);
+
 
   // Total Charges KPI must match what the AMOUNT column shows per row:
   // prefer live-computed charges, fall back to persisted total_security_charges,
