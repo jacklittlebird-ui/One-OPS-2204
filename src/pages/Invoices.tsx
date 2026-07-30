@@ -705,7 +705,7 @@ export default function InvoicesPage() {
     });
 
     return Object.values(grouped);
-  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab]);
+  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab, effectiveDispatchCharge]);
 
   // Guard: only allow "Generate from Dispatches" when every dispatch in the selected
   // month/station is marked Completed. Pending/in-progress dispatches block generation.
