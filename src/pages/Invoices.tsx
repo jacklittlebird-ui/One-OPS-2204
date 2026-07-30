@@ -339,6 +339,17 @@ export default function InvoicesPage() {
     setShowAdd(false); setNewInvoice(emptyInvoice());
   };
   const startEdit = (inv: InvoiceRow) => { setEditId(inv.id); setEditData({ ...inv }); };
+  const editInvoiceNo = async (inv: InvoiceRow) => {
+    const next = window.prompt("Invoice No.", inv.invoice_no || "");
+    if (next === null) return;
+    const trimmed = next.trim();
+    if (!trimmed || trimmed === inv.invoice_no) return;
+    await update({ id: inv.id, invoice_no: trimmed } as any);
+    setDetailInvoice(prev => (prev && prev.id === inv.id ? { ...prev, invoice_no: trimmed } : prev));
+    setPrintInvoice(prev => (prev && (prev as any).id === inv.id ? { ...(prev as any), invoiceNo: trimmed } : prev));
+    toast({ title: "Invoice number updated", description: trimmed });
+  };
+
   const saveEdit = async () => {
     if (!editId) return;
     const { id, ...rest } = editData;
