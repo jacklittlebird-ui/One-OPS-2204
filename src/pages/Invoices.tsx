@@ -930,17 +930,10 @@ export default function InvoicesPage() {
         d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
         (d.flight_date || "").startsWith(monthlyAirlineMonth);
     });
-    // Enrich each row with effective charges (stored or live-computed fallback).
+    // Enrich each row with effective charges (live-computed wins over stored).
     const rows = baseRows.map((d: any) => {
-      const storedBase = Number(d.base_fee) || 0;
-      const storedOt = Number(d.overtime_charge) || 0;
-      const storedTotal = Number(d.total_charge) || 0;
-      let base = storedBase, overtime = storedOt, total = storedTotal || (storedBase + storedOt);
-      if (total <= 0) {
-        const live = computeLiveCharge(d);
-        if (live.total > 0) { base = live.base; overtime = live.overtime; total = live.total; }
-      }
-      return { ...d, _effBase: base, _effOvertime: overtime, _effTotal: total };
+      const eff = effectiveDispatchCharge(d);
+      return { ...d, _effBase: eff.base, _effOvertime: eff.overtime, _effTotal: eff.amount };
     });
     const totals = rows.reduce(
       (acc: any, d: any) => { acc.base += d._effBase; acc.overtime += d._effOvertime; acc.total += d._effTotal; return acc; },
@@ -954,7 +947,8 @@ export default function InvoicesPage() {
       byStationType[key].total += d._effTotal;
     });
     return { rows, totals, breakdown: Object.values(byStationType) };
-  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, computeLiveCharge]);
+  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, effectiveDispatchCharge]);
+
 
   type SecIssue = { id: string; flight: string; date: string; station: string; severity: "error" | "warning"; issues: string[] };
   const monthlySecurityValidation = useMemo(() => {
