@@ -1111,11 +1111,10 @@ export default function InvoicesPage() {
     const stationBreakdown = Array.from(stationMap.values())
       .map(s => ({ station: s.station, rows: s.rows, flights: s.rows, base: s.base, overtime: s.overtime, total: s.total }))
       .sort((a, b) => b.total - a.total);
-      .sort((a, b) => b.total - a.total);
     const isFiltered = !!(from || to);
     return {
       rows, totals, stationBreakdown, isFiltered,
-      counts: { rows: rows.length, flights: flights.size, stations: stations.size, dates: dates.size },
+      counts: { rows: rows.length, flights: rows.length, stations: stations.size, dates: dates.size },
       hiddenCount: securityAnnexExport.rows.length - rows.length,
     };
   }, [securityAnnexExport, securityAnnexDateFrom, securityAnnexDateTo]);
