@@ -20,6 +20,8 @@ export type SecurityDetailRow = {
   actualEnd?: string;
   durationHours?: number;
   overtimeHours?: number;
+  /** Contracted (non-overtime) ground time in hours; defaults to 3 when absent. */
+  contractHours?: number;
   staffCount?: number;
   civil?: number;
   handling?: number;
@@ -30,7 +32,8 @@ export type SecurityDetailRow = {
 };
 
 /**
- * Canonical column headers for the per-flight security invoice table.
+ * Canonical column headers for the per-flight security invoice table
+ * (invoice detail preview).
  * Tests assert this exact list is rendered (and that "Service / Notes"
  * is NOT present).
  */
@@ -42,13 +45,61 @@ export const SECURITY_INVOICE_COLUMNS = [
   "Reg.",
   "Route",
   "Service Type",
-  "SKD",
   "Start",
   "End",
   "Duration (h)",
   "OT (h)",
   "Amount",
 ] as const;
+
+/** Printed Annex A — Security Service page columns. */
+export const SECURITY_ANNEX_COLUMNS = [
+  "S",
+  "ARR DATE",
+  "DEP DATE",
+  "Flight",
+  "Reg.",
+  "Route",
+  "Service Type",
+  "SKD",
+  "OT (h)",
+  "Amount",
+] as const;
+
+/** Printed Annex A — Extra Service page columns (no SKD). */
+export const EXTRA_ANNEX_COLUMNS = [
+  "S",
+  "ARR DATE",
+  "DEP DATE",
+  "Flight",
+  "Reg.",
+  "Route",
+  "Service Type",
+  "OT (h)",
+  "Amount",
+] as const;
+
+/**
+ * Overtime hours exactly as shown in the Service Report list:
+ * ceil((actual ground time − contracted time) / 60min), contracted time
+ * defaulting to 3h. Falls back to the stored value when actual times are
+ * missing. Keeps invoices/print/Excel in sync with the operational record.
+ */
+export function resolveDetailOvertimeHours(r: SecurityDetailRow): number {
+  const baselineMins = Math.round(((r.contractHours && r.contractHours > 0) ? r.contractHours : 3) * 60);
+  const start = r.actualStart;
+  const end = r.actualEnd;
+  if (start && end) {
+    const [h1, m1] = String(start).split(":").map(Number);
+    const [h2, m2] = String(end).split(":").map(Number);
+    if (![h1, m1, h2, m2].some(v => Number.isNaN(v))) {
+      let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+      if (diff < 0) diff += 24 * 60;
+      return Math.ceil(Math.max(0, diff - baselineMins) / 60);
+    }
+  }
+  return Number(r.overtimeHours) || 0;
+}
 
 /**
  * Fields backfilled by the regeneration helper when an existing invoice
