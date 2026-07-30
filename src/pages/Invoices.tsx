@@ -158,7 +158,31 @@ export default function InvoicesPage() {
   const { data: invoicesRaw, isLoading, add, update, remove, bulkInsert } = useInvoices<InvoiceRow>();
   const invoices = Array.isArray(invoicesRaw) ? invoicesRaw : [];
   const { data: dispatchesRaw } = useDispatchBoardFS({ scope: "history" });
-  const dispatches = Array.isArray(dispatchesRaw) ? dispatchesRaw : [];
+  // A flight can accumulate more than one dispatch row (re-created task sheets,
+  // re-assignments). Billing must count ONE billable dispatch per flight, or the
+  // monthly totals / flight counts drift from the Service Report lists which are
+  // keyed on flight_schedules. Keep the richest row: Completed > highest charge >
+  // most recently updated.
+  const dispatches = useMemo(() => {
+    const rows = Array.isArray(dispatchesRaw) ? dispatchesRaw : [];
+    const best = new Map<string, any>();
+    const out: any[] = [];
+    const score = (d: any) => [
+      (d?.status || "").toLowerCase() === "completed" ? 1 : 0,
+      Number(d?.total_security_charges) || Number(d?.total_charge) || 0,
+      Date.parse(d?.updated_at || d?.created_at || "") || 0,
+    ];
+    for (const d of rows) {
+      const key = d?.flight_schedule_id;
+      if (!key) { out.push(d); continue; }
+      const prev = best.get(key);
+      if (!prev) { best.set(key, d); continue; }
+      const a = score(d), b = score(prev);
+      if (a[0] !== b[0] ? a[0] > b[0] : a[1] !== b[1] ? a[1] > b[1] : a[2] > b[2]) best.set(key, d);
+    }
+    return [...out, ...best.values()];
+  }, [dispatchesRaw]);
+
   const { data: contracts } = useSupabaseTable<any>("contracts");
   const { data: flightSchedules } = useFlightHistory();
   const { data: contractRates } = useContractServiceRatesRef();
