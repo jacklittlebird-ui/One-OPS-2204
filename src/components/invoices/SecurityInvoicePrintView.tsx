@@ -79,6 +79,8 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
   // Available height per page (A4 landscape minus top+bottom margin).
   const availableDetailsHeightPx = useMemo(() => (A4_H_MM - margin * 2) * MM_TO_PX, [margin]);
 
+  // Rows that comfortably fit on one A4 landscape annex page (header + table + totals).
+  const ROWS_PER_PAGE = 20;
 
   const [annexScales, setAnnexScales] = useState<Record<string, number>>({});
   useEffect(() => {
@@ -90,7 +92,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
         const id = el.dataset.annexId || "";
         const naturalH = el.scrollHeight;
         next[id] = naturalH > availableDetailsHeightPx
-          ? Math.max(0.5, availableDetailsHeightPx / naturalH)
+          ? Math.max(0.6, availableDetailsHeightPx / naturalH)
           : 1;
       });
       setAnnexScales(next);
@@ -104,6 +106,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
     if (coverRef.current) ro.observe(coverRef.current);
     return () => ro.disconnect();
   }, [availableDetailsHeightPx, detail.length, stations.length]);
+
 
   const handlePrint = () => window.print();
 
