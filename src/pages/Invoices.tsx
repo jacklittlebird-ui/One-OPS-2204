@@ -264,6 +264,7 @@ export default function InvoicesPage() {
   const [showMonthlyAirline, setShowMonthlyAirline] = useState(false);
   const [monthlyAirlineMonth, setMonthlyAirlineMonth] = useState(new Date().toISOString().slice(0, 7));
   const [monthlyAirlineOperator, setMonthlyAirlineOperator] = useState("Air Cairo");
+  const [manualInvoiceNo, setManualInvoiceNo] = useState("");
   const [monthlyTab, setMonthlyTab] = useState<"security" | "handling">("security");
   const [showSecurityAnnexPreview, setShowSecurityAnnexPreview] = useState(false);
   const [securityAnnexDateFrom, setSecurityAnnexDateFrom] = useState("");
@@ -1145,7 +1146,7 @@ export default function InvoicesPage() {
       const ok = window.confirm(`A monthly Security invoice already exists for ${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${duplicate.invoice_no}, ${duplicate.status}).\n\nCreate another anyway?`);
       if (!ok) { toast({ title: "Duplicate skipped", description: `Existing invoice ${duplicate.invoice_no} kept.` }); return; }
     }
-    const invoiceNo = existingSec.length > 0 ? `${baseNo}-R${existingSec.length + 1}` : baseNo;
+    const invoiceNo = manualInvoiceNo.trim() || (existingSec.length > 0 ? `${baseNo}-R${existingSec.length + 1}` : baseNo);
     const detailRows = rows.map((d: any) => {
       const fi = lookupFlightInfo(d);
       return {
@@ -1221,7 +1222,7 @@ export default function InvoicesPage() {
       const ok = window.confirm(`A monthly invoice already exists for ${monthlyAirlineOperator} — ${monthlyAirlineMonth}.\n\nCreate another anyway?`);
       if (!ok) return;
     }
-    const invoiceNo = existingCount > 0 ? `${baseNo}-R${existingCount + 1}` : baseNo;
+    const invoiceNo = manualInvoiceNo.trim() || (existingCount > 0 ? `${baseNo}-R${existingCount + 1}` : baseNo);
 
     const handlingRows = reports.map((r: any) => {
       const m = rollupReport(r);
@@ -1330,7 +1331,7 @@ export default function InvoicesPage() {
       inv.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
       inv.billing_period === monthlyAirlineMonth && inv.station === "ALL"
     ).length;
-    const invoiceNo = existingCount > 0 ? `${baseNo}-R${existingCount + 1}` : baseNo;
+    const invoiceNo = manualInvoiceNo.trim() || (existingCount > 0 ? `${baseNo}-R${existingCount + 1}` : baseNo);
 
     const subtotal = totals.civil + totals.handling + totals.airport + totals.other;
     const inv: Partial<InvoiceRow> = {
@@ -1757,6 +1758,10 @@ export default function InvoicesPage() {
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Billing Month</label>
                   <input type="month" className={inputCls} value={monthlyAirlineMonth} onChange={e => setMonthlyAirlineMonth(e.target.value)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Invoice No. (manual — leave blank to auto-generate)</label>
+                  <input type="text" className={inputCls} value={manualInvoiceNo} onChange={e => setManualInvoiceNo(e.target.value)} />
                 </div>
               </div>
               <div className="flex justify-end">
