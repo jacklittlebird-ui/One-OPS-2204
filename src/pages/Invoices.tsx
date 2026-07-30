@@ -1097,21 +1097,20 @@ export default function InvoicesPage() {
       { base: 0, overtime: 0, total: 0 }
     );
     const stations = new Set(rows.map(r => (r.station || "").trim()).filter(Boolean));
-    const flights = new Set(rows.map(r => (r.flight || "").trim()).filter(Boolean));
     const dates = new Set(rows.map(r => (r.date || "").trim()).filter(Boolean));
-    const stationMap = new Map<string, { station: string; flights: Set<string>; rows: number; base: number; overtime: number; total: number }>();
+    const stationMap = new Map<string, { station: string; rows: number; base: number; overtime: number; total: number }>();
     for (const r of rows) {
       const key = (r.station || "—").trim() || "—";
-      const existing = stationMap.get(key) || { station: key, flights: new Set<string>(), rows: 0, base: 0, overtime: 0, total: 0 };
+      const existing = stationMap.get(key) || { station: key, rows: 0, base: 0, overtime: 0, total: 0 };
       existing.rows += 1;
       existing.base += r.base;
       existing.overtime += r.overtime;
       existing.total += r.total;
-      if ((r.flight || "").trim()) existing.flights.add(r.flight.trim());
       stationMap.set(key, existing);
     }
     const stationBreakdown = Array.from(stationMap.values())
-      .map(s => ({ station: s.station, rows: s.rows, flights: s.flights.size, base: s.base, overtime: s.overtime, total: s.total }))
+      .map(s => ({ station: s.station, rows: s.rows, flights: s.rows, base: s.base, overtime: s.overtime, total: s.total }))
+      .sort((a, b) => b.total - a.total);
       .sort((a, b) => b.total - a.total);
     const isFiltered = !!(from || to);
     return {
