@@ -1374,7 +1374,7 @@ export default function InvoicesPage() {
               onClick={() => setShowBillingPreview(true)}
               title="Generate invoices from completed dispatches for the selected period"
               className="toolbar-btn-outline"
-            ><Zap size={14} /> Generate from Dispatches</button>
+            ><Zap size={14} /> Generate from Service Reports</button>
             <button onClick={() => setShowMonthlyAirline(true)} className="toolbar-btn-outline"><Calendar size={14} /> Monthly Airline Invoice</button>
             <button onClick={() => { setNewInvoice(emptyInvoice()); setShowAdd(true); }} className="toolbar-btn-primary"><Plus size={14} /> New Invoice</button>
           </div>
@@ -1634,7 +1634,7 @@ export default function InvoicesPage() {
                   <div className="flex items-start gap-2">
                     <Zap size={16} className="text-warning shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-semibold text-warning">Dispatches not fully completed</div>
+                      <div className="font-semibold text-warning">Service reports not fully completed</div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {dispatchGenerationGuard.incompleteCount} of {dispatchGenerationGuard.total} dispatch(es) for {billingMonth}{billingStation !== "All" ? ` · ${billingStation}` : ""} are not ready for billing. Invoice generation is disabled until all flights are complete.
                       </div>
