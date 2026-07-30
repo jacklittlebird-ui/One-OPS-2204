@@ -82,7 +82,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
   const availableDetailsHeightPx = useMemo(() => (A4_H_MM - margin * 2) * MM_TO_PX, [margin]);
 
   // Rows that comfortably fit on one A4 landscape annex page (header + table + totals).
-  const ROWS_PER_PAGE = 20;
+  const ROWS_PER_PAGE = 32;
 
   const [annexScales, setAnnexScales] = useState<Record<string, number>>({});
   useEffect(() => {
