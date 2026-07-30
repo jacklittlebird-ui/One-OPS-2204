@@ -161,6 +161,7 @@ export function parseSecurityDetail(notes: string | null | undefined): {
         durationHours: Number(r.durationHours) || 0,
         overtimeHours: Number(r.overtimeHours) || 0,
         staffCount: Number(r.staffCount) || 0,
+        contractHours: Number(r.contractHours) || 0,
         category: r.category || "",
         civil: Number(r.civil) || 0,
         handling: Number(r.handling) || 0,
