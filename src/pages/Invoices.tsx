@@ -755,16 +755,10 @@ export default function InvoicesPage() {
     return { civil, handling, airport, other, total: lineTotal };
   };
 
-  // Batch 4: monthly totals + (station × type) breakdown now come from the
-  // precomputed `mv_invoice_monthly_summary` materialized view. Zero
-  // .reduce() / groupBy on the client — the DB has already aggregated.
-  // The `reports` array remains a pure .filter() (no aggregation) because
-  // invoice generation still needs per-flight detail rows.
-  const { data: mvRows = [] } = useInvoiceMonthlySummary({
-    operator: monthlyAirlineOperator,
-    month: monthlyAirlineMonth,
-  });
+  // Monthly totals are computed from the same filtered report rows rendered in
+  // the preview so counts and charges can never diverge.
   const refreshInvoiceSummary = useRefreshInvoiceMonthlySummary();
+
 
   const monthlyAirlinePreview = useMemo(() => {
     const reports = (serviceReports || []).filter((r: any) => {
