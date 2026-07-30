@@ -55,9 +55,14 @@ export function useDispatchBoardFS<T extends Record<string, any> = any>(
           cutoff.setDate(cutoff.getDate() - 180);
           q = q.gte("flight_date", cutoff.toISOString().slice(0, 10));
         }
+        // Deterministic tiebreaker: paging on a non-unique sort key (flight_date
+        // has thousands of ties) lets PostgREST return overlapping/skipped rows
+        // across ranges — which silently dropped flights from monthly billing.
         const { data, error } = await q
           .order("flight_date", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: true })
           .range(from, from + PAGE - 1);
+
         if (error) throw error;
         const chunk = (data || []) as any[];
         all.push(...chunk);
