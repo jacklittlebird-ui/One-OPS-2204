@@ -614,6 +614,28 @@ export default function InvoicesPage() {
     });
   }, [securityRatesByContract, securityAirlineToContract, lookupFlightInfo]);
 
+  // Billing month is based on the authoritative flight schedule date first.
+  // Dispatch `flight_date` can be stale after station/route/date amendments, so
+  // using it first can hide an incomplete flight from Generate Monthly Billing.
+  const resolveDispatchBillingDate = useCallback((d: any) => {
+    const fi = lookupFlightInfo(d);
+    return (fi.arrDate || fi.depDate || d?.flight_date || "").toString().slice(0, 10);
+  }, [lookupFlightInfo]);
+
+  const getDispatchIncompleteReasons = useCallback((d: any): string[] => {
+    const reasons: string[] = [];
+    const workflowStatus = String(d?.status || "Pending").trim();
+    const reviewStatus = String(d?.review_status || "Draft").trim();
+    if (workflowStatus.toLowerCase() !== "completed") reasons.push(`Status: ${workflowStatus}`);
+    if (reviewStatus.toLowerCase() !== "ready for billing") reasons.push(`Review: ${reviewStatus}`);
+    if (!resolveDispatchBillingDate(d)) reasons.push("Missing billing date");
+    return reasons;
+  }, [resolveDispatchBillingDate]);
+
+  const isDispatchBillingComplete = useCallback((d: any) => {
+    return getDispatchIncompleteReasons(d).length === 0;
+  }, [getDispatchIncompleteReasons]);
+
 
 
   // Billing preview: group completed dispatches by airline+station for the month
@@ -643,11 +665,10 @@ export default function InvoicesPage() {
 
     // 1) Dispatch assignments (security side)
     const completedDispatches = includeSecurity ? dispatches.filter((d: any) => {
-      const fi = lookupFlightInfo(d);
-      const dt = (d.flight_date || fi.arrDate || fi.depDate || "").toString();
+      const dt = resolveDispatchBillingDate(d);
       const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
-      return d.status === "Completed" && matchMonth && matchStation;
+      return isDispatchBillingComplete(d) && matchMonth && matchStation;
     }) : [];
 
     completedDispatches.forEach((d: any) => {
@@ -693,28 +714,40 @@ export default function InvoicesPage() {
     });
 
     return Object.values(grouped);
-  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab, effectiveDispatchCharge, lookupFlightInfo]);
+  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab, effectiveDispatchCharge, lookupFlightInfo, resolveDispatchBillingDate, isDispatchBillingComplete]);
 
   // Guard: only allow "Generate from Dispatches" when every dispatch in the selected
   // month/station is marked Completed. Pending/in-progress dispatches block generation.
   const dispatchGenerationGuard = useMemo(() => {
     const scoped = (dispatches || []).filter((d: any) => {
-      const fi = lookupFlightInfo(d);
-      // A dispatch may have no flight_date of its own — fall back to the linked
-      // flight's arrival/departure date so incomplete rows are never skipped.
-      const dt = (d.flight_date || fi.arrDate || fi.depDate || "").toString();
+      const dt = resolveDispatchBillingDate(d);
       const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
       return matchMonth && matchStation;
     });
-    const incomplete = scoped.filter((d: any) => (d.status || "").toLowerCase() !== "completed");
+    const incomplete = scoped.filter((d: any) => !isDispatchBillingComplete(d));
+    const incompleteRows = incomplete
+      .map((d: any) => ({
+        id: d.id,
+        date: resolveDispatchBillingDate(d) || "—",
+        station: d.station || "—",
+        airline: d.airline || "—",
+        flight: d.flight_no || "—",
+        reasons: getDispatchIncompleteReasons(d),
+      }))
+      .sort((a: any, b: any) => {
+        const byDate = String(a.date || "").localeCompare(String(b.date || ""));
+        if (byDate !== 0) return byDate;
+        return String(a.flight || "").localeCompare(String(b.flight || ""));
+      });
     return {
       total: scoped.length,
       incompleteCount: incomplete.length,
+      incompleteRows,
       allComplete: scoped.length > 0 && incomplete.length === 0,
       hasAny: scoped.length > 0,
     };
-  }, [dispatches, billingMonth, billingStation, lookupFlightInfo]);
+  }, [dispatches, billingMonth, billingStation, resolveDispatchBillingDate, isDispatchBillingComplete, getDispatchIncompleteReasons]);
 
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
@@ -738,7 +771,7 @@ export default function InvoicesPage() {
 
         const fi = lookupFlightInfo(it);
         detailRows.push({
-          date: it.flight_date || "", flight: it.flight_no || "",
+          date: fi.arrDate || fi.depDate || it.flight_date || "", flight: it.flight_no || "",
           arrDate: fi.arrDate || it.flight_date || "",
           depDate: fi.depDate || it.flight_date || "",
           reg: it.registration || fi.reg || "",
@@ -932,10 +965,9 @@ export default function InvoicesPage() {
 
   const monthlySecurityPreview = useMemo(() => {
     const baseRows = (dispatches || []).filter((d: any) => {
-      const rs = (d.review_status || "").toLowerCase().trim();
-      return (rs === "approved" || rs === "ready for billing") &&
+      return isDispatchBillingComplete(d) &&
         d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
-        (d.flight_date || "").startsWith(monthlyAirlineMonth);
+        resolveDispatchBillingDate(d).startsWith(monthlyAirlineMonth);
     });
     // Enrich each row with effective charges (live-computed wins over stored).
     const rows = baseRows.map((d: any) => {
@@ -954,7 +986,7 @@ export default function InvoicesPage() {
       byStationType[key].total += d._effTotal;
     });
     return { rows, totals, breakdown: Object.values(byStationType) };
-  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, effectiveDispatchCharge]);
+  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, effectiveDispatchCharge, resolveDispatchBillingDate, isDispatchBillingComplete]);
 
 
   type SecIssue = { id: string; flight: string; date: string; station: string; severity: "error" | "warning"; issues: string[] };
@@ -971,7 +1003,8 @@ export default function InvoicesPage() {
       let severity: "error" | "warning" = "warning";
       if (!d.flight_no?.trim()) { rowIssues.push("Missing flight number"); severity = "error"; }
       if (!d.station?.trim()) { rowIssues.push("Missing station"); severity = "error"; }
-      if (!d.flight_date) { rowIssues.push("Missing flight date"); severity = "error"; }
+      const billingDate = resolveDispatchBillingDate(d);
+      if (!billingDate) { rowIssues.push("Missing flight date"); severity = "error"; }
       if (!d.service_type?.trim()) { rowIssues.push("Missing service type"); }
       const total = Number(d._effTotal) || 0;
       const effBase = Number(d._effBase) || 0;
@@ -991,13 +1024,13 @@ export default function InvoicesPage() {
       if (median > 0 && total > outlierHigh) rowIssues.push(`Unusually high total (${total.toFixed(0)} vs median ${median.toFixed(0)})`);
       if (median > 0 && total > 0 && total < outlierLow) rowIssues.push(`Unusually low total (${total.toFixed(0)} vs median ${median.toFixed(0)})`);
       if (rowIssues.length > 0) {
-        issues.push({ id: d.id, flight: d.flight_no || "—", date: d.flight_date || "—", station: d.station || "—", severity, issues: rowIssues });
+        issues.push({ id: d.id, flight: d.flight_no || "—", date: billingDate || "—", station: d.station || "—", severity, issues: rowIssues });
       }
     });
     const errorCount = issues.filter(i => i.severity === "error").length;
     const warningCount = issues.filter(i => i.severity === "warning").length;
     return { issues, errorCount, warningCount, cleanCount: rows.length - issues.length };
-  }, [monthlySecurityPreview]);
+  }, [monthlySecurityPreview, resolveDispatchBillingDate]);
 
   // Annex A export-mirror: identical shape to detailRows used in generateMonthlySecurityInvoice
   const securityAnnexExport = useMemo(() => {
@@ -1597,14 +1630,43 @@ export default function InvoicesPage() {
 
 
               {dispatchGenerationGuard.hasAny && !dispatchGenerationGuard.allComplete && (
-                <div className="bg-warning/10 border border-warning/40 text-warning-foreground rounded-lg p-3 text-sm flex items-start gap-2">
-                  <Zap size={16} className="text-warning shrink-0 mt-0.5" />
-                  <div>
-                    <div className="font-semibold text-warning">Dispatches not fully completed</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {dispatchGenerationGuard.incompleteCount} of {dispatchGenerationGuard.total} dispatch(es) for {billingMonth}{billingStation !== "All" ? ` · ${billingStation}` : ""} are not marked Completed. Invoice generation is disabled until all flights are complete.
+                <div className="bg-warning/10 border border-warning/40 text-warning-foreground rounded-lg p-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <Zap size={16} className="text-warning shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-warning">Dispatches not fully completed</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {dispatchGenerationGuard.incompleteCount} of {dispatchGenerationGuard.total} dispatch(es) for {billingMonth}{billingStation !== "All" ? ` · ${billingStation}` : ""} are not ready for billing. Invoice generation is disabled until all flights are complete.
+                      </div>
                     </div>
                   </div>
+                  <div className="mt-3 max-h-48 overflow-auto rounded-md border bg-card/60">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/60 sticky top-0">
+                        <tr>
+                          {["Date", "Station", "Airline", "Flight", "Reason"].map((h) => (
+                            <th key={h} className="px-2 py-1.5 text-left font-semibold text-muted-foreground">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dispatchGenerationGuard.incompleteRows.slice(0, 50).map((row: any) => (
+                          <tr key={row.id} className="border-t">
+                            <td className="px-2 py-1.5 whitespace-nowrap">{row.date}</td>
+                            <td className="px-2 py-1.5 font-semibold">{row.station}</td>
+                            <td className="px-2 py-1.5">{row.airline}</td>
+                            <td className="px-2 py-1.5 font-mono">{row.flight}</td>
+                            <td className="px-2 py-1.5 text-muted-foreground">{row.reasons.join(" · ")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {dispatchGenerationGuard.incompleteRows.length > 50 && (
+                    <div className="text-[11px] text-muted-foreground mt-2">
+                      Showing first 50 incomplete dispatches. Narrow the station/month filter to inspect more.
+                    </div>
+                  )}
                 </div>
               )}
 
