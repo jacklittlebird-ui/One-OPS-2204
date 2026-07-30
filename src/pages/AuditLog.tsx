@@ -177,6 +177,7 @@ export default function AuditLogPage() {
           .from("audit_logs")
           .select("*")
           .order("created_at", { ascending: false })
+          .order("id", { ascending: true })
           .range(offset, Math.min(offset + BATCH - 1, cap - 1));
         qb = applyFilters(qb, filters);
         const { data, error } = await qb;
