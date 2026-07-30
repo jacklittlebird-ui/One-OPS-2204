@@ -28,6 +28,8 @@ import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes
 const SecurityTaskSheetDialog = lazy(() => import("@/components/security/SecurityTaskSheetDialog"));
 import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
+import { computeLiveSecurityCharge } from "@/lib/securityRowCharges";
+
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
 import { snapshotBeforeSave, verifyAfterSave } from "@/lib/phase3WriteCycleVerifier";
 import { resolveDownloadFields } from "@/lib/securityDownloadFields";
