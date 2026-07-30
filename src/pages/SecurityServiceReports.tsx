@@ -2228,6 +2228,26 @@ export default function SecurityServiceReportsPage() {
             <option>All</option>
             {WORKFLOW_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          <select
+            value={stepFilter}
+            onChange={e => setStepFilter(e.target.value)}
+            title="Filter by pipeline step"
+            className="text-sm border rounded px-2 py-1.5 bg-card text-foreground"
+          >
+            <option value="All Steps">All Steps</option>
+            <optgroup label="Currently at step">
+              <option value="at:clearance">At Step 1 — Clearance</option>
+              <option value="at:station">At Step 2 — Security Service</option>
+              <option value="at:operations">At Step 3 — Operations</option>
+              <option value="at:receivables">At Step 4 — Receivables</option>
+            </optgroup>
+            <optgroup label="Step completed">
+              <option value="done:clearance">Step 1 completed</option>
+              <option value="done:station">Step 2 completed</option>
+              <option value="done:operations">Step 3 completed</option>
+              <option value="done:receivables">Step 4 completed</option>
+            </optgroup>
+          </select>
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
           {isReceivablesView && (
