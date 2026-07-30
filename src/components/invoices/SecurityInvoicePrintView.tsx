@@ -331,6 +331,8 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                 total: number,
                 key: string,
               ) => {
+                const showSkd = amountKey === "handling";
+                const columns: readonly string[] = showSkd ? SECURITY_ANNEX_COLUMNS : EXTRA_ANNEX_COLUMNS;
                 const sorted = [...rows].sort((a, b) => {
                   const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
                   const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
