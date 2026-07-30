@@ -336,6 +336,7 @@ export default function SecurityServiceReportsPage() {
   const [search, setSearch] = useState(_initParams.get("search") || "");
   const [stationFilter, setStationFilter] = useState(_initParams.get("station") || "All Stations");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [stepFilter, setStepFilter] = useState("All Steps");
   const [serviceFilter, setServiceFilter] = useState(_initParams.get("type") || "All Types");
   const [dateFrom, setDateFrom] = useState(_initParams.get("date_from") || "");
   const [dateTo, setDateTo] = useState(_initParams.get("date_to") || "");
@@ -1055,6 +1056,25 @@ export default function SecurityServiceReportsPage() {
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
     if (statusFilter !== "All") rows = rows.filter(r => getWorkflowDispatchStatus(r) === statusFilter);
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
+    if (stepFilter !== "All Steps") {
+      const [mode, stage] = stepFilter.split(":") as ["at" | "done", any];
+      rows = rows.filter(r => {
+        const workflowStatus = getWorkflowDispatchStatus(r);
+        const invStatus = (invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none") as "none" | "issued" | "paid";
+        const opts = {
+          isLinked: workflowStatus === "Completed",
+          reviewStatus: r.review_status,
+          clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+          dispatchStatus: workflowStatus,
+          invoiceStatus: invStatus,
+          chargesSaved: hasSavedSecurityCharges(r as any),
+          createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
+        };
+        return mode === "done"
+          ? derivePipelineCompletedStages(opts).includes(stage)
+          : derivePipelineStage({ ...opts, channel: activeChannel }) === stage;
+      });
+    }
     if (dateFrom) rows = rows.filter(r => (r.flight_date || "") >= dateFrom);
     if (dateTo) rows = rows.filter(r => (r.flight_date || "") <= dateTo);
     if (search) {
@@ -1097,7 +1117,7 @@ export default function SecurityServiceReportsPage() {
       }
       return (a.flight_no || "").localeCompare(b.flight_no || "") || (a.id || "").localeCompare(b.id || "");
     });
-  }, [mergedRows, stationFilter, statusFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter]);
+  }, [mergedRows, stationFilter, statusFilter, stepFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter, invoiceStatusByFlight, flightStatusById, flightCreatedViaById, activeChannel]);
 
   
   
@@ -2207,6 +2227,26 @@ export default function SecurityServiceReportsPage() {
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All</option>
             {WORKFLOW_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select
+            value={stepFilter}
+            onChange={e => setStepFilter(e.target.value)}
+            title="Filter by pipeline step"
+            className="text-sm border rounded px-2 py-1.5 bg-card text-foreground"
+          >
+            <option value="All Steps">All Steps</option>
+            <optgroup label="Currently at step">
+              <option value="at:clearance">At Step 1 — Clearance</option>
+              <option value="at:station">At Step 2 — Security Service</option>
+              <option value="at:operations">At Step 3 — Operations</option>
+              <option value="at:receivables">At Step 4 — Receivables</option>
+            </optgroup>
+            <optgroup label="Step completed">
+              <option value="done:clearance">Step 1 completed</option>
+              <option value="done:station">Step 2 completed</option>
+              <option value="done:operations">Step 3 completed</option>
+              <option value="done:receivables">Step 4 completed</option>
+            </optgroup>
           </select>
           <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
           <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
