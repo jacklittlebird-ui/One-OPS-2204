@@ -169,7 +169,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
       coverBody.push(["", "VAT (Zero%)", fmtMoney(invoice.vat || 0, invoice.currency)]);
       coverBody.push(["", "Total", fmtMoney(invoice.total || 0, invoice.currency)]);
       autoTable(pdf, {
-        startY: 74,
+        startY: 86,
         head: [["Station", "Details", "Amount"]],
         body: coverBody,
         styles: { fontSize: 9, cellPadding: 2 },
