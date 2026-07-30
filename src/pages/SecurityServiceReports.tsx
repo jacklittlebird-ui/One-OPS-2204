@@ -1796,47 +1796,91 @@ export default function SecurityServiceReportsPage() {
     const dispatchById = new Map(freshDispatch.map((r: any) => [r.id, r]));
     const flightById = new Map(freshFlights.map((r: any) => [r.id, r]));
 
+    // Column order mirrors the on-screen record table exactly (STATION →
+    // PIPELINE), then appends the detailed task-sheet fields. Every displayed
+    // value (duration, OT, AMOUNT) is derived with the SAME helpers the table
+    // uses, so the exported file can never drift from the screen.
     const rows = filtered.map((r) => {
       const dbRow: any = dispatchById.get(r.id) || r;
       const dbFlight: any = (r.flight_schedule_id && flightById.get(r.flight_schedule_id)) || (r as any).flightMeta || null;
       const f = resolveDownloadFields(dbRow, dbFlight);
+      const fd = r.flight_schedule_id ? flightDetailsById.get(r.flight_schedule_id) : undefined;
+      const disp = resolveSecurityRowDisplay(dbRow as any, fd, (r as any).flightMeta);
+      const workflowStatus = getWorkflowDispatchStatus(r);
+
+      const actualStart = dbRow.actual_start, actualEnd = dbRow.actual_end;
+      const durationH = actualStart && actualEnd
+        ? timeDiffHours(actualStart, actualEnd)
+        : (Number(dbRow.actual_duration_hours) || 0);
+      const baselineMins = Math.round(((dbRow.contract_duration_hours && dbRow.contract_duration_hours > 0) ? dbRow.contract_duration_hours : 3) * 60);
+      const otH = actualStart && actualEnd
+        ? Math.ceil(Math.max(0, timeDiffMinutes(actualStart, actualEnd) - baselineMins) / 60)
+        : (Number(dbRow.overtime_hours) || 0);
+
+      const live = computeRowCharges({ ...(dbRow as any), flightMeta: (r as any).flightMeta, flight_schedule_id: r.flight_schedule_id } as any);
+      const savedAmt = Number(dbRow.total_security_charges || dbRow.total_charge || 0);
+      const amount = live.amount > 0 ? live.amount : savedAmt;
+      const currency = live.currency || dbRow.charges_currency || "USD";
+
+      const chargesSaved = chargesSavedIds.has(r.id) || hasSavedSecurityCharges(dbRow as any);
+      const invStatus = (invoiceStatusByFlight.get(normalizeFlightKey(String(disp.flightNo || dbRow.flight_no || ""))) || "none") as "none" | "issued" | "paid";
+      const completed = derivePipelineCompletedStages({
+        isLinked: workflowStatus === "Completed",
+        reviewStatus: dbRow.review_status,
+        clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+        dispatchStatus: workflowStatus,
+        invoiceStatus: invStatus,
+        chargesSaved,
+        createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
+      });
+
       return {
-        "Station": f.station,
-        "Airline": f.airline,
-        "Flight No": f.flightNo,
-        "Date": f.date,
-        "Service Type": f.serviceType,
-        "Registration": f.registration,
-        "Route": f.route,
-        "Aircraft Type": f.aircraftType,
-        "SKD Type": f.skdType,
-        "STA": f.sta,
-        "STD": f.std,
+        "STATION": f.station,
+        "AIRLINE": f.airline,
+        "FLIGHT": disp.flightNo || "",
+        "REG": disp.registration || "",
+        "TYPE": dbRow.service_type || f.serviceType,
+        "SKD TYPE": disp.skdType || "",
+        "ARR DATE": disp.arrivalDate || "",
+        "STA": disp.sta || "",
+        "DEP DATE": disp.departureDate || "",
+        "STD": disp.std || "",
+        "ROUTE": disp.route || "",
+        "A/C TYPE": disp.aircraftType || "",
+        "ACTUAL TIME": actualStart && actualEnd ? `${actualStart}–${actualEnd}` : "",
+        "DURATION (h)": durationH || "",
+        "OT (h)": otH || "",
+        "CURRENCY": amount > 0 ? currency : "",
+        "AMOUNT": amount > 0 ? Number(amount.toFixed(2)) : "",
+        "STATUS": workflowStatus,
+        "PIPELINE": `${completed.length}/4`,
+        // ── Task-sheet detail ──────────────────────────────────────────────
         "ATA": f.ata, // strict: blank when not saved
         "ATD": f.atd, // strict: blank when not saved
         "Staff Count": f.staffCount,
         "Staff Names": f.staffNames,
         "Scheduled Start": f.scheduledStart,
         "Scheduled End": f.scheduledEnd,
-        "Actual Start": f.actualStart,
-        "Actual End": f.actualEnd,
         "Contract Duration (h)": f.contractDurationHours,
-        "Actual Duration (h)": f.actualDurationHours,
-        "Overtime (h)": f.overtimeHours,
         "Base Fee": f.baseFee,
         "Service Rate": f.serviceRate,
         "Overtime Charge": f.overtimeCharge,
-        "Total Charge": f.totalCharge,
-        "Status": f.status,
         "Review Status": f.reviewStatus,
         "Remarks": f.remarks,
       };
     });
 
     const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = Object.keys(rows[0] || {}).map((k) => ({
+      wch: Math.min(28, Math.max(10, k.length + 2, ...rows.slice(0, 200).map((row: any) => String(row[k] ?? "").length + 2))),
+    }));
+    ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+    if (!(ws as any)["!autofilter"] && rows.length) {
+      (ws as any)["!autofilter"] = { ref: ws["!ref"] as string };
+    }
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Security Service Reports");
-    XLSX.writeFile(wb, "Security_Service_Reports.xlsx");
+    XLSX.writeFile(wb, `Security_Service_Reports_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const inputCls = "text-sm border rounded px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
