@@ -965,10 +965,9 @@ export default function InvoicesPage() {
 
   const monthlySecurityPreview = useMemo(() => {
     const baseRows = (dispatches || []).filter((d: any) => {
-      const rs = (d.review_status || "").toLowerCase().trim();
-      return (rs === "approved" || rs === "ready for billing") &&
+      return isDispatchBillingComplete(d) &&
         d.airline?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
-        (d.flight_date || "").startsWith(monthlyAirlineMonth);
+        resolveDispatchBillingDate(d).startsWith(monthlyAirlineMonth);
     });
     // Enrich each row with effective charges (live-computed wins over stored).
     const rows = baseRows.map((d: any) => {
@@ -987,7 +986,7 @@ export default function InvoicesPage() {
       byStationType[key].total += d._effTotal;
     });
     return { rows, totals, breakdown: Object.values(byStationType) };
-  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, effectiveDispatchCharge]);
+  }, [dispatches, monthlyAirlineOperator, monthlyAirlineMonth, effectiveDispatchCharge, resolveDispatchBillingDate, isDispatchBillingComplete]);
 
 
   type SecIssue = { id: string; flight: string; date: string; station: string; severity: "error" | "warning"; issues: string[] };
@@ -1004,7 +1003,8 @@ export default function InvoicesPage() {
       let severity: "error" | "warning" = "warning";
       if (!d.flight_no?.trim()) { rowIssues.push("Missing flight number"); severity = "error"; }
       if (!d.station?.trim()) { rowIssues.push("Missing station"); severity = "error"; }
-      if (!d.flight_date) { rowIssues.push("Missing flight date"); severity = "error"; }
+      const billingDate = resolveDispatchBillingDate(d);
+      if (!billingDate) { rowIssues.push("Missing flight date"); severity = "error"; }
       if (!d.service_type?.trim()) { rowIssues.push("Missing service type"); }
       const total = Number(d._effTotal) || 0;
       const effBase = Number(d._effBase) || 0;
@@ -1024,13 +1024,13 @@ export default function InvoicesPage() {
       if (median > 0 && total > outlierHigh) rowIssues.push(`Unusually high total (${total.toFixed(0)} vs median ${median.toFixed(0)})`);
       if (median > 0 && total > 0 && total < outlierLow) rowIssues.push(`Unusually low total (${total.toFixed(0)} vs median ${median.toFixed(0)})`);
       if (rowIssues.length > 0) {
-        issues.push({ id: d.id, flight: d.flight_no || "—", date: d.flight_date || "—", station: d.station || "—", severity, issues: rowIssues });
+        issues.push({ id: d.id, flight: d.flight_no || "—", date: billingDate || "—", station: d.station || "—", severity, issues: rowIssues });
       }
     });
     const errorCount = issues.filter(i => i.severity === "error").length;
     const warningCount = issues.filter(i => i.severity === "warning").length;
     return { issues, errorCount, warningCount, cleanCount: rows.length - issues.length };
-  }, [monthlySecurityPreview]);
+  }, [monthlySecurityPreview, resolveDispatchBillingDate]);
 
   // Annex A export-mirror: identical shape to detailRows used in generateMonthlySecurityInvoice
   const securityAnnexExport = useMemo(() => {
