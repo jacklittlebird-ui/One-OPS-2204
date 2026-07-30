@@ -1056,6 +1056,25 @@ export default function SecurityServiceReportsPage() {
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
     if (statusFilter !== "All") rows = rows.filter(r => getWorkflowDispatchStatus(r) === statusFilter);
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
+    if (stepFilter !== "All Steps") {
+      const [mode, stage] = stepFilter.split(":") as ["at" | "done", any];
+      rows = rows.filter(r => {
+        const workflowStatus = getWorkflowDispatchStatus(r);
+        const invStatus = (invoiceStatusByFlight.get(normalizeFlightKey(String(r.flight_no || ""))) || "none") as "none" | "issued" | "paid";
+        const opts = {
+          isLinked: workflowStatus === "Completed",
+          reviewStatus: r.review_status,
+          clearanceStatus: r.flight_schedule_id ? flightStatusById.get(r.flight_schedule_id) : undefined,
+          dispatchStatus: workflowStatus,
+          invoiceStatus: invStatus,
+          chargesSaved: hasSavedSecurityCharges(r as any),
+          createdVia: resolvePipelineCreatedVia(r, (r as any).flightMeta, r.flight_schedule_id ? flightCreatedViaById.get(r.flight_schedule_id) : undefined),
+        };
+        return mode === "done"
+          ? derivePipelineCompletedStages(opts).includes(stage)
+          : derivePipelineStage({ ...opts, channel: activeChannel }) === stage;
+      });
+    }
     if (dateFrom) rows = rows.filter(r => (r.flight_date || "") >= dateFrom);
     if (dateTo) rows = rows.filter(r => (r.flight_date || "") <= dateTo);
     if (search) {
