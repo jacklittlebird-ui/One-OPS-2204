@@ -898,31 +898,8 @@ export default function InvoicesPage() {
   // ============================================================
   // SECURITY: monthly airline invoice (sourced from dispatch_assignments)
   // ============================================================
-  // Shared charge maps — identical precedence to the Service Report page so
-  // station/monthly totals can never drift between the two screens.
-  const securityRatesByContract = useMemo(
-    () => buildRatesByContract((contractRates || []) as any[]),
-    [contractRates],
-  );
-  const securityAirlineToContract = useMemo(
-    () => buildAirlineContractMap(
-      ((contracts || []) as any[]).filter((c: any) =>
-        ["Security", "Both"].includes(String(c?.service_category || "")) &&
-        String(c?.status || "") === "Active"
-      ),
-    ),
-    [contracts],
-  );
+  // (charge maps + effectiveDispatchCharge are defined above, near the billing preview)
 
-  /** Effective billable amount for a dispatch row (live > stored > legacy). */
-  const effectiveDispatchCharge = useCallback((d: any) => {
-    const fi = lookupFlightInfo(d);
-    return resolveEffectiveSecurityCharge(d, {
-      ratesByContractId: securityRatesByContract,
-      airlineToContractId: securityAirlineToContract,
-      skdType: fi.skdType,
-    });
-  }, [securityRatesByContract, securityAirlineToContract, lookupFlightInfo]);
 
 
   const monthlySecurityPreview = useMemo(() => {
