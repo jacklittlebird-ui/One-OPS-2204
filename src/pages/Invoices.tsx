@@ -643,10 +643,13 @@ export default function InvoicesPage() {
 
     // 1) Dispatch assignments (security side)
     const completedDispatches = includeSecurity ? dispatches.filter((d: any) => {
-      const matchMonth = d.flight_date?.startsWith(billingMonth);
+      const fi = lookupFlightInfo(d);
+      const dt = (d.flight_date || fi.arrDate || fi.depDate || "").toString();
+      const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
       return d.status === "Completed" && matchMonth && matchStation;
     }) : [];
+
     completedDispatches.forEach((d: any) => {
       const key = `${d.airline}__${d.station}`;
       if (!grouped[key]) grouped[key] = { airline: d.airline, station: d.station, flights: 0, baseFees: 0, serviceCharges: 0, overtime: 0, total: 0, items: [], sources: { dispatches: 0, reports: 0 } };
