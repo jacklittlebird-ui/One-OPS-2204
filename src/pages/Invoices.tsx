@@ -769,21 +769,33 @@ export default function InvoicesPage() {
   const monthlyAirlinePreview = useMemo(() => {
     const reports = (serviceReports || []).filter((r: any) => {
       const rs = (r.review_status || "").toLowerCase().trim();
+      const ht = (r.handling_type || "").toString().toLowerCase();
       return (rs === "approved" || rs === "ready for billing") &&
+        !ht.includes("security") &&
         r.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
         (r.arrival_date || "").startsWith(monthlyAirlineMonth);
     });
-    const t = rollupMonthlySummary(mvRows);
-    const totals = {
-      civil: t.civil,
-      handling: t.handling,
-      airport: t.airport,
-      other: t.other,
-      total: t.total,
-    };
-    const breakdown = breakdownMonthlySummary(mvRows);
+
+    // Totals MUST be derived from the exact same rows shown in the record list,
+    // otherwise the flight count, the charge columns and the grand total drift
+    // apart (the MV is refreshed on demand and can be stale / differently scoped).
+    let civil = 0, handling = 0, airport = 0, other = 0, total = 0;
+    const byKey: Record<string, { station: string; type: string; flights: number; total: number }> = {};
+    for (const r of reports) {
+      const m = rollupReport(r);
+      civil += m.civil; handling += m.handling; airport += m.airport; other += m.other; total += m.total;
+      const station = r.station || "—";
+      const type = r.handling_type || "—";
+      const key = `${station}__${type}`;
+      if (!byKey[key]) byKey[key] = { station, type, flights: 0, total: 0 };
+      byKey[key].flights++;
+      byKey[key].total += m.total;
+    }
+    const totals = { civil, handling, airport, other, total };
+    const breakdown = Object.values(byKey);
     return { reports, totals, breakdown };
-  }, [serviceReports, mvRows, monthlyAirlineOperator, monthlyAirlineMonth]);
+  }, [serviceReports, monthlyAirlineOperator, monthlyAirlineMonth]);
+
 
   // Operator dropdown: MV-distinct operators (precomputed) + dispatch airlines.
   // Plain Set union — not aggregation.
