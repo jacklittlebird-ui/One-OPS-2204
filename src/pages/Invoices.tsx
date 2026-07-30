@@ -29,6 +29,8 @@ import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
 import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
+import { buildAirlineContractMap, buildRatesByContract, resolveEffectiveSecurityCharge } from "@/lib/securityRowCharges";
+
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
