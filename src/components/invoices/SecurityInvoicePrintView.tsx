@@ -151,6 +151,93 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
     }
   };
 
+  // Excel export mirroring the printed layout: a cover sheet plus one sheet
+  // per station annex, using the exact same columns/values as the PDF.
+  const handleExportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
+
+    const cover: (string | number)[][] = [
+      ["LINK AVIATION SERVICES — SECURITY INVOICE"],
+      [],
+      ["Invoice #", invoice.invoiceNo],
+      ["Issued On", formatDateDMY(invoice.date)],
+      ["Bill To", invoice.operator],
+      ["Period", invoice.billingPeriod || `${periodFrom} – ${periodTo}`],
+      ["Currency", invoice.currency],
+      [],
+      ["Station", "Details", "Amount"],
+    ];
+    for (const [st, g] of stations) {
+      if (g.security > 0) cover.push([st, `${st}-Ramp Security Service`, Number(g.security.toFixed(2))]);
+      if (g.extra > 0) cover.push([st, `${st}-Ramp Extra Service`, Number(g.extra.toFixed(2))]);
+    }
+    cover.push([]);
+    cover.push(["", "VAT (Zero%)", Number((invoice.vat || 0).toFixed(2))]);
+    cover.push(["", "Total", Number((invoice.total || 0).toFixed(2))]);
+    const wsCover = XLSX.utils.aoa_to_sheet(cover);
+    wsCover["!cols"] = [{ wch: 12 }, { wch: 44 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, wsCover, "Invoice");
+
+    const usedNames = new Set<string>();
+    const addAnnexSheet = (st: string, title: string, rows: DetailRow[], amountKey: "handling" | "other", total: number) => {
+      if (!rows.length) return;
+      const showSkd = amountKey === "handling";
+      const cols: readonly string[] = showSkd ? SECURITY_ANNEX_COLUMNS : EXTRA_ANNEX_COLUMNS;
+      const sorted = [...rows].sort((a, b) => {
+        const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
+        const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
+        return ka.localeCompare(kb);
+      });
+      const aoa: (string | number)[][] = [
+        [`${title.toUpperCase()} — ${invoice.operator}`],
+        [`Station: ${st}`, `From: ${periodFrom || "—"}`, `To: ${periodTo || "—"}`],
+        [],
+        [...cols],
+      ];
+      sorted.forEach((r, i) => {
+        const row: (string | number)[] = [
+          i + 1,
+          r.arrDate ? formatDateDMY(r.arrDate) : (r.date ? formatDateDMY(r.date) : ""),
+          r.depDate ? formatDateDMY(r.depDate) : (r.date ? formatDateDMY(r.date) : ""),
+          r.flight || "",
+          r.reg || "",
+          r.route || "",
+          r.serviceType || r.type || "",
+        ];
+        if (showSkd) row.push(r.skdType || "");
+        row.push(Number(resolveDetailOvertimeHours(r).toFixed(2)));
+        row.push(Number((Number(r[amountKey]) || 0).toFixed(2)));
+        aoa.push(row);
+      });
+      const pad = new Array(cols.length - 2).fill("");
+      aoa.push([]);
+      aoa.push([...pad, "Grand total", Number((total || 0).toFixed(2))]);
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = cols.map((c) =>
+        c === "Service Type" ? { wch: 26 }
+          : c === "Route" ? { wch: 14 }
+          : c === "Amount" ? { wch: 14 }
+          : c === "S" ? { wch: 5 }
+          : { wch: 12 },
+      );
+      let name = `${st} ${showSkd ? "Security" : "Extra"}`.slice(0, 28);
+      let n = 2;
+      while (usedNames.has(name)) name = `${name.slice(0, 26)} ${n++}`;
+      usedNames.add(name);
+      XLSX.utils.book_append_sheet(wb, ws, name);
+    };
+
+    for (const [st, g] of stations) {
+      addAnnexSheet(st, "Security Service", g.rows.filter(r => (r.handling || 0) > 0), "handling", g.security);
+      addAnnexSheet(st, "Extra Service", g.rows.filter(r => (r.other || 0) > 0), "other", g.extra);
+    }
+
+    XLSX.writeFile(wb, `${invoice.invoiceNo || "security-invoice"}.xlsx`);
+  };
+
+
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-y-auto m-4 print:m-0 print:shadow-none print:rounded-none print:max-h-none print:overflow-visible">
