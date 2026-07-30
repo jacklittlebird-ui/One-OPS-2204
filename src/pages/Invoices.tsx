@@ -696,7 +696,11 @@ export default function InvoicesPage() {
   // month/station is marked Completed. Pending/in-progress dispatches block generation.
   const dispatchGenerationGuard = useMemo(() => {
     const scoped = (dispatches || []).filter((d: any) => {
-      const matchMonth = d.flight_date?.startsWith(billingMonth);
+      const fi = lookupFlightInfo(d);
+      // A dispatch may have no flight_date of its own — fall back to the linked
+      // flight's arrival/departure date so incomplete rows are never skipped.
+      const dt = (d.flight_date || fi.arrDate || fi.depDate || "").toString();
+      const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
       return matchMonth && matchStation;
     });
@@ -707,7 +711,8 @@ export default function InvoicesPage() {
       allComplete: scoped.length > 0 && incomplete.length === 0,
       hasAny: scoped.length > 0,
     };
-  }, [dispatches, billingMonth, billingStation]);
+  }, [dispatches, billingMonth, billingStation, lookupFlightInfo]);
+
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
     let civil = 0, handling = 0, airport = 0, other = 0;
