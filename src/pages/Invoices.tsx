@@ -27,7 +27,7 @@ import InvoicePrintView from "@/components/InvoicePrintView";
 import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
-import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
+import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail, resolveDetailOvertimeHours, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { buildAirlineContractMap, buildRatesByContract, resolveEffectiveSecurityCharge } from "@/lib/securityRowCharges";
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
@@ -477,7 +477,7 @@ export default function InvoicesPage() {
         Subtotal: subtotal,
         Total: total,
         "Duration (h)": sum("durationHours"),
-        "Overtime (h)": parseSecurityDetail(i.notes).detail.reduce((a, r) => a + resolveDetailOvertimeHours(r), 0),
+        "Overtime (h)": detail.reduce((a, r) => a + resolveDetailOvertimeHours(r), 0),
         Notes: parseSecurityDetail(i.notes).cleanNotes,
       };
     });
