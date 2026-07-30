@@ -1,6 +1,6 @@
 import { X, FileText, DollarSign, Plane, Calendar, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard } from "lucide-react";
 import { formatDateDMY } from "@/lib/utils";
-import { parseSecurityDetail, SECURITY_INVOICE_COLUMNS, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
+import { parseSecurityDetail, resolveDetailOvertimeHours, SECURITY_INVOICE_COLUMNS, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
 
 export type InvoiceRow = {
   id: string; invoice_no: string; date: string; due_date: string;
@@ -141,11 +141,10 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
                         <td className="border border-border px-1.5 py-1 text-center font-mono">{r.reg || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center">{r.route || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center">{r.serviceType || r.type || "—"}</td>
-                        <td className="border border-border px-1.5 py-1 text-center">{r.skdType || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
                         <td className="border border-border px-1.5 py-1 text-right font-mono">{r.durationHours != null ? Number(r.durationHours).toFixed(2) : "—"}</td>
-                        <td className="border border-border px-1.5 py-1 text-right font-mono">{r.overtimeHours != null ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
+                        <td className="border border-border px-1.5 py-1 text-right font-mono">{resolveDetailOvertimeHours(r).toFixed(2)}</td>
                         <td className="border border-border px-1.5 py-1 text-right font-mono">{fmtN((r.handling || 0) + (r.other || 0))}</td>
                       </tr>
                     ))}

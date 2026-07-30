@@ -27,7 +27,7 @@ import InvoicePrintView from "@/components/InvoicePrintView";
 import SecurityInvoicePrintView from "@/components/invoices/SecurityInvoicePrintView";
 import InvoiceDetailModal from "@/components/invoices/InvoiceDetailModal";
 import { logAudit } from "@/lib/auditLogger";
-import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
+import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail, resolveDetailOvertimeHours, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { buildAirlineContractMap, buildRatesByContract, resolveEffectiveSecurityCharge } from "@/lib/securityRowCharges";
 import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
@@ -477,7 +477,7 @@ export default function InvoicesPage() {
         Subtotal: subtotal,
         Total: total,
         "Duration (h)": sum("durationHours"),
-        "Overtime (h)": sum("overtimeHours"),
+        "Overtime (h)": detail.reduce((a, r) => a + resolveDetailOvertimeHours(r), 0),
         Notes: parseSecurityDetail(i.notes).cleanNotes,
       };
     });
@@ -513,7 +513,7 @@ export default function InvoicesPage() {
           Start: r.actualStart || "",
           End: r.actualEnd || "",
           "Duration (h)": Number(r.durationHours) || 0,
-          "OT (h)": Number(r.overtimeHours) || 0,
+          "OT (h)": resolveDetailOvertimeHours(r),
           Staff: Number(r.staffCount) || 0,
           Amount: Number(r.total) || 0,
         });
@@ -785,6 +785,7 @@ export default function InvoicesPage() {
           actualEnd: it.actual_end || "",
           durationHours: Number(it.actual_duration_hours) || 0,
           overtimeHours: Number(it.overtime_hours) || 0,
+          contractHours: Number(it.contract_duration_hours) || 0,
           staffCount: Number(it.staff_count) || 0,
           category: "Security", civil: 0, handling: base, airport: 0, other: ot, total: base + ot,
         });
@@ -1162,6 +1163,7 @@ export default function InvoicesPage() {
         actualEnd: d.actual_end || "",
         durationHours: Number(d.actual_duration_hours) || 0,
         overtimeHours: Number(d.overtime_hours) || 0,
+        contractHours: Number(d.contract_duration_hours) || 0,
         staffCount: Number(d.staff_count) || 0,
         civil: 0,
         handling: Number(d._effBase) || 0,           // base fee → handling column in Annex A

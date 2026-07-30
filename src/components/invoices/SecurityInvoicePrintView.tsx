@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Printer, Download, FileText } from "lucide-react";
+import { X, Printer, Download, FileText, Sheet } from "lucide-react";
 import linkAeroLogo from "@/assets/linkaero-logo.png";
 import ighcLogo from "@/assets/ighc-logo.jpg";
 import { formatDateDMY } from "@/lib/utils";
 import {
   parseSecurityDetail,
-  SECURITY_INVOICE_COLUMNS,
+  resolveDetailOvertimeHours,
+  SECURITY_ANNEX_COLUMNS,
+  EXTRA_ANNEX_COLUMNS,
   type SecurityDetailRow,
 } from "@/lib/securityInvoiceDetail";
 
@@ -123,9 +125,14 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
         // Temporarily clear any preview-only scale transform.
         const prev = el.style.transform;
         el.style.transform = "none";
-        const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        const canvas = await html2canvas(el, {
+          scale: 3,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          windowWidth: el.scrollWidth,
+        });
         el.style.transform = prev;
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const imgData = canvas.toDataURL("image/png");
         const availW = A4_W_MM - margin * 2;
         const availH = A4_H_MM - margin * 2;
         const ratio = canvas.width / canvas.height;
@@ -135,7 +142,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
         const x = margin + (availW - w) / 2;
         const y = margin;
         if (addPage) pdf.addPage("a4", "landscape");
-        pdf.addImage(imgData, "JPEG", x, y, w, h);
+        pdf.addImage(imgData, "PNG", x, y, w, h, undefined, "FAST");
       };
 
       if (coverRef.current) await renderToPdf(coverRef.current, false);
@@ -148,6 +155,93 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
       setIsDownloading(false);
     }
   };
+
+  // Excel export mirroring the printed layout: a cover sheet plus one sheet
+  // per station annex, using the exact same columns/values as the PDF.
+  const handleExportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
+
+    const cover: (string | number)[][] = [
+      ["LINK AVIATION SERVICES — SECURITY INVOICE"],
+      [],
+      ["Invoice #", invoice.invoiceNo],
+      ["Issued On", formatDateDMY(invoice.date)],
+      ["Bill To", invoice.operator],
+      ["Period", invoice.billingPeriod || `${periodFrom} – ${periodTo}`],
+      ["Currency", invoice.currency],
+      [],
+      ["Station", "Details", "Amount"],
+    ];
+    for (const [st, g] of stations) {
+      if (g.security > 0) cover.push([st, `${st}-Ramp Security Service`, Number(g.security.toFixed(2))]);
+      if (g.extra > 0) cover.push([st, `${st}-Ramp Extra Service`, Number(g.extra.toFixed(2))]);
+    }
+    cover.push([]);
+    cover.push(["", "VAT (Zero%)", Number((invoice.vat || 0).toFixed(2))]);
+    cover.push(["", "Total", Number((invoice.total || 0).toFixed(2))]);
+    const wsCover = XLSX.utils.aoa_to_sheet(cover);
+    wsCover["!cols"] = [{ wch: 12 }, { wch: 44 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, wsCover, "Invoice");
+
+    const usedNames = new Set<string>();
+    const addAnnexSheet = (st: string, title: string, rows: DetailRow[], amountKey: "handling" | "other", total: number) => {
+      if (!rows.length) return;
+      const showSkd = amountKey === "handling";
+      const cols: readonly string[] = showSkd ? SECURITY_ANNEX_COLUMNS : EXTRA_ANNEX_COLUMNS;
+      const sorted = [...rows].sort((a, b) => {
+        const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
+        const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
+        return ka.localeCompare(kb);
+      });
+      const aoa: (string | number)[][] = [
+        [`${title.toUpperCase()} — ${invoice.operator}`],
+        [`Station: ${st}`, `From: ${periodFrom || "—"}`, `To: ${periodTo || "—"}`],
+        [],
+        [...cols],
+      ];
+      sorted.forEach((r, i) => {
+        const row: (string | number)[] = [
+          i + 1,
+          r.arrDate ? formatDateDMY(r.arrDate) : (r.date ? formatDateDMY(r.date) : ""),
+          r.depDate ? formatDateDMY(r.depDate) : (r.date ? formatDateDMY(r.date) : ""),
+          r.flight || "",
+          r.reg || "",
+          r.route || "",
+          r.serviceType || r.type || "",
+        ];
+        if (showSkd) row.push(r.skdType || "");
+        row.push(Number(resolveDetailOvertimeHours(r).toFixed(2)));
+        row.push(Number((Number(r[amountKey]) || 0).toFixed(2)));
+        aoa.push(row);
+      });
+      const pad = new Array(cols.length - 2).fill("");
+      aoa.push([]);
+      aoa.push([...pad, "Grand total", Number((total || 0).toFixed(2))]);
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = cols.map((c) =>
+        c === "Service Type" ? { wch: 26 }
+          : c === "Route" ? { wch: 14 }
+          : c === "Amount" ? { wch: 14 }
+          : c === "S" ? { wch: 5 }
+          : { wch: 12 },
+      );
+      let name = `${st} ${showSkd ? "Security" : "Extra"}`.slice(0, 28);
+      let n = 2;
+      while (usedNames.has(name)) name = `${name.slice(0, 26)} ${n++}`;
+      usedNames.add(name);
+      XLSX.utils.book_append_sheet(wb, ws, name);
+    };
+
+    for (const [st, g] of stations) {
+      addAnnexSheet(st, "Security Service", g.rows.filter(r => (r.handling || 0) > 0), "handling", g.security);
+      addAnnexSheet(st, "Extra Service", g.rows.filter(r => (r.other || 0) > 0), "other", g.extra);
+    }
+
+    XLSX.writeFile(wb, `${invoice.invoiceNo || "security-invoice"}.xlsx`);
+  };
+
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm">
@@ -173,6 +267,12 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                 className="w-16 px-2 py-1 border border-gray-300 rounded text-xs"
               />
             </label>
+            <button
+              onClick={handleExportExcel}
+              className="toolbar-btn-primary inline-flex items-center gap-1.5"
+            >
+              <Sheet size={14} /> Export Excel
+            </button>
             <button
               onClick={handleDownloadPdf}
               disabled={isDownloading}
@@ -329,6 +429,8 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                 total: number,
                 key: string,
               ) => {
+                const showSkd = amountKey === "handling";
+                const columns: readonly string[] = showSkd ? SECURITY_ANNEX_COLUMNS : EXTRA_ANNEX_COLUMNS;
                 const sorted = [...rows].sort((a, b) => {
                   const ka = (a.arrDate || a.depDate || a.date || "") + (a.flight || "");
                   const kb = (b.arrDate || b.depDate || b.date || "") + (b.flight || "");
@@ -379,7 +481,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                         <table className="w-full text-[10px] border border-gray-800 border-collapse">
                           <thead>
                             <tr className="bg-gray-100">
-                              {SECURITY_INVOICE_COLUMNS.map(h => (
+                              {columns.map(h => (
                                 <th key={h} className="border border-gray-800 px-1.5 py-1 text-center font-bold">{h}</th>
                               ))}
                             </tr>
@@ -394,11 +496,10 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                                 <td className="border border-gray-800 px-1.5 py-1 text-center">{r.reg || "—"}</td>
                                 <td className="border border-gray-800 px-1.5 py-1 text-center">{r.route || "—"}</td>
                                 <td className="border border-gray-800 px-1.5 py-1 text-left">{r.serviceType || r.type || "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualStart || "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.actualEnd || "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.durationHours ? Number(r.durationHours).toFixed(2) : "—"}</td>
-                                <td className="border border-gray-800 px-1.5 py-1 text-center">{r.overtimeHours ? Number(r.overtimeHours).toFixed(2) : "—"}</td>
+                                {showSkd && (
+                                  <td className="border border-gray-800 px-1.5 py-1 text-center">{r.skdType || "—"}</td>
+                                )}
+                                <td className="border border-gray-800 px-1.5 py-1 text-center">{resolveDetailOvertimeHours(r).toFixed(2)}</td>
                                 <td className="border border-gray-800 px-1.5 py-1 text-right whitespace-nowrap">{fmtMoney(Number(r[amountKey]) || 0, invoice.currency)}</td>
                               </tr>
                             ))}
@@ -407,21 +508,21 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
                             {isLast ? (
                               <>
                                 <tr>
-                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
+                                  <td colSpan={columns.length - 1} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Total</td>
                                   <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(total, invoice.currency)}</td>
                                 </tr>
                                 <tr>
-                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
+                                  <td colSpan={columns.length - 1} className="border border-gray-800 px-1.5 py-1 text-right">Admin</td>
                                   <td className="border border-gray-800 px-1.5 py-1 text-right">{fmtMoney(0, invoice.currency)}</td>
                                 </tr>
                                 <tr className="font-bold">
-                                  <td colSpan={12} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
+                                  <td colSpan={columns.length - 1} className="border border-gray-800 px-1.5 py-1.5 text-right">Grand total</td>
                                   <td className="border border-gray-800 px-1.5 py-1.5 text-right">{fmtMoney(total, invoice.currency)}</td>
                                 </tr>
                               </>
                             ) : (
                               <tr>
-                                <td colSpan={12} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Subtotal (carried forward)</td>
+                                <td colSpan={columns.length - 1} className="border border-gray-800 px-1.5 py-1 text-right font-semibold">Subtotal (carried forward)</td>
                                 <td className="border border-gray-800 px-1.5 py-1 text-right">
                                   {fmtMoney(
                                     sorted.slice(0, offset + chunk.length).reduce((s, r) => s + (Number(r[amountKey]) || 0), 0),
