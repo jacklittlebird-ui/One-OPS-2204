@@ -141,6 +141,8 @@ export function useSupabaseTable<T extends Record<string, any>>(
           .from(table)
           .select(selectCols)
           .order(orderCol, { ascending: asc, nullsFirst: false })
+          // Deterministic tiebreaker so paginated pages never drift/duplicate.
+          .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (applyStationFilter) {
           // Scope strictly by the record's STATION field (authority for flight_schedules) — not by route contents.

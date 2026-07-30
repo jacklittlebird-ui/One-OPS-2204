@@ -53,6 +53,7 @@ export default function JournalEntriesPage() {
           .from("chart_of_accounts" as any)
           .select("id,code,name,account_type,is_group")
           .order("code")
+          .order("id", { ascending: true })
           .range(from, from + PAGE - 1);
         if (error) throw error;
         const rows = (data || []) as any[];

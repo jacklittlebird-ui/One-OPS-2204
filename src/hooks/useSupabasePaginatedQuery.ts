@@ -116,6 +116,8 @@ export function useSupabasePaginatedQuery<T = any>(opts: PaginatedQueryOptions<T
         .from(table as any)
         .select(select, selectOpts)
         .order(orderCol, { ascending, nullsFirst: false })
+        // Deterministic tiebreaker so page boundaries are stable.
+        .order("id", { ascending: true })
         .range(from, to);
 
       if (applyStation) q = q.eq(stationCol, station as string);
