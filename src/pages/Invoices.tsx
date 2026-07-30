@@ -1630,14 +1630,43 @@ export default function InvoicesPage() {
 
 
               {dispatchGenerationGuard.hasAny && !dispatchGenerationGuard.allComplete && (
-                <div className="bg-warning/10 border border-warning/40 text-warning-foreground rounded-lg p-3 text-sm flex items-start gap-2">
-                  <Zap size={16} className="text-warning shrink-0 mt-0.5" />
-                  <div>
-                    <div className="font-semibold text-warning">Dispatches not fully completed</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {dispatchGenerationGuard.incompleteCount} of {dispatchGenerationGuard.total} dispatch(es) for {billingMonth}{billingStation !== "All" ? ` · ${billingStation}` : ""} are not marked Completed. Invoice generation is disabled until all flights are complete.
+                <div className="bg-warning/10 border border-warning/40 text-warning-foreground rounded-lg p-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <Zap size={16} className="text-warning shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-warning">Dispatches not fully completed</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {dispatchGenerationGuard.incompleteCount} of {dispatchGenerationGuard.total} dispatch(es) for {billingMonth}{billingStation !== "All" ? ` · ${billingStation}` : ""} are not ready for billing. Invoice generation is disabled until all flights are complete.
+                      </div>
                     </div>
                   </div>
+                  <div className="mt-3 max-h-48 overflow-auto rounded-md border bg-card/60">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/60 sticky top-0">
+                        <tr>
+                          {["Date", "Station", "Airline", "Flight", "Reason"].map((h) => (
+                            <th key={h} className="px-2 py-1.5 text-left font-semibold text-muted-foreground">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dispatchGenerationGuard.incompleteRows.slice(0, 50).map((row: any) => (
+                          <tr key={row.id} className="border-t">
+                            <td className="px-2 py-1.5 whitespace-nowrap">{row.date}</td>
+                            <td className="px-2 py-1.5 font-semibold">{row.station}</td>
+                            <td className="px-2 py-1.5">{row.airline}</td>
+                            <td className="px-2 py-1.5 font-mono">{row.flight}</td>
+                            <td className="px-2 py-1.5 text-muted-foreground">{row.reasons.join(" · ")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {dispatchGenerationGuard.incompleteRows.length > 50 && (
+                    <div className="text-[11px] text-muted-foreground mt-2">
+                      Showing first 50 incomplete dispatches. Narrow the station/month filter to inspect more.
+                    </div>
+                  )}
                 </div>
               )}
 
