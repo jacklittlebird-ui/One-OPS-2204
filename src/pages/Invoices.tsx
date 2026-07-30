@@ -1599,7 +1599,9 @@ export default function InvoicesPage() {
                       )}
                       {!readOnly && (
                         <>
+                          <button onClick={() => editInvoiceNo(inv)} className="text-primary hover:text-primary/80" title="Edit invoice number"><Hash size={13} /></button>
                           <button onClick={() => startEdit(inv)} className="text-info hover:text-info/80" title="Edit"><Pencil size={13} /></button>
+
                           <button onClick={() => requestDeleteSingle(inv.id)} className="text-destructive hover:text-destructive/80" title="Delete"><Trash2 size={13} /></button>
                         </>
                       )}
