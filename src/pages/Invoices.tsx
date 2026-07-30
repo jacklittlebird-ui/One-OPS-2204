@@ -737,9 +737,12 @@ export default function InvoicesPage() {
           category: "Handling", civil: m.civil, handling: m.handling, airport: m.airport, other: m.other, total: m.total,
         });
       } else {
-        const base = (it.total_security_charges || it.service_rate || 0) + (it.base_fee || 0);
-        const ot = (it.overtime_charge || 0);
+        // Use the same effective amounts the preview grouped on.
+        const eff = it._effTotal !== undefined ? { base: it._effBase || 0, overtime: it._effOvertime || 0, amount: it._effTotal || 0 } : effectiveDispatchCharge(it);
+        const base = eff.base;
+        const ot = eff.overtime;
         handling += base; other += ot;
+
         const fi = lookupFlightInfo(it);
         detailRows.push({
           date: it.flight_date || "", flight: it.flight_no || "",
