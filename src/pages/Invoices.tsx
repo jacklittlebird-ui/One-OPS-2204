@@ -614,6 +614,28 @@ export default function InvoicesPage() {
     });
   }, [securityRatesByContract, securityAirlineToContract, lookupFlightInfo]);
 
+  // Billing month is based on the authoritative flight schedule date first.
+  // Dispatch `flight_date` can be stale after station/route/date amendments, so
+  // using it first can hide an incomplete flight from Generate Monthly Billing.
+  const resolveDispatchBillingDate = useCallback((d: any) => {
+    const fi = lookupFlightInfo(d);
+    return (fi.arrDate || fi.depDate || d?.flight_date || "").toString().slice(0, 10);
+  }, [lookupFlightInfo]);
+
+  const getDispatchIncompleteReasons = useCallback((d: any): string[] => {
+    const reasons: string[] = [];
+    const workflowStatus = String(d?.status || "Pending").trim();
+    const reviewStatus = String(d?.review_status || "Draft").trim();
+    if (workflowStatus.toLowerCase() !== "completed") reasons.push(`Status: ${workflowStatus}`);
+    if (reviewStatus.toLowerCase() !== "ready for billing") reasons.push(`Review: ${reviewStatus}`);
+    if (!resolveDispatchBillingDate(d)) reasons.push("Missing billing date");
+    return reasons;
+  }, [resolveDispatchBillingDate]);
+
+  const isDispatchBillingComplete = useCallback((d: any) => {
+    return getDispatchIncompleteReasons(d).length === 0;
+  }, [getDispatchIncompleteReasons]);
+
 
 
   // Billing preview: group completed dispatches by airline+station for the month
@@ -643,11 +665,10 @@ export default function InvoicesPage() {
 
     // 1) Dispatch assignments (security side)
     const completedDispatches = includeSecurity ? dispatches.filter((d: any) => {
-      const fi = lookupFlightInfo(d);
-      const dt = (d.flight_date || fi.arrDate || fi.depDate || "").toString();
+      const dt = resolveDispatchBillingDate(d);
       const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
-      return d.status === "Completed" && matchMonth && matchStation;
+      return isDispatchBillingComplete(d) && matchMonth && matchStation;
     }) : [];
 
     completedDispatches.forEach((d: any) => {
@@ -693,28 +714,40 @@ export default function InvoicesPage() {
     });
 
     return Object.values(grouped);
-  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab, effectiveDispatchCharge, lookupFlightInfo]);
+  }, [dispatches, serviceReports, billingMonth, billingStation, categoryTab, effectiveDispatchCharge, lookupFlightInfo, resolveDispatchBillingDate, isDispatchBillingComplete]);
 
   // Guard: only allow "Generate from Dispatches" when every dispatch in the selected
   // month/station is marked Completed. Pending/in-progress dispatches block generation.
   const dispatchGenerationGuard = useMemo(() => {
     const scoped = (dispatches || []).filter((d: any) => {
-      const fi = lookupFlightInfo(d);
-      // A dispatch may have no flight_date of its own — fall back to the linked
-      // flight's arrival/departure date so incomplete rows are never skipped.
-      const dt = (d.flight_date || fi.arrDate || fi.depDate || "").toString();
+      const dt = resolveDispatchBillingDate(d);
       const matchMonth = dt.startsWith(billingMonth);
       const matchStation = billingStation === "All" || d.station === billingStation;
       return matchMonth && matchStation;
     });
-    const incomplete = scoped.filter((d: any) => (d.status || "").toLowerCase() !== "completed");
+    const incomplete = scoped.filter((d: any) => !isDispatchBillingComplete(d));
+    const incompleteRows = incomplete
+      .map((d: any) => ({
+        id: d.id,
+        date: resolveDispatchBillingDate(d) || "—",
+        station: d.station || "—",
+        airline: d.airline || "—",
+        flight: d.flight_no || "—",
+        reasons: getDispatchIncompleteReasons(d),
+      }))
+      .sort((a: any, b: any) => {
+        const byDate = String(a.date || "").localeCompare(String(b.date || ""));
+        if (byDate !== 0) return byDate;
+        return String(a.flight || "").localeCompare(String(b.flight || ""));
+      });
     return {
       total: scoped.length,
       incompleteCount: incomplete.length,
+      incompleteRows,
       allComplete: scoped.length > 0 && incomplete.length === 0,
       hasAny: scoped.length > 0,
     };
-  }, [dispatches, billingMonth, billingStation, lookupFlightInfo]);
+  }, [dispatches, billingMonth, billingStation, resolveDispatchBillingDate, isDispatchBillingComplete, getDispatchIncompleteReasons]);
 
 
   const generateInvoiceFromBilling = async (group: typeof billingPreviewData[0]) => {
@@ -738,7 +771,7 @@ export default function InvoicesPage() {
 
         const fi = lookupFlightInfo(it);
         detailRows.push({
-          date: it.flight_date || "", flight: it.flight_no || "",
+          date: fi.arrDate || fi.depDate || it.flight_date || "", flight: it.flight_no || "",
           arrDate: fi.arrDate || it.flight_date || "",
           depDate: fi.depDate || it.flight_date || "",
           reg: it.registration || fi.reg || "",
