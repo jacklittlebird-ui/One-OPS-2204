@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import SecurityInvoicePrintView, { type SecurityPrintInvoice } from "./SecurityInvoicePrintView";
 import {
-  SECURITY_INVOICE_COLUMNS,
+  SECURITY_ANNEX_COLUMNS,
+  EXTRA_ANNEX_COLUMNS,
   serializeSecurityDetail,
   parseSecurityDetail,
   backfillSecurityDetail,
@@ -53,8 +54,13 @@ describe("SecurityInvoicePrintView", () => {
 
     // Every canonical column must be present in a <th>
     const headers = screen.getAllByRole("columnheader").map(h => h.textContent?.trim());
-    for (const col of SECURITY_INVOICE_COLUMNS) {
+    for (const col of [...SECURITY_ANNEX_COLUMNS, ...EXTRA_ANNEX_COLUMNS]) {
       expect(headers).toContain(col);
+    }
+
+    // Removed columns must not appear in the printed annexes
+    for (const col of ["Start", "End", "Duration (h)"]) {
+      expect(headers).not.toContain(col);
     }
 
     // The deprecated "Service / Notes" column must NEVER appear again
@@ -65,7 +71,7 @@ describe("SecurityInvoicePrintView", () => {
 
   it("renders per-flight data fields from the parsed detail row", () => {
     render(<SecurityInvoicePrintView invoice={baseInvoice([sampleRow])} onClose={() => {}} />);
-    for (const v of ["TA100", "SU-ABC", "CAI-DXB", "INT", "Ramp Security", "10:00", "12:30"]) {
+    for (const v of ["TA100", "SU-ABC", "CAI-DXB", "INT", "Ramp Security"]) {
       expect(screen.getAllByText(v).length).toBeGreaterThan(0);
     }
   });
