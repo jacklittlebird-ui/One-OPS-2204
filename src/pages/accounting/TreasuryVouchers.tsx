@@ -196,6 +196,37 @@ export default function TreasuryVouchersPage() {
     },
   });
 
+  // Spec §2.4 — daily FX revaluation log (each row is backed by a real GL journal entry)
+  const { data: fxLog = [] } = useQuery({
+    queryKey: ["treasury_fx_daily_log"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from as any)("treasury_fx_daily_log")
+        .select("*")
+        .order("reval_date", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const revalMutation = useMutation({
+    mutationFn: async (revalDate: string) => {
+      const { data, error } = await (supabase.rpc as any)("run_treasury_daily_revaluation", { p_date: revalDate });
+      if (error) throw error;
+      return (Array.isArray(data) ? data[0] : data) as { rows_logged: number; total_difference: number } | null;
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["treasury_fx_daily_log"] });
+      qc.invalidateQueries({ queryKey: ["v_treasury_balances"] });
+      if (!res || !res.rows_logged) toast.info("No FX differences to record for this date");
+      else toast.success(`${res.rows_logged} FX difference row(s) posted to the general ledger`);
+    },
+    onError: (e: any) => toast.error(e.message || "Revaluation failed"),
+  });
+
+
+
   const { data: companies = [] } = useQuery({
     queryKey: ["companies_min"],
     queryFn: async () => {
