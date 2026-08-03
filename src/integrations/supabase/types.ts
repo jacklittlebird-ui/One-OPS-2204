@@ -13993,6 +13993,14 @@ export type Database = {
         Args: { _as_of?: string; _schedule_id: string }
         Returns: string
       }
+      run_treasury_daily_revaluation: {
+        Args: { p_date?: string }
+        Returns: {
+          journal_entry_id: string
+          rows_logged: number
+          total_difference: number
+        }[]
+      }
       scan_contract_renewals: {
         Args: never
         Returns: {
@@ -14088,13 +14096,15 @@ export type Database = {
           received_total: number
         }[]
       }
-      treasury_daily_rate: {
-        Args: {
-          _currency: Database["public"]["Enums"]["finance_currency"]
-          _date: string
-        }
-        Returns: number
-      }
+      treasury_daily_rate:
+        | {
+            Args: {
+              _currency: Database["public"]["Enums"]["finance_currency"]
+              _date: string
+            }
+            Returns: number
+          }
+        | { Args: { _currency: string; _date: string }; Returns: number }
       update_flight_master_from_station: {
         Args: { _id: string; _patch: Json }
         Returns: {
@@ -14189,6 +14199,7 @@ export type Database = {
         | "EUR"
         | "SAR"
         | "GBP"
+        | "CHF"
       handling_type:
         | "Turn Around"
         | "Night Stop"
@@ -14428,6 +14439,7 @@ export const Constants = {
         "EUR",
         "SAR",
         "GBP",
+        "CHF",
       ],
       handling_type: [
         "Turn Around",
