@@ -49,7 +49,7 @@ type VoucherType = "receipt" | "payment" | "pending";
 type PaymentSubtype = "general" | "pending_custody" | "advance" | "cost";
 type VoucherStatus =
   | "draft" | "pending_approval" | "approved" | "posted" | "settled" | "void";
-type TabKey = "receipt" | "general" | "pending_custody" | "advance" | "cost" | "balances";
+type TabKey = "receipt" | "general" | "pending_custody" | "advance" | "cost" | "balances" | "fx";
 
 const STATUS_VARIANT: Record<VoucherStatus, "default" | "secondary" | "destructive" | "outline"> = {
   draft: "outline",
