@@ -11906,6 +11906,60 @@ export type Database = {
           },
         ]
       }
+      treasury_fx_daily_log: {
+        Row: {
+          bank_account_id: string | null
+          base_value_prev: number
+          base_value_today: number
+          cash_account_id: string | null
+          company_id: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          fx_balance: number
+          fx_difference: number
+          id: string
+          journal_entry_id: string | null
+          rate_prev: number | null
+          rate_today: number
+          reval_date: string
+          station_id: string | null
+        }
+        Insert: {
+          bank_account_id?: string | null
+          base_value_prev?: number
+          base_value_today?: number
+          cash_account_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency: Database["public"]["Enums"]["finance_currency"]
+          fx_balance?: number
+          fx_difference?: number
+          id?: string
+          journal_entry_id?: string | null
+          rate_prev?: number | null
+          rate_today: number
+          reval_date: string
+          station_id?: string | null
+        }
+        Update: {
+          bank_account_id?: string | null
+          base_value_prev?: number
+          base_value_today?: number
+          cash_account_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency?: Database["public"]["Enums"]["finance_currency"]
+          fx_balance?: number
+          fx_difference?: number
+          id?: string
+          journal_entry_id?: string | null
+          rate_prev?: number | null
+          rate_today?: number
+          reval_date?: string
+          station_id?: string | null
+        }
+        Relationships: []
+      }
       treasury_vouchers: {
         Row: {
           account_id: string | null
@@ -11923,6 +11977,9 @@ export type Database = {
           currency: Database["public"]["Enums"]["finance_currency"]
           description: string
           exchange_rate: number
+          expense_item: string | null
+          finance_approved_at: string | null
+          finance_approved_by: string | null
           flight_schedule_id: string | null
           id: string
           journal_entry_id: string | null
@@ -11930,13 +11987,21 @@ export type Database = {
           parent_pending_id: string | null
           party_name: string | null
           party_type: string | null
+          payment_subtype: string | null
+          pending_kind: string | null
           posted_at: string | null
           posted_by: string | null
+          print_unlocked: boolean
+          recovered_amount: number
           reference: string | null
+          repayment_plan: string | null
           requires_approval: boolean
+          returned_amount: number
           service_type: string | null
+          settled_amount: number | null
           settled_at: string | null
           settled_by: string | null
+          settlement_voucher_id: string | null
           station_id: string | null
           status: Database["public"]["Enums"]["voucher_status"]
           supplier_id: string | null
@@ -11961,6 +12026,9 @@ export type Database = {
           currency: Database["public"]["Enums"]["finance_currency"]
           description?: string
           exchange_rate?: number
+          expense_item?: string | null
+          finance_approved_at?: string | null
+          finance_approved_by?: string | null
           flight_schedule_id?: string | null
           id?: string
           journal_entry_id?: string | null
@@ -11968,13 +12036,21 @@ export type Database = {
           parent_pending_id?: string | null
           party_name?: string | null
           party_type?: string | null
+          payment_subtype?: string | null
+          pending_kind?: string | null
           posted_at?: string | null
           posted_by?: string | null
+          print_unlocked?: boolean
+          recovered_amount?: number
           reference?: string | null
+          repayment_plan?: string | null
           requires_approval?: boolean
+          returned_amount?: number
           service_type?: string | null
+          settled_amount?: number | null
           settled_at?: string | null
           settled_by?: string | null
+          settlement_voucher_id?: string | null
           station_id?: string | null
           status?: Database["public"]["Enums"]["voucher_status"]
           supplier_id?: string | null
@@ -11999,6 +12075,9 @@ export type Database = {
           currency?: Database["public"]["Enums"]["finance_currency"]
           description?: string
           exchange_rate?: number
+          expense_item?: string | null
+          finance_approved_at?: string | null
+          finance_approved_by?: string | null
           flight_schedule_id?: string | null
           id?: string
           journal_entry_id?: string | null
@@ -12006,13 +12085,21 @@ export type Database = {
           parent_pending_id?: string | null
           party_name?: string | null
           party_type?: string | null
+          payment_subtype?: string | null
+          pending_kind?: string | null
           posted_at?: string | null
           posted_by?: string | null
+          print_unlocked?: boolean
+          recovered_amount?: number
           reference?: string | null
+          repayment_plan?: string | null
           requires_approval?: boolean
+          returned_amount?: number
           service_type?: string | null
+          settled_amount?: number | null
           settled_at?: string | null
           settled_by?: string | null
+          settlement_voucher_id?: string | null
           station_id?: string | null
           status?: Database["public"]["Enums"]["voucher_status"]
           supplier_id?: string | null
@@ -13225,6 +13312,100 @@ export type Database = {
           },
         ]
       }
+      v_treasury_balances: {
+        Row: {
+          advances_outstanding: number | null
+          bank_account_id: string | null
+          cash_account_id: string | null
+          cash_balance: number | null
+          cash_balance_egp: number | null
+          company_id: string | null
+          currency: Database["public"]["Enums"]["finance_currency"] | null
+          custody_outstanding: number | null
+          final_available_cash: number | null
+          final_available_cash_egp: number | null
+          payments: number | null
+          rate_today: number | null
+          receipts: number | null
+          station_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treasury_vouchers_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            isOneToOne: false
+            referencedRelation: "cash_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_treasury_daily_movement: {
+        Row: {
+          bank_account_id: string | null
+          cash_account_id: string | null
+          company_id: string | null
+          credit_in: number | null
+          currency: Database["public"]["Enums"]["finance_currency"] | null
+          debit_advance: number | null
+          debit_cost: number | null
+          debit_custody: number | null
+          debit_general: number | null
+          debit_total: number | null
+          station_id: string | null
+          voucher_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treasury_vouchers_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_cash_account_id_fkey"
+            columns: ["cash_account_id"]
+            isOneToOne: false
+            referencedRelation: "cash_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_vouchers_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "finance_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accrue_commissions_for_invoice: {
@@ -13248,6 +13429,64 @@ export type Database = {
           _reviewed_by?: string
         }
         Returns: Json
+      }
+      approve_treasury_advance: {
+        Args: { _voucher_id: string }
+        Returns: {
+          account_id: string | null
+          airline_id: string | null
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_account_id: string | null
+          base_amount: number
+          base_currency: Database["public"]["Enums"]["finance_currency"] | null
+          cash_account_id: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          description: string
+          exchange_rate: number
+          expense_item: string | null
+          finance_approved_at: string | null
+          finance_approved_by: string | null
+          flight_schedule_id: string | null
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          parent_pending_id: string | null
+          party_name: string | null
+          party_type: string | null
+          payment_subtype: string | null
+          pending_kind: string | null
+          posted_at: string | null
+          posted_by: string | null
+          print_unlocked: boolean
+          recovered_amount: number
+          reference: string | null
+          repayment_plan: string | null
+          requires_approval: boolean
+          returned_amount: number
+          service_type: string | null
+          settled_amount: number | null
+          settled_at: string | null
+          settled_by: string | null
+          settlement_voucher_id: string | null
+          station_id: string | null
+          status: Database["public"]["Enums"]["voucher_status"]
+          supplier_id: string | null
+          updated_at: string
+          voucher_date: string
+          voucher_no: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "treasury_vouchers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       auto_match_statement_lines: { Args: { _import: string }; Returns: number }
       auto_renew_contracts: { Args: never; Returns: number }
@@ -13548,6 +13787,64 @@ export type Database = {
         Args: { _provision_id: string }
         Returns: undefined
       }
+      record_advance_recovery: {
+        Args: { _amount: number; _notes?: string; _voucher_id: string }
+        Returns: {
+          account_id: string | null
+          airline_id: string | null
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_account_id: string | null
+          base_amount: number
+          base_currency: Database["public"]["Enums"]["finance_currency"] | null
+          cash_account_id: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          description: string
+          exchange_rate: number
+          expense_item: string | null
+          finance_approved_at: string | null
+          finance_approved_by: string | null
+          flight_schedule_id: string | null
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          parent_pending_id: string | null
+          party_name: string | null
+          party_type: string | null
+          payment_subtype: string | null
+          pending_kind: string | null
+          posted_at: string | null
+          posted_by: string | null
+          print_unlocked: boolean
+          recovered_amount: number
+          reference: string | null
+          repayment_plan: string | null
+          requires_approval: boolean
+          returned_amount: number
+          service_type: string | null
+          settled_amount: number | null
+          settled_at: string | null
+          settled_by: string | null
+          settlement_voucher_id: string | null
+          station_id: string | null
+          status: Database["public"]["Enums"]["voucher_status"]
+          supplier_id: string | null
+          updated_at: string
+          voucher_date: string
+          voucher_no: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "treasury_vouchers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_bg_event: {
         Args: {
           p_amount_delta?: number
@@ -13663,6 +13960,64 @@ export type Database = {
           end_date: string
         }[]
       }
+      settle_pending_custody: {
+        Args: { _actual_amount: number; _notes?: string; _voucher_id: string }
+        Returns: {
+          account_id: string | null
+          airline_id: string | null
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_account_id: string | null
+          base_amount: number
+          base_currency: Database["public"]["Enums"]["finance_currency"] | null
+          cash_account_id: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: Database["public"]["Enums"]["finance_currency"]
+          description: string
+          exchange_rate: number
+          expense_item: string | null
+          finance_approved_at: string | null
+          finance_approved_by: string | null
+          flight_schedule_id: string | null
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          parent_pending_id: string | null
+          party_name: string | null
+          party_type: string | null
+          payment_subtype: string | null
+          pending_kind: string | null
+          posted_at: string | null
+          posted_by: string | null
+          print_unlocked: boolean
+          recovered_amount: number
+          reference: string | null
+          repayment_plan: string | null
+          requires_approval: boolean
+          returned_amount: number
+          service_type: string | null
+          settled_amount: number | null
+          settled_at: string | null
+          settled_by: string | null
+          settlement_voucher_id: string | null
+          station_id: string | null
+          status: Database["public"]["Enums"]["voucher_status"]
+          supplier_id: string | null
+          updated_at: string
+          voucher_date: string
+          voucher_no: string
+          voucher_type: Database["public"]["Enums"]["voucher_type"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "treasury_vouchers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       submit_expense_report_for_approval: {
         Args: { _report_id: string }
         Returns: number
@@ -13690,6 +14045,13 @@ export type Database = {
           po_total: number
           received_total: number
         }[]
+      }
+      treasury_daily_rate: {
+        Args: {
+          _currency: Database["public"]["Enums"]["finance_currency"]
+          _date: string
+        }
+        Returns: number
       }
       update_flight_master_from_station: {
         Args: { _id: string; _patch: Json }
