@@ -595,7 +595,7 @@ export default function TreasuryVouchersPage() {
               <TabsTrigger key={t.key} value={t.key} className="gap-2">{t.icon} {t.label}</TabsTrigger>
             ))}
           </TabsList>
-          {activeTab !== "balances" && (
+          {activeTab !== "balances" && activeTab !== "fx" && (
             <div className="flex items-center gap-2">
               <Label className="text-sm text-muted-foreground">Status</Label>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
