@@ -549,6 +549,7 @@ export default function TreasuryVouchersPage() {
     { key: "advance", label: "Advances", icon: <HandCoins className="h-4 w-4" /> },
     { key: "cost", label: "Cost Vouchers", icon: <FileCheck2 className="h-4 w-4" /> },
     { key: "balances", label: "Balances", icon: <Wallet className="h-4 w-4" /> },
+    { key: "fx", label: "FX Revaluation", icon: <RefreshCw className="h-4 w-4" /> },
   ];
 
   return (
