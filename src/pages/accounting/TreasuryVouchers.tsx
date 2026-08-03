@@ -563,7 +563,7 @@ export default function TreasuryVouchersPage() {
             Receipt voucher and the four payment voucher types — general, pending custody, advance and cost.
           </p>
         </div>
-        {activeTab !== "balances" && (
+        {activeTab !== "balances" && activeTab !== "fx" && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={exportRows}>
               <Download className="h-4 w-4 mr-2" /> Export
