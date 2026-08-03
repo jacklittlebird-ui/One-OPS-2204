@@ -77,7 +77,7 @@ const SUBTYPE_LABEL: Record<PaymentSubtype, string> = {
 };
 
 // Spec §2.1 — supported treasury currencies (EGP is the base/reporting currency)
-const CURRENCIES = ["EGP", "USD", "EUR", "GBP", "MAD", "JOD", "AED", "SAR"] as const;
+const CURRENCIES = ["EGP", "USD", "EUR", "GBP", "CHF", "MAD", "JOD", "AED", "SAR"] as const;
 const PARTY_TYPES = ["Customer", "Supplier", "Employee", "Other"] as const;
 const REPAYMENT_PLANS: { value: string; label: string }[] = [
   { value: "full", label: "Full deduction at month end" },
