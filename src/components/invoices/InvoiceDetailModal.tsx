@@ -109,6 +109,25 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
             {inv.payment_date && <DetailRow label="Payment Date" value={formatDateDMY(inv.payment_date)} />}
           </div>
 
+          {/* Invoice number history */}
+          {history.length > 0 && (
+            <div className="bg-muted/30 rounded-lg p-4">
+              <h3 className="text-xs font-bold text-warning uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <History size={12} /> Invoice Number History
+              </h3>
+              <div className="space-y-1.5">
+                {history.map(h => (
+                  <div key={h.id} className="flex items-center justify-between text-xs gap-2">
+                    <span className="font-mono text-muted-foreground line-through">{h.old_invoice_no || "—"}</span>
+                    <span className="text-muted-foreground">→</span>
+                    <span className="font-mono font-semibold text-foreground flex-1">{h.new_invoice_no}</span>
+                    <span className="text-muted-foreground whitespace-nowrap">{formatDateDMY(h.changed_at)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Charges Breakdown — mirrors the printable Annex A per-flight detail */}
           <div className="bg-muted/30 rounded-lg p-4">
             <h3 className="text-xs font-bold text-success uppercase tracking-wider mb-3 flex items-center gap-1.5"><DollarSign size={12} /> Charges Breakdown</h3>
