@@ -6576,6 +6576,48 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_number_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          invoice_id: string
+          new_invoice_no: string
+          old_invoice_no: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          invoice_id: string
+          new_invoice_no: string
+          old_invoice_no?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          invoice_id?: string
+          new_invoice_no?: string
+          old_invoice_no?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_number_history_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_number_history_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_variance_reports: {
         Row: {
           created_at: string
