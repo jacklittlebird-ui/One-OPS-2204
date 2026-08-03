@@ -1,6 +1,10 @@
-import { X, FileText, DollarSign, Plane, Calendar, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, FileText, DollarSign, Plane, Calendar, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard, History as HistoryIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { formatDateDMY } from "@/lib/utils";
 import { parseSecurityDetail, resolveDetailOvertimeHours, SECURITY_INVOICE_COLUMNS, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
+
+type NoHistoryRow = { id: string; old_invoice_no: string | null; new_invoice_no: string; changed_at: string };
 
 export type InvoiceRow = {
   id: string; invoice_no: string; date: string; due_date: string;
