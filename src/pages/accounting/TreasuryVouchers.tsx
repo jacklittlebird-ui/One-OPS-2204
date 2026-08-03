@@ -167,6 +167,7 @@ export default function TreasuryVouchersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm(null));
   const [statusFilter, setStatusFilter] = useState<"all" | VoucherStatus>("all");
+  const [revalDate, setRevalDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [settleTarget, setSettleTarget] = useState<Voucher | null>(null);
   const [settleAmount, setSettleAmount] = useState<number>(0);
   const [settleNotes, setSettleNotes] = useState("");
