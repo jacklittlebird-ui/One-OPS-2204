@@ -117,7 +117,7 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
           {history.length > 0 && (
             <div className="bg-muted/30 rounded-lg p-4">
               <h3 className="text-xs font-bold text-warning uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <History size={12} /> Invoice Number History
+                <HistoryIcon size={12} /> Invoice Number History
               </h3>
               <div className="space-y-1.5">
                 {history.map(h => (
