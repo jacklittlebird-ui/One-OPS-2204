@@ -758,7 +758,77 @@ export default function TreasuryVouchersPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Spec §2.4 — daily FX revaluation: EGP equivalent only, real GL entry per run */}
+        <TabsContent value="fx" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <CardTitle className="text-base">Daily FX revaluation (CBE rate of the same day)</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    EGP value (today) − EGP value (yesterday) for the same foreign-currency balance.
+                    The foreign-currency balance never changes; each difference posts a real journal entry
+                    to FX Revaluation Gain / Loss.
+                  </p>
+                </div>
+                <div className="flex items-end gap-2">
+                  <div>
+                    <Label className="text-xs">Revaluation date</Label>
+                    <Input type="date" value={revalDate} onChange={(e) => setRevalDate(e.target.value)} className="w-44" />
+                  </div>
+                  <Button onClick={() => revalMutation.mutate(revalDate)} disabled={revalMutation.isPending}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Run revaluation
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Currency</TableHead>
+                    <TableHead className="text-right">FX Balance</TableHead>
+                    <TableHead className="text-right">Rate (prev)</TableHead>
+                    <TableHead className="text-right">Rate (today)</TableHead>
+                    <TableHead className="text-right">EGP (prev)</TableHead>
+                    <TableHead className="text-right">EGP (today)</TableHead>
+                    <TableHead className="text-right">FX Difference (EGP)</TableHead>
+                    <TableHead>GL Entry</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fxLog.length === 0 ? (
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      No revaluation recorded yet.
+                    </TableCell></TableRow>
+                  ) : fxLog.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell>{f.reval_date}</TableCell>
+                      <TableCell className="font-medium">{f.currency}</TableCell>
+                      <TableCell className="text-right">{num(f.fx_balance)}</TableCell>
+                      <TableCell className="text-right">{f.rate_prev ?? "—"}</TableCell>
+                      <TableCell className="text-right">{f.rate_today ?? "—"}</TableCell>
+                      <TableCell className="text-right">{num(f.base_value_prev)}</TableCell>
+                      <TableCell className="text-right">{num(f.base_value_today)}</TableCell>
+                      <TableCell className={`text-right font-bold ${Number(f.fx_difference) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                        {num(f.fx_difference)}
+                      </TableCell>
+                      <TableCell>
+                        {f.journal_entry_id
+                          ? <Badge variant="default">Posted</Badge>
+                          : <Badge variant="outline">—</Badge>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
 
       {/* Create voucher */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
