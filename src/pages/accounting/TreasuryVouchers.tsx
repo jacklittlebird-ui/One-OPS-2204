@@ -40,7 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
   Receipt, ArrowDownCircle, ArrowUpCircle, Clock, Plus, Download,
-  CheckCircle2, Send, Ban, FileCheck2, Printer, Wallet, HandCoins,
+  CheckCircle2, Send, Ban, FileCheck2, Printer, Wallet, HandCoins, RefreshCw,
 } from "lucide-react";
 import { exportToExcel } from "@/lib/exportExcel";
 import { format } from "date-fns";
@@ -49,7 +49,7 @@ type VoucherType = "receipt" | "payment" | "pending";
 type PaymentSubtype = "general" | "pending_custody" | "advance" | "cost";
 type VoucherStatus =
   | "draft" | "pending_approval" | "approved" | "posted" | "settled" | "void";
-type TabKey = "receipt" | "general" | "pending_custody" | "advance" | "cost" | "balances";
+type TabKey = "receipt" | "general" | "pending_custody" | "advance" | "cost" | "balances" | "fx";
 
 const STATUS_VARIANT: Record<VoucherStatus, "default" | "secondary" | "destructive" | "outline"> = {
   draft: "outline",
@@ -77,7 +77,7 @@ const SUBTYPE_LABEL: Record<PaymentSubtype, string> = {
 };
 
 // Spec §2.1 — supported treasury currencies (EGP is the base/reporting currency)
-const CURRENCIES = ["EGP", "USD", "EUR", "GBP", "MAD", "JOD", "AED", "SAR"] as const;
+const CURRENCIES = ["EGP", "USD", "EUR", "GBP", "CHF", "MAD", "JOD", "AED", "SAR"] as const;
 const PARTY_TYPES = ["Customer", "Supplier", "Employee", "Other"] as const;
 const REPAYMENT_PLANS: { value: string; label: string }[] = [
   { value: "full", label: "Full deduction at month end" },
@@ -167,6 +167,7 @@ export default function TreasuryVouchersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm(null));
   const [statusFilter, setStatusFilter] = useState<"all" | VoucherStatus>("all");
+  const [revalDate, setRevalDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [settleTarget, setSettleTarget] = useState<Voucher | null>(null);
   const [settleAmount, setSettleAmount] = useState<number>(0);
   const [settleNotes, setSettleNotes] = useState("");
@@ -195,6 +196,37 @@ export default function TreasuryVouchersPage() {
       return (data ?? []) as any[];
     },
   });
+
+  // Spec §2.4 — daily FX revaluation log (each row is backed by a real GL journal entry)
+  const { data: fxLog = [] } = useQuery({
+    queryKey: ["treasury_fx_daily_log"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from as any)("treasury_fx_daily_log")
+        .select("*")
+        .order("reval_date", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const revalMutation = useMutation({
+    mutationFn: async (revalDate: string) => {
+      const { data, error } = await (supabase.rpc as any)("run_treasury_daily_revaluation", { p_date: revalDate });
+      if (error) throw error;
+      return (Array.isArray(data) ? data[0] : data) as { rows_logged: number; total_difference: number } | null;
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["treasury_fx_daily_log"] });
+      qc.invalidateQueries({ queryKey: ["v_treasury_balances"] });
+      if (!res || !res.rows_logged) toast.info("No FX differences to record for this date");
+      else toast.success(`${res.rows_logged} FX difference row(s) posted to the general ledger`);
+    },
+    onError: (e: any) => toast.error(e.message || "Revaluation failed"),
+  });
+
+
 
   const { data: companies = [] } = useQuery({
     queryKey: ["companies_min"],
@@ -475,7 +507,7 @@ export default function TreasuryVouchersPage() {
 
   const openCreate = (tab: TabKey) => {
     const subtype: PaymentSubtype | null =
-      tab === "receipt" || tab === "balances" ? null : (tab as PaymentSubtype);
+      tab === "receipt" || tab === "balances" || tab === "fx" ? null : (tab as PaymentSubtype);
     setForm(emptyForm(subtype));
     setDialogOpen(true);
   };
@@ -517,6 +549,7 @@ export default function TreasuryVouchersPage() {
     { key: "advance", label: "Advances", icon: <HandCoins className="h-4 w-4" /> },
     { key: "cost", label: "Cost Vouchers", icon: <FileCheck2 className="h-4 w-4" /> },
     { key: "balances", label: "Balances", icon: <Wallet className="h-4 w-4" /> },
+    { key: "fx", label: "FX Revaluation", icon: <RefreshCw className="h-4 w-4" /> },
   ];
 
   return (
@@ -530,7 +563,7 @@ export default function TreasuryVouchersPage() {
             Receipt voucher and the four payment voucher types — general, pending custody, advance and cost.
           </p>
         </div>
-        {activeTab !== "balances" && (
+        {activeTab !== "balances" && activeTab !== "fx" && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={exportRows}>
               <Download className="h-4 w-4 mr-2" /> Export
@@ -562,7 +595,7 @@ export default function TreasuryVouchersPage() {
               <TabsTrigger key={t.key} value={t.key} className="gap-2">{t.icon} {t.label}</TabsTrigger>
             ))}
           </TabsList>
-          {activeTab !== "balances" && (
+          {activeTab !== "balances" && activeTab !== "fx" && (
             <div className="flex items-center gap-2">
               <Label className="text-sm text-muted-foreground">Status</Label>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
@@ -725,7 +758,77 @@ export default function TreasuryVouchersPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Spec §2.4 — daily FX revaluation: EGP equivalent only, real GL entry per run */}
+        <TabsContent value="fx" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <CardTitle className="text-base">Daily FX revaluation (CBE rate of the same day)</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    EGP value (today) − EGP value (yesterday) for the same foreign-currency balance.
+                    The foreign-currency balance never changes; each difference posts a real journal entry
+                    to FX Revaluation Gain / Loss.
+                  </p>
+                </div>
+                <div className="flex items-end gap-2">
+                  <div>
+                    <Label className="text-xs">Revaluation date</Label>
+                    <Input type="date" value={revalDate} onChange={(e) => setRevalDate(e.target.value)} className="w-44" />
+                  </div>
+                  <Button onClick={() => revalMutation.mutate(revalDate)} disabled={revalMutation.isPending}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Run revaluation
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Currency</TableHead>
+                    <TableHead className="text-right">FX Balance</TableHead>
+                    <TableHead className="text-right">Rate (prev)</TableHead>
+                    <TableHead className="text-right">Rate (today)</TableHead>
+                    <TableHead className="text-right">EGP (prev)</TableHead>
+                    <TableHead className="text-right">EGP (today)</TableHead>
+                    <TableHead className="text-right">FX Difference (EGP)</TableHead>
+                    <TableHead>GL Entry</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fxLog.length === 0 ? (
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      No revaluation recorded yet.
+                    </TableCell></TableRow>
+                  ) : fxLog.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell>{f.reval_date}</TableCell>
+                      <TableCell className="font-medium">{f.currency}</TableCell>
+                      <TableCell className="text-right">{num(f.fx_balance)}</TableCell>
+                      <TableCell className="text-right">{f.rate_prev ?? "—"}</TableCell>
+                      <TableCell className="text-right">{f.rate_today ?? "—"}</TableCell>
+                      <TableCell className="text-right">{num(f.base_value_prev)}</TableCell>
+                      <TableCell className="text-right">{num(f.base_value_today)}</TableCell>
+                      <TableCell className={`text-right font-bold ${Number(f.fx_difference) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                        {num(f.fx_difference)}
+                      </TableCell>
+                      <TableCell>
+                        {f.journal_entry_id
+                          ? <Badge variant="default">Posted</Badge>
+                          : <Badge variant="outline">—</Badge>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
 
       {/* Create voucher */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

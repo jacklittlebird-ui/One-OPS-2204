@@ -23,7 +23,7 @@ type RateRow = {
   source?: string | null;
 };
 
-const CURRENCIES = ["EGP", "AED", "MAD", "JOD", "USD", "EUR", "SAR", "GBP", "KWD"];
+const CURRENCIES = ["EGP", "AED", "MAD", "JOD", "USD", "EUR", "SAR", "GBP", "CHF", "KWD"];
 
 const emptyForm = () => ({
   rate_date: format(new Date(), "yyyy-MM-dd"),
