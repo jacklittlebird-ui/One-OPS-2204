@@ -47,6 +47,21 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
   const st = statusStyles[inv.status] || statusStyles.Draft;
   const daysUntilDue = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000);
 
+  // Previous invoice numbers, logged automatically whenever the number is edited.
+  const [history, setHistory] = useState<NoHistoryRow[]>([]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data } = await (supabase.from as any)("invoice_number_history")
+        .select("id,old_invoice_no,new_invoice_no,changed_at")
+        .eq("invoice_id", inv.id)
+        .order("changed_at", { ascending: false })
+        .limit(10);
+      if (alive) setHistory((data ?? []) as NoHistoryRow[]);
+    })();
+    return () => { alive = false; };
+  }, [inv.id, inv.invoice_no]);
+
   const fmt = (n: number) => `${inv.currency} ${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
   const fmtN = (n: number | undefined) => (n == null ? "" : (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
