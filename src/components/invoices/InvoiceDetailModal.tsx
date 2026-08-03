@@ -1,6 +1,10 @@
-import { X, FileText, DollarSign, Plane, Calendar, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, FileText, DollarSign, Plane, Calendar, ShieldCheck, Printer, Clock, CheckCircle, AlertCircle, XCircle, BookOpen, CreditCard, History as HistoryIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { formatDateDMY } from "@/lib/utils";
 import { parseSecurityDetail, resolveDetailOvertimeHours, SECURITY_INVOICE_COLUMNS, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
+
+type NoHistoryRow = { id: string; old_invoice_no: string | null; new_invoice_no: string; changed_at: string };
 
 export type InvoiceRow = {
   id: string; invoice_no: string; date: string; due_date: string;
@@ -42,6 +46,21 @@ function DetailRow({ label, value, mono }: { label: string; value: React.ReactNo
 export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFinalize, onPrint }: Props) {
   const st = statusStyles[inv.status] || statusStyles.Draft;
   const daysUntilDue = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000);
+
+  // Previous invoice numbers, logged automatically whenever the number is edited.
+  const [history, setHistory] = useState<NoHistoryRow[]>([]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data } = await (supabase.from as any)("invoice_number_history")
+        .select("id,old_invoice_no,new_invoice_no,changed_at")
+        .eq("invoice_id", inv.id)
+        .order("changed_at", { ascending: false })
+        .limit(10);
+      if (alive) setHistory((data ?? []) as NoHistoryRow[]);
+    })();
+    return () => { alive = false; };
+  }, [inv.id, inv.invoice_no]);
 
   const fmt = (n: number) => `${inv.currency} ${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
   const fmtN = (n: number | undefined) => (n == null ? "" : (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -108,6 +127,25 @@ export default function InvoiceDetailModal({ invoice: inv, onClose, onEdit, onFi
             {inv.sent_at && <DetailRow label="Sent At" value={formatDateDMY(inv.sent_at)} />}
             {inv.payment_date && <DetailRow label="Payment Date" value={formatDateDMY(inv.payment_date)} />}
           </div>
+
+          {/* Invoice number history */}
+          {history.length > 0 && (
+            <div className="bg-muted/30 rounded-lg p-4">
+              <h3 className="text-xs font-bold text-warning uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <HistoryIcon size={12} /> Invoice Number History
+              </h3>
+              <div className="space-y-1.5">
+                {history.map(h => (
+                  <div key={h.id} className="flex items-center justify-between text-xs gap-2">
+                    <span className="font-mono text-muted-foreground line-through">{h.old_invoice_no || "—"}</span>
+                    <span className="text-muted-foreground">→</span>
+                    <span className="font-mono font-semibold text-foreground flex-1">{h.new_invoice_no}</span>
+                    <span className="text-muted-foreground whitespace-nowrap">{formatDateDMY(h.changed_at)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Charges Breakdown — mirrors the printable Annex A per-flight detail */}
           <div className="bg-muted/30 rounded-lg p-4">
