@@ -1009,16 +1009,8 @@ export default function TreasuryVouchersPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>GL account</Label>
-                  <Select value={form.account_id} onValueChange={(v) => setForm({ ...form, account_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {glAccounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="col-span-2 text-xs text-muted-foreground">
+                  Cost centre 2 (station) is set above; the GL account is selected below.
                 </div>
                 <div className="col-span-2">
                   <Label>Flight schedule ID (required for accounts starting with 8)</Label>
