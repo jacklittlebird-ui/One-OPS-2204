@@ -76,6 +76,14 @@ const SUBTYPE_LABEL: Record<PaymentSubtype, string> = {
   cost: "Cost Voucher",
 };
 
+const SUBTYPE_LABEL_AR: Record<PaymentSubtype, string> = {
+  general: "إيصال صرف عام",
+  pending_custody: "إيصال صرف معلق",
+  advance: "إيصال صرف سلف",
+  cost: "إيصال صرف تكلفة",
+};
+
+
 // Spec §2.1 — supported treasury currencies (EGP is the base/reporting currency)
 const CURRENCIES = ["EGP", "USD", "EUR", "GBP", "CHF", "MAD", "JOD", "AED", "SAR"] as const;
 const PARTY_TYPES = ["Customer", "Supplier", "Employee", "Other"] as const;
@@ -581,9 +589,11 @@ export default function TreasuryVouchersPage() {
   const openCreate = (tab: TabKey) => {
     const subtype: PaymentSubtype | null =
       tab === "receipt" || tab === "balances" || tab === "fx" ? null : (tab as PaymentSubtype);
+    setActiveTab(tab === "balances" || tab === "fx" ? "receipt" : tab);
     setForm(emptyForm(subtype));
     setDialogOpen(true);
   };
+
 
   const exportRows = () => {
     exportToExcel(
@@ -637,15 +647,21 @@ export default function TreasuryVouchersPage() {
           </p>
         </div>
         {activeTab !== "balances" && activeTab !== "fx" && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={exportRows}>
               <Download className="h-4 w-4 mr-2" /> Export
             </Button>
-            <Button onClick={() => openCreate(activeTab)}>
-              <Plus className="h-4 w-4 mr-2" /> New {activeTab === "receipt" ? "Receipt" : SUBTYPE_LABEL[activeTab as PaymentSubtype]}
+            <Button variant="secondary" onClick={() => openCreate("receipt")}>
+              <ArrowDownCircle className="h-4 w-4 mr-2" /> New Receipt / سند قبض
             </Button>
+            {(["general", "cost", "pending_custody", "advance"] as PaymentSubtype[]).map((s) => (
+              <Button key={s} onClick={() => openCreate(s)}>
+                <Plus className="h-4 w-4 mr-2" /> {SUBTYPE_LABEL[s]} / {SUBTYPE_LABEL_AR[s]}
+              </Button>
+            ))}
           </div>
         )}
+
       </div>
 
       <div className="grid gap-4 md:grid-cols-5">
