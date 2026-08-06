@@ -76,6 +76,14 @@ const SUBTYPE_LABEL: Record<PaymentSubtype, string> = {
   cost: "Cost Voucher",
 };
 
+const SUBTYPE_LABEL_AR: Record<PaymentSubtype, string> = {
+  general: "إيصال صرف عام",
+  pending_custody: "إيصال صرف معلق",
+  advance: "إيصال صرف سلف",
+  cost: "إيصال صرف تكلفة",
+};
+
+
 // Spec §2.1 — supported treasury currencies (EGP is the base/reporting currency)
 const CURRENCIES = ["EGP", "USD", "EUR", "GBP", "CHF", "MAD", "JOD", "AED", "SAR"] as const;
 const PARTY_TYPES = ["Customer", "Supplier", "Employee", "Other"] as const;
