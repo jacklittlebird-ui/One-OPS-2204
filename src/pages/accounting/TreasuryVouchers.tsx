@@ -129,7 +129,7 @@ interface Voucher {
 
 interface Named { id: string; name: string; }
 interface AccountRow { id: string; account_name: string; currency: string; }
-interface GlAccount { id: string; code: string; name: string; }
+interface GlAccount { id: string; code: string; name: string; name_ar: string | null; }
 
 const emptyForm = (subtype: PaymentSubtype | null) => ({
   voucher_no: "",
