@@ -160,6 +160,72 @@ const emptyForm = (subtype: PaymentSubtype | null) => ({
 const num = (n: unknown) =>
   Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Searchable chart-of-accounts picker (search by code or by Arabic/English name).
+function AccountPicker({
+  accounts, value, onChange, side,
+}: {
+  accounts: GlAccount[];
+  value: string;
+  onChange: (id: string) => void;
+  side: "debit" | "credit";
+}) {
+  const [q, setQ] = useState("");
+  const selected = accounts.find((a) => a.id === value);
+  const results = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    const list = term
+      ? accounts.filter(
+          (a) =>
+            a.code.toLowerCase().includes(term) ||
+            (a.name ?? "").toLowerCase().includes(term) ||
+            (a.name_ar ?? "").toLowerCase().includes(term),
+        )
+      : accounts;
+    return list.slice(0, 200);
+  }, [accounts, q]);
+
+  return (
+    <div className="col-span-2">
+      <Label>
+        {side === "debit"
+          ? "Debit account — البند المدين (الخزينة دائنة)"
+          : "Credit account — البند الدائن (الخزينة مدينة)"}
+      </Label>
+      <Input
+        className="mb-2"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        aria-label="Search account by code or name"
+      />
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select account from the chart of accounts" />
+        </SelectTrigger>
+        <SelectContent className="max-h-72">
+          {selected && !results.some((a) => a.id === selected.id) && (
+            <SelectItem value={selected.id}>
+              {selected.code} — {selected.name_ar || selected.name}
+            </SelectItem>
+          )}
+          {results.map((a) => (
+            <SelectItem key={a.id} value={a.id}>
+              {a.code} — {a.name_ar || a.name}
+            </SelectItem>
+          ))}
+          {results.length === 0 && (
+            <div className="px-3 py-2 text-sm text-muted-foreground">No matching account</div>
+          )}
+        </SelectContent>
+      </Select>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {side === "debit"
+          ? "Payment voucher: treasury is credited, the selected account is debited."
+          : "Receipt voucher: treasury is debited, the selected account is credited."}
+      </p>
+    </div>
+  );
+}
+
 export default function TreasuryVouchersPage() {
   const qc = useQueryClient();
   const { user } = useAuth();
