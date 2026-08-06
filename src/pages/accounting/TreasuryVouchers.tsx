@@ -396,6 +396,12 @@ export default function TreasuryVouchersPage() {
     mutationFn: async () => {
       if (!form.voucher_no.trim()) throw new Error("Voucher number is required");
       if (!form.amount || form.amount <= 0) throw new Error("Amount must be greater than zero");
+      if (!form.account_id)
+        throw new Error(
+          form.payment_subtype === null
+            ? "Select the credit account from the chart of accounts"
+            : "Select the debit account from the chart of accounts",
+        );
 
       const isReceipt = form.payment_subtype === null;
       const payload: Record<string, unknown> = {
