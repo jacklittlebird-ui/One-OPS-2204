@@ -12329,6 +12329,74 @@ export type Database = {
           },
         ]
       }
+      vehicles: {
+        Row: {
+          created_at: string
+          id: string
+          insurance_company: string | null
+          insurance_end_date: string | null
+          insurance_policy_no: string | null
+          insurance_start_date: string | null
+          insured_driver_employee_id: string | null
+          insured_driver_name: string | null
+          insured_driver_type: string
+          license_expiry_date: string | null
+          make_model: string | null
+          notes: string | null
+          plate_no: string
+          station: string | null
+          status: string
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insurance_company?: string | null
+          insurance_end_date?: string | null
+          insurance_policy_no?: string | null
+          insurance_start_date?: string | null
+          insured_driver_employee_id?: string | null
+          insured_driver_name?: string | null
+          insured_driver_type?: string
+          license_expiry_date?: string | null
+          make_model?: string | null
+          notes?: string | null
+          plate_no: string
+          station?: string | null
+          status?: string
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insurance_company?: string | null
+          insurance_end_date?: string | null
+          insurance_policy_no?: string | null
+          insurance_start_date?: string | null
+          insured_driver_employee_id?: string | null
+          insured_driver_name?: string | null
+          insured_driver_type?: string
+          license_expiry_date?: string | null
+          make_model?: string | null
+          notes?: string | null
+          plate_no?: string
+          station?: string | null
+          status?: string
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_insured_driver_employee_id_fkey"
+            columns: ["insured_driver_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_documents: {
         Row: {
           created_at: string
