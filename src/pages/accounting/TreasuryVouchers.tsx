@@ -1020,6 +1020,13 @@ export default function TreasuryVouchersPage() {
               </>
             )}
 
+            <AccountPicker
+              accounts={glAccounts}
+              value={form.account_id}
+              onChange={(v) => setForm({ ...form, account_id: v })}
+              side={form.payment_subtype === null ? "credit" : "debit"}
+            />
+
             <div>
               <Label>Party Type</Label>
               <Select value={form.party_type} onValueChange={(v) => setForm({ ...form, party_type: v })}>
