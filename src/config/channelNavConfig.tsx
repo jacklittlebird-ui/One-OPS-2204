@@ -48,6 +48,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
       children: [
         { label: "Airlines", path: "/airlines" },
         { label: "Aircrafts", path: "/aircrafts" },
+        { label: "Vehicles", path: "/vehicles" },
         { label: "Aircraft Types", path: "/aircraft-types" },
         { label: "Airports", path: "/airports" },
       ],
@@ -123,6 +124,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Airports", path: "/airports" },
         { label: "Airlines", path: "/airlines" },
         { label: "Aircrafts", path: "/aircrafts" },
+        { label: "Vehicles", path: "/vehicles" },
         { label: "Staff Roster", path: "/staff-roster" },
       ],
     },
@@ -277,6 +279,7 @@ const channelNavs: Record<Channel, NavSection[]> = {
         { label: "Airports", path: "/airports" },
         { label: "Airlines", path: "/airlines" },
         { label: "Aircrafts", path: "/aircrafts" },
+        { label: "Vehicles", path: "/vehicles" },
         { label: "Services Catalog", path: "/services-catalog" },
         { label: "Service Providers", path: "/service-providers" },
         { label: "Delay Codes", path: "/delay-codes" },

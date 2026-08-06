@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 import AirlinesPage from "./pages/Airlines";
 import AircraftsPage from "./pages/Aircrafts";
+import VehiclesPage from "./pages/Vehicles";
 
 import ServicesPage from "./pages/Services";
 import AirportChargesPage from "./pages/AirportCharges";
@@ -204,6 +205,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />
       <Route path="/airport-charges" element={<ProtectedRoute><AppLayout><AirportChargesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/airlines" element={<ProtectedRoute><AppLayout><AirlinesPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/vehicles" element={<ProtectedRoute><AppLayout><VehiclesPage /></AppLayout></ProtectedRoute>} />
       <Route path="/aircrafts" element={<ProtectedRoute><AppLayout><AircraftsPage /></AppLayout></ProtectedRoute>} />
       <Route path="/flight-schedule" element={<Navigate to="/clearances" replace />} />
       <Route path="/services" element={<ProtectedRoute><AppLayout><ServicesPage /></AppLayout></ProtectedRoute>} />
