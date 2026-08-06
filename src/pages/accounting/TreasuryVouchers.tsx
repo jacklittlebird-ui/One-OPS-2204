@@ -335,9 +335,10 @@ export default function TreasuryVouchersPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chart_of_accounts")
-        .select("id,code,name")
+        .select("id,code,name,name_ar")
+        .eq("is_group", false)
         .order("code")
-        .limit(2000);
+        .limit(5000);
       if (error) throw error;
       return (data ?? []) as GlAccount[];
     },
