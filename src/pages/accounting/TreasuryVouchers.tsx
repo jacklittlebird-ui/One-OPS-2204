@@ -589,9 +589,11 @@ export default function TreasuryVouchersPage() {
   const openCreate = (tab: TabKey) => {
     const subtype: PaymentSubtype | null =
       tab === "receipt" || tab === "balances" || tab === "fx" ? null : (tab as PaymentSubtype);
+    setActiveTab(tab === "balances" || tab === "fx" ? "receipt" : tab);
     setForm(emptyForm(subtype));
     setDialogOpen(true);
   };
+
 
   const exportRows = () => {
     exportToExcel(
