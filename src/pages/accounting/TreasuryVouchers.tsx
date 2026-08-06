@@ -129,7 +129,7 @@ interface Voucher {
 
 interface Named { id: string; name: string; }
 interface AccountRow { id: string; account_name: string; currency: string; }
-interface GlAccount { id: string; code: string; name: string; }
+interface GlAccount { id: string; code: string; name: string; name_ar: string | null; }
 
 const emptyForm = (subtype: PaymentSubtype | null) => ({
   voucher_no: "",
@@ -159,6 +159,72 @@ const emptyForm = (subtype: PaymentSubtype | null) => ({
 
 const num = (n: unknown) =>
   Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Searchable chart-of-accounts picker (search by code or by Arabic/English name).
+function AccountPicker({
+  accounts, value, onChange, side,
+}: {
+  accounts: GlAccount[];
+  value: string;
+  onChange: (id: string) => void;
+  side: "debit" | "credit";
+}) {
+  const [q, setQ] = useState("");
+  const selected = accounts.find((a) => a.id === value);
+  const results = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    const list = term
+      ? accounts.filter(
+          (a) =>
+            a.code.toLowerCase().includes(term) ||
+            (a.name ?? "").toLowerCase().includes(term) ||
+            (a.name_ar ?? "").toLowerCase().includes(term),
+        )
+      : accounts;
+    return list.slice(0, 200);
+  }, [accounts, q]);
+
+  return (
+    <div className="col-span-2">
+      <Label>
+        {side === "debit"
+          ? "Debit account — البند المدين (الخزينة دائنة)"
+          : "Credit account — البند الدائن (الخزينة مدينة)"}
+      </Label>
+      <Input
+        className="mb-2"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        aria-label="Search account by code or name"
+      />
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select account from the chart of accounts" />
+        </SelectTrigger>
+        <SelectContent className="max-h-72">
+          {selected && !results.some((a) => a.id === selected.id) && (
+            <SelectItem value={selected.id}>
+              {selected.code} — {selected.name_ar || selected.name}
+            </SelectItem>
+          )}
+          {results.map((a) => (
+            <SelectItem key={a.id} value={a.id}>
+              {a.code} — {a.name_ar || a.name}
+            </SelectItem>
+          ))}
+          {results.length === 0 && (
+            <div className="px-3 py-2 text-sm text-muted-foreground">No matching account</div>
+          )}
+        </SelectContent>
+      </Select>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {side === "debit"
+          ? "Payment voucher: treasury is credited, the selected account is debited."
+          : "Receipt voucher: treasury is debited, the selected account is credited."}
+      </p>
+    </div>
+  );
+}
 
 export default function TreasuryVouchersPage() {
   const qc = useQueryClient();
@@ -269,9 +335,10 @@ export default function TreasuryVouchersPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chart_of_accounts")
-        .select("id,code,name")
+        .select("id,code,name,name_ar")
+        .eq("is_group", false)
         .order("code")
-        .limit(2000);
+        .limit(5000);
       if (error) throw error;
       return (data ?? []) as GlAccount[];
     },
@@ -329,6 +396,12 @@ export default function TreasuryVouchersPage() {
     mutationFn: async () => {
       if (!form.voucher_no.trim()) throw new Error("Voucher number is required");
       if (!form.amount || form.amount <= 0) throw new Error("Amount must be greater than zero");
+      if (!form.account_id)
+        throw new Error(
+          form.payment_subtype === null
+            ? "Select the credit account from the chart of accounts"
+            : "Select the debit account from the chart of accounts",
+        );
 
       const isReceipt = form.payment_subtype === null;
       const payload: Record<string, unknown> = {
@@ -942,16 +1015,8 @@ export default function TreasuryVouchersPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>GL account</Label>
-                  <Select value={form.account_id} onValueChange={(v) => setForm({ ...form, account_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {glAccounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="col-span-2 text-xs text-muted-foreground">
+                  Cost centre 2 (station) is set above; the GL account is selected below.
                 </div>
                 <div className="col-span-2">
                   <Label>Flight schedule ID (required for accounts starting with 8)</Label>
@@ -960,6 +1025,13 @@ export default function TreasuryVouchersPage() {
                 </div>
               </>
             )}
+
+            <AccountPicker
+              accounts={glAccounts}
+              value={form.account_id}
+              onChange={(v) => setForm({ ...form, account_id: v })}
+              side={form.payment_subtype === null ? "credit" : "debit"}
+            />
 
             <div>
               <Label>Party Type</Label>
