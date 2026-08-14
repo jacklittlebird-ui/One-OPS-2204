@@ -1297,6 +1297,8 @@ export default function SecurityServiceReportsPage() {
         review_status: "Ready for Billing",
         reviewed_by: RECEIVABLES_REVIEWER,
         reviewed_at: new Date().toISOString(),
+        // Durable Receivables marker — step 4 stays complete after sign-out/in.
+        charges_saved_at: new Date().toISOString(),
       } as any).eq("id", r.id).select("id");
       if (error || !data || data.length === 0) failed++;
       else { ok++; savedIds.push(r.id); }
