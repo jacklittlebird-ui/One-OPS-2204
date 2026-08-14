@@ -160,6 +160,7 @@ const DISPATCH_TABLE_LIST_COLUMNS = [
   "return_to_ramp_with_load",
   "charges_currency",
   "created_via",
+  "charges_saved_at",
 ].join(",");
 
 const SECURITY_RATE_LIST_COLUMNS = [
