@@ -1455,7 +1455,13 @@ export default function SecurityServiceReportsPage() {
               (row.review_status === "Draft" || !row.review_status)
                 ? { review_status: "Pending Review" }
                 : {}),
-      ...(isReceivablesView ? { review_status: "Ready for Billing" } : {}),
+      ...(isReceivablesView
+        ? {
+            review_status: "Ready for Billing",
+            reviewed_by: RECEIVABLES_REVIEWER,
+            reviewed_at: new Date().toISOString(),
+          }
+        : {}),
     };
 
     let insertedDispatch: any = null;
