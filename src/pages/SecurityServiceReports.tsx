@@ -1463,6 +1463,7 @@ export default function SecurityServiceReportsPage() {
             review_status: "Ready for Billing",
             reviewed_by: RECEIVABLES_REVIEWER,
             reviewed_at: new Date().toISOString(),
+            charges_saved_at: new Date().toISOString(),
           }
         : {}),
     };
