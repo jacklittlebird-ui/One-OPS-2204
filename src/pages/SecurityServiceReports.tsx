@@ -199,18 +199,25 @@ const isOperationsApprovedReview = (status?: string | null) => {
 const getWorkflowDispatchStatus = (row: { status?: string | null; review_status?: string | null }) =>
   isOperationsApprovedReview(row.review_status) ? "Completed" : (row.status || "Pending");
 
-const hasSavedSecurityCharges = (row: { review_status?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
+export const RECEIVABLES_REVIEWER = "Receivables";
+const isReceivablesReviewer = (value: unknown) =>
+  /receiv|acc\s*rec|accrec/i.test(String(value || ""));
+
+const hasSavedSecurityCharges = (row: { review_status?: string | null; reviewed_by?: string | null; charges_saved_at?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
   // Step 4 (Receivables) only completes when Receivables explicitly saves the
-  // security charges — that action sets review_status to "Ready for Billing".
-  // Operations "Approved" alone must NOT complete step 4, even when a computed
-  // total_security_charges value is already present on the row.
+  // security charges. "Ready for Billing" alone is NOT enough — Operations can
+  // also set that status (e.g. approving a Modified report), which must keep
+  // step 4 open until Accounts Receivable actually reviews the charges.
+  if ((row as any).charges_saved_at) return true;
   const value = String(row.review_status || "").trim().toLowerCase();
   if (value !== "ready for billing") return false;
+  if (!isReceivablesReviewer(row.reviewed_by)) return false;
   const amount = Number(row.total_security_charges || 0);
   const lines = row.charges_breakdown;
   const hasLines = Array.isArray(lines) ? lines.length > 0 : !!lines;
   return amount > 0 || hasLines;
 };
+
 
 interface DispatchRow {
   id: string;
@@ -1287,6 +1294,8 @@ export default function SecurityServiceReportsPage() {
         total_security_charges: c.amount,
         charges_currency: c.currency,
         review_status: "Ready for Billing",
+        reviewed_by: RECEIVABLES_REVIEWER,
+        reviewed_at: new Date().toISOString(),
       } as any).eq("id", r.id).select("id");
       if (error || !data || data.length === 0) failed++;
       else { ok++; savedIds.push(r.id); }
@@ -1446,7 +1455,13 @@ export default function SecurityServiceReportsPage() {
               (row.review_status === "Draft" || !row.review_status)
                 ? { review_status: "Pending Review" }
                 : {}),
-      ...(isReceivablesView ? { review_status: "Ready for Billing" } : {}),
+      ...(isReceivablesView
+        ? {
+            review_status: "Ready for Billing",
+            reviewed_by: RECEIVABLES_REVIEWER,
+            reviewed_at: new Date().toISOString(),
+          }
+        : {}),
     };
 
     let insertedDispatch: any = null;
