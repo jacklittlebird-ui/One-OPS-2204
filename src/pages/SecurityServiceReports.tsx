@@ -160,6 +160,7 @@ const DISPATCH_TABLE_LIST_COLUMNS = [
   "return_to_ramp_with_load",
   "charges_currency",
   "created_via",
+  "charges_saved_at",
 ].join(",");
 
 const SECURITY_RATE_LIST_COLUMNS = [
@@ -1296,6 +1297,8 @@ export default function SecurityServiceReportsPage() {
         review_status: "Ready for Billing",
         reviewed_by: RECEIVABLES_REVIEWER,
         reviewed_at: new Date().toISOString(),
+        // Durable Receivables marker — step 4 stays complete after sign-out/in.
+        charges_saved_at: new Date().toISOString(),
       } as any).eq("id", r.id).select("id");
       if (error || !data || data.length === 0) failed++;
       else { ok++; savedIds.push(r.id); }
@@ -1460,6 +1463,7 @@ export default function SecurityServiceReportsPage() {
             review_status: "Ready for Billing",
             reviewed_by: RECEIVABLES_REVIEWER,
             reviewed_at: new Date().toISOString(),
+            charges_saved_at: new Date().toISOString(),
           }
         : {}),
     };
