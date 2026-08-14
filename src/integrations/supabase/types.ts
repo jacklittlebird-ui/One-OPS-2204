@@ -4525,6 +4525,8 @@ export type Database = {
           base_fee: number
           charges_breakdown: Json
           charges_currency: string
+          charges_saved_at: string | null
+          charges_saved_by: string | null
           contract_duration_hours: number
           contract_id: string | null
           created_at: string
@@ -4564,6 +4566,8 @@ export type Database = {
           base_fee?: number
           charges_breakdown?: Json
           charges_currency?: string
+          charges_saved_at?: string | null
+          charges_saved_by?: string | null
           contract_duration_hours?: number
           contract_id?: string | null
           created_at?: string
@@ -4603,6 +4607,8 @@ export type Database = {
           base_fee?: number
           charges_breakdown?: Json
           charges_currency?: string
+          charges_saved_at?: string | null
+          charges_saved_by?: string | null
           contract_duration_hours?: number
           contract_id?: string | null
           created_at?: string
