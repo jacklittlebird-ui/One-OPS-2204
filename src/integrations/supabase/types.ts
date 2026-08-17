@@ -4460,6 +4460,51 @@ export type Database = {
         }
         Relationships: []
       }
+      deleted_records_archive: {
+        Row: {
+          deleted_at: string
+          deleted_by: string | null
+          deleted_by_email: string | null
+          entity: string
+          flight_no: string | null
+          id: string
+          payload: Json
+          record_id: string
+          related: Json
+          restored_at: string | null
+          service_date: string | null
+          station: string | null
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by?: string | null
+          deleted_by_email?: string | null
+          entity: string
+          flight_no?: string | null
+          id?: string
+          payload: Json
+          record_id: string
+          related?: Json
+          restored_at?: string | null
+          service_date?: string | null
+          station?: string | null
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string | null
+          deleted_by_email?: string | null
+          entity?: string
+          flight_no?: string | null
+          id?: string
+          payload?: Json
+          record_id?: string
+          related?: Json
+          restored_at?: string | null
+          service_date?: string | null
+          station?: string | null
+        }
+        Relationships: []
+      }
       depreciation_entries: {
         Row: {
           asset_id: string
