@@ -246,7 +246,21 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
 
       // Remove duplicates only when the same airline + station + flight + route + dates + service already exists.
       // Never delete by flight number alone: repeating flight numbers across different dates are valid schedule rows.
+      //
+      // DATA-LOSS GUARD: a duplicate that already carries recorded operational work
+      // (a security task sheet / dispatch, or a handling service report) is NEVER
+      // deleted and NEVER re-inserted. Re-importing a schedule used to wipe those
+      // rows — which silently destroyed station-entered task sheets and charges.
       const uniqueKeys = [...new Set(records.map(r => r.flight_no).filter(Boolean))];
+      let protectedKeys = new Set<string>();
+      const keyOf = (r: any) => [
+        r.flight_no || "",
+        r.route || "",
+        r.arrival_date || "",
+        r.departure_date || "",
+        r.clearance_type || "",
+      ].join("||");
+
       if (uniqueKeys.length > 0 && selectedAirline) {
         const { data: existingRows, error: lookupError } = await supabase
           .from("flight_schedules")
@@ -256,34 +270,39 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
           .in("flight_no", uniqueKeys as string[]);
         if (lookupError) throw lookupError;
 
-        const duplicateKeys = new Set(records.map(r => [
-          r.flight_no || "",
-          r.route || "",
-          r.arrival_date || "",
-          r.departure_date || "",
-          r.clearance_type || "",
-        ].join("||")));
-        const idsToDelete = (existingRows || [])
-          .filter(r => duplicateKeys.has([
-            r.flight_no || "",
-            r.route || "",
-            r.arrival_date || "",
-            r.departure_date || "",
-            r.clearance_type || "",
-          ].join("||")))
-          .map(r => r.id);
+        const duplicateKeys = new Set(records.map(keyOf));
+        const duplicates = (existingRows || []).filter(r => duplicateKeys.has(keyOf(r)));
 
-        if (idsToDelete.length > 0) {
-          const { error: deleteError } = await supabase
-            .from("flight_schedules")
-            .delete()
-            .in("id", idsToDelete);
-          if (deleteError) throw deleteError;
+        if (duplicates.length > 0) {
+          const dupIds = duplicates.map(r => r.id);
+          const [{ data: withDispatch }, { data: withReport }] = await Promise.all([
+            supabase.from("dispatch_assignments").select("flight_schedule_id").in("flight_schedule_id", dupIds),
+            supabase.from("service_reports").select("flight_schedule_id").in("flight_schedule_id", dupIds),
+          ]);
+          const busy = new Set<string>([
+            ...(withDispatch || []).map((d: any) => d.flight_schedule_id),
+            ...(withReport || []).map((d: any) => d.flight_schedule_id),
+          ].filter(Boolean));
+
+          duplicates.forEach(r => { if (busy.has(r.id)) protectedKeys.add(keyOf(r)); });
+
+          const idsToDelete = duplicates.filter(r => !busy.has(r.id)).map(r => r.id);
+          if (idsToDelete.length > 0) {
+            const { error: deleteError } = await supabase
+              .from("flight_schedules")
+              .delete()
+              .in("id", idsToDelete);
+            if (deleteError) throw deleteError;
+          }
         }
       }
 
-      const { error } = await supabase.from("flight_schedules").insert(records);
-      if (error) throw error;
+      const toInsert = records.filter(r => !protectedKeys.has(keyOf(r)));
+      const skipped = records.length - toInsert.length;
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from("flight_schedules").insert(toInsert);
+        if (error) throw error;
+      }
 
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
       queryClient.invalidateQueries({ queryKey: ["all_clearance_flights_readonly"] });
