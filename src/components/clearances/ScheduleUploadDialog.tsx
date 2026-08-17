@@ -306,7 +306,12 @@ export default function ScheduleUploadDialog({ open, onOpenChange, defaultCatego
 
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
       queryClient.invalidateQueries({ queryKey: ["all_clearance_flights_readonly"] });
-      toast({ title: "✅ Import Complete", description: `${records.length} flight records imported (duplicates replaced).` });
+      toast({
+        title: "✅ Import Complete",
+        description: skipped > 0
+          ? `${toInsert.length} flight records imported. ${skipped} kept untouched because they already have a task sheet / service report recorded.`
+          : `${toInsert.length} flight records imported (duplicates replaced).`,
+      });
       handleClose();
     } catch (err: any) {
       toast({ title: "Import Error", description: err.message, variant: "destructive" });
