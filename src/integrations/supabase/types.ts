@@ -14120,6 +14120,7 @@ export type Database = {
           total_difference: number
         }[]
       }
+      safe_parse_flight_date: { Args: { txt: string }; Returns: string }
       scan_contract_renewals: {
         Args: never
         Returns: {
