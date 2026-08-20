@@ -205,7 +205,7 @@ export const RECEIVABLES_REVIEWER = "Receivables";
 const isReceivablesReviewer = (value: unknown) =>
   /receiv|acc\s*rec|accrec/i.test(String(value || ""));
 
-const hasSavedSecurityCharges = (row: { review_status?: string | null; reviewed_by?: string | null; charges_saved_at?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
+
 const hasSavedSecurityCharges = (row: { review_status?: string | null; reviewed_by?: string | null; charges_saved_at?: string | null; invoiced_at?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
   // Step 4 (Receivables) only completes when Receivables explicitly saves the
   // security charges. "Ready for Billing" alone is NOT enough — Operations can
