@@ -107,6 +107,8 @@ const DISPATCH_LIST_COLUMNS = [
   "return_to_ramp_with_load",
   "charges_currency",
   "created_via",
+  "charges_saved_at",
+  "invoiced_at",
   "fs_id",
   "fs_flight_no",
   "fs_registration",
@@ -255,6 +257,8 @@ interface DispatchRow {
   review_comment: string;
   reviewed_by: string;
   reviewed_at: string | null;
+  charges_saved_at?: string | null;
+  invoiced_at?: string | null;
   irregularity_id: string | null;
   created_at: string;
   updated_at: string;
@@ -414,7 +418,7 @@ export default function SecurityServiceReportsPage() {
   // (station/airline/flight_no/service_type). Read through the FS-driven
   // view so display fields resolve from flight_schedules + airlines.
   const { data: dispatches = [], isLoading } = useQuery({
-    queryKey: ["v_dispatch_with_flight", "service-reports", session?.user?.id, isStationScoped ? userStation : null, effectiveDateFrom, dateTo || null],
+    queryKey: ["v_dispatch_with_flight", "service-reports-v2", session?.user?.id, isStationScoped ? userStation : null, effectiveDateFrom, dateTo || null],
     queryFn: async () => {
       const all: any[] = [];
       const PAGE_SIZE = 1000;
@@ -438,7 +442,7 @@ export default function SecurityServiceReportsPage() {
     enabled: !!session,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
