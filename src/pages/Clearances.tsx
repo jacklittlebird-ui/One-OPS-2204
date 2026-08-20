@@ -780,7 +780,22 @@ export default function ClearancesPage() {
                           <TableCell>
                             <div className="flex gap-1">
                               <Button size="icon" variant="ghost" onClick={() => setDetailItem(c)}><Eye size={14} /></Button>
-                              <Button size="icon" variant="ghost" onClick={() => openEdit(c)}><Pencil size={14} /></Button>
+                              {(() => {
+                                const editBlocked = isFlightConfirmed(c) && !isAdmin;
+                                return (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="disabled:opacity-40"
+                                    title={editBlocked ? "Approved by Operations (step 3) — admin only" : "Edit"}
+                                    disabled={editBlocked}
+                                    onClick={() => openEdit(c)}
+                                  >
+                                    <Pencil size={14} />
+                                  </Button>
+                                );
+                              })()}
+
                               {(() => {
                                 const confirmed = isFlightConfirmed(c);
                                 const blocked = confirmed && !isAdmin;
