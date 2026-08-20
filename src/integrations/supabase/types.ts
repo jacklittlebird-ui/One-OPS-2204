@@ -5263,6 +5263,7 @@ export type Database = {
           status: string
           termination_date: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           bank_account?: string | null
@@ -5285,6 +5286,7 @@ export type Database = {
           status?: string
           termination_date?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           bank_account?: string | null
@@ -5307,6 +5309,7 @@ export type Database = {
           status?: string
           termination_date?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
