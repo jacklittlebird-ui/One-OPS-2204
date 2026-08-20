@@ -324,8 +324,22 @@ export default function SecurityServiceReportsPage() {
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
   const [opsTab, setOpsTab] = useState<"all" | "modified" | "clearance-flights" | "pending-approval">("all");
 
+  // Once Operations completes step 3 (review approved), the Station may no
+  // longer amend the report — only an administrator can.
+  const isOpsLocked = (r: { review_status?: string | null }) =>
+    !isAdmin && isStationView && isOperationsApprovedReview(r.review_status);
+
   const tryOpenEdit = (r: DispatchRow) => {
+    if (isOpsLocked(r)) {
+      toast({
+        title: "Locked",
+        description: "Operations approved this report (step 3). Only an administrator can amend it.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (isReceivablesView) {
+
       const workflowStatus = getWorkflowDispatchStatus(r);
       const completed = derivePipelineCompletedStages({
         isLinked: workflowStatus === "Completed",
@@ -2747,7 +2761,12 @@ export default function SecurityServiceReportsPage() {
 
                             ) : (
                               <>
-                                <button onClick={() => tryOpenEdit(r)} className="p-1 rounded hover:bg-muted" title="Edit Report">
+                                <button
+                                  onClick={() => tryOpenEdit(r)}
+                                  disabled={isOpsLocked(r)}
+                                  className="p-1 rounded hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                                  title={isOpsLocked(r) ? "Approved by Operations (step 3) — admin only" : "Edit Report"}
+                                >
                                   <Pencil size={14} className="text-muted-foreground" />
                                 </button>
                                 {r.review_status === "Draft" && r.status === "Completed" && (
@@ -2762,7 +2781,8 @@ export default function SecurityServiceReportsPage() {
                                 )}
                               </>
                             )}
-                            {isStationView && (
+                            {isStationView && !isOpsLocked(r) && (
+
                               <button
                                 onClick={async () => {
                                   const comment = prompt(`Return flight ${r.flight_no} to Clearance — reason:`);
