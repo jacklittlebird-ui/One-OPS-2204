@@ -161,6 +161,7 @@ const DISPATCH_TABLE_LIST_COLUMNS = [
   "charges_currency",
   "created_via",
   "charges_saved_at",
+  "invoiced_at",
 ].join(",");
 
 const SECURITY_RATE_LIST_COLUMNS = [
@@ -204,11 +205,15 @@ export const RECEIVABLES_REVIEWER = "Receivables";
 const isReceivablesReviewer = (value: unknown) =>
   /receiv|acc\s*rec|accrec/i.test(String(value || ""));
 
-const hasSavedSecurityCharges = (row: { review_status?: string | null; reviewed_by?: string | null; charges_saved_at?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
+
+const hasSavedSecurityCharges = (row: { review_status?: string | null; reviewed_by?: string | null; charges_saved_at?: string | null; invoiced_at?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
   // Step 4 (Receivables) only completes when Receivables explicitly saves the
   // security charges. "Ready for Billing" alone is NOT enough — Operations can
   // also set that status (e.g. approving a Modified report), which must keep
   // step 4 open until Accounts Receivable actually reviews the charges.
+  // An issued invoice is definitive proof the charges were reviewed & billed:
+  // once invoiced, step 4 stays complete forever.
+  if ((row as any).invoiced_at) return true;
   if ((row as any).charges_saved_at) return true;
   const value = String(row.review_status || "").trim().toLowerCase();
   if (value !== "ready for billing") return false;
