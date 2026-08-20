@@ -161,6 +161,7 @@ const DISPATCH_TABLE_LIST_COLUMNS = [
   "charges_currency",
   "created_via",
   "charges_saved_at",
+  "invoiced_at",
 ].join(",");
 
 const SECURITY_RATE_LIST_COLUMNS = [
