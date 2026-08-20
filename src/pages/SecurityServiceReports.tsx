@@ -526,70 +526,70 @@ export default function SecurityServiceReportsPage() {
   });
 
 
-  // Fetch flight schedules awaiting Operations approval (created by Station/Security service reports).
+  // Operations "Rejected by Operations" tab: every flight whose security task
+  // sheet Operations sent back to the Station (dispatch review_status =
+  // 'Rejected'). As soon as the Station edits/resubmits the report the
+  // review_status flips back to 'Pending Review', so the row leaves this tab.
   const { data: pendingApprovalFlights = [] } = useQuery({
-    queryKey: ["flight_schedules", "station-dispatch-pending", isStationScoped ? userStation : null, pendingEffectiveDateFrom, pendingDateTo || dateTo || null],
+    queryKey: ["flight_schedules", "ops-rejected-reports", isStationScoped ? userStation : null, pendingEffectiveDateFrom, pendingDateTo || dateTo || null],
     queryFn: async () => {
       const PAGE_SIZE = 1000;
-      const byId = new Map<string, any>();
-      const loadPending = async (useDepartureFallback: boolean) => {
-        for (let from = 0; ; from += PAGE_SIZE) {
-          let q = supabase
-            .from("flight_schedules")
-            .select(SECURITY_FLIGHT_LIST_COLUMNS)
-            .neq("status", "Completed")
-            .eq("created_via", "station")
-            .order(useDepartureFallback ? "departure_date" : "arrival_date", { ascending: true, nullsFirst: false })
-            .order("id", { ascending: true })
-            .range(from, from + PAGE_SIZE - 1);
-          if (isStationScoped && userStation) q = (q as any).eq("authority", userStation);
-          if (useDepartureFallback) {
-            q = (q as any).is("arrival_date", null).gte("departure_date", pendingEffectiveDateFrom);
-            if (pendingDateTo || dateTo) q = (q as any).lte("departure_date", pendingDateTo || dateTo);
-          } else {
-            q = (q as any).gte("arrival_date", pendingEffectiveDateFrom);
-            if (pendingDateTo || dateTo) q = (q as any).lte("arrival_date", pendingDateTo || dateTo);
-          }
-          const { data, error } = await q;
-          if (error) throw error;
-          (data || []).forEach((row: any) => byId.set(row.id, row));
-          if (!data || data.length < PAGE_SIZE) break;
-        }
-      };
-      await loadPending(false);
-      await loadPending(true);
-      const flights = Array.from(byId.values()).sort((a: any, b: any) => {
-        const ad = a.arrival_date || a.departure_date || "";
-        const bd = b.arrival_date || b.departure_date || "";
-        if (ad !== bd) return ad.localeCompare(bd);
-        return String(a.id || "").localeCompare(String(b.id || ""));
-      });
-      if (flights.length === 0) return [] as any[];
-
-      // Enrich each pending flight with its latest dispatch_assignments row so
-      // the Operations view can show every field the station captured on the
-      // task sheet (SKD type, aircraft type, ATA/ATD, staff names, remarks).
-      const ids = flights.map((f: any) => f.id);
-      // Batch the IN() lookup — passing hundreds of UUIDs in one PostgREST
-      // request blows past the URL length limit and the request silently
-      // returns nothing, leaving every enrichment column ("—") empty.
+      // 1) All rejected dispatches (latest per flight).
       const byFs = new Map<string, any>();
-      const CHUNK = 100;
-      for (let i = 0; i < ids.length; i += CHUNK) {
-        const slice = ids.slice(i, i + CHUNK);
-        const { data: dispatches } = await supabase
+      for (let from = 0; ; from += PAGE_SIZE) {
+        const { data, error } = await supabase
           .from("dispatch_assignments")
           .select(DISPATCH_TABLE_LIST_COLUMNS)
-          .in("flight_schedule_id", slice);
-        (dispatches || []).forEach((d: any) => {
+          .eq("review_status", "Rejected")
+          .order("updated_at", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: true })
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        (data || []).forEach((d: any) => {
+          if (!d.flight_schedule_id) return;
           const prev = byFs.get(d.flight_schedule_id);
           if (!prev || new Date(d.updated_at || d.created_at || 0) > new Date(prev.updated_at || prev.created_at || 0)) {
             byFs.set(d.flight_schedule_id, d);
           }
         });
+        if (!data || data.length < PAGE_SIZE) break;
       }
+      const ids = Array.from(byFs.keys());
+      if (ids.length === 0) return [] as any[];
+
+      // 2) Their flight rows (batched IN() to stay under the URL length limit).
+      const flightsById = new Map<string, any>();
+      const CHUNK = 100;
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        let q: any = supabase
+          .from("flight_schedules")
+          .select(SECURITY_FLIGHT_LIST_COLUMNS)
+          .in("id", ids.slice(i, i + CHUNK));
+        if (isStationScoped && userStation) q = q.eq("authority", userStation);
+        const { data, error } = await q;
+        if (error) throw error;
+        (data || []).forEach((f: any) => flightsById.set(f.id, f));
+      }
+
+      const dateOf = (f: any) => f.arrival_date || f.departure_date || "";
+      const dateTop = pendingDateTo || dateTo;
+      const flights = Array.from(flightsById.values())
+        .filter((f: any) => {
+          const d = dateOf(f);
+          if (!d) return true;
+          if (pendingEffectiveDateFrom && d < pendingEffectiveDateFrom) return false;
+          if (dateTop && d > dateTop) return false;
+          return true;
+        })
+        .sort((a: any, b: any) => {
+          const ad = dateOf(a), bd = dateOf(b);
+          if (ad !== bd) return ad.localeCompare(bd);
+          return String(a.id || "").localeCompare(String(b.id || ""));
+        });
+
       return flights.map((f: any) => ({ ...f, dispatch: byFs.get(f.id) || null })) as any[];
     },
+
     enabled: !!session && isOperationsView && opsTab === "pending-approval",
     staleTime: 60_000,
     gcTime: 5 * 60_000,
