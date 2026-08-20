@@ -1762,7 +1762,11 @@ export default function SecurityServiceReportsPage() {
         queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"], refetchType: "none" as any });
         if (action === "Approved") {
           queryClient.invalidateQueries({ queryKey: ["flight_schedules"], refetchType: "none" as any });
+        } else {
+          // Newly rejected report must surface in Operations › Rejected Reports.
+          queryClient.invalidateQueries({ queryKey: ["flight_schedules", "ops-rejected-reports"] });
         }
+
       } catch (e: any) {
         toast({ title: "Error", description: e?.message || "Save failed", variant: "destructive" });
       }
