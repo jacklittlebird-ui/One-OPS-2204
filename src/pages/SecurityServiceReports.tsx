@@ -397,7 +397,7 @@ export default function SecurityServiceReportsPage() {
         if (!Array.isArray(old)) return old;
         return old.map((flight: any) => flight?.id === flightId ? { ...flight, status: "Completed" } : flight);
       });
-      queryClient.setQueriesData({ queryKey: ["flight_schedules", "station-dispatch-pending"] }, (old: any) => {
+      queryClient.setQueriesData({ queryKey: ["flight_schedules", "ops-rejected-reports"] }, (old: any) => {
         if (!Array.isArray(old)) return old;
         return old.filter((flight: any) => flight?.id !== flightId);
       });
@@ -608,7 +608,7 @@ export default function SecurityServiceReportsPage() {
     // Optimistic UI first: close the dialog / remove the row immediately. The
     // backend approval is one RPC and runs in the background, so large list
     // refetches never block the click.
-    queryClient.setQueriesData({ queryKey: ["flight_schedules", "station-dispatch-pending"] }, (old: any) => {
+    queryClient.setQueriesData({ queryKey: ["flight_schedules", "ops-rejected-reports"] }, (old: any) => {
       if (!Array.isArray(old)) return old;
       return old.filter((f: any) => f?.id !== flightId);
     });
@@ -645,7 +645,7 @@ export default function SecurityServiceReportsPage() {
         queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"], refetchType: "none" as any });
       } catch (e: any) {
         toast({ title: "Error", description: e?.message || "Approval failed", variant: "destructive" });
-        queryClient.invalidateQueries({ queryKey: ["flight_schedules", "station-dispatch-pending"] });
+        queryClient.invalidateQueries({ queryKey: ["flight_schedules", "ops-rejected-reports"] });
       }
     })();
   };
