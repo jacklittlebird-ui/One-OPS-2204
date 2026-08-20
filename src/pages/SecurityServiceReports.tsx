@@ -324,8 +324,22 @@ export default function SecurityServiceReportsPage() {
   const [stationTab, setStationTab] = useState<"all" | "rejected">("all");
   const [opsTab, setOpsTab] = useState<"all" | "modified" | "clearance-flights" | "pending-approval">("all");
 
+  // Once Operations completes step 3 (review approved), the Station may no
+  // longer amend the report — only an administrator can.
+  const isOpsLocked = (r: { review_status?: string | null }) =>
+    !isAdmin && isStationView && isOperationsApprovedReview(r.review_status);
+
   const tryOpenEdit = (r: DispatchRow) => {
+    if (isOpsLocked(r)) {
+      toast({
+        title: "Locked",
+        description: "Operations approved this report (step 3). Only an administrator can amend it.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (isReceivablesView) {
+
       const workflowStatus = getWorkflowDispatchStatus(r);
       const completed = derivePipelineCompletedStages({
         isLinked: workflowStatus === "Completed",
