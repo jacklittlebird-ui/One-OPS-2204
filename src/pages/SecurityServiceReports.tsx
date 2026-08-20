@@ -2755,7 +2755,7 @@ export default function SecurityServiceReportsPage() {
                                     <ExternalLink size={14} className="text-primary" />
                                   </button>
                                 )}
-                                {(r.review_status === "Pending Review" || r.review_status === "Modified") && (
+                                {!isStationView && (r.review_status === "Pending Review" || r.review_status === "Modified") && (
                                   <button onClick={() => { setReviewRow(r); setReviewComment(r.review_comment); }} className="p-1 rounded hover:bg-muted" title={r.review_status === "Modified" ? "Review Modified Report" : "Review"}>
                                     <MessageSquare size={14} className={r.review_status === "Modified" ? "text-info" : "text-warning"} />
                                   </button>
