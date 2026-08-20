@@ -13268,6 +13268,8 @@ export type Database = {
           base_fee: number | null
           charges_breakdown: Json | null
           charges_currency: string | null
+          charges_saved_at: string | null
+          charges_saved_by: string | null
           contract_duration_hours: number | null
           contract_id: string | null
           created_at: string | null
@@ -13292,6 +13294,8 @@ export type Database = {
           fs_status: Database["public"]["Enums"]["clearance_status"] | null
           fs_std: string | null
           id: string | null
+          invoice_id: string | null
+          invoiced_at: string | null
           irregularity_id: string | null
           notes: string | null
           overtime_charge: number | null
@@ -13352,6 +13356,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_service_report_with_flight"
             referencedColumns: ["fs_id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "dispatch_assignments_irregularity_id_fkey"
