@@ -2042,7 +2042,7 @@ export default function SecurityServiceReportsPage() {
             }`}
           >
             <Clock size={14} />
-            Pending Approval
+            Rejected Reports
             {pendingApprovalFlights.length > 0 && (
               <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
                 {pendingApprovalFlights.length}
@@ -2060,7 +2060,7 @@ export default function SecurityServiceReportsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="stat-card">
               <div className="stat-card-icon bg-destructive"><Clock size={20} /></div>
-              <div><div className="text-xl font-bold text-foreground">{pendingTotal}</div><div className="text-xs text-muted-foreground">Pending Total</div></div>
+              <div><div className="text-xl font-bold text-foreground">{pendingTotal}</div><div className="text-xs text-muted-foreground">Rejected Total</div></div>
             </div>
             <div className="stat-card">
               <div className="stat-card-icon bg-warning"><CalendarDays size={20} /></div>
@@ -2083,7 +2083,7 @@ export default function SecurityServiceReportsPage() {
                 <Clock size={14} className="text-destructive" />
                 Pending Operations Approval
                 <span className="text-xs font-normal text-muted-foreground">
-                  — {pendingTotal} flight{pendingTotal === 1 ? "" : "s"} awaiting review
+                  — {pendingTotal} flight{pendingTotal === 1 ? "" : "s"} rejected by Operations
                 </span>
               </h3>
               <div className="relative">
@@ -2132,8 +2132,8 @@ export default function SecurityServiceReportsPage() {
                     <tr>
                       <td colSpan={20} className="text-center py-16">
                         <Clock size={36} className="mx-auto text-muted-foreground/30 mb-2" />
-                        <p className="font-semibold text-foreground">No flights pending approval</p>
-                        <p className="text-muted-foreground text-sm mt-1">New service reports added by stations will appear here for Operations approval.</p>
+                        <p className="font-semibold text-foreground">No rejected reports</p>
+                        <p className="text-muted-foreground text-sm mt-1">Reports you reject are listed here until the Station amends and resubmits them.</p>
                       </td>
                     </tr>
                   ) : pagePending.map((f: any, i: number) => {
