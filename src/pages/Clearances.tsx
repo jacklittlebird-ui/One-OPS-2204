@@ -310,7 +310,18 @@ export default function ClearancesPage() {
     setDialogOpen(true);
   };
   const openEdit = (c: ClearanceRow) => {
+    // Once Operations completed step 3 (approval), Clearance may not amend the
+    // flight any more — admin only.
+    if (!isAdmin && isFlightConfirmed(c)) {
+      toast({
+        title: "Editing blocked",
+        description: "This flight was approved by Operations (step 3). Only an administrator can amend it.",
+        variant: "destructive",
+      });
+      return;
+    }
     setEditItem(c);
+
     setForm({
       airline_id: c.airline_id || "", permit_no: c.permit_no, flight_no: c.flight_no,
       aircraft_type: c.aircraft_type, registration: c.registration, route: c.route,
