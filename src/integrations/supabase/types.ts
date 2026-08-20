@@ -4581,6 +4581,8 @@ export type Database = {
           flight_date: string
           flight_schedule_id: string | null
           id: string
+          invoice_id: string | null
+          invoiced_at: string | null
           irregularity_id: string | null
           notes: string
           overtime_charge: number
@@ -4622,6 +4624,8 @@ export type Database = {
           flight_date?: string
           flight_schedule_id?: string | null
           id?: string
+          invoice_id?: string | null
+          invoiced_at?: string | null
           irregularity_id?: string | null
           notes?: string
           overtime_charge?: number
@@ -4663,6 +4667,8 @@ export type Database = {
           flight_date?: string
           flight_schedule_id?: string | null
           id?: string
+          invoice_id?: string | null
+          invoiced_at?: string | null
           irregularity_id?: string | null
           notes?: string
           overtime_charge?: number
@@ -4721,6 +4727,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_service_report_with_flight"
             referencedColumns: ["fs_id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_assignments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_invoices"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "dispatch_assignments_irregularity_id_fkey"
