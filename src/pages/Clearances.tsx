@@ -373,6 +373,12 @@ export default function ClearancesPage() {
         no_of_flights: Number(activeForm.no_of_flights) || 0,
       };
       if (!p.airline_id) delete p.airline_id;
+      // enum columns reject empty strings — fall back to sane defaults
+      if (!p.status || String(p.status).trim() === "") p.status = "Pending";
+      if (!p.clearance_type || String(p.clearance_type).trim() === "") {
+        p.clearance_type = serviceCategory === "security" ? "Arrival Security" : "Full Handling";
+      }
+      if (!p.purpose || String(p.purpose).trim() === "") p.purpose = "Scheduled";
       if (!p.valid_from) p.valid_from = null;
       if (!p.valid_to) p.valid_to = null;
       if (!p.departure_date) p.departure_date = null;
