@@ -48,3 +48,37 @@ export function buildSecurityFlightIdSet(
   for (const r of rows) if (r.flight_schedule_id) s.add(r.flight_schedule_id);
   return s;
 }
+
+/**
+ * Authoritative billing/list date for a dispatch row.
+ *
+ * flight_schedules is the SSoT: `dispatch_assignments.flight_date` can go stale
+ * after a date/route amendment (e.g. a flight moved from 31 Aug to 1 Sep), which
+ * made the Service Report list and the generated invoice disagree on the month.
+ * Both screens MUST resolve the period through this helper.
+ */
+export function resolveBillingDate(row: {
+  fs_arrival_date?: string | null;
+  fs_departure_date?: string | null;
+  arrival_date?: string | null;
+  departure_date?: string | null;
+  flight_date?: string | null;
+}): string {
+  const v =
+    row?.fs_arrival_date ||
+    row?.fs_departure_date ||
+    row?.arrival_date ||
+    row?.departure_date ||
+    row?.flight_date ||
+    "";
+  return String(v).slice(0, 10);
+}
+
+/** Shift a YYYY-MM-DD date string by `days` (used for fetch-window buffers). */
+export function shiftDateStr(date: string, days: number): string {
+  if (!date) return date;
+  const d = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return date;
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
