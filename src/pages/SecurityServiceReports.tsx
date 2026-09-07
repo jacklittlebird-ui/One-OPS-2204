@@ -30,7 +30,7 @@ import AllClearanceFlightsPage from "@/pages/AllClearanceFlights";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { computeLiveSecurityCharge } from "@/lib/securityRowCharges";
 
-import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
+import { dedupeDispatchRows, resolveBillingDate, shiftDateStr } from "@/lib/securityDispatchRows";
 import { snapshotBeforeSave, verifyAfterSave } from "@/lib/phase3WriteCycleVerifier";
 import { resolveDownloadFields } from "@/lib/securityDownloadFields";
 import { parseDeletionRequests } from "@/lib/statusRouting";
@@ -444,8 +444,11 @@ export default function SecurityServiceReportsPage() {
           .order("id", { ascending: true })
           .range(from, from + PAGE_SIZE - 1);
         if (isStationScoped && userStation) q = q.eq("station", userStation);
-        q = q.gte("flight_date", effectiveDateFrom);
-        if (dateTo) q = q.lte("flight_date", dateTo);
+        // Buffer the server window by 2 days: `flight_date` can lag the
+        // authoritative flight_schedules date, so boundary rows must still be
+        // fetched and then filtered by resolveBillingDate() below.
+        q = q.gte("flight_date", shiftDateStr(effectiveDateFrom, -2));
+        if (dateTo) q = q.lte("flight_date", shiftDateStr(dateTo, 2));
         const { data, error } = await q;
         if (error) throw error;
         all.push(...(data || []));
@@ -1108,8 +1111,10 @@ export default function SecurityServiceReportsPage() {
           : derivePipelineStage({ ...opts, channel: activeChannel }) === stage;
       });
     }
-    if (dateFrom) rows = rows.filter(r => (r.flight_date || "") >= dateFrom);
-    if (dateTo) rows = rows.filter(r => (r.flight_date || "") <= dateTo);
+    // Period filtering uses the FS-authoritative date so this list and the
+    // generated invoice always agree on which month a flight belongs to.
+    if (dateFrom) rows = rows.filter(r => resolveBillingDate(r as any) >= dateFrom);
+    if (dateTo) rows = rows.filter(r => resolveBillingDate(r as any) <= dateTo);
     if (search) {
       const s = search.toLowerCase();
       rows = rows.filter(r => {
@@ -1286,8 +1291,8 @@ export default function SecurityServiceReportsPage() {
     // bulk action targets every flight in the chosen period — not just what
     // the current tab / status / service filters happen to show.
     let scope: MergedSecurityRow[] = mergedRows;
-    if (dateFrom) scope = scope.filter(r => (r.flight_date || "") >= dateFrom);
-    if (dateTo) scope = scope.filter(r => (r.flight_date || "") <= dateTo);
+    if (dateFrom) scope = scope.filter(r => resolveBillingDate(r as any) >= dateFrom);
+    if (dateTo) scope = scope.filter(r => resolveBillingDate(r as any) <= dateTo);
     let eligible = scope.filter(r => {
       if ((r as any).isPending) return false;
       const reviewDone = (r.review_status || "").toLowerCase() === "approved" || (r.review_status || "").toLowerCase().includes("billing");
