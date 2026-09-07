@@ -30,7 +30,7 @@ import { logAudit } from "@/lib/auditLogger";
 import { parseSecurityDetail, serializeSecurityDetail, backfillSecurityDetail, resolveDetailOvertimeHours, type SecurityDetailRow } from "@/lib/securityInvoiceDetail";
 import { calculateSecurityCharges } from "@/lib/securityChargeCalculator";
 import { buildAirlineContractMap, buildRatesByContract, resolveEffectiveSecurityCharge } from "@/lib/securityRowCharges";
-import { dedupeDispatchRows } from "@/lib/securityDispatchRows";
+import { dedupeDispatchRows, resolveBillingDate } from "@/lib/securityDispatchRows";
 
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -650,7 +650,11 @@ export default function InvoicesPage() {
   // using it first can hide an incomplete flight from Generate Monthly Billing.
   const resolveDispatchBillingDate = useCallback((d: any) => {
     const fi = lookupFlightInfo(d);
-    return (fi.arrDate || fi.depDate || d?.flight_date || "").toString().slice(0, 10);
+    return (
+      (fi.arrDate || fi.depDate || "").toString().slice(0, 10) ||
+      // Same shared resolver the Service Report list uses.
+      resolveBillingDate(d)
+    );
   }, [lookupFlightInfo]);
 
   const getDispatchIncompleteReasons = useCallback((d: any): string[] => {
