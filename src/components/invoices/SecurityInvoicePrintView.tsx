@@ -78,10 +78,10 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
   const periodFrom = fromDate ? formatDateDMY(fromDate) : "";
   const periodTo = toDate ? formatDateDMY(toDate) : "";
 
-  // Available height per page (A4 landscape minus top+bottom margin).
+  // Available height per page (A4 portrait minus top+bottom margin).
   const availableDetailsHeightPx = useMemo(() => (A4_H_MM - margin * 2) * MM_TO_PX, [margin]);
 
-  // Rows that comfortably fit on one A4 landscape annex page (header + table + totals).
+  // Rows that comfortably fit on one A4 portrait annex page (header + table + totals).
   const ROWS_PER_PAGE = 32;
 
   const [annexScales, setAnnexScales] = useState<Record<string, number>>({});
@@ -382,7 +382,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
           </div>
         </div>
 
-        {/* Print styles — configurable margin, forced landscape, 2-page layout */}
+        {/* Print styles — configurable margin, forced portrait, 2-page layout */}
         <style>{`
           @media print {
             @page { size: A4 portrait; margin: ${margin}mm; }
