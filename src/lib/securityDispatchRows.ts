@@ -52,27 +52,35 @@ export function buildSecurityFlightIdSet(
 /**
  * Authoritative billing/list date for a dispatch row.
  *
- * flight_schedules is the SSoT: `dispatch_assignments.flight_date` can go stale
- * after a date/route amendment (e.g. a flight moved from 31 Aug to 1 Sep), which
- * made the Service Report list and the generated invoice disagree on the month.
- * Both screens MUST resolve the period through this helper.
+ * The period a flight is billed in MUST match the ARR DATE shown in the
+ * Service Report list. That displayed value comes from the task sheet
+ * (`task_sheet_data.arrival_date`) when the station saved one — e.g. a flight
+ * arriving 31/08 whose schedule row was later amended to 01/09 still belongs to
+ * August. Order: task-sheet arrival → row arrival → schedule arrival →
+ * departure fallbacks → dispatch flight_date. Both the list filter and the
+ * invoice generator MUST resolve the period through this helper.
  */
 export function resolveBillingDate(row: {
+  task_sheet_data?: Record<string, any> | null;
   fs_arrival_date?: string | null;
   fs_departure_date?: string | null;
   arrival_date?: string | null;
   departure_date?: string | null;
   flight_date?: string | null;
 }): string {
+  const ts = (row?.task_sheet_data || {}) as Record<string, any>;
   const v =
-    row?.fs_arrival_date ||
-    row?.fs_departure_date ||
+    (ts.arrival_date ? String(ts.arrival_date).trim() : "") ||
     row?.arrival_date ||
+    row?.fs_arrival_date ||
+    (ts.departure_date ? String(ts.departure_date).trim() : "") ||
     row?.departure_date ||
+    row?.fs_departure_date ||
     row?.flight_date ||
     "";
   return String(v).slice(0, 10);
 }
+
 
 /** Shift a YYYY-MM-DD date string by `days` (used for fetch-window buffers). */
 export function shiftDateStr(date: string, days: number): string {
