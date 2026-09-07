@@ -1147,11 +1147,14 @@ export default function InvoicesPage() {
       if (!ok) return;
     }
     const baseNo = `LNK-${monthlyAirlineMonth.replace("-", "")}-${monthlyAirlineOperator.replace(/\s+/g, "").slice(0, 4).toUpperCase()}-SEC`;
+    // Detect duplicates by airline + period + Security category — NOT by invoice number,
+    // because manually numbered invoices (e.g. "201-2026") don't carry the -SEC suffix.
     const existingSec = (invoices || []).filter((inv: any) =>
       inv.operator?.toLowerCase().trim() === monthlyAirlineOperator.toLowerCase().trim() &&
       inv.billing_period === monthlyAirlineMonth && inv.station === "ALL" &&
-      (inv.invoice_no || "").includes("-SEC")
+      ((inv.invoice_no || "").includes("-SEC") || /security/i.test(inv.description || ""))
     );
+
     const duplicate = existingSec.find((inv: any) => (inv.status || "").toLowerCase() !== "cancelled");
     if (duplicate) {
       const ok = window.confirm(`A monthly Security invoice already exists for ${monthlyAirlineOperator} — ${monthlyAirlineMonth} (${duplicate.invoice_no}, ${duplicate.status}).\n\nCreate another anyway?`);
