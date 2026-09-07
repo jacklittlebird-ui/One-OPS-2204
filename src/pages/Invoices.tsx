@@ -233,7 +233,7 @@ export default function InvoicesPage() {
       route: pickField(d?.fs_route, f?.route),
       aircraftType: pickField(d?.fs_aircraft_type, f?.aircraft_type),
       skdType: pickField(d?.fs_skd_type, f?.skd_type),
-      arrDate: pickField(d?.fs_arrival_date, f?.arrival_date),
+      arrDate: resolveBillingDate(d) || pickField(d?.fs_arrival_date, f?.arrival_date),
       depDate: pickField(d?.fs_departure_date, f?.departure_date),
     };
   }, [fsById, fsByFlightDate]);
