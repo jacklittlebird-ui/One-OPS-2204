@@ -650,12 +650,14 @@ export default function InvoicesPage() {
   // using it first can hide an incomplete flight from Generate Monthly Billing.
   const resolveDispatchBillingDate = useCallback((d: any) => {
     const fi = lookupFlightInfo(d);
+    // Shared resolver (task-sheet ARR DATE first) so the invoice period always
+    // matches the ARR DATE the Service Report list shows and filters on.
     return (
-      (fi.arrDate || fi.depDate || "").toString().slice(0, 10) ||
-      // Same shared resolver the Service Report list uses.
-      resolveBillingDate(d)
+      resolveBillingDate(d) ||
+      (fi.arrDate || fi.depDate || "").toString().slice(0, 10)
     );
   }, [lookupFlightInfo]);
+
 
   const getDispatchIncompleteReasons = useCallback((d: any): string[] => {
     const reasons: string[] = [];
