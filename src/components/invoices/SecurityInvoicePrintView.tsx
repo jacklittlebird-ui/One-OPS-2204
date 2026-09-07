@@ -42,9 +42,9 @@ interface Props {
   onClose: () => void;
 }
 
-// A4 landscape in mm
-const A4_W_MM = 297;
-const A4_H_MM = 210;
+// A4 portrait in mm
+const A4_W_MM = 210;
+const A4_H_MM = 297;
 // 1mm ≈ 3.7795px @ 96dpi
 const MM_TO_PX = 3.7795275591;
 
@@ -78,10 +78,10 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
   const periodFrom = fromDate ? formatDateDMY(fromDate) : "";
   const periodTo = toDate ? formatDateDMY(toDate) : "";
 
-  // Available height per page (A4 landscape minus top+bottom margin).
+  // Available height per page (A4 portrait minus top+bottom margin).
   const availableDetailsHeightPx = useMemo(() => (A4_H_MM - margin * 2) * MM_TO_PX, [margin]);
 
-  // Rows that comfortably fit on one A4 landscape annex page (header + table + totals).
+  // Rows that comfortably fit on one A4 portrait annex page (header + table + totals).
   const ROWS_PER_PAGE = 32;
 
   const [annexScales, setAnnexScales] = useState<Record<string, number>>({});
@@ -121,7 +121,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
         import("jspdf"),
         import("jspdf-autotable"),
       ]);
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
       const left = margin + 6;
       const right = A4_W_MM - margin - 6;
 
@@ -210,7 +210,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
           return row;
         });
         const lastIdx = cols.length - 1;
-        pdf.addPage("a4", "landscape");
+        pdf.addPage("a4", "portrait");
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(11);
         pdf.text(`${title.toUpperCase()} — ${invoice.operator || ""}`, left, 14);
@@ -346,7 +346,7 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
           <div className="flex items-center gap-3 text-sm">
             <span className="font-semibold text-gray-700">Security Invoice Preview</span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
-              <FileText size={12} /> {pageCount} page{pageCount === 1 ? "" : "s"} · A4 Landscape
+              <FileText size={12} /> {pageCount} page{pageCount === 1 ? "" : "s"} · A4 Portrait
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -382,10 +382,10 @@ export default function SecurityInvoicePrintView({ invoice, onClose }: Props) {
           </div>
         </div>
 
-        {/* Print styles — configurable margin, forced landscape, 2-page layout */}
+        {/* Print styles — configurable margin, forced portrait, 2-page layout */}
         <style>{`
           @media print {
-            @page { size: A4 landscape; margin: ${margin}mm; }
+            @page { size: A4 portrait; margin: ${margin}mm; }
             html, body { width: ${A4_W_MM - margin * 2}mm; }
             .no-print { display: none !important; }
             #invoice-cover-page {
