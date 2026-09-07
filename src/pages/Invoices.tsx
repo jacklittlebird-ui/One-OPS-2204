@@ -190,7 +190,7 @@ export default function InvoicesPage() {
     return regByFlightNo[first] || "";
   }, [regByFlightNo]);
 
-  // Lookup flight_schedules by id and by (flight_no + flight_date) so we can
+  // Lookup flight_schedules by id and by (flight_no + date) so we can
   // enrich dispatch rows (which don't carry registration / route columns).
   const fsById = useMemo(() => {
     const m: Record<string, any> = {};
@@ -200,8 +200,18 @@ export default function InvoicesPage() {
   const fsByFlightDate = useMemo(() => {
     const m: Record<string, any> = {};
     (flightSchedules || []).forEach((f: any) => {
-      const k = `${(f.flight_no || "").trim().toUpperCase()}__${(f.flight_date || "").toString().slice(0, 10)}`;
-      if (k.trim() !== "__" && !m[k]) m[k] = f;
+      const no = (f.flight_no || "").trim().toUpperCase();
+      if (!no) return;
+      // flight_schedules has NO `flight_date` column — the operational date is
+      // arrival_date (falling back to departure_date). Keying on the missing
+      // column silently produced an all-empty map, which dropped SKD type and
+      // therefore the ADHOC surcharge from generated invoices.
+      for (const dt of [f.arrival_date, f.departure_date]) {
+        const d = (dt || "").toString().slice(0, 10);
+        if (!d) continue;
+        const k = `${no}__${d}`;
+        if (!m[k]) m[k] = f;
+      }
     });
     return m;
   }, [flightSchedules]);
@@ -210,15 +220,24 @@ export default function InvoicesPage() {
     const key = `${(d?.flight_no || "").trim().toUpperCase()}__${(d?.flight_date || "").toString().slice(0, 10)}`;
     const fromKey = fsByFlightDate[key];
     const f = fromId || fromKey;
+    // AUTHORITATIVE: `v_dispatch_with_flight` already joins the flight schedule
+    // (fs_* columns). These win over any client-side lookup, which can miss rows
+    // when the flight list is scoped/windowed differently — that mismatch is what
+    // made billing totals drift from the Service Report list.
+    const pickField = (viewVal: any, joinVal: any) => {
+      const v = (viewVal ?? "").toString().trim();
+      return v || (joinVal ?? "").toString().trim();
+    };
     return {
-      reg: f?.registration || "",
-      route: f?.route || "",
-      aircraftType: f?.aircraft_type || "",
-      skdType: f?.skd_type || "",
-      arrDate: f?.arrival_date || "",
-      depDate: f?.departure_date || "",
+      reg: pickField(d?.fs_registration, f?.registration),
+      route: pickField(d?.fs_route, f?.route),
+      aircraftType: pickField(d?.fs_aircraft_type, f?.aircraft_type),
+      skdType: pickField(d?.fs_skd_type, f?.skd_type),
+      arrDate: pickField(d?.fs_arrival_date, f?.arrival_date),
+      depDate: pickField(d?.fs_departure_date, f?.departure_date),
     };
   }, [fsById, fsByFlightDate]);
+
 
   // Build a descriptive service-type label including overtime information.
   const buildServiceTypeLabel = (d: any): string => {
