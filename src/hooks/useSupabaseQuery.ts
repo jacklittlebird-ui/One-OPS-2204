@@ -232,9 +232,15 @@ export function useSupabaseTable<T extends Record<string, any>>(
       const { data, error } = await supabase.from(table).delete().eq("id", id).select("id");
       if (error) throw error;
       if (!data || data.length === 0) {
-        throw new Error("Delete blocked: you don't have permission to delete this record.");
+        // No rows returned can mean either the delete was blocked, or the row
+        // was already gone (e.g. stale list / bulk delete of the same record).
+        const { data: still } = await supabase.from(table).select("id").eq("id", id).maybeSingle();
+        if (still) {
+          throw new Error("Delete blocked: you don't have permission to delete this record.");
+        }
       }
     },
+
     onSuccess: () => {
       invalidate();
       toast({ title: "Deleted", description: "Record removed." });
