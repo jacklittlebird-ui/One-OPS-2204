@@ -9,6 +9,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveFlightMasterForWrite } from "@/lib/resolveFlightMasterForWrite";
+import { syncFlightMasterFromReport } from "@/lib/syncFlightMasterFromReport";
 import { expandFlightRef, normalizeFlightKey } from "@/lib/flightRefMatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { generateAllCharges } from "@/data/airportChargesData";
