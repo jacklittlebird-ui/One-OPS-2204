@@ -980,6 +980,20 @@ function HandlingServiceReportContent() {
         if (dErr) throw dErr;
       }
       await saveLineItems(inserted.id, data);
+      // Flight identity lives on flight_schedules (SSoT) and is read back through
+      // the FS view — push the form's edits there so the records list matches
+      // the report instead of showing the old master values.
+      const masterSync = await syncFlightMasterFromReport(data.flightScheduleId, {
+        flightNo: data.flightNo,
+        registration: data.registration,
+        route: data.route,
+        aircraftType: data.aircraftType,
+        station: isStationScoped && userStation ? userStation : data.station,
+        arrivalDate: data.arrivalDate,
+        departureDate: data.departureDate,
+        sta: data.sta,
+        std: data.std,
+      });
       // Mark the underlying flight schedule as Approved once a service report exists
       if (data.flightScheduleId) {
         await supabase
@@ -987,7 +1001,7 @@ function HandlingServiceReportContent() {
           .update({ status: "Approved" } as any)
           .eq("id", data.flightScheduleId);
       }
-      return inserted;
+      return { ...inserted, __masterSyncError: masterSync.error } as any;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
