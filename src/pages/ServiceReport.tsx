@@ -1003,11 +1003,16 @@ function HandlingServiceReportContent() {
       }
       return { ...inserted, __masterSyncError: masterSync.error } as any;
     },
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-      toast({ title: "Saved", description: "Service report added." });
+      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+      if (res?.__masterSyncError) {
+        toast({ title: "Flight details not updated", description: res.__masterSyncError, variant: "destructive" });
+      } else {
+        toast({ title: "Saved", description: "Service report added." });
+      }
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
