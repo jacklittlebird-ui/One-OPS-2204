@@ -1052,12 +1052,31 @@ function HandlingServiceReportContent() {
         if (dErr) throw dErr;
       }
       await saveLineItems(id, data);
+      // Push identity/date/time edits back to the flight schedule (SSoT) so
+      // every portal's records list shows exactly what the report shows.
+      const masterSync = await syncFlightMasterFromReport(data.flightScheduleId, {
+        flightNo: data.flightNo,
+        registration: data.registration,
+        route: data.route,
+        aircraftType: data.aircraftType,
+        station: isStationScoped && userStation ? userStation : data.station,
+        arrivalDate: data.arrivalDate,
+        departureDate: data.departureDate,
+        sta: data.sta,
+        std: data.std,
+      });
+      return { __masterSyncError: masterSync.error } as any;
     },
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-      toast({ title: "Updated", description: "Service report updated." });
+      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+      if (res?.__masterSyncError) {
+        toast({ title: "Flight details not updated", description: res.__masterSyncError, variant: "destructive" });
+      } else {
+        toast({ title: "Updated", description: "Service report updated." });
+      }
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
