@@ -9,6 +9,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveFlightMasterForWrite } from "@/lib/resolveFlightMasterForWrite";
+import { syncFlightMasterFromReport } from "@/lib/syncFlightMasterFromReport";
 import { expandFlightRef, normalizeFlightKey } from "@/lib/flightRefMatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { generateAllCharges } from "@/data/airportChargesData";
@@ -979,6 +980,20 @@ function HandlingServiceReportContent() {
         if (dErr) throw dErr;
       }
       await saveLineItems(inserted.id, data);
+      // Flight identity lives on flight_schedules (SSoT) and is read back through
+      // the FS view — push the form's edits there so the records list matches
+      // the report instead of showing the old master values.
+      const masterSync = await syncFlightMasterFromReport(data.flightScheduleId, {
+        flightNo: data.flightNo,
+        registration: data.registration,
+        route: data.route,
+        aircraftType: data.aircraftType,
+        station: isStationScoped && userStation ? userStation : data.station,
+        arrivalDate: data.arrivalDate,
+        departureDate: data.departureDate,
+        sta: data.sta,
+        std: data.std,
+      });
       // Mark the underlying flight schedule as Approved once a service report exists
       if (data.flightScheduleId) {
         await supabase
@@ -986,13 +1001,18 @@ function HandlingServiceReportContent() {
           .update({ status: "Approved" } as any)
           .eq("id", data.flightScheduleId);
       }
-      return inserted;
+      return { ...inserted, __masterSyncError: masterSync.error } as any;
     },
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-      toast({ title: "Saved", description: "Service report added." });
+      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+      if (res?.__masterSyncError) {
+        toast({ title: "Flight details not updated", description: res.__masterSyncError, variant: "destructive" });
+      } else {
+        toast({ title: "Saved", description: "Service report added." });
+      }
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -1032,12 +1052,31 @@ function HandlingServiceReportContent() {
         if (dErr) throw dErr;
       }
       await saveLineItems(id, data);
+      // Push identity/date/time edits back to the flight schedule (SSoT) so
+      // every portal's records list shows exactly what the report shows.
+      const masterSync = await syncFlightMasterFromReport(data.flightScheduleId, {
+        flightNo: data.flightNo,
+        registration: data.registration,
+        route: data.route,
+        aircraftType: data.aircraftType,
+        station: isStationScoped && userStation ? userStation : data.station,
+        arrivalDate: data.arrivalDate,
+        departureDate: data.departureDate,
+        sta: data.sta,
+        std: data.std,
+      });
+      return { __masterSyncError: masterSync.error } as any;
     },
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ["service_reports"] }); queryClient.invalidateQueries({ queryKey: ["v_service_report_with_flight"] });
       queryClient.invalidateQueries({ queryKey: ["service_report_delays"] });
       queryClient.invalidateQueries({ queryKey: ["flight_schedules"] });
-      toast({ title: "Updated", description: "Service report updated." });
+      queryClient.invalidateQueries({ queryKey: ["v_dispatch_with_flight"] });
+      if (res?.__masterSyncError) {
+        toast({ title: "Flight details not updated", description: res.__masterSyncError, variant: "destructive" });
+      } else {
+        toast({ title: "Updated", description: "Service report updated." });
+      }
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
