@@ -2241,7 +2241,7 @@ export default function SecurityServiceReportsPage() {
       ) : (
       <>
       {/* KPI Cards */}
-      <div className={`grid grid-cols-2 ${isOperationsView ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-4`}>
+      <div className={`grid grid-cols-2 ${isReceivablesView ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-4`}>
         <div className="stat-card">
           <div className="stat-card-icon bg-primary"><FileBarChart2 size={20} /></div>
           <div><div className="text-xl font-bold text-foreground">{totalReports}</div><div className="text-xs text-muted-foreground">Total Reports</div></div>
@@ -2254,7 +2254,7 @@ export default function SecurityServiceReportsPage() {
           <div className="stat-card-icon bg-warning"><Clock size={20} /></div>
           <div><div className="text-xl font-bold text-foreground">{pendingReview}</div><div className="text-xs text-muted-foreground">Pending</div></div>
         </div>
-        {!isOperationsView && (
+        {isReceivablesView && (
           <div className="stat-card">
             <div className="stat-card-icon bg-info"><DollarSign size={20} /></div>
             <div><div className="text-xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Charges</div></div>

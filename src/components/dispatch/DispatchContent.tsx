@@ -457,17 +457,15 @@ export default function DispatchContent({ serviceCategory }: DispatchContentProp
   const todayDispatches = dispatches.filter(d => d.flight_date >= dateFrom && d.flight_date <= dateTo && (!stationFilter || d.station === stationFilter));
   const completedCount = todayDispatches.filter(d => d.status === "Completed").length;
   const overtimeTotal = todayDispatches.reduce((s, d) => s + (d.overtime_hours || 0), 0);
-  const revenueTotal = todayDispatches.reduce((s, d) => s + (d.total_charge || 0), 0);
 
   return (
     <>
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card"><div className="stat-card-icon bg-primary"><Plane size={20} /></div><div><div className="text-xl font-bold text-foreground">{todayDispatches.length}</div><div className="text-xs text-muted-foreground">Dispatched</div></div></div>
         <div className="stat-card"><div className="stat-card-icon bg-success"><CheckCircle size={20} /></div><div><div className="text-xl font-bold text-foreground">{completedCount}</div><div className="text-xs text-muted-foreground">Completed</div></div></div>
         <div className="stat-card"><div className="stat-card-icon bg-warning"><AlertTriangle size={20} /></div><div><div className="text-xl font-bold text-foreground">{overtimeTotal.toFixed(1)}h</div><div className="text-xs text-muted-foreground">Overtime Hours</div></div></div>
         <div className="stat-card"><div className="stat-card-icon bg-info"><Users size={20} /></div><div><div className="text-xl font-bold text-foreground">{stationFlights.length - [...assignedFlightIds].filter(id => dispatches.find(d => d.flight_schedule_id === id && (!stationFilter || d.station === stationFilter))).length}</div><div className="text-xs text-muted-foreground">Unassigned Flights</div></div></div>
-        <div className="stat-card"><div className="stat-card-icon bg-muted"><Clock size={20} /></div><div><div className="text-xl font-bold text-foreground">${revenueTotal.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total Charges</div></div></div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
