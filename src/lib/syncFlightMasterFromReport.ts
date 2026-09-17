@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const STATION_NAME_TO_IATA: Record<string, string> = {
   cairo: "CAI",
-  alexandria: "HBE",
+  alexandria: "ALY",
   hurghada: "HRG",
   "sharm el sheikh": "SSH",
   luxor: "LXR",

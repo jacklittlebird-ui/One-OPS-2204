@@ -38,7 +38,8 @@ const stationOptions = [
 
 const iataToStationName: Record<string, string> = {
   "CAI": "Cairo",
-  "HBE": "Alexandria",
+  "ALY": "Alexandria",
+  "HBE": "Alexandria", // legacy code, kept for old records
   "HRG": "Hurghada",
   "SSH": "Sharm El Sheikh",
   "LXR": "Luxor",
