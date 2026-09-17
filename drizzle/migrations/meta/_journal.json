@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789635220641,
+      "tag": "0000_clear_orphan_dispatch_invoice_links",
+      "breakpoints": true
+    }
+  ]
+}
