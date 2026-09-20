@@ -1655,6 +1655,37 @@ export default function SecurityServiceReportsPage() {
               .eq("id", linkedFsId);
             if (fallbackFsErr) throw fallbackFsErr;
           } else if (fsErr) throw fsErr;
+
+          // ── Persistence guard ───────────────────────────────────────────
+          // flight_schedules is the single source of truth for STA/STD/REG/
+          // route/dates, and every record list reads it. If the update above
+          // silently affected no rows (row-level protection, locked flight,
+          // permission scope), the task sheet would keep the new value while
+          // the record shows the old one. Verify and tell the user instead of
+          // losing the edit quietly.
+          const { data: fsAfter } = await supabase
+            .from("flight_schedules")
+            .select("sta,std,registration,route,arrival_date,departure_date")
+            .eq("id", linkedFsId)
+            .maybeSingle();
+          if (fsAfter) {
+            const same = (a: any, b: any) =>
+              String(a ?? "").trim().toUpperCase() === String(b ?? "").trim().toUpperCase();
+            const drifted: string[] = [];
+            if (!same(fsAfter.sta, fsUpdate.sta)) drifted.push("STA");
+            if (!same(fsAfter.std, fsUpdate.std)) drifted.push("STD");
+            if (!same(fsAfter.registration, fsUpdate.registration)) drifted.push("Registration");
+            if (!same(fsAfter.route, fsUpdate.route)) drifted.push("Route");
+            if (!same(fsAfter.arrival_date, fsUpdate.arrival_date)) drifted.push("Arrival Date");
+            if (!same(fsAfter.departure_date, fsUpdate.departure_date)) drifted.push("Departure Date");
+            if (drifted.length) {
+              toast({
+                variant: "destructive",
+                title: "Flight details not saved",
+                description: `${drifted.join(", ")} could not be changed on this flight (it may be approved or already invoiced). The record still shows the previous value.`,
+              });
+            }
+          }
         }
 
         if (serviceTypeChanged) {
