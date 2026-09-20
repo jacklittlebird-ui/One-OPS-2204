@@ -49,19 +49,26 @@ function pick(...candidates: any[]): string | null {
  */
 export function getMasterFields(row: AnyRow, fs?: AnyRow): FlightMasterFields {
   const ts = (row?.task_sheet_data ?? {}) as Record<string, any>;
+  // Rows read from `v_dispatch_with_flight` carry the authoritative
+  // flight_schedules values as flat `fs_*` columns instead of a nested
+  // `flight_schedules` object. Treat them with the same (highest) priority as
+  // a joined FS row — otherwise the frozen task_sheet_data snapshot wins and
+  // forms show stale times while list records show the real schedule.
+  const f = fs ?? {};
+  const r = row ?? {};
   return {
-    flight_no:      pick(fs?.flight_no, row?.flight_no, ts.flight_no),
-    registration:   pick(fs?.registration, row?.registration, ts.registration),
-    aircraft_type:  pick(fs?.aircraft_type, row?.aircraft_type, ts.aircraft_type),
-    route:          pick(fs?.route, row?.route, ts.route),
-    sta:            pick(fs?.sta, row?.sta, ts.sta),
-    std:            pick(fs?.std, row?.std, ts.std),
-    skd_type:       pick(fs?.skd_type, row?.skd_type, ts.skd_type, ts.flight_type),
-    clearance_type: pick(fs?.clearance_type, row?.clearance_type, row?.service_type),
-    arrival_date:   pick(fs?.arrival_date, row?.arrival_date, ts.arrival_date, row?.flight_date),
-    departure_date: pick(fs?.departure_date, row?.departure_date, ts.departure_date),
-    authority:      pick(fs?.authority, row?.authority, row?.station),
-    airline_id:     pick(fs?.airline_id, row?.airline_id),
+    flight_no:      pick(f.flight_no, r.fs_flight_no, r.flight_no, ts.flight_no),
+    registration:   pick(f.registration, r.fs_registration, r.registration, ts.registration),
+    aircraft_type:  pick(f.aircraft_type, r.fs_aircraft_type, r.aircraft_type, ts.aircraft_type),
+    route:          pick(f.route, r.fs_route, r.route, ts.route),
+    sta:            pick(f.sta, r.fs_sta, r.sta, ts.sta),
+    std:            pick(f.std, r.fs_std, r.std, ts.std),
+    skd_type:       pick(f.skd_type, r.fs_skd_type, r.skd_type, ts.skd_type, ts.flight_type),
+    clearance_type: pick(f.clearance_type, r.fs_clearance_type, r.clearance_type, r.service_type),
+    arrival_date:   pick(f.arrival_date, r.fs_arrival_date, r.arrival_date, ts.arrival_date, r.flight_date),
+    departure_date: pick(f.departure_date, r.fs_departure_date, r.departure_date, ts.departure_date),
+    authority:      pick(f.authority, r.fs_authority, r.authority, r.station),
+    airline_id:     pick(f.airline_id, r.fs_airline_id, r.airline_id),
   };
 }
 
