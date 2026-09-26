@@ -1,37 +1,22 @@
-name: Force Sync from linkqero
-
-
-
+name: Force Sync from linkaero
 
 on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
-
-
-
 permissions:
   contents: write
-
-
-
 
 jobs:
   sync:
     runs-on: ubuntu-latest
 
-
-
-
     steps:
-      - name: Checkout target repo (One-OPS-2204)
-
-
+      - name: Checkout target repo
         uses: actions/checkout@v4
-
-
-
+        with:
+          fetch-depth: 0
 
       - name: Configure Git
         run: |
@@ -43,8 +28,19 @@ jobs:
           git remote remove lovable || true
           git remote add lovable https://github.com/jacklittlebird-ui/linkaero.git
           git fetch lovable
+
+          # Save the target repo's workflow
+          cp .github/workflows/main.yml /tmp/main.yml
+
+          # Force sync everything from the source repo
           git reset --hard lovable/main
+
+          # Restore the target repo's workflow
+          mkdir -p .github/workflows
+          cp /tmp/main.yml .github/workflows/main.yml
 
       - name: Push force update to main
         run: |
+          git add -A
+          git commit -m "Force sync from linkaero" || echo "No changes to commit"
           git push origin main --force
