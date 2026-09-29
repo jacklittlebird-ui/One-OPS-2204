@@ -133,10 +133,11 @@ export function useSupabaseTable<T extends Record<string, any>>(
       }
 
       const PAGE_SIZE = 1000;
-      let allData: any[] = [];
-      let from = 0;
-      let hasMore = true;
-      while (hasMore) {
+      // Fetch pages in parallel batches instead of one-by-one. Large tables
+      // (15k+ flights) previously needed ~16 sequential round-trips, which
+      // left pages like the Clearance portal stuck on a spinner.
+      const CONCURRENCY = 6;
+      const fetchPage = async (from: number) => {
         let q = supabase
           .from(table)
           .select(selectCols)
@@ -153,11 +154,8 @@ export function useSupabaseTable<T extends Record<string, any>>(
           }
         }
         if (dateFloor && dateCol) {
-          // For flight_schedules / service_reports a row can be departure-only
-          // (arrival_date IS NULL) or arrival-only (departure_date IS NULL).
-          // A plain gte on arrival_date silently drops departure-only flights
-          // — which caused Station-returned departure flights to vanish from
-          // the Clearance portal. Match on EITHER date being inside the window.
+          // Match on EITHER date being inside the window for tables that can
+          // be departure-only or arrival-only.
           if (table === "flight_schedules" || table === "service_reports") {
             q = (q as any).or(`arrival_date.gte.${dateFloor},departure_date.gte.${dateFloor}`);
           } else {
@@ -166,9 +164,28 @@ export function useSupabaseTable<T extends Record<string, any>>(
         }
         const { data, error } = await q;
         if (error) throw error;
-        allData = allData.concat(data || []);
-        hasMore = (data?.length || 0) === PAGE_SIZE;
-        from += PAGE_SIZE;
+        return (data || []) as any[];
+      };
+
+      const allData: any[] = [];
+      const seen = new Set<any>();
+      let batchStart = 0;
+      let done = false;
+      while (!done) {
+        const offsets = Array.from({ length: CONCURRENCY }, (_, i) => batchStart + i * PAGE_SIZE);
+        const pages = await Promise.all(offsets.map(fetchPage));
+        for (const rows of pages) {
+          for (const r of rows) {
+            const k = r?.id;
+            if (k != null) {
+              if (seen.has(k)) continue;
+              seen.add(k);
+            }
+            allData.push(r);
+          }
+          if (rows.length < PAGE_SIZE) { done = true; break; }
+        }
+        batchStart += CONCURRENCY * PAGE_SIZE;
       }
       return allData as T[];
     },
