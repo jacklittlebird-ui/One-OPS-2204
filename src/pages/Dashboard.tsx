@@ -82,7 +82,7 @@ function ClearanceDashboard() {
     queryKey: ["dash_flight_schedules"],
     queryFn: async () => {
       const { data } = await supabase.from("flight_schedules")
-        .select("id,flight_no,operator,route,status,valid_to,passengers,requested_date,created_at,authority")
+        .select("id,flight_no,operator:handling_agent,airline_id,route,status,valid_to,passengers,requested_date,created_at,authority")
         .order("created_at", { ascending: false });
       return data || [];
     },
