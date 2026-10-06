@@ -1022,13 +1022,17 @@ export default function SecurityServiceReportsPage() {
   const allServiceTypes = useMemo(() => [...new Set(dispatches.map(d => d.service_type))].sort(), [dispatches]);
   const allAirlines = useMemo(() => {
     const set = new Set<string>();
-    mergedRows.forEach(r => { if (r.airline) set.add(r.airline); });
+    dispatches.forEach(r => { if (r.airline) set.add(r.airline); });
+    securityFlights.forEach((f: any) => {
+      const name = f.airlines?.name || f.handling_agent;
+      if (name) set.add(name);
+    });
     pendingApprovalFlights.forEach((f: any) => {
       const name = f.airlines?.name || f.handling_agent;
       if (name) set.add(name);
     });
     return [...set].sort((a, b) => a.localeCompare(b));
-  }, [mergedRows, pendingApprovalFlights]);
+  }, [dispatches, securityFlights, pendingApprovalFlights]);
 
   // Security tab shows ONLY flights with dispatch_assignments.
   // Clearance-only security flights (no dispatch yet) are NOT shown here.
