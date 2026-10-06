@@ -49,10 +49,14 @@ interface Props {
 }
 
 export function AirFranceHeader() {
-  return <div className="mb-4 flex items-start justify-between gap-4">
-    <img src={linkLogo.url} alt="Link Aero" className="h-24 w-auto object-contain" />
-    <img src={airFranceLogo.url} alt="Air France Security Services" className="mt-2 h-auto w-48 max-w-[50%] object-contain" />
-  </div>;
+  return <>
+    <div className="flex items-start justify-between gap-4">
+      <img src={linkLogo.url} alt="Link Aero" className="h-24 w-auto object-contain" />
+      <img src={airFranceLogo.url} alt="Air France Security Services" className="mt-2 h-auto w-48 max-w-[50%] object-contain" />
+    </div>
+    <h3 className="mt-2 text-center text-xl font-bold text-foreground">AF Staff Distribution</h3>
+    <div className="mt-4" />
+  </>;
 }
 
 export default function AirFranceTaskSheet({ sheet, flight, update, updateFlight, dateDisplay, dateInput, timeInput, dualTimeInput }: Props) {
