@@ -895,6 +895,91 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         ${rowsHtml}</table>`;
     };
 
+    if (printIsEthiopian) {
+      const ethObserver = (title: string, rows: [string, string][], showStaff = true) => `
+<table class="eth-block">
+  <tr><th colspan="2" class="eth-section">${title}</th></tr>
+  ${showStaff ? `<tr><td colspan="2" class="eth-staff">Staff Name</td></tr>` : ""}
+  ${rows.map(([label, val]) => `<tr><td class="eth-index">${label}</td><td class="eth-value">${val || ""}</td></tr>`).join("")}
+</table>`;
+      const ethHtml = `<!DOCTYPE html><html><head>
+<title>ETH Security Task Sheet - ${flightNoVal}</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:#000; font-family: Georgia, 'Times New Roman', serif; }
+  .page { width:210mm; min-height:297mm; margin:0 auto; padding:15mm 11mm 16mm; }
+  .logos { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10mm; }
+  .link-logo { width:29mm; height:auto; }
+  .eth-logo { width:55mm; height:auto; margin-top:5mm; }
+  .title { text-align:center; font-size:18pt; font-weight:900; text-transform:uppercase; margin-bottom:7mm; }
+  table { width:100%; border-collapse:collapse; table-layout:fixed; }
+  th, td { border:1px dotted #333; padding:3px 5px; font-size:14pt; line-height:1.08; vertical-align:middle; }
+  th, .blue { background:#c9dcf2; font-weight:900; }
+  .main th { text-align:left; }
+  .center { text-align:center; }
+  .field { min-height:21px; font-weight:700; }
+  .time-label { width:12mm; background:#c9dcf2; font-weight:900; }
+  .time-value { width:35mm; font-weight:900; }
+  .check-cell { font-weight:900; text-align:center; white-space:nowrap; }
+  .box { display:inline-block; width:15px; height:15px; border:2px solid #000; margin-left:6px; vertical-align:-1px; }
+  .box.checked::after { content:'✓'; display:block; font-size:15px; line-height:12px; text-align:center; }
+  .eth-block { margin-top:3.3mm; }
+  .eth-section { text-align:left; background:#c9dcf2; font-size:15pt; }
+  .eth-staff { text-align:center; font-weight:900; font-size:15pt; height:8mm; }
+  .eth-index { width:7mm; font-weight:900; text-align:center; }
+  .eth-value { height:7mm; font-weight:700; }
+  .important { margin:1.2mm 0 3.2mm; font-size:12.5pt; }
+  .important b { color:#c00000; }
+  .red-label { color:#c00000; font-weight:900; font-size:15pt; width:65mm; }
+  .orange { background:#e97817; color:#fff; font-weight:900; font-size:16pt; }
+  .footer { display:flex; justify-content:space-between; margin-top:21mm; padding:0 7mm; font-family: Arial, sans-serif; font-size:11pt; }
+  @media print { .page { margin:0; } @page { size:A4 portrait; margin:0; } }
+</style>
+</head><body><div class="page">
+  <div class="logos">
+    <img class="link-logo" src="${linkAeroTaskLogo.url}" alt="Link Aero" />
+    <img class="eth-logo" src="${ethiopianAirlinesLogo.url}" alt="Ethiopian" />
+  </div>
+  <div class="title">Ethiopian Airlines Security Task Sheet</div>
+  <table class="main">
+    <tr><th colspan="2">Flight Number</th><th colspan="2" class="center">DATE</th><th>Registration</th><th colspan="3" class="center">Route</th></tr>
+    <tr><td colspan="2" class="field center">${flightNoVal}</td><td colspan="2" class="field center">${flightDate}</td><td class="field center">${reg}</td><td colspan="3" class="field center">${rt}</td></tr>
+    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
+    <tr><td class="time-label">STD</td><td class="time-value">${stdVal}</td><td class="time-label">ATD</td><td class="time-value center">${atdVal || "/"}</td><td class="blue">Delay</td><td colspan="3" class="field">${v.delay || ""}</td></tr>
+  </table>
+
+  ${ethObserver("Cargo Observer", [["1", v.cargo_observer_1]])}
+  ${ethObserver("Hold Baggage Observer", [["1", v.hold_baggage_observer_1], ["2", v.hold_baggage_observer_2]])}
+  ${ethObserver("Aircraft Door Observer", [["1", v.aircraft_door_observer_1], ["2", v.aircraft_door_observer_2]], false)}
+  <div class="important"><b>Important//</b>Arrive at gate 20 minutes prior to aircraft arrival.</div>
+  ${ethObserver("Aircraft Ramp Observer", [["1", v.aircraft_ramp_observer_1], ["2", v.aircraft_ramp_observer_2]])}
+
+  <table class="eth-block">
+    <tr><th colspan="2" class="eth-section">Baggage Information:</th></tr>
+    <tr><td class="red-label">Total Baggage On BRS:</td><td class="eth-value">${v.total_baggage_brs || ""}</td></tr>
+    <tr><td class="red-label">Total Baggage Accepted:</td><td class="eth-value">${v.total_baggage_accepted || ""}</td></tr>
+    <tr><td class="red-label">Missing Baggage On BRS:</td><td class="eth-value">${v.missing_baggage_brs || ""}</td></tr>
+    <tr><td class="red-label">00 BAGS LOADED IN H5</td><td class="eth-value">${v.baggage_loaded_h5 || ""}</td></tr>
+  </table>
+
+  <table class="eth-block">
+    <tr><th colspan="2" class="eth-section">CARGO AND BAGGAGE ACCOMPANIED BY:</th></tr>
+    <tr><td colspan="2" class="eth-staff">Staff Name</td></tr>
+    <tr><td style="width:36mm;text-align:center;font-weight:900;">Cargo</td><td class="eth-value">${v.cargo_accompanied || ""}</td></tr>
+    <tr><td style="text-align:center;font-weight:900;">Baggage</td><td class="eth-value">${v.baggage_accompanied || ""}</td></tr>
+  </table>
+
+  <table class="eth-block"><tr><th class="orange">Ethiopian Airlines&nbsp; (Duty Manager)</th></tr><tr><td class="eth-value">${v.security_supervisor || ""}</td></tr></table>
+  <div class="footer"><span>ETH Security Task Sheet</span><span>V.05 22Jan2023</span></div>
+</div></body></html>`;
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return;
+      printWindow.document.write(ethHtml);
+      printWindow.document.close();
+      setTimeout(() => { printWindow.print(); printWindow.close(); }, 400);
+      return;
+    }
+
     const html = `<!DOCTYPE html><html><head>
 <title>${airlineName} Security Task Sheet - ${flightNoVal}</title>
 <style>
