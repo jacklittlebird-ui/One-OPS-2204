@@ -325,9 +325,11 @@ const selectCls = "w-full px-3 py-1.5 text-sm border rounded bg-card text-foregr
 const RATE_SERVICE_TYPES = ["Arrival", "Departure", "Turnaround", "Night Stop", "ADHOC", "Overtime", "Staffing"];
 const SERVICE_SCOPES_LIST = ["Ad-Hoc", "Arrival Only", "Departure Only", "Full Service", "Maintenance", "Supervision Only", "Turnaround"];
 
-const ContractFormModal = ({ data, onChange, onCancel, onSave, isSaving, title, serviceRates, onServiceRatesChange }: any) => {
+const ContractFormModal = ({ data, onChange, onCancel, onSave, isSaving, title, serviceRates: serviceRatesProp, onServiceRatesChange }: any) => {
+  const serviceRates: any[] = Array.isArray(serviceRatesProp) ? serviceRatesProp : [];
   const set = (key: string, val: any) => onChange({ ...data, [key]: val });
-  const { data: airlines } = useAirlinesRef();
+  const { data: airlinesData } = useAirlinesRef();
+  const airlines = airlinesData ?? [];
 
   const addRate = () => {
     onServiceRatesChange([...serviceRates, { service_type: "", rate: 0, staff_count: 0, duration_hours: 0 }]);
