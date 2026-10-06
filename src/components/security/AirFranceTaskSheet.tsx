@@ -32,7 +32,7 @@ export const AIR_FRANCE_SECTIONS = [
 export type AirFranceField = typeof AIR_FRANCE_SECTIONS[number]["fields"][number][0];
 export type AirFranceData = Record<AirFranceField, string>;
 export const emptyAirFranceData = (): AirFranceData => Object.fromEntries(
-  AIR_FRANCE_SECTIONS.flatMap(section => section.fields.map(([key]) => [key, ""])),
+  AIR_FRANCE_SECTIONS.flatMap(section => Array.from(section.fields as readonly (readonly [AirFranceField, string])[]).map(field => [field[0], ""])),
 ) as AirFranceData;
 
 const boxedField = "w-full min-w-0 rounded-sm border border-input bg-card px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-default";
