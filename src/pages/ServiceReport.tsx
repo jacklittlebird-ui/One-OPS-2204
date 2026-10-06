@@ -23,6 +23,7 @@ import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
 import {
+import { airlineColor } from "@/lib/airlineColors";
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
 } from "@/components/serviceReport/ReportFormTypes";
