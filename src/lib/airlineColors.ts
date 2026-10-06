@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 // Deterministic per-airline display colors for record tables.
 // Same airline always gets the same color in every portal; readable on dark backgrounds.
 const PALETTE = [
@@ -27,7 +29,7 @@ export function airlineColor(name?: string | null): string {
 }
 
 // Solid badge style: filled airline-colored pill with dark text for readability.
-export function airlineBadgeStyle(name?: string | null): React.CSSProperties | undefined {
+export function airlineBadgeStyle(name?: string | null): CSSProperties | undefined {
   const c = airlineColor(name);
   if (!c) return undefined;
   return { backgroundColor: c, color: "#0F172A", borderColor: c };
