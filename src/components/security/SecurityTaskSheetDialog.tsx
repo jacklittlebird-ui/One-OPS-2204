@@ -896,6 +896,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     };
 
     if (printIsEthiopian) {
+      const linkLogoUrl = linkAeroTaskLogo.url.startsWith("/") ? `${window.location.origin}${linkAeroTaskLogo.url}` : linkAeroTaskLogo.url;
+      const ethiopianLogoUrl = ethiopianAirlinesLogo.url.startsWith("/") ? `${window.location.origin}${ethiopianAirlinesLogo.url}` : ethiopianAirlinesLogo.url;
       const ethObserver = (title: string, rows: [string, string][], showStaff = true) => `
 <table class="eth-block">
   <tr><th colspan="2" class="eth-section">${title}</th></tr>
@@ -937,8 +939,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 </style>
 </head><body><div class="page">
   <div class="logos">
-    <img class="link-logo" src="${linkAeroTaskLogo.url}" alt="Link Aero" />
-    <img class="eth-logo" src="${ethiopianAirlinesLogo.url}" alt="Ethiopian" />
+    <img class="link-logo" src="${linkLogoUrl}" alt="Link Aero" />
+    <img class="eth-logo" src="${ethiopianLogoUrl}" alt="Ethiopian" />
   </div>
   <div class="title">Ethiopian Airlines Security Task Sheet</div>
   <table class="main">
