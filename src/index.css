@@ -4,6 +4,11 @@
 
 @layer base {
   :root {
+    --document-paper: 0 0% 100%;
+    --document-ink: 0 0% 0%;
+    --document-border: 0 0% 30%;
+    --document-heading: 212 45% 25%;
+    --document-briefing: 191 43% 81%;
     --background: 220 20% 97%;
     --foreground: 222 47% 11%;
 
