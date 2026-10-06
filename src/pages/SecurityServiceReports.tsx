@@ -381,6 +381,7 @@ export default function SecurityServiceReportsPage() {
   const _initParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const [search, setSearch] = useState(_initParams.get("search") || "");
   const [stationFilter, setStationFilter] = useState(_initParams.get("station") || "All Stations");
+  const [airlineFilter, setAirlineFilter] = useState(_initParams.get("airline") || "All Airlines");
   const [statusFilter, setStatusFilter] = useState("All");
   const [stepFilter, setStepFilter] = useState("All Steps");
   const [serviceFilter, setServiceFilter] = useState(_initParams.get("type") || "All Types");
@@ -410,6 +411,7 @@ export default function SecurityServiceReportsPage() {
   /* Pending Approval tab filters */
   const [pendingSearch, setPendingSearch] = useState("");
   const [pendingStationFilter, setPendingStationFilter] = useState("All Stations");
+  const [pendingAirlineFilter, setPendingAirlineFilter] = useState("All Airlines");
   const [pendingTypeFilter, setPendingTypeFilter] = useState("All Types");
   const [pendingStatusFilter, setPendingStatusFilter] = useState("All Statuses");
   const [pendingDateFrom, setPendingDateFrom] = useState("");
@@ -1018,6 +1020,19 @@ export default function SecurityServiceReportsPage() {
     return [...set].sort();
   }, [dispatches, dbAirports]);
   const allServiceTypes = useMemo(() => [...new Set(dispatches.map(d => d.service_type))].sort(), [dispatches]);
+  const allAirlines = useMemo(() => {
+    const set = new Set<string>();
+    dispatches.forEach(r => { if (r.airline) set.add(r.airline); });
+    securityFlights.forEach((f: any) => {
+      const name = f.airlines?.name || f.handling_agent;
+      if (name) set.add(name);
+    });
+    pendingApprovalFlights.forEach((f: any) => {
+      const name = f.airlines?.name || f.handling_agent;
+      if (name) set.add(name);
+    });
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [dispatches, securityFlights, pendingApprovalFlights]);
 
   // Security tab shows ONLY flights with dispatch_assignments.
   // Clearance-only security flights (no dispatch yet) are NOT shown here.
@@ -1103,6 +1118,7 @@ export default function SecurityServiceReportsPage() {
       rows = rows.filter(r => set.has(r.id));
     }
     if (stationFilter !== "All Stations") rows = rows.filter(r => r.station === stationFilter);
+    if (airlineFilter !== "All Airlines") rows = rows.filter(r => r.airline === airlineFilter);
     if (statusFilter !== "All") rows = rows.filter(r => getWorkflowDispatchStatus(r) === statusFilter);
     if (serviceFilter !== "All Types") rows = rows.filter(r => r.service_type === serviceFilter);
     if (stepFilter !== "All Steps") {
@@ -1168,7 +1184,7 @@ export default function SecurityServiceReportsPage() {
       }
       return (a.flight_no || "").localeCompare(b.flight_no || "") || (a.id || "").localeCompare(b.id || "");
     });
-  }, [mergedRows, stationFilter, statusFilter, stepFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter, invoiceStatusByFlight, flightStatusById, flightCreatedViaById, activeChannel]);
+  }, [mergedRows, stationFilter, airlineFilter, statusFilter, stepFilter, serviceFilter, dateFrom, dateTo, search, isOperationsView, isStationView, isReceivablesView, stationTab, opsTab, flightDetailsById, reviewIdsFilter, invoiceStatusByFlight, flightStatusById, flightCreatedViaById, activeChannel]);
 
   
   
@@ -1186,6 +1202,7 @@ export default function SecurityServiceReportsPage() {
   const filteredPendingFlights = useMemo(() => {
     let rows = [...pendingApprovalFlights];
     if (pendingStationFilter !== "All Stations") rows = rows.filter((f: any) => f.authority === pendingStationFilter);
+    if (pendingAirlineFilter !== "All Airlines") rows = rows.filter((f: any) => (f.airlines?.name || f.handling_agent || "") === pendingAirlineFilter);
     if (pendingTypeFilter !== "All Types") rows = rows.filter((f: any) => f.clearance_type === pendingTypeFilter);
     if (pendingStatusFilter !== "All Statuses") rows = rows.filter((f: any) => f.status === pendingStatusFilter);
     if (pendingDateFrom) rows = rows.filter((f: any) => (f.arrival_date || f.departure_date || f.flight_date || "") >= pendingDateFrom);
@@ -1221,10 +1238,10 @@ export default function SecurityServiceReportsPage() {
       return (a.id || "").localeCompare(b.id || "");
     });
     return rows;
-  }, [pendingApprovalFlights, pendingStationFilter, pendingTypeFilter, pendingStatusFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
+  }, [pendingApprovalFlights, pendingStationFilter, pendingAirlineFilter, pendingTypeFilter, pendingStatusFilter, pendingDateFrom, pendingDateTo, pendingSearch]);
 
-  const { pageRows: pagePending, ...pagPending } = usePagination(filteredPendingFlights, { resetKey: [pendingSearch, pendingStationFilter, pendingTypeFilter, pendingStatusFilter, pendingDateFrom, pendingDateTo] });
-  const { pageRows: pageData, ...pagMain } = usePagination(filtered, { resetKey: [filtered.length] });
+  const { pageRows: pagePending, ...pagPending } = usePagination(filteredPendingFlights, { resetKey: [pendingSearch, pendingStationFilter, pendingAirlineFilter, pendingTypeFilter, pendingStatusFilter, pendingDateFrom, pendingDateTo] });
+  const { pageRows: pageData, ...pagMain } = usePagination(filtered, { resetKey: [filtered.length, airlineFilter, stationFilter, serviceFilter, statusFilter, stepFilter, dateFrom, dateTo, search] });
 
 
 
@@ -2176,6 +2193,10 @@ export default function SecurityServiceReportsPage() {
                 <option>All Stations</option>
                 {allStations.map(s => <option key={s}>{s}</option>)}
               </select>
+              <select value={pendingAirlineFilter} onChange={e => setPendingAirlineFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+                <option>All Airlines</option>
+                {allAirlines.map(a => <option key={a}>{a}</option>)}
+              </select>
               <select value={pendingTypeFilter} onChange={e => setPendingTypeFilter(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
                 <option>All Types</option>
                 {[...new Set(pendingApprovalFlights.map((f: any) => f.clearance_type).filter(Boolean))].sort().map((t: string) => <option key={t} value={t}>{t}</option>)}
@@ -2186,9 +2207,9 @@ export default function SecurityServiceReportsPage() {
               </select>
               <input type="date" value={pendingDateFrom} onChange={e => setPendingDateFrom(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="From" />
               <input type="date" value={pendingDateTo} onChange={e => setPendingDateTo(e.target.value)} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground" title="To" />
-              {(pendingSearch || pendingStationFilter !== "All Stations" || pendingTypeFilter !== "All Types" || pendingStatusFilter !== "All Statuses" || pendingDateFrom || pendingDateTo) && (
+              {(pendingSearch || pendingStationFilter !== "All Stations" || pendingAirlineFilter !== "All Airlines" || pendingTypeFilter !== "All Types" || pendingStatusFilter !== "All Statuses" || pendingDateFrom || pendingDateTo) && (
                 <button
-                  onClick={() => { setPendingSearch(""); setPendingStationFilter("All Stations"); setPendingTypeFilter("All Types"); setPendingStatusFilter("All Statuses"); setPendingDateFrom(""); setPendingDateTo(""); }}
+                  onClick={() => { setPendingSearch(""); setPendingStationFilter("All Stations"); setPendingAirlineFilter("All Airlines"); setPendingTypeFilter("All Types"); setPendingStatusFilter("All Statuses"); setPendingDateFrom(""); setPendingDateTo(""); }}
                   className="toolbar-btn-outline text-xs"
                 >
                   <X size={12} /> Clear
@@ -2350,6 +2371,10 @@ export default function SecurityServiceReportsPage() {
           <select value={stationFilter} onChange={e => { setStationFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Stations</option>
             {allStations.map(s => <option key={s}>{s}</option>)}
+          </select>
+          <select value={airlineFilter} onChange={e => { setAirlineFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
+            <option>All Airlines</option>
+            {allAirlines.map(a => <option key={a}>{a}</option>)}
           </select>
           <select value={serviceFilter} onChange={e => { setServiceFilter(e.target.value);  }} className="text-sm border rounded px-2 py-1.5 bg-card text-foreground">
             <option>All Types</option>
