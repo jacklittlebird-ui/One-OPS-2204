@@ -34,7 +34,7 @@ import { dedupeDispatchRows, resolveBillingDate, shiftDateStr } from "@/lib/secu
 import { snapshotBeforeSave, verifyAfterSave } from "@/lib/phase3WriteCycleVerifier";
 import { resolveDownloadFields } from "@/lib/securityDownloadFields";
 import { parseDeletionRequests } from "@/lib/statusRouting";
-import { airlineColor } from "@/lib/airlineColors";
+import { airlineBadgeStyle } from "@/lib/airlineColors";
 
 
 
@@ -2252,7 +2252,9 @@ export default function SecurityServiceReportsPage() {
                     <tr key={f.id} className="data-table-row">
                       <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagPending.start + i + 1}</td>
                       <td className="px-3 py-2.5 font-semibold text-foreground">{d.station || f.authority || "—"}</td>
-                      <td className="px-3 py-2.5 font-semibold" style={(() => { const c = airlineColor(d.airline || f.airlines?.name || f.handling_agent); return c ? { color: c } : undefined; })()}>{d.airline || f.airlines?.name || f.handling_agent || "—"}</td>
+                      <td className="px-3 py-2.5">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" style={airlineBadgeStyle(d.airline || f.airlines?.name || f.handling_agent)}>{d.airline || f.airlines?.name || f.handling_agent || "—"}</span>
+                      </td>
                       <td className="px-3 py-2.5 font-mono text-xs text-foreground">{d.flightNo || f.flight_no || "—"}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.registration || f.registration || "—"}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.aircraftType || f.aircraft_type || "—"}</td>
@@ -2693,7 +2695,9 @@ export default function SecurityServiceReportsPage() {
                         )}
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{pagMain.start + i + 1}</td>
                         <td className="px-3 py-2.5 font-semibold text-foreground">{r.station}</td>
-                        <td className="px-3 py-2.5 font-semibold" style={(() => { const c = airlineColor(r.airline); return c ? { color: c } : undefined; })()}>{r.airline || "—"}</td>
+                        <td className="px-3 py-2.5">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" style={airlineBadgeStyle(r.airline)}>{r.airline || "—"}</span>
+                        </td>
                         <td className="px-3 py-2.5 font-mono text-xs text-foreground">
                           <div className="flex flex-col gap-0.5">
                             <span>{flightNo || "—"}</span>

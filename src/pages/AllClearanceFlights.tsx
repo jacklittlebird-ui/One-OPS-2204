@@ -13,7 +13,7 @@ import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes
 import { getTypeBadgeClass } from "@/lib/typeColors";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { fetchSecurityFlights } from "@/lib/securityFlightsQuery";
-import { airlineColor } from "@/lib/airlineColors";
+import { airlineBadgeStyle } from "@/lib/airlineColors";
 
 interface AllClearanceFlightsPageProps {
   /** When true, only Security clearance types are shown (Operations security view). */
@@ -233,8 +233,8 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
                   <tr key={f.id} className="border-t hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-2 font-mono text-[11px] text-foreground whitespace-nowrap">{f.permit_no || "—"}</td>
                     <td className="px-3 py-2 font-semibold text-foreground text-xs whitespace-nowrap">{f.flight_no || "—"}</td>
-                    <td className="px-3 py-2 font-semibold text-xs whitespace-nowrap" style={(() => { const c = airline ? airlineColor(airline.name) : ""; return c ? { color: c } : undefined; })()}>
-                      {airline ? `${airline.iata ? airline.iata + " · " : ""}${airline.name}` : "—"}
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      {airline ? <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" style={airlineBadgeStyle(airline.name)}>{airline.iata ? `${airline.iata} · ${airline.name}` : airline.name}</span> : "—"}
                     </td>
                     <td className="px-3 py-2 text-foreground text-xs whitespace-nowrap">{f.aircraft_type || "—"}</td>
                     <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground whitespace-nowrap">{f.registration || "—"}</td>
