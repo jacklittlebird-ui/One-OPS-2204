@@ -207,6 +207,10 @@ export const RECEIVABLES_REVIEWER = "Receivables";
 const isReceivablesReviewer = (value: unknown) =>
   /receiv|acc\s*rec|accrec/i.test(String(value || ""));
 
+const isEthiopianAirline = (value: unknown) => /ethiopian/i.test(String(value || ""));
+const getSecurityFlightTypeLabel = (airline: unknown) =>
+  isEthiopianAirline(airline) ? "FLIGHT TYPE" : "SKD TYPE";
+
 
 const hasSavedSecurityCharges = (row: { review_status?: string | null; reviewed_by?: string | null; charges_saved_at?: string | null; invoiced_at?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
   // Step 4 (Receivables) only completes when Receivables explicitly saves the
@@ -1420,7 +1424,7 @@ export default function SecurityServiceReportsPage() {
       std: taskSheet.std,
       arrival_date: normalizedDates.arrivalDate || undefined,
       departure_date: normalizedDates.departureDate || undefined,
-      skd_type: taskSheet.flight_type,
+      skd_type: isEthiopianAirline(row.airline) ? (flightDetailsById.get(linkedFsId)?.skd_type || undefined) : taskSheet.flight_type,
       clearance_type: row.service_type,
       flight_no: row.flight_no,
     } as const;
@@ -1531,7 +1535,7 @@ export default function SecurityServiceReportsPage() {
         if (taskSheet.aircraft_type !== undefined) fsSync.aircraft_type = taskSheet.aircraft_type || "";
         if (taskSheet.sta !== undefined) fsSync.sta = taskSheet.sta || "";
         if (taskSheet.std !== undefined) fsSync.std = taskSheet.std || "";
-        if (taskSheet.flight_type) fsSync.skd_type = taskSheet.flight_type;
+        if (!isEthiopianAirline(row.airline) && taskSheet.flight_type) fsSync.skd_type = taskSheet.flight_type;
         if (row.service_type) fsSync.clearance_type = row.service_type;
         // Station-scoped users: force authority to the user's station so the
         // flight appears under that station in every portal's station filter.
@@ -1559,7 +1563,7 @@ export default function SecurityServiceReportsPage() {
           route: taskSheet.route || "",
           sta: taskSheet.sta || "",
           std: taskSheet.std || "",
-          skd_type: taskSheet.flight_type || "",
+          skd_type: isEthiopianAirline(row.airline) ? "" : (taskSheet.flight_type || ""),
           clearance_type: row.service_type || "Arrival Security",
           status: "Approved" as const,
           authority: row.station || "CAI",
@@ -1626,7 +1630,7 @@ export default function SecurityServiceReportsPage() {
             aircraft_type: taskSheet.aircraft_type || "",
             sta: taskSheet.sta || "",
             std: taskSheet.std || "",
-            skd_type: taskSheet.flight_type || "",
+            skd_type: isEthiopianAirline(row.airline) ? (flightDetailsById.get(linkedFsId)?.skd_type || "") : (taskSheet.flight_type || ""),
             arrival_date: normalizedDates.arrivalDate || null,
             departure_date: normalizedDates.departureDate || null,
           };
@@ -1650,7 +1654,7 @@ export default function SecurityServiceReportsPage() {
                 aircraft_type: taskSheet.aircraft_type || "",
                 sta: taskSheet.sta || "",
                 std: taskSheet.std || "",
-                skd_type: taskSheet.flight_type || "",
+                ...(isEthiopianAirline(row.airline) ? {} : { skd_type: taskSheet.flight_type || "" }),
               } as any)
               .eq("id", linkedFsId);
             if (fallbackFsErr) throw fallbackFsErr;
