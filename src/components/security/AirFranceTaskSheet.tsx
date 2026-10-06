@@ -68,7 +68,6 @@ export default function AirFranceTaskSheet({ sheet, flight, update, updateFlight
     </div>
   );
   return <div className="space-y-4" data-testid="air-france-task-sheet">
-    <h3 className="text-center text-xl font-bold text-foreground">AF Staff Distribution</h3>
     <div className="grid grid-cols-1 gap-3 border border-border p-3 sm:grid-cols-2 md:grid-cols-4">
       <div><label htmlFor="af-flight-no" className="mb-1 block text-xs font-bold">Flight Number</label><input id="af-flight-no" className={boxedField} value={flight.flight_no || ""} onChange={e => updateFlight("flight_no", e.target.value.toUpperCase())} /></div>
       <div><label htmlFor="af-flight-date" className="mb-1 block text-xs font-bold">Arrival Date</label><input id="af-flight-date" className={boxedField} maxLength={10} value={dateDisplay(flight.flight_date || "")} onChange={e => updateFlight("flight_date", dateInput(e.target.value, flight.flight_date || ""))} /></div>
