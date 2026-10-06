@@ -50,6 +50,13 @@
       "when": 1790687135117,
       "tag": "0006_flight_dup_index_include_times",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791295374284,
+      "tag": "0007_air_france_default_flight_type",
+      "breakpoints": true
     }
   ]
 }
