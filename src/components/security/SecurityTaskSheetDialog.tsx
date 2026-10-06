@@ -1175,7 +1175,7 @@ ${accompaniedHtml}
               )}
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">{flightTypeLabel} {isNew && <span className="text-destructive">*</span>}</label>
-                {isNew ? (
+                {isNew || isEthiopianAirline ? (
                   <select className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}>
                     <option value="">Select...</option>
                     {flightTypeOptions.map(ft => <option key={ft} value={ft}>{ft}</option>)}
