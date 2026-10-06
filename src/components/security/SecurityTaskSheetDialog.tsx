@@ -20,6 +20,8 @@ import {
   getLastWriteCycleResult,
   type WriteCycleResult,
 } from "@/lib/phase3WriteCycleVerifier";
+import linkAeroTaskLogo from "@/assets/link-aero-task-logo.png.asset.json";
+import ethiopianAirlinesLogo from "@/assets/ethiopian-airlines-logo.jpeg.asset.json";
 
 /** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
@@ -139,6 +141,7 @@ interface TaskSheetData {
   aircraft_door_observer_1: string;
   aircraft_door_observer_2: string;
   aircraft_ramp_observer_1: string;
+  aircraft_ramp_observer_2: string;
   catering_accompanied: string;
   cargo_accompanied: string;
   baggage_accompanied: string;
@@ -171,6 +174,7 @@ const emptyTaskSheet = (): TaskSheetData => ({
   aircraft_door_observer_1: "",
   aircraft_door_observer_2: "",
   aircraft_ramp_observer_1: "",
+  aircraft_ramp_observer_2: "",
   catering_accompanied: "",
   cargo_accompanied: "",
   baggage_accompanied: "",
@@ -891,6 +895,93 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         ${rowsHtml}</table>`;
     };
 
+    if (printIsEthiopian) {
+      const linkLogoUrl = linkAeroTaskLogo.url.startsWith("/") ? `${window.location.origin}${linkAeroTaskLogo.url}` : linkAeroTaskLogo.url;
+      const ethiopianLogoUrl = ethiopianAirlinesLogo.url.startsWith("/") ? `${window.location.origin}${ethiopianAirlinesLogo.url}` : ethiopianAirlinesLogo.url;
+      const ethObserver = (title: string, rows: [string, string][], showStaff = true) => `
+<table class="eth-block">
+  <tr><th colspan="2" class="eth-section">${title}</th></tr>
+  ${showStaff ? `<tr><td colspan="2" class="eth-staff">Staff Name</td></tr>` : ""}
+  ${rows.map(([label, val]) => `<tr><td class="eth-index">${label}</td><td class="eth-value">${val || ""}</td></tr>`).join("")}
+</table>`;
+      const ethHtml = `<!DOCTYPE html><html><head>
+<title>ETH Security Task Sheet - ${flightNoVal}</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:#000; font-family: Georgia, 'Times New Roman', serif; }
+  .page { width:210mm; min-height:297mm; margin:0 auto; padding:15mm 11mm 16mm; }
+  .logos { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10mm; }
+  .link-logo { width:29mm; height:auto; }
+  .eth-logo { width:55mm; height:auto; margin-top:5mm; }
+  .title { text-align:center; font-size:18pt; font-weight:900; text-transform:uppercase; margin-bottom:7mm; }
+  table { width:100%; border-collapse:collapse; table-layout:fixed; }
+  th, td { border:1px dotted #333; padding:3px 5px; font-size:14pt; line-height:1.08; vertical-align:middle; }
+  th, .blue { background:#c9dcf2; font-weight:900; }
+  .main th { text-align:left; }
+  .center { text-align:center; }
+  .field { min-height:21px; font-weight:700; }
+  .time-label { width:12mm; background:#c9dcf2; font-weight:900; }
+  .time-value { width:35mm; font-weight:900; }
+  .check-cell { font-weight:900; text-align:center; white-space:nowrap; }
+  .box { display:inline-block; width:15px; height:15px; border:2px solid #000; margin-left:6px; vertical-align:-1px; }
+  .box.checked::after { content:'✓'; display:block; font-size:15px; line-height:12px; text-align:center; }
+  .eth-block { margin-top:3.3mm; }
+  .eth-section { text-align:left; background:#c9dcf2; font-size:15pt; }
+  .eth-staff { text-align:center; font-weight:900; font-size:15pt; height:8mm; }
+  .eth-index { width:7mm; font-weight:900; text-align:center; }
+  .eth-value { height:7mm; font-weight:700; }
+  .important { margin:1.2mm 0 3.2mm; font-size:12.5pt; }
+  .important b { color:#c00000; }
+  .red-label { color:#c00000; font-weight:900; font-size:15pt; width:65mm; }
+  .orange { background:#e97817; color:#fff; font-weight:900; font-size:16pt; }
+  .footer { display:flex; justify-content:space-between; margin-top:21mm; padding:0 7mm; font-family: Arial, sans-serif; font-size:11pt; }
+  @media print { .page { margin:0; } @page { size:A4 portrait; margin:0; } }
+</style>
+</head><body><div class="page">
+  <div class="logos">
+    <img class="link-logo" src="${linkLogoUrl}" alt="Link Aero" />
+    <img class="eth-logo" src="${ethiopianLogoUrl}" alt="Ethiopian" />
+  </div>
+  <div class="title">Ethiopian Airlines Security Task Sheet</div>
+  <table class="main">
+    <tr><th colspan="2">Flight Number</th><th colspan="2" class="center">DATE</th><th>Registration</th><th colspan="3" class="center">Route</th></tr>
+    <tr><td colspan="2" class="field center">${flightNoVal}</td><td colspan="2" class="field center">${flightDate}</td><td class="field center">${reg}</td><td colspan="3" class="field center">${rt}</td></tr>
+    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
+    <tr><td class="time-label">STD</td><td class="time-value">${stdVal}</td><td class="time-label">ATD</td><td class="time-value center">${atdVal || "/"}</td><td class="blue">Delay</td><td colspan="3" class="field">${v.delay || ""}</td></tr>
+  </table>
+
+  ${ethObserver("Cargo Observer", [["1", v.cargo_observer_1]])}
+  ${ethObserver("Hold Baggage Observer", [["1", v.hold_baggage_observer_1], ["2", v.hold_baggage_observer_2]])}
+  ${ethObserver("Aircraft Door Observer", [["1", v.aircraft_door_observer_1], ["2", v.aircraft_door_observer_2]], false)}
+  <div class="important"><b>Important//</b>Arrive at gate 20 minutes prior to aircraft arrival.</div>
+  ${ethObserver("Aircraft Ramp Observer", [["1", v.aircraft_ramp_observer_1], ["2", v.aircraft_ramp_observer_2]])}
+
+  <table class="eth-block">
+    <tr><th colspan="2" class="eth-section">Baggage Information:</th></tr>
+    <tr><td class="red-label">Total Baggage On BRS:</td><td class="eth-value">${v.total_baggage_brs || ""}</td></tr>
+    <tr><td class="red-label">Total Baggage Accepted:</td><td class="eth-value">${v.total_baggage_accepted || ""}</td></tr>
+    <tr><td class="red-label">Missing Baggage On BRS:</td><td class="eth-value">${v.missing_baggage_brs || ""}</td></tr>
+    <tr><td class="red-label">00 BAGS LOADED IN H5</td><td class="eth-value">${v.baggage_loaded_h5 || ""}</td></tr>
+  </table>
+
+  <table class="eth-block">
+    <tr><th colspan="2" class="eth-section">CARGO AND BAGGAGE ACCOMPANIED BY:</th></tr>
+    <tr><td colspan="2" class="eth-staff">Staff Name</td></tr>
+    <tr><td style="width:36mm;text-align:center;font-weight:900;">Cargo</td><td class="eth-value">${v.cargo_accompanied || ""}</td></tr>
+    <tr><td style="text-align:center;font-weight:900;">Baggage</td><td class="eth-value">${v.baggage_accompanied || ""}</td></tr>
+  </table>
+
+  <table class="eth-block"><tr><th class="orange">Ethiopian Airlines&nbsp; (Duty Manager)</th></tr><tr><td class="eth-value">${v.security_supervisor || ""}</td></tr></table>
+  <div class="footer"><span>ETH Security Task Sheet</span><span>V.05 22Jan2023</span></div>
+</div></body></html>`;
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return;
+      printWindow.document.write(ethHtml);
+      printWindow.document.close();
+      setTimeout(() => { printWindow.print(); printWindow.close(); }, 400);
+      return;
+    }
+
     const html = `<!DOCTYPE html><html><head>
 <title>${airlineName} Security Task Sheet - ${flightNoVal}</title>
 <style>
@@ -1118,6 +1209,113 @@ ${accompaniedHtml}
           </div>
         )}
         <fieldset disabled={reviewMode || isReceivablesView || stationLockedAfterApproval} className="contents">
+          {isEthiopianAirline ? (
+            <div className="mx-4 mb-4 rounded-lg border bg-background p-4 shadow-sm md:mx-6">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <img src={linkAeroTaskLogo.url} alt="Link Aero" className="h-20 w-auto object-contain" />
+                <img src={ethiopianAirlinesLogo.url} alt="Ethiopian Airlines" className="h-16 w-auto object-contain" />
+              </div>
+              <h3 className="mb-4 text-center text-lg font-black uppercase text-foreground">Ethiopian Airlines Security Task Sheet</h3>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[880px] border-collapse text-sm">
+                  <tbody className="[&_td]:border [&_td]:border-border [&_td]:p-0 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left [&_th]:font-black [&_th]:text-foreground">
+                    <tr>
+                      <th colSpan={2}>Flight Number</th>
+                      <th colSpan={2}>DATE</th>
+                      <th>Registration</th>
+                      <th colSpan={3}>Route</th>
+                    </tr>
+                    <tr>
+                      <td colSpan={2}><input className="w-full bg-transparent px-2 py-1.5 font-bold text-foreground outline-none" value={editableRow.flight_no || ""} onChange={e => updateRow("flight_no", e.target.value.toUpperCase())} /></td>
+                      <td colSpan={2}><input className="w-full bg-transparent px-2 py-1.5 font-mono text-foreground outline-none" value={isoToDmy(editableRow.flight_date || "")} onChange={e => { const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.flight_date || "")); const iso = dmyToIso(formatted); updateRow("flight_date", iso || formatted); }} maxLength={10} /></td>
+                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono uppercase text-foreground outline-none" value={sheet.registration} onChange={e => update("registration", e.target.value.toUpperCase())} /></td>
+                      <td colSpan={3}><input className="w-full bg-transparent px-2 py-1.5 uppercase text-foreground outline-none" value={sheet.route} onChange={e => update("route", e.target.value.toUpperCase())} /></td>
+                    </tr>
+                    <tr>
+                      <th className="w-16">STA</th>
+                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono font-bold text-foreground outline-none" value={sheet.sta} onChange={e => update("sta", formatTimeInput(e.target.value, sheet.sta))} maxLength={5} /></td>
+                      <th className="w-16">ATA</th>
+                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono text-foreground outline-none" value={sheet.ata} onChange={e => update("ata", formatTimeInput(e.target.value, sheet.ata))} maxLength={5} /></td>
+                      <th>Flight Type</th>
+                      {flightTypeOptions.map(ft => (
+                        <td key={ft} className="px-2 py-1.5 font-black text-foreground">
+                          <label className="flex items-center justify-center gap-2">
+                            <span>{ft}</span>
+                            <input type="checkbox" checked={sheet.flight_type === ft} onChange={() => update("flight_type", ft)} className="h-4 w-4" />
+                          </label>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <th>STD</th>
+                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono font-bold text-foreground outline-none" value={sheet.std} onChange={e => update("std", formatTimeInput(e.target.value, sheet.std))} maxLength={5} /></td>
+                      <th>ATD</th>
+                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono text-foreground outline-none" value={sheet.atd} onChange={e => update("atd", formatTimeInput(e.target.value, sheet.atd))} maxLength={5} /></td>
+                      <th>Delay</th>
+                      <td colSpan={3}><input className="w-full bg-transparent px-2 py-1.5 text-foreground outline-none" value={sheet.delay} onChange={e => update("delay", e.target.value)} /></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-3 space-y-3">
+                <div className="border border-border">
+                  <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Cargo Observer</div>
+                  <div className="border-t border-border px-2 py-1.5 text-center font-black text-foreground">Staff Name</div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.cargo_observer_1} onChange={e => update("cargo_observer_1", e.target.value)} /></div>
+                </div>
+
+                <div className="border border-border">
+                  <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Hold Baggage Observer</div>
+                  <div className="border-t border-border px-2 py-1.5 text-center font-black text-foreground">Staff Name</div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.hold_baggage_observer_1} onChange={e => update("hold_baggage_observer_1", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.hold_baggage_observer_2} onChange={e => update("hold_baggage_observer_2", e.target.value)} /></div>
+                </div>
+
+                <div className="border border-border">
+                  <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Aircraft Door Observer</div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.aircraft_door_observer_1} onChange={e => update("aircraft_door_observer_1", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.aircraft_door_observer_2} onChange={e => update("aircraft_door_observer_2", e.target.value)} /></div>
+                </div>
+
+                <div className="text-sm text-foreground"><span className="font-black text-destructive">Important//</span>Arrive at gate 20 minutes prior to aircraft arrival.</div>
+
+                <div className="border border-border">
+                  <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Aircraft Ramp Observer</div>
+                  <div className="border-t border-border px-2 py-1.5 text-center font-black text-foreground">Staff Name</div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.aircraft_ramp_observer_1} onChange={e => update("aircraft_ramp_observer_1", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.aircraft_ramp_observer_2} onChange={e => update("aircraft_ramp_observer_2", e.target.value)} /></div>
+                </div>
+
+                <div className="border border-border">
+                  <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Baggage Information:</div>
+                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Total Baggage On BRS:</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.total_baggage_brs} onChange={e => update("total_baggage_brs", e.target.value)} /></div>
+                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Total Baggage Accepted:</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.total_baggage_accepted} onChange={e => update("total_baggage_accepted", e.target.value)} /></div>
+                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Missing Baggage On BRS:</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.missing_baggage_brs} onChange={e => update("missing_baggage_brs", e.target.value)} /></div>
+                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">00 BAGS LOADED IN H5</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.baggage_loaded_h5} onChange={e => update("baggage_loaded_h5", e.target.value)} /></div>
+                </div>
+
+                <div className="border border-border">
+                  <div className="bg-muted px-2 py-1.5 text-base font-black uppercase text-foreground">Cargo and Baggage Accompanied By:</div>
+                  <div className="border-t border-border px-2 py-1.5 text-center font-black text-foreground">Staff Name</div>
+                  <div className="grid grid-cols-[220px_1fr] border-t border-border"><label className="px-2 py-1.5 text-center font-black text-foreground">Cargo</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.cargo_accompanied} onChange={e => update("cargo_accompanied", e.target.value)} /></div>
+                  <div className="grid grid-cols-[220px_1fr] border-t border-border"><label className="px-2 py-1.5 text-center font-black text-foreground">Baggage</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.baggage_accompanied} onChange={e => update("baggage_accompanied", e.target.value)} /></div>
+                </div>
+
+                <div className="border border-border">
+                  <div className="bg-warning px-2 py-2 text-lg font-black text-warning-foreground">Ethiopian Airlines (Duty Manager)</div>
+                  <input className="w-full bg-transparent px-2 py-2 outline-none" value={sheet.security_supervisor} onChange={e => update("security_supervisor", e.target.value)} />
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-between px-8 text-sm text-muted-foreground">
+                <span>ETH Security Task Sheet</span>
+                <span>V.05 22Jan2023</span>
+              </div>
+            </div>
+          ) : (
+          <>
           {/* Assignment — Airline & Station (editable for new) + Skd Type */}
           <Section title="Assignment" icon={<Plane size={14} />} accent="text-primary" iconBg="bg-primary/10">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -1404,6 +1602,8 @@ ${accompaniedHtml}
               placeholder="Supervisor name"
             />
           </Section>
+          </>
+          )}
 
           </fieldset>
 
