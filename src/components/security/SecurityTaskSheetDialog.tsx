@@ -729,6 +729,16 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         // Air France form has no Skd Type field — skip its required check.
         if (!isAirFrance && !String(sheet.flight_type || "").trim()) missing.push(flightTypeLabel);
       }
+      if (missing.length > 0) {
+        toast({
+          title: "Missing required fields",
+          description: `Please fill: ${missing.join(", ")}`,
+          variant: "destructive",
+        });
+        timer.finish("validation_error");
+        return;
+      }
+    }
     // Keep dates exactly as entered by the user. Do NOT cross-copy between
     // arrival_date (flight_date) and departure_date based on service type —
     // empty fields must remain empty so re-opening the form preserves the
