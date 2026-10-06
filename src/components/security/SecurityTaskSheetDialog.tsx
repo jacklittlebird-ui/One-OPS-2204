@@ -902,6 +902,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       const ethiopianLogoUrl = ethiopianAirlinesLogo.url.startsWith("/") ? `${window.location.origin}${ethiopianAirlinesLogo.url}` : ethiopianAirlinesLogo.url;
       const ethObserver = (title: string, rows: [string, string][], showStaff = true) => `
 <table class="blk">
+  <colgroup><col style="width:3.5%"><col style="width:96.5%"></colgroup>
   <tr><th colspan="2" class="sec">${title}</th></tr>
   <tr><td colspan="2" class="staff">${showStaff ? "Staff Name" : "&nbsp;"}</td></tr>
   ${rows.map(([label, val]) => `<tr><td class="idx">${label}</td><td class="val">${val || ""}</td></tr>`).join("")}
