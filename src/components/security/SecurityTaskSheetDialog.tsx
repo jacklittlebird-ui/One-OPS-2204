@@ -259,6 +259,7 @@ const ETHIOPIAN_FLIGHT_TYPES = ["PAX", "Cargo", "UN"] as const;
 const isEthiopianAirlineName = (value: unknown) => /ethiopian/i.test(String(value || ""));
 
 const inputCls = "text-sm border border-border rounded-md px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary placeholder:text-muted-foreground w-full transition-colors";
+const ethInnerFieldCls = "m-1 w-[calc(100%-0.5rem)] rounded-sm border border-border bg-card px-2 py-1 text-foreground outline-none focus:ring-1 focus:ring-primary";
 const readOnlyCls = "text-sm border border-border rounded-md px-2.5 py-2 bg-muted/50 text-foreground w-full cursor-default";
 const sectionHeaderCls = "bg-primary/10 text-primary font-bold text-sm px-3 py-2 rounded-t border border-primary/20";
 
@@ -886,7 +887,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   <tr><td class="label" style="width:260px;">Total Baggage on BRS:</td><td class="value-cell">${v.total_baggage_brs || ""}</td></tr>
   <tr><td class="label">Total Baggage Accepted:</td><td class="value-cell">${v.total_baggage_accepted || ""}</td></tr>
   <tr><td class="label">Missing Baggage on BRS:</td><td class="value-cell">${v.missing_baggage_brs || ""}</td></tr>
-  <tr><td class="label">No. of Baggage loaded in H5:</td><td class="value-cell">${v.baggage_loaded_h5 || ""}</td></tr>
+  <tr><td class="label">Bags loaded in H5:</td><td class="value-cell">${v.baggage_loaded_h5 || ""}</td></tr>
 </table>` : "";
     const accompaniedHtml = printIsEthiopian ? `
 <table style="margin-bottom:10px;">
@@ -986,7 +987,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <tr class="redrow"><td class="red">Total Baggage On &nbsp;BRS:</td><td class="redv">${v.total_baggage_brs || ""}</td></tr>
     <tr class="redrow"><td class="red">Total Baggage Accepted:</td><td class="redv">${v.total_baggage_accepted || ""}</td></tr>
     <tr class="redrow"><td class="red">Missing &nbsp;Baggage On BRS:</td><td class="redv">${v.missing_baggage_brs || ""}</td></tr>
-    <tr class="redrow"><td class="red">00 BAGS LOADED IN H5</td><td class="redv">${v.baggage_loaded_h5 || ""}</td></tr>
+    <tr class="redrow"><td class="red">BAGS LOADED IN H5</td><td class="redv">${v.baggage_loaded_h5 || ""}</td></tr>
   </table>
   <table class="blk">
     <colgroup><col style="width:17%"><col style="width:83%"></colgroup>
@@ -1254,16 +1255,16 @@ ${accompaniedHtml}
                       <th colSpan={3}>Route</th>
                     </tr>
                     <tr>
-                      <td colSpan={2}><input className="w-full bg-transparent px-2 py-1.5 font-bold text-foreground outline-none" value={editableRow.flight_no || ""} onChange={e => updateRow("flight_no", e.target.value.toUpperCase())} /></td>
-                      <td colSpan={2}><input className="w-full bg-transparent px-2 py-1.5 font-mono text-foreground outline-none" value={isoToDmy(editableRow.flight_date || "")} onChange={e => { const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.flight_date || "")); const iso = dmyToIso(formatted); updateRow("flight_date", iso || formatted); }} maxLength={10} /></td>
-                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono uppercase text-foreground outline-none" value={sheet.registration} onChange={e => update("registration", e.target.value.toUpperCase())} /></td>
-                      <td colSpan={3}><input className="w-full bg-transparent px-2 py-1.5 uppercase text-foreground outline-none" value={sheet.route} onChange={e => update("route", e.target.value.toUpperCase())} /></td>
+                      <td colSpan={2}><input className={`${ethInnerFieldCls} font-bold uppercase`} value={editableRow.flight_no || ""} onChange={e => updateRow("flight_no", e.target.value.toUpperCase())} /></td>
+                      <td colSpan={2}><input className={`${ethInnerFieldCls} font-mono`} value={isoToDmy(editableRow.flight_date || "")} onChange={e => { const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.flight_date || "")); const iso = dmyToIso(formatted); updateRow("flight_date", iso || formatted); }} maxLength={10} /></td>
+                      <td><input className={`${ethInnerFieldCls} font-mono uppercase`} value={sheet.registration} onChange={e => update("registration", e.target.value.toUpperCase())} /></td>
+                      <td colSpan={3}><input className={`${ethInnerFieldCls} uppercase`} value={sheet.route} onChange={e => update("route", e.target.value.toUpperCase())} /></td>
                     </tr>
                     <tr>
                       <th className="w-16">STA</th>
-                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono font-bold text-foreground outline-none" value={sheet.sta} onChange={e => update("sta", formatTimeInput(e.target.value, sheet.sta))} maxLength={5} /></td>
+                      <td><input className={`${ethInnerFieldCls} font-mono font-bold`} value={sheet.sta} onChange={e => update("sta", formatTimeInput(e.target.value, sheet.sta))} maxLength={5} /></td>
                       <th className="w-16">ATA</th>
-                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono text-foreground outline-none" value={sheet.ata} onChange={e => update("ata", formatTimeInput(e.target.value, sheet.ata))} maxLength={5} /></td>
+                      <td><input className={`${ethInnerFieldCls} font-mono`} value={sheet.ata} onChange={e => update("ata", formatDualTimeInput(e.target.value, sheet.ata))} maxLength={11} /></td>
                       <th>Flight Type</th>
                       {flightTypeOptions.map(ft => (
                         <td key={ft} className="px-2 py-1.5 font-black text-foreground">
@@ -1276,11 +1277,11 @@ ${accompaniedHtml}
                     </tr>
                     <tr>
                       <th>STD</th>
-                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono font-bold text-foreground outline-none" value={sheet.std} onChange={e => update("std", formatTimeInput(e.target.value, sheet.std))} maxLength={5} /></td>
+                      <td><input className={`${ethInnerFieldCls} font-mono font-bold`} value={sheet.std} onChange={e => update("std", formatTimeInput(e.target.value, sheet.std))} maxLength={5} /></td>
                       <th>ATD</th>
-                      <td><input className="w-full bg-transparent px-2 py-1.5 font-mono text-foreground outline-none" value={sheet.atd} onChange={e => update("atd", formatTimeInput(e.target.value, sheet.atd))} maxLength={5} /></td>
+                      <td><input className={`${ethInnerFieldCls} font-mono`} value={sheet.atd} onChange={e => update("atd", formatDualTimeInput(e.target.value, sheet.atd))} maxLength={11} /></td>
                       <th>Delay</th>
-                      <td colSpan={3}><input className="w-full bg-transparent px-2 py-1.5 text-foreground outline-none" value={sheet.delay} onChange={e => update("delay", e.target.value)} /></td>
+                      <td colSpan={3}><input className={ethInnerFieldCls} value={sheet.delay} onChange={e => update("delay", e.target.value)} /></td>
                     </tr>
                   </tbody>
                 </table>
@@ -1290,20 +1291,20 @@ ${accompaniedHtml}
                 <div className="border border-border">
                   <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Cargo Observer</div>
                   <div className="border-t border-border px-2 py-1.5 text-center font-black text-foreground">Staff Name</div>
-                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.cargo_observer_1} onChange={e => update("cargo_observer_1", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className={ethInnerFieldCls} value={sheet.cargo_observer_1} onChange={e => update("cargo_observer_1", e.target.value)} /></div>
                 </div>
 
                 <div className="border border-border">
                   <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Hold Baggage Observer</div>
                   <div className="border-t border-border px-2 py-1.5 text-center font-black text-foreground">Staff Name</div>
-                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.hold_baggage_observer_1} onChange={e => update("hold_baggage_observer_1", e.target.value)} /></div>
-                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.hold_baggage_observer_2} onChange={e => update("hold_baggage_observer_2", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className={ethInnerFieldCls} value={sheet.hold_baggage_observer_1} onChange={e => update("hold_baggage_observer_1", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className={ethInnerFieldCls} value={sheet.hold_baggage_observer_2} onChange={e => update("hold_baggage_observer_2", e.target.value)} /></div>
                 </div>
 
                 <div className="border border-border">
                   <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Aircraft Door Observer</div>
-                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.aircraft_door_observer_1} onChange={e => update("aircraft_door_observer_1", e.target.value)} /></div>
-                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.aircraft_door_observer_2} onChange={e => update("aircraft_door_observer_2", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className={ethInnerFieldCls} value={sheet.aircraft_door_observer_1} onChange={e => update("aircraft_door_observer_1", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className={ethInnerFieldCls} value={sheet.aircraft_door_observer_2} onChange={e => update("aircraft_door_observer_2", e.target.value)} /></div>
                 </div>
 
                 <div className="text-sm text-foreground"><span className="font-black text-destructive">Important//</span>Arrive at gate 20 minutes prior to aircraft arrival.</div>
@@ -1311,28 +1312,28 @@ ${accompaniedHtml}
                 <div className="border border-border">
                   <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Aircraft Ramp Observer</div>
                   <div className="border-t border-border px-2 py-1.5 text-center font-black text-foreground">Staff Name</div>
-                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.aircraft_ramp_observer_1} onChange={e => update("aircraft_ramp_observer_1", e.target.value)} /></div>
-                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.aircraft_ramp_observer_2} onChange={e => update("aircraft_ramp_observer_2", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">1</div><input className={ethInnerFieldCls} value={sheet.aircraft_ramp_observer_1} onChange={e => update("aircraft_ramp_observer_1", e.target.value)} /></div>
+                  <div className="grid grid-cols-[42px_1fr] border-t border-border"><div className="border-r border-border px-3 py-1.5 font-bold">2</div><input className={ethInnerFieldCls} value={sheet.aircraft_ramp_observer_2} onChange={e => update("aircraft_ramp_observer_2", e.target.value)} /></div>
                 </div>
 
                 <div className="border border-border">
                   <div className="bg-muted px-2 py-1.5 text-base font-black text-foreground">Baggage Information:</div>
-                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Total Baggage On BRS:</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.total_baggage_brs} onChange={e => update("total_baggage_brs", e.target.value)} /></div>
-                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Total Baggage Accepted:</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.total_baggage_accepted} onChange={e => update("total_baggage_accepted", e.target.value)} /></div>
-                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Missing Baggage On BRS:</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.missing_baggage_brs} onChange={e => update("missing_baggage_brs", e.target.value)} /></div>
-                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">00 BAGS LOADED IN H5</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.baggage_loaded_h5} onChange={e => update("baggage_loaded_h5", e.target.value)} /></div>
+                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Total Baggage On BRS:</label><input className={ethInnerFieldCls} value={sheet.total_baggage_brs} onChange={e => update("total_baggage_brs", e.target.value)} /></div>
+                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Total Baggage Accepted:</label><input className={ethInnerFieldCls} value={sheet.total_baggage_accepted} onChange={e => update("total_baggage_accepted", e.target.value)} /></div>
+                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">Missing Baggage On BRS:</label><input className={ethInnerFieldCls} value={sheet.missing_baggage_brs} onChange={e => update("missing_baggage_brs", e.target.value)} /></div>
+                  <div className="grid grid-cols-[260px_1fr] border-t border-border"><label className="px-2 py-1.5 font-black text-destructive">BAGS LOADED IN H5</label><input className={ethInnerFieldCls} value={sheet.baggage_loaded_h5} onChange={e => update("baggage_loaded_h5", e.target.value)} /></div>
                 </div>
 
                 <div className="border border-border">
                   <div className="bg-muted px-2 py-1.5 text-base font-black uppercase text-foreground">Cargo and Baggage Accompanied By:</div>
                   <div className="border-t border-border px-2 py-1.5 text-center font-black text-foreground">Staff Name</div>
-                  <div className="grid grid-cols-[220px_1fr] border-t border-border"><label className="px-2 py-1.5 text-center font-black text-foreground">Cargo</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.cargo_accompanied} onChange={e => update("cargo_accompanied", e.target.value)} /></div>
-                  <div className="grid grid-cols-[220px_1fr] border-t border-border"><label className="px-2 py-1.5 text-center font-black text-foreground">Baggage</label><input className="bg-transparent px-2 py-1.5 outline-none" value={sheet.baggage_accompanied} onChange={e => update("baggage_accompanied", e.target.value)} /></div>
+                  <div className="grid grid-cols-[220px_1fr] border-t border-border"><label className="px-2 py-1.5 text-center font-black text-foreground">Cargo</label><input className={ethInnerFieldCls} value={sheet.cargo_accompanied} onChange={e => update("cargo_accompanied", e.target.value)} /></div>
+                  <div className="grid grid-cols-[220px_1fr] border-t border-border"><label className="px-2 py-1.5 text-center font-black text-foreground">Baggage</label><input className={ethInnerFieldCls} value={sheet.baggage_accompanied} onChange={e => update("baggage_accompanied", e.target.value)} /></div>
                 </div>
 
                 <div className="border border-border">
                   <div className="bg-warning px-2 py-2 text-lg font-black text-warning-foreground">Ethiopian Airlines (Duty Manager)</div>
-                  <input className="w-full bg-transparent px-2 py-2 outline-none" value={sheet.security_supervisor} onChange={e => update("security_supervisor", e.target.value)} />
+                  <input className={`${ethInnerFieldCls} py-2`} value={sheet.security_supervisor} onChange={e => update("security_supervisor", e.target.value)} />
                 </div>
               </div>
 
@@ -1583,7 +1584,7 @@ ${accompaniedHtml}
                   <input className={inputCls} value={sheet.missing_baggage_brs} onChange={e => update("missing_baggage_brs", e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">No. of Baggage loaded in H5</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Bags loaded in H5</label>
                   <input className={inputCls} value={sheet.baggage_loaded_h5} onChange={e => update("baggage_loaded_h5", e.target.value)} />
                 </div>
               </div>
