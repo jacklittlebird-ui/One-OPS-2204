@@ -20,6 +20,8 @@ import {
   getLastWriteCycleResult,
   type WriteCycleResult,
 } from "@/lib/phase3WriteCycleVerifier";
+import linkAeroTaskLogo from "@/assets/link-aero-task-logo.png.asset.json";
+import ethiopianAirlinesLogo from "@/assets/ethiopian-airlines-logo.jpeg.asset.json";
 
 /** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
@@ -139,6 +141,7 @@ interface TaskSheetData {
   aircraft_door_observer_1: string;
   aircraft_door_observer_2: string;
   aircraft_ramp_observer_1: string;
+  aircraft_ramp_observer_2: string;
   catering_accompanied: string;
   cargo_accompanied: string;
   baggage_accompanied: string;
@@ -171,6 +174,7 @@ const emptyTaskSheet = (): TaskSheetData => ({
   aircraft_door_observer_1: "",
   aircraft_door_observer_2: "",
   aircraft_ramp_observer_1: "",
+  aircraft_ramp_observer_2: "",
   catering_accompanied: "",
   cargo_accompanied: "",
   baggage_accompanied: "",
