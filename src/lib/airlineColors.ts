@@ -28,9 +28,9 @@ export function airlineColor(name?: string | null): string {
   return PALETTE[h % PALETTE.length];
 }
 
-// Solid badge style: filled airline-colored pill with dark text for readability.
+// Highlighter style: black text over a solid airline-colored background.
 export function airlineBadgeStyle(name?: string | null): CSSProperties | undefined {
   const c = airlineColor(name);
   if (!c) return undefined;
-  return { backgroundColor: c, color: "#0F172A", borderColor: c };
+  return { backgroundColor: c, color: "#000000", borderColor: c };
 }
