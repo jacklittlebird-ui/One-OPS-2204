@@ -233,7 +233,7 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
                   <tr key={f.id} className="border-t hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-2 font-mono text-[11px] text-foreground whitespace-nowrap">{f.permit_no || "—"}</td>
                     <td className="px-3 py-2 font-semibold text-foreground text-xs whitespace-nowrap">{f.flight_no || "—"}</td>
-                    <td className="px-3 py-2 text-foreground text-xs whitespace-nowrap">
+                    <td className="px-3 py-2 font-semibold text-xs whitespace-nowrap" style={(() => { const c = airline ? airlineColor(airline.name) : ""; return c ? { color: c } : undefined; })()}>
                       {airline ? `${airline.iata ? airline.iata + " · " : ""}${airline.name}` : "—"}
                     </td>
                     <td className="px-3 py-2 text-foreground text-xs whitespace-nowrap">{f.aircraft_type || "—"}</td>
