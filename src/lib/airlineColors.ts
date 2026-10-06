@@ -1,22 +1,21 @@
 import type { CSSProperties } from "react";
 
-// Deterministic per-airline display colors for record tables.
-// Same airline always gets the same color in every portal; readable on dark backgrounds.
+// Light highlighter-style palette: pastel backgrounds with black text.
 const PALETTE = [
-  "#60A5FA", // blue
-  "#F472B6", // pink
-  "#34D399", // emerald
-  "#FBBF24", // amber
-  "#A78BFA", // violet
-  "#F87171", // red
-  "#22D3EE", // cyan
-  "#A3E635", // lime
-  "#FB923C", // orange
-  "#E879F9", // fuchsia
-  "#4ADE80", // green
-  "#FACC15", // yellow
-  "#2DD4BF", // teal
-  "#FDBA74", // light orange
+  "#BFDBFE", // light blue
+  "#FBCFE8", // light pink
+  "#A7F3D0", // light emerald
+  "#FDE68A", // light amber
+  "#DDD6FE", // light violet
+  "#FECACA", // light red
+  "#A5F3FC", // light cyan
+  "#D9F99D", // light lime
+  "#FED7AA", // light orange
+  "#F5D0FE", // light fuchsia
+  "#BBF7D0", // light green
+  "#FEF08A", // light yellow
+  "#99F6E4", // light teal
+  "#FED7AA", // light orange 2
 ];
 
 export function airlineColor(name?: string | null): string {
