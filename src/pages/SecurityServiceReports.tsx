@@ -207,6 +207,19 @@ export const RECEIVABLES_REVIEWER = "Receivables";
 const isReceivablesReviewer = (value: unknown) =>
   /receiv|acc\s*rec|accrec/i.test(String(value || ""));
 
+const isEthiopianAirline = (value: unknown) => /ethiopian/i.test(String(value || ""));
+const getSecurityFlightType = (
+  airline: unknown,
+  taskSheet: Record<string, any> | null | undefined,
+  fallback: unknown,
+) => {
+  const savedFlightType = String(taskSheet?.flight_type || "").trim();
+  const fallbackValue = String(fallback || "").trim();
+  return isEthiopianAirline(airline)
+    ? (savedFlightType || fallbackValue)
+    : (fallbackValue || savedFlightType);
+};
+
 
 const hasSavedSecurityCharges = (row: { review_status?: string | null; reviewed_by?: string | null; charges_saved_at?: string | null; invoiced_at?: string | null; total_security_charges?: number | null; charges_breakdown?: unknown }) => {
   // Step 4 (Receivables) only completes when Receivables explicitly saves the
@@ -1420,7 +1433,7 @@ export default function SecurityServiceReportsPage() {
       std: taskSheet.std,
       arrival_date: normalizedDates.arrivalDate || undefined,
       departure_date: normalizedDates.departureDate || undefined,
-      skd_type: taskSheet.flight_type,
+      skd_type: isEthiopianAirline(row.airline) ? (flightDetailsById.get(linkedFsId)?.skd_type || undefined) : taskSheet.flight_type,
       clearance_type: row.service_type,
       flight_no: row.flight_no,
     } as const;
@@ -1531,7 +1544,7 @@ export default function SecurityServiceReportsPage() {
         if (taskSheet.aircraft_type !== undefined) fsSync.aircraft_type = taskSheet.aircraft_type || "";
         if (taskSheet.sta !== undefined) fsSync.sta = taskSheet.sta || "";
         if (taskSheet.std !== undefined) fsSync.std = taskSheet.std || "";
-        if (taskSheet.flight_type) fsSync.skd_type = taskSheet.flight_type;
+        if (!isEthiopianAirline(row.airline) && taskSheet.flight_type) fsSync.skd_type = taskSheet.flight_type;
         if (row.service_type) fsSync.clearance_type = row.service_type;
         // Station-scoped users: force authority to the user's station so the
         // flight appears under that station in every portal's station filter.
@@ -1559,7 +1572,7 @@ export default function SecurityServiceReportsPage() {
           route: taskSheet.route || "",
           sta: taskSheet.sta || "",
           std: taskSheet.std || "",
-          skd_type: taskSheet.flight_type || "",
+          skd_type: isEthiopianAirline(row.airline) ? "" : (taskSheet.flight_type || ""),
           clearance_type: row.service_type || "Arrival Security",
           status: "Approved" as const,
           authority: row.station || "CAI",
@@ -1626,7 +1639,7 @@ export default function SecurityServiceReportsPage() {
             aircraft_type: taskSheet.aircraft_type || "",
             sta: taskSheet.sta || "",
             std: taskSheet.std || "",
-            skd_type: taskSheet.flight_type || "",
+            skd_type: isEthiopianAirline(row.airline) ? (flightDetailsById.get(linkedFsId)?.skd_type || "") : (taskSheet.flight_type || ""),
             arrival_date: normalizedDates.arrivalDate || null,
             departure_date: normalizedDates.departureDate || null,
           };
@@ -1650,7 +1663,7 @@ export default function SecurityServiceReportsPage() {
                 aircraft_type: taskSheet.aircraft_type || "",
                 sta: taskSheet.sta || "",
                 std: taskSheet.std || "",
-                skd_type: taskSheet.flight_type || "",
+                ...(isEthiopianAirline(row.airline) ? {} : { skd_type: taskSheet.flight_type || "" }),
               } as any)
               .eq("id", linkedFsId);
             if (fallbackFsErr) throw fallbackFsErr;
@@ -1922,7 +1935,7 @@ export default function SecurityServiceReportsPage() {
         "FLIGHT": disp.flightNo || "",
         "REG": disp.registration || "",
         "TYPE": dbRow.service_type || f.serviceType,
-        "SKD TYPE": disp.skdType || "",
+        "FLIGHT TYPE": getSecurityFlightType(disp.airline || f.airline, dbRow.task_sheet_data, disp.skdType),
         "ARR DATE": disp.arrivalDate || "",
         "STA": disp.sta || "",
         "DEP DATE": disp.departureDate || "",
@@ -1949,6 +1962,12 @@ export default function SecurityServiceReportsPage() {
         "Overtime Charge": f.overtimeCharge,
         "Review Status": f.reviewStatus,
         "Remarks": f.remarks,
+        "Total Baggage on BRS": dbRow.task_sheet_data?.total_baggage_brs || "",
+        "Total Baggage Accepted": dbRow.task_sheet_data?.total_baggage_accepted || "",
+        "Missing Baggage on BRS": dbRow.task_sheet_data?.missing_baggage_brs || "",
+        "No. of Baggage loaded in H5": dbRow.task_sheet_data?.baggage_loaded_h5 || "",
+        "Cargo Accompanied By": dbRow.task_sheet_data?.cargo_accompanied || "",
+        "Baggage Accompanied By": dbRow.task_sheet_data?.baggage_accompanied || "",
       };
     });
 
@@ -2181,7 +2200,7 @@ export default function SecurityServiceReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/30">
-                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "A/C", "SKD TYPE", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ATA", "ATD", "ROUTE", "SHIFT", "STAFF", "OBSERVERS", "REMARKS", "PIPELINE", "ACTIONS"].map(h => (
+                    {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "A/C", "FLIGHT TYPE", "SERVICE TYPE", "ARR DATE", "STA", "STD", "ATA", "ATD", "ROUTE", "SHIFT", "STAFF", "OBSERVERS", "REMARKS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -2215,7 +2234,7 @@ export default function SecurityServiceReportsPage() {
                       <td className="px-3 py-2.5 font-mono text-xs text-foreground">{d.flightNo || f.flight_no || "—"}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.registration || f.registration || "—"}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.aircraftType || f.aircraft_type || "—"}</td>
-                      <td className="px-3 py-2.5 text-foreground text-xs">{d.skdType || f.skd_type || "—"}</td>
+                      <td className="px-3 py-2.5 text-foreground text-xs">{getSecurityFlightType(d.airline || f.airlines?.name || f.handling_agent, ts, d.skdType || f.skd_type) || "—"}</td>
                       <td className="px-3 py-2.5">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeBadgeClass(f.clearance_type)}`}>{d.serviceType || f.clearance_type || "—"}</span>
                       </td>
@@ -2523,7 +2542,7 @@ export default function SecurityServiceReportsPage() {
                         />
                       </th>
                     )}
-                     {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "TYPE", "SKD TYPE", "ARR DATE", "STA", "DEP DATE", "STD", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
+                     {["#", "STATION", "AIRLINE", "FLIGHT", "REG", "TYPE", "FLIGHT TYPE", "ARR DATE", "STA", "DEP DATE", "STD", "ROUTE", "A/C TYPE", "ACTUAL TIME", "DURATION", "OT (h)", ...(isReceivablesView ? ["AMOUNT"] : []), "STATUS", "PIPELINE", "ACTIONS"].map(h => (
                       <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -2681,7 +2700,7 @@ export default function SecurityServiceReportsPage() {
                           </div>
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs">
-                          {skdType || "—"}
+                          {getSecurityFlightType(r.airline, r.task_sheet_data, skdType) || "—"}
                         </td>
                         <td className="px-3 py-2.5 text-foreground text-xs whitespace-nowrap">{arrDate || "—"}</td>
                         <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{sta || "—"}</td>
