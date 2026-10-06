@@ -142,6 +142,10 @@ interface TaskSheetData {
   catering_accompanied: string;
   cargo_accompanied: string;
   baggage_accompanied: string;
+  total_baggage_brs: string;
+  total_baggage_accepted: string;
+  missing_baggage_brs: string;
+  baggage_loaded_h5: string;
   remarks: string;
   security_supervisor: string;
 }
@@ -170,6 +174,10 @@ const emptyTaskSheet = (): TaskSheetData => ({
   catering_accompanied: "",
   cargo_accompanied: "",
   baggage_accompanied: "",
+  total_baggage_brs: "",
+  total_baggage_accepted: "",
+  missing_baggage_brs: "",
+  baggage_loaded_h5: "",
   remarks: "",
   security_supervisor: "",
 });
@@ -226,6 +234,8 @@ interface Props {
 }
 
 const FLIGHT_TYPES = SKD_TYPES;
+const ETHIOPIAN_FLIGHT_TYPES = ["PAX", "Cargo", "UN"] as const;
+const isEthiopianAirlineName = (value: unknown) => /ethiopian/i.test(String(value || ""));
 
 const inputCls = "text-sm border border-border rounded-md px-2.5 py-2 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary placeholder:text-muted-foreground w-full transition-colors";
 const readOnlyCls = "text-sm border border-border rounded-md px-2.5 py-2 bg-muted/50 text-foreground w-full cursor-default";
@@ -469,6 +479,13 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   }, [securityContracts, contractId]);
 
   const currentRow = isNew ? editableRow : (editableRow || row);
+  const currentAirlineName = String((currentRow as any)?.airline || (currentRow as any)?.airline_name || "").trim();
+  const isEthiopianAirline = isEthiopianAirlineName(currentAirlineName);
+  const flightTypeOptions = isEthiopianAirline ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
+  const flightTypeLabel = isEthiopianAirline ? "Flight Type" : "Skd Type";
+  const supervisorTitle = isEthiopianAirline
+    ? "Ethiopian Airlines (Duty Manager)"
+    : `${currentAirlineName.toUpperCase()} — Security Supervisor on Duty`;
 
   // Look up invoice status for this flight so the Receivables pipeline step
   // only marks complete when the invoice is fully Paid.
@@ -559,11 +576,19 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   // Maintenance Security. Sourced from FS clearance_type (Phase 6.5).
   useEffect(() => {
     if (!editableRow) return;
+    if (isEthiopianAirline) return;
     if (effectiveServiceType === "Maintenance Security" && sheet.flight_type !== "Maintenance") {
       setSheet(prev => ({ ...prev, flight_type: "Maintenance" }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveServiceType]);
+
+  useEffect(() => {
+    if (!editableRow || !isEthiopianAirline) return;
+    setSheet(prev => ETHIOPIAN_FLIGHT_TYPES.includes(prev.flight_type as any)
+      ? prev
+      : { ...prev, flight_type: "PAX" });
+  }, [editableRow?.airline, isEthiopianAirline, row?.id]);
 
   const computedCharges = useMemo(() => {
     if (!contractRates.length || !currentRow) return null;
@@ -652,10 +677,13 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       const isArrivalOnly = ft.includes("arrival") && !ft.includes("departure");
       const isDepartureOnly = ft.includes("departure") && !ft.includes("arrival");
 
-      const required: { key: keyof TaskSheetData; label: string }[] = [
-        { key: "shift_start", label: "Start Shift Time" },
-        { key: "shift_end", label: "End Shift Time" },
-      ];
+      const required: { key: keyof TaskSheetData; label: string }[] = [];
+      if (!isEthiopianAirline) {
+        required.push(
+          { key: "shift_start", label: "Start Shift Time" },
+          { key: "shift_end", label: "End Shift Time" },
+        );
+      }
       if (!isDepartureOnly) {
         required.push({ key: "sta", label: "STA" }, { key: "ata", label: "ATA" });
       }
@@ -665,7 +693,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
       if (isNew) {
         if (!String(editableRow.airline || "").trim()) missing.unshift("Airline");
-        if (!String(sheet.flight_type || "").trim()) missing.push("Skd Type");
+        if (!String(sheet.flight_type || "").trim()) missing.push(flightTypeLabel);
       }
       if (missing.length > 0) {
         toast({
@@ -787,6 +815,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       dbFlight?.airline_id && a.id === dbFlight.airline_id,
     );
     const airlineName = pick(matchedAirline?.name, baseRow.airline, dbFlight?.handling_agent) || "—";
+    const printIsEthiopian = isEthiopianAirlineName(airlineName);
+    const airlineHeader = /airlines/i.test(airlineName) ? airlineName : `${airlineName} Airlines`;
+    const printFlightTypeOptions = printIsEthiopian ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
     const flightNoVal = pick(v.flight_no, dbFlight?.flight_no, baseRow.flight_no) || "—";
     const flightDate = formatDate(pick(baseRow.flight_date, dbFlight?.arrival_date, dbFlight?.departure_date));
     const reg = pick(v.registration, dbFlight?.registration, (baseRow as any).registration);
@@ -804,9 +835,44 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     // propagate to the printable task sheet and the readonly view.
     const skdVal = pick(skdType, dbFlight?.skd_type, v.flight_type, (baseRow as any).skd_type) || "—";
 
-    const ftChecks = FLIGHT_TYPES.map(ft =>
-      `<td style="text-align:center;border:1px solid #333;padding:4px 6px;font-size:11px;">${ft === skdVal ? "☒" : "☐"} ${ft}</td>`
+    const ftChecks = printFlightTypeOptions.map(ft =>
+      `<td class="ft-cell" style="border:2px solid #222;padding:7px 10px;">${ft === skdVal ? "☒" : "☐"} ${ft}</td>`
     ).join("");
+
+    const flightTypeCells = printIsEthiopian
+      ? ftChecks
+      : `<td colspan="${printFlightTypeOptions.length}" class="value-cell" style="font-size:13px;font-weight:600;">${skdVal}</td>`;
+    const shiftRowHtml = printIsEthiopian ? "" : `
+  <tr>
+    <td class="label" colspan="2">ARR/DEP SHIFT START</td>
+    <td colspan="2" class="mono">${v.shift_start || ""}</td>
+    <td class="label">ARR/DEP SHIFT END</td>
+    <td colspan="5" class="mono">${v.shift_end || ""}</td>
+  </tr>`;
+    const baggageInfoHtml = printIsEthiopian ? `
+<table style="margin-bottom:10px;">
+  <tr><td colspan="2" class="section">Baggage Information:</td></tr>
+  <tr><td class="label" style="width:260px;">Total Baggage on BRS:</td><td class="value-cell">${v.total_baggage_brs || ""}</td></tr>
+  <tr><td class="label">Total Baggage Accepted:</td><td class="value-cell">${v.total_baggage_accepted || ""}</td></tr>
+  <tr><td class="label">Missing Baggage on BRS:</td><td class="value-cell">${v.missing_baggage_brs || ""}</td></tr>
+  <tr><td class="label">No. of Baggage loaded in H5:</td><td class="value-cell">${v.baggage_loaded_h5 || ""}</td></tr>
+</table>` : "";
+    const accompaniedHtml = printIsEthiopian ? `
+<table style="margin-bottom:10px;">
+  <tr><td colspan="2" class="section">CARGO AND BAGGAGE ACCOMPANIED BY:</td></tr>
+  <tr><td class="label" style="width:110px;">Cargo</td><td class="value-cell">${v.cargo_accompanied || ""}</td></tr>
+  <tr><td class="label">Baggage</td><td class="value-cell">${v.baggage_accompanied || ""}</td></tr>
+</table>` : `
+<table style="margin-bottom:10px;">
+  <tr><td colspan="2" class="section">CARGO AND BAGGAGE & CATERING ACCOMPANIED BY:</td></tr>
+  <tr><td class="label" style="width:110px;">Catering</td><td class="value-cell">${v.catering_accompanied || ""}</td></tr>
+  <tr><td class="label">Cargo</td><td class="value-cell">${v.cargo_accompanied || ""}</td></tr>
+  <tr><td class="label">Baggage</td><td class="value-cell">${v.baggage_accompanied || ""}</td></tr>
+</table>`;
+    const printSupervisorTitle = printIsEthiopian
+      ? "ETHIOPIAN AIRLINES (DUTY MANAGER)"
+      : `${String(airlineName).toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)`;
+    const printVersion = printIsEthiopian ? "V.05 22Jan2023" : "V.03 22Jan2023";
 
     const obsSection = (title: string, rows: [string, string][]) => {
       const rowsHtml = rows.map(([label, val]) =>
@@ -844,7 +910,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 </style>
 </head><body>
 
-<div class="title">${airlineName} AIRLINES SECURITY TASK SHEET</div>
+<div class="title">${airlineHeader} Security Task Sheet</div>
 
 <table style="margin-bottom:10px;">
   <tr class="header-row">
@@ -867,8 +933,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="mono" style="width:75px;">${staVal}</td>
     <td class="label" style="width:55px;">ATA</td>
     <td class="mono" style="width:75px;">${ataVal}</td>
-     <td class="label" style="width:85px;">Skd Type</td>
-     <td colspan="${FLIGHT_TYPES.length}" class="value-cell" style="font-size:13px;font-weight:600;">${skdVal}</td>
+     <td class="label" style="width:85px;">Flight Type</td>
+     ${flightTypeCells}
   </tr>
   <tr>
     <td class="label">STD</td>
@@ -876,20 +942,15 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     <td class="label">ATD</td>
     <td class="mono">${atdVal}</td>
     <td class="label">Service Type</td>
-    <td colspan="5" class="value-cell" style="font-size:13px;font-weight:600;">${svcType}</td>
+    <td colspan="${printFlightTypeOptions.length}" class="value-cell" style="font-size:13px;font-weight:600;">${svcType}</td>
   </tr>
   <tr>
     <td class="label" colspan="2"></td>
     <td colspan="2"></td>
     <td class="label">Delay</td>
-    <td colspan="5" class="value-cell">${v.delay || ""}</td>
+    <td colspan="${printFlightTypeOptions.length}" class="value-cell">${v.delay || ""}</td>
   </tr>
-  <tr>
-    <td class="label" colspan="2">ARR/DEP SHIFT START</td>
-    <td colspan="2" class="mono">${v.shift_start || ""}</td>
-    <td class="label">ARR/DEP SHIFT END</td>
-    <td colspan="5" class="mono">${v.shift_end || ""}</td>
-  </tr>
+  ${shiftRowHtml}
 </table>
 
 <div class="obs-grid">
@@ -900,12 +961,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   ${obsSection("Aircraft Ramp Observer", [["1", v.aircraft_ramp_observer_1]])}
 </div>
 
-<table style="margin-bottom:10px;">
-  <tr><td colspan="2" class="section">CARGO AND BAGGAGE & CATERING ACCOMPANIED BY:</td></tr>
-  <tr><td class="label" style="width:110px;">Catering</td><td class="value-cell">${v.catering_accompanied || ""}</td></tr>
-  <tr><td class="label">Cargo</td><td class="value-cell">${v.cargo_accompanied || ""}</td></tr>
-  <tr><td class="label">Baggage</td><td class="value-cell">${v.baggage_accompanied || ""}</td></tr>
-</table>
+${baggageInfoHtml}
+${accompaniedHtml}
 
 <table style="margin-bottom:10px;">
   <tr><td class="section">REMARKS</td></tr>
@@ -913,13 +970,13 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 </table>
 
 <table style="margin-bottom:10px;">
-  <tr><td class="section">${String(airlineName).toUpperCase()} (SECURITY SUPERVISOR ON-DUTY)</td></tr>
+  <tr><td class="section">${printSupervisorTitle}</td></tr>
   <tr><td class="value-cell" style="padding:10px;">${v.security_supervisor || ""}</td></tr>
 </table>
 
 <div class="footer">
   <span>${airlineName} Security Task Sheet</span>
-  <span>V.03 22Jan2023</span>
+  <span>${printVersion}</span>
 </div>
 
 </body></html>`;
@@ -1109,11 +1166,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 </>
               )}
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Skd Type {isNew && <span className="text-destructive">*</span>}</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">{flightTypeLabel} {isNew && <span className="text-destructive">*</span>}</label>
                 {isNew ? (
                   <select className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}>
                     <option value="">Select...</option>
-                    {FLIGHT_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
+                    {flightTypeOptions.map(ft => <option key={ft} value={ft}>{ft}</option>)}
                   </select>
                 ) : (
                   <input className={readOnlyCls} value={skdType || sheet.flight_type || "—"} readOnly disabled />
@@ -1198,7 +1255,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <input className={inputCls} value={sheet.delay} onChange={e => update("delay", e.target.value)} placeholder="Delay info" />
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 pt-3 border-t">
+            {!isEthiopianAirline && <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 pt-3 border-t">
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Start Shift Date</label>
                 <input
@@ -1235,7 +1292,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">End Shift Time</label>
                 <input className={inputCls + " font-mono"} value={sheet.shift_end} onChange={e => update("shift_end", formatTimeInput(e.target.value, sheet.shift_end))} placeholder="HH:MM" maxLength={5} />
               </div>
-            </div>
+            </div>}
           </Section>
 
           {/* Observers */}
@@ -1277,13 +1334,38 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
             </div>
           </Section>
 
-          {/* Accompanied By */}
-          <Section title="Cargo, Baggage & Catering Accompanied By" icon={<Package size={14} />} accent="text-accent-foreground" iconBg="bg-accent">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Catering</label>
-                <input className={inputCls} value={sheet.catering_accompanied} onChange={e => update("catering_accompanied", e.target.value)} placeholder="Name" />
+          {isEthiopianAirline && (
+            <Section title="Baggage Information" icon={<Package size={14} />} accent="text-info" iconBg="bg-info/10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Total Baggage on BRS</label>
+                  <input className={inputCls} value={sheet.total_baggage_brs} onChange={e => update("total_baggage_brs", e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Total Baggage Accepted</label>
+                  <input className={inputCls} value={sheet.total_baggage_accepted} onChange={e => update("total_baggage_accepted", e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Missing Baggage on BRS</label>
+                  <input className={inputCls} value={sheet.missing_baggage_brs} onChange={e => update("missing_baggage_brs", e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">No. of Baggage loaded in H5</label>
+                  <input className={inputCls} value={sheet.baggage_loaded_h5} onChange={e => update("baggage_loaded_h5", e.target.value)} />
+                </div>
               </div>
+            </Section>
+          )}
+
+          {/* Accompanied By */}
+          <Section title={isEthiopianAirline ? "Cargo Baggage Accompanied By" : "Cargo, Baggage & Catering Accompanied By"} icon={<Package size={14} />} accent="text-accent-foreground" iconBg="bg-accent">
+            <div className={`grid grid-cols-1 ${isEthiopianAirline ? "md:grid-cols-2" : "md:grid-cols-3"} gap-3`}>
+              {!isEthiopianAirline && (
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Catering</label>
+                  <input className={inputCls} value={sheet.catering_accompanied} onChange={e => update("catering_accompanied", e.target.value)} placeholder="Name" />
+                </div>
+              )}
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Cargo</label>
                 <input className={inputCls} value={sheet.cargo_accompanied} onChange={e => update("cargo_accompanied", e.target.value)} placeholder="Name or NIL" />
@@ -1306,7 +1388,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           </Section>
 
           {/* Security Supervisor */}
-          <Section title={`${String((currentRow as any)?.airline || (currentRow as any)?.airline_name || "").toUpperCase()} — Security Supervisor on Duty`} icon={<UserCheck size={14} />} accent="text-primary" iconBg="bg-primary/10">
+          <Section title={supervisorTitle} icon={<UserCheck size={14} />} accent="text-primary" iconBg="bg-primary/10">
             <input
               className={inputCls}
               value={sheet.security_supervisor}
@@ -1433,7 +1515,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
           {/* Footer matching the PDF */}
           <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-3 border-t">
             <span className="flex items-center gap-1.5"><Shield size={12} /> {currentRow.airline} Security Task Sheet</span>
-            <span className="font-mono">V.03 22Jan2023</span>
+            <span className="font-mono">{isEthiopianAirline ? "V.05" : "V.03"} 22Jan2023</span>
           </div>
         </div>
 
