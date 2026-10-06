@@ -900,93 +900,88 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     if (printIsEthiopian) {
       const linkLogoUrl = linkAeroTaskLogo.url.startsWith("/") ? `${window.location.origin}${linkAeroTaskLogo.url}` : linkAeroTaskLogo.url;
       const ethiopianLogoUrl = ethiopianAirlinesLogo.url.startsWith("/") ? `${window.location.origin}${ethiopianAirlinesLogo.url}` : ethiopianAirlinesLogo.url;
-      const ethOuterRow = (content: string, sideContent = "") => `
-  <tr>
-    <td class="word-left">${content}</td>
-    <td class="word-side">${sideContent}</td>
-  </tr>`;
-      const ethObserver = (title: string, rows: [string, string][], showStaff = true) => ethOuterRow(`
-<table class="eth-block">
-  <tr><th colspan="2" class="eth-section">${title}</th></tr>
-  ${showStaff ? `<tr><td colspan="2" class="eth-staff">Staff Name</td></tr>` : ""}
-  ${rows.map(([label, val]) => `<tr><td class="eth-index">${label}</td><td class="eth-value">${val || ""}</td></tr>`).join("")}
-</table>`);
+      const ethObserver = (title: string, rows: [string, string][], showStaff = true) => `
+<table class="blk">
+  <colgroup><col style="width:3.5%"><col style="width:96.5%"></colgroup>
+  <tr><th colspan="2" class="sec">${title}</th></tr>
+  <tr><td colspan="2" class="staff">${showStaff ? "Staff Name" : "&nbsp;"}</td></tr>
+  ${rows.map(([label, val]) => `<tr><td class="idx">${label}</td><td class="val">${val || ""}</td></tr>`).join("")}
+</table>`;
+      const box = (ft: string) => `<span class="box">${ft === skdVal ? "✓" : ""}</span>`;
       const ethHtml = `<!DOCTYPE html><html><head>
 <title>ETH Security Task Sheet - ${flightNoVal}</title>
 <style>
-  * { box-sizing:border-box; }
-  body { margin:0; background:#fff; color:#000; font-family: Georgia, 'Times New Roman', serif; }
-  .page { width:210mm; height:297mm; margin:0 auto; padding:8mm 9mm 6mm; overflow:hidden; }
-  .logos { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:4mm; }
-  .link-logo { width:31mm; height:auto; }
-  .eth-logo { width:55mm; height:auto; margin-top:2mm; }
-  .title { text-align:center; font-size:15pt; font-weight:900; text-transform:uppercase; text-decoration:underline; margin-bottom:4mm; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { background:#fff; color:#000; font-family: Cambria, Georgia, 'Times New Roman', serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page { width:210mm; height:296mm; margin:0 auto; padding:9mm 15mm 8mm 13mm; position:relative; overflow:hidden; }
+  .logos { display:flex; align-items:flex-start; justify-content:space-between; height:28mm; }
+  .link-logo { width:24mm; height:auto; margin-left:2mm; }
+  .eth-logo { width:50mm; height:auto; margin-top:2mm; }
+  .title { text-align:center; font-size:12pt; font-weight:700; margin:6mm 0 4mm; }
   table { width:100%; border-collapse:collapse; table-layout:fixed; }
-  th, td { border:1px dotted #333; padding:1.5px 4px; font-size:10.5pt; line-height:1.04; vertical-align:middle; }
-  .word-shell { border:1px solid #000; }
-  .word-shell > tbody > tr > td { border:1px solid #000; padding:0; }
-  .word-left { width:96%; }
-  .word-side { width:4%; text-align:center; vertical-align:top; }
-  th, .blue { background:#c9dcf2; font-weight:900; }
-  .main th { text-align:left; }
+  th, td { border:1px dotted #000; padding:0.6mm 1.2mm; font-size:10pt; line-height:1.15; vertical-align:middle; text-align:left; font-weight:700; }
+  .blk { margin-bottom:3.2mm; }
+  .main { margin-bottom:3.2mm; }
+  .blue, .sec { background:#c6d9f1; }
   .center { text-align:center; }
-  .field { min-height:15px; font-weight:700; }
-  .time-label { width:12mm; background:#c9dcf2; font-weight:900; }
-  .time-value { width:35mm; font-weight:900; }
-  .check-cell { font-weight:900; text-align:center; white-space:nowrap; }
-  .box { display:inline-block; width:11px; height:11px; border:1.5px solid #000; margin-left:4px; vertical-align:-1px; }
-  .box.checked::after { content:'✓'; display:block; font-size:11px; line-height:9px; text-align:center; }
-  .eth-block { margin:0; }
-  .eth-section { text-align:left; background:#c9dcf2; font-size:11pt; }
-  .eth-staff { text-align:center; font-weight:900; font-size:11pt; height:5mm; }
-  .eth-index { width:7mm; font-weight:900; text-align:center; }
-  .eth-value { height:4.8mm; font-weight:700; }
-  .important { margin:0.8mm 0 1.6mm; font-size:9.8pt; }
+  .sec { font-size:10.5pt; }
+  .staff { text-align:center; height:5.5mm; }
+  .idx { width:4mm; text-align:center; font-size:9pt; height:5.2mm; }
+  .val { font-weight:600; }
+  .h { height:5mm; }
+  .box { display:inline-block; width:3mm; height:3mm; border:1px solid #000; margin-left:1px; vertical-align:-0.4mm; font-size:8pt; line-height:2.6mm; text-align:center; }
+  .ft { white-space:nowrap; font-size:10pt; }
+  .ft span.lbl { margin-right:5mm; }
+  .important { font-size:8pt; font-weight:400; margin:-2.6mm 0 3mm; }
   .important b { color:#c00000; }
-  .red-label { color:#c00000; font-weight:900; font-size:10.5pt; width:65mm; }
-  .orange { background:#e97817; color:#fff; font-weight:900; font-size:12pt; }
-  .footer { display:flex; justify-content:space-between; margin-top:4mm; padding:0 7mm; font-family: Arial, sans-serif; font-size:9pt; }
-  .side-check { display:inline-block; width:11px; height:11px; border:1.5px solid #000; margin-top:8mm; }
-  .word-spacer { height:1.5mm; border-left:0!important; border-right:0!important; }
-  @media print { .page { margin:0; } @page { size:A4 portrait; margin:0; } }
+  .red { color:#c00000; border:0; padding:0.4mm 0; }
+  .redrow td { border:0; }
+  .bag { margin-bottom:3.2mm; border-left:1px dotted #000; border-right:1px dotted #000; border-bottom:1px dotted #000; }
+  .bag th { border:1px dotted #000; }
+  .bag .redv { border:0; font-weight:600; }
+  .acc-title { font-size:9pt; }
+  .orange { background:#e46c0a; color:#fff; font-size:11pt; padding:1mm 1.2mm; }
+  .footer { position:absolute; left:23mm; right:23mm; bottom:9mm; display:flex; justify-content:space-between; font-family: Arial, sans-serif; font-size:8pt; font-weight:400; }
+  @page { size:A4 portrait; margin:0; }
+  @media print { .page { margin:0; } }
 </style>
 </head><body><div class="page">
   <div class="logos">
     <img class="link-logo" src="${linkLogoUrl}" alt="Link Aero" />
     <img class="eth-logo" src="${ethiopianLogoUrl}" alt="Ethiopian" />
   </div>
-  <div class="title">Ethiopian Airlines Security Task Sheet</div>
-  <table class="word-shell"><tbody>
-  ${ethOuterRow(`<table class="main">
-    <tr><th colspan="2">Flight Number</th><th colspan="2" class="center">DATE</th><th>Registration</th><th colspan="3" class="center">Route</th></tr>
-    <tr><td colspan="2" class="field center">${flightNoVal}</td><td colspan="2" class="field center">${flightDate}</td><td class="field center">${reg}</td><td colspan="3" class="field center">${rt}</td></tr>
-    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
-    <tr><td class="time-label">STD</td><td class="time-value">${stdVal}</td><td class="time-label">ATD</td><td class="time-value center">${atdVal || "/"}</td><td class="blue">Delay</td><td colspan="3" class="field">${v.delay || ""}</td></tr>
-  </table>`, `<span class="side-check"></span>`)}
-
+  <div class="title">ETHIOPIAN AIRLINES SECURITY TASK SHEET</div>
+  <table class="main">
+    <colgroup><col style="width:5%"><col style="width:18%"><col style="width:5%"><col style="width:24%"><col style="width:14%"><col style="width:34%"></colgroup>
+    <tr class="blue"><td colspan="2">Flight Number</td><td colspan="2" class="center">DATE</td><td>Registration</td><td class="center">Route</td></tr>
+    <tr class="h"><td colspan="2" class="center">${flightNoVal && flightNoVal !== "—" ? flightNoVal : "ET /"}</td><td colspan="2" class="center">${flightDate}</td><td class="center">${reg}</td><td class="center">${rt}</td></tr>
+    <tr><td class="blue">STA</td><td>${staVal}</td><td class="blue">ATA</td><td class="center">${ataVal || "/"}</td><td class="blue">Flight Type</td><td class="ft">${printFlightTypeOptions.map(ft => `<span class="lbl">${ft.toUpperCase()}${box(ft)}</span>`).join("")}</td></tr>
+    <tr><td class="blue">STD</td><td>${stdVal}</td><td class="blue">ATD</td><td class="center">${atdVal || "/"}</td><td class="blue">Delay</td><td>${v.delay || ""}</td></tr>
+  </table>
   ${ethObserver("Cargo Observer", [["1", v.cargo_observer_1]])}
   ${ethObserver("Hold Baggage Observer", [["1", v.hold_baggage_observer_1], ["2", v.hold_baggage_observer_2]])}
   ${ethObserver("Aircraft Door Observer", [["1", v.aircraft_door_observer_1], ["2", v.aircraft_door_observer_2]], false)}
-  ${ethOuterRow(`<div class="important"><b>Important//</b>Arrive at gate 20 minutes prior to aircraft arrival.</div>`)}
+  <div class="important"><b>Important//</b>Arrive at gate 20 minutes prior to aircraft arrival.</div>
   ${ethObserver("Aircraft Ramp Observer", [["1", v.aircraft_ramp_observer_1], ["2", v.aircraft_ramp_observer_2]])}
-
-  ${ethOuterRow(`<table class="eth-block">
-    <tr><th colspan="2" class="eth-section">Baggage Information:</th></tr>
-    <tr><td class="red-label">Total Baggage On BRS:</td><td class="eth-value">${v.total_baggage_brs || ""}</td></tr>
-    <tr><td class="red-label">Total Baggage Accepted:</td><td class="eth-value">${v.total_baggage_accepted || ""}</td></tr>
-    <tr><td class="red-label">Missing Baggage On BRS:</td><td class="eth-value">${v.missing_baggage_brs || ""}</td></tr>
-    <tr><td class="red-label">00 BAGS LOADED IN H5</td><td class="eth-value">${v.baggage_loaded_h5 || ""}</td></tr>
-  </table>`)}
-
-  ${ethOuterRow(`<table class="eth-block">
-    <tr><th colspan="2" class="eth-section">CARGO AND BAGGAGE ACCOMPANIED BY:</th></tr>
-    <tr><td colspan="2" class="eth-staff">Staff Name</td></tr>
-    <tr><td style="width:36mm;text-align:center;font-weight:900;">Cargo</td><td class="eth-value">${v.cargo_accompanied || ""}</td></tr>
-    <tr><td style="text-align:center;font-weight:900;">Baggage</td><td class="eth-value">${v.baggage_accompanied || ""}</td></tr>
-  </table>`)}
-
-  ${ethOuterRow(`<table class="eth-block"><tr><th class="orange">Ethiopian Airlines&nbsp; (Duty Manager)</th></tr><tr><td class="eth-value">${v.security_supervisor || ""}</td></tr></table>`)}
-  </tbody></table>
+  <table class="bag">
+    <colgroup><col style="width:40%"><col style="width:60%"></colgroup>
+    <tr><th colspan="2" class="sec">&nbsp;Baggage Information:</th></tr>
+    <tr class="redrow"><td class="red">Total Baggage On &nbsp;BRS:</td><td class="redv">${v.total_baggage_brs || ""}</td></tr>
+    <tr class="redrow"><td class="red">Total Baggage Accepted:</td><td class="redv">${v.total_baggage_accepted || ""}</td></tr>
+    <tr class="redrow"><td class="red">Missing &nbsp;Baggage On BRS:</td><td class="redv">${v.missing_baggage_brs || ""}</td></tr>
+    <tr class="redrow"><td class="red">00 BAGS LOADED IN H5</td><td class="redv">${v.baggage_loaded_h5 || ""}</td></tr>
+  </table>
+  <table class="blk">
+    <colgroup><col style="width:17%"><col style="width:83%"></colgroup>
+    <tr><th colspan="2" class="sec acc-title">CARGO AND BAGGAGE ACCOMPANIED BY:</th></tr>
+    <tr><td colspan="2" class="staff">Staff Name</td></tr>
+    <tr><td class="center h">Cargo</td><td class="val">${v.cargo_accompanied || ""}</td></tr>
+    <tr><td class="center h">Baggage</td><td class="val">${v.baggage_accompanied || ""}</td></tr>
+  </table>
+  <table class="blk" style="margin-top:5mm;">
+    <tr><th class="orange">Ethiopian Airlines&nbsp; (Duty Manager)</th></tr>
+    <tr><td class="val h">${v.security_supervisor || ""}</td></tr>
+  </table>
   <div class="footer"><span>ETH Security Task Sheet</span><span>V.05 22Jan2023</span></div>
 </div></body></html>`;
       const printWindow = window.open("", "_blank");
