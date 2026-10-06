@@ -723,11 +723,6 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       if (!isArrivalOnly) {
         required.push({ key: "std", label: "STD" }, { key: "atd", label: "ATD" });
       }
-      const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
-      if (isNew) {
-        if (!String(editableRow.airline || "").trim()) missing.unshift("Airline");
-        if (!String(sheet.flight_type || "").trim()) missing.push(flightTypeLabel);
-      }
       if (missing.length > 0) {
         toast({
           title: "Missing required fields",
