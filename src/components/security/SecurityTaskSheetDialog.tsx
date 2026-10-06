@@ -909,32 +909,32 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 <style>
   * { box-sizing:border-box; }
   body { margin:0; background:#fff; color:#000; font-family: Georgia, 'Times New Roman', serif; }
-  .page { width:210mm; min-height:297mm; margin:0 auto; padding:15mm 11mm 16mm; }
-  .logos { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10mm; }
-  .link-logo { width:29mm; height:auto; }
-  .eth-logo { width:55mm; height:auto; margin-top:5mm; }
-  .title { text-align:center; font-size:18pt; font-weight:900; text-transform:uppercase; margin-bottom:7mm; }
+  .page { width:210mm; height:297mm; margin:0 auto; padding:7mm 9mm 6mm; overflow:hidden; }
+  .logos { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:3mm; }
+  .link-logo { width:23mm; height:auto; }
+  .eth-logo { width:43mm; height:auto; margin-top:2mm; }
+  .title { text-align:center; font-size:15pt; font-weight:900; text-transform:uppercase; margin-bottom:3mm; }
   table { width:100%; border-collapse:collapse; table-layout:fixed; }
-  th, td { border:1px dotted #333; padding:3px 5px; font-size:14pt; line-height:1.08; vertical-align:middle; }
+  th, td { border:1px dotted #333; padding:1.5px 4px; font-size:10.5pt; line-height:1.04; vertical-align:middle; }
   th, .blue { background:#c9dcf2; font-weight:900; }
   .main th { text-align:left; }
   .center { text-align:center; }
-  .field { min-height:21px; font-weight:700; }
+  .field { min-height:15px; font-weight:700; }
   .time-label { width:12mm; background:#c9dcf2; font-weight:900; }
   .time-value { width:35mm; font-weight:900; }
   .check-cell { font-weight:900; text-align:center; white-space:nowrap; }
-  .box { display:inline-block; width:15px; height:15px; border:2px solid #000; margin-left:6px; vertical-align:-1px; }
-  .box.checked::after { content:'✓'; display:block; font-size:15px; line-height:12px; text-align:center; }
-  .eth-block { margin-top:3.3mm; }
-  .eth-section { text-align:left; background:#c9dcf2; font-size:15pt; }
-  .eth-staff { text-align:center; font-weight:900; font-size:15pt; height:8mm; }
+  .box { display:inline-block; width:11px; height:11px; border:1.5px solid #000; margin-left:4px; vertical-align:-1px; }
+  .box.checked::after { content:'✓'; display:block; font-size:11px; line-height:9px; text-align:center; }
+  .eth-block { margin-top:1.6mm; }
+  .eth-section { text-align:left; background:#c9dcf2; font-size:11pt; }
+  .eth-staff { text-align:center; font-weight:900; font-size:11pt; height:5mm; }
   .eth-index { width:7mm; font-weight:900; text-align:center; }
-  .eth-value { height:7mm; font-weight:700; }
-  .important { margin:1.2mm 0 3.2mm; font-size:12.5pt; }
+  .eth-value { height:4.8mm; font-weight:700; }
+  .important { margin:0.8mm 0 1.6mm; font-size:9.8pt; }
   .important b { color:#c00000; }
-  .red-label { color:#c00000; font-weight:900; font-size:15pt; width:65mm; }
-  .orange { background:#e97817; color:#fff; font-weight:900; font-size:16pt; }
-  .footer { display:flex; justify-content:space-between; margin-top:21mm; padding:0 7mm; font-family: Arial, sans-serif; font-size:11pt; }
+  .red-label { color:#c00000; font-weight:900; font-size:10.5pt; width:65mm; }
+  .orange { background:#e97817; color:#fff; font-weight:900; font-size:12pt; }
+  .footer { display:flex; justify-content:space-between; margin-top:4mm; padding:0 7mm; font-family: Arial, sans-serif; font-size:9pt; }
   @media print { .page { margin:0; } @page { size:A4 portrait; margin:0; } }
 </style>
 </head><body><div class="page">
@@ -946,7 +946,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   <table class="main">
     <tr><th colspan="2">Flight Number</th><th colspan="2" class="center">DATE</th><th>Registration</th><th colspan="3" class="center">Route</th></tr>
     <tr><td colspan="2" class="field center">${flightNoVal}</td><td colspan="2" class="field center">${flightDate}</td><td class="field center">${reg}</td><td colspan="3" class="field center">${rt}</td></tr>
-    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
+    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => ft === "PAX" ? `<td class="check-cell">${ft.toUpperCase()}</td>` : `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
     <tr><td class="time-label">STD</td><td class="time-value">${stdVal}</td><td class="time-label">ATD</td><td class="time-value center">${atdVal || "/"}</td><td class="blue">Delay</td><td colspan="3" class="field">${v.delay || ""}</td></tr>
   </table>
 
@@ -1240,10 +1240,14 @@ ${accompaniedHtml}
                       <th>Flight Type</th>
                       {flightTypeOptions.map(ft => (
                         <td key={ft} className="px-2 py-1.5 font-black text-foreground">
-                          <label className="flex items-center justify-center gap-2">
-                            <span>{ft}</span>
-                            <input type="checkbox" checked={sheet.flight_type === ft} onChange={() => update("flight_type", ft)} className="h-4 w-4" />
-                          </label>
+                          {ft === "PAX" ? (
+                            <span className="flex items-center justify-center">{ft}</span>
+                          ) : (
+                            <label className="flex items-center justify-center gap-2">
+                              <span>{ft}</span>
+                              <input type="checkbox" checked={sheet.flight_type === ft} onChange={() => update("flight_type", ft)} className="h-4 w-4" />
+                            </label>
+                          )}
                         </td>
                       ))}
                     </tr>
