@@ -22,7 +22,7 @@ import {
 } from "@/lib/phase3WriteCycleVerifier";
 import linkAeroTaskLogo from "@/assets/link-aero-task-logo.png.asset.json";
 import ethiopianAirlinesLogo from "@/assets/ethiopian-airlines-logo.jpeg.asset.json";
-import AirFranceTaskSheet, { isAirFranceAirline, emptyAirFranceData, buildAirFrancePrintHtml, type AirFranceData } from "@/components/security/AirFranceTaskSheet";
+import AirFranceTaskSheet, { AirFranceHeader, isAirFranceAirline, emptyAirFranceData, buildAirFrancePrintHtml, type AirFranceData } from "@/components/security/AirFranceTaskSheet";
 
 /** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
@@ -1276,6 +1276,7 @@ ${accompaniedHtml}
         <fieldset disabled={reviewMode || isReceivablesView || stationLockedAfterApproval} className="contents">
           {isAirFrance ? (
             <>
+              <AirFranceHeader />
               <Section title="Assignment" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div><label htmlFor="af-airline" className="mb-1 block text-xs font-bold">Airline</label><select id="af-airline" className={inputCls} value={editableRow.airline || ""} disabled={!isNew} onChange={e => updateRow("airline", e.target.value)}>{airlines.map((a: any) => <option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
