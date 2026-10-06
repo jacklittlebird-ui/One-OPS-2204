@@ -723,16 +723,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       if (!isArrivalOnly) {
         required.push({ key: "std", label: "STD" }, { key: "atd", label: "ATD" });
       }
-      if (missing.length > 0) {
-        toast({
-          title: "Missing required fields",
-          description: `Please fill: ${missing.join(", ")}`,
-          variant: "destructive",
-        });
-        timer.finish("validation_error");
-        return;
+      const missing = required.filter(f => !String(sheet[f.key] || "").trim()).map(f => f.label);
+      if (isNew) {
+        if (!String(editableRow.airline || "").trim()) missing.unshift("Airline");
+        // Air France form has no Skd Type field — skip its required check.
+        if (!isAirFrance && !String(sheet.flight_type || "").trim()) missing.push(flightTypeLabel);
       }
-    }
     // Keep dates exactly as entered by the user. Do NOT cross-copy between
     // arrival_date (flight_date) and departure_date based on service type —
     // empty fields must remain empty so re-opening the form preserves the
