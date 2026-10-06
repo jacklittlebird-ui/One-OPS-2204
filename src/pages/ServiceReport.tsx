@@ -1703,7 +1703,9 @@ function HandlingServiceReportContent() {
               ) : pageData.map((r, i) => (
                 <tr key={r.id || `fs-${r.flightScheduleId}-${i}`} className={`data-table-row ${!r.isLinked ? "bg-muted/30" : ""}`}>
                   <td className="px-3 py-2.5 text-muted-foreground text-xs">{pag.start + i + 1}</td>
-                  <td className="px-3 py-2.5 font-semibold whitespace-nowrap" style={(() => { const c = airlineColor(r.operator); return c ? { color: c } : undefined; })()}>{r.operator}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    {r.operator ? <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" style={airlineBadgeStyle(r.operator)}>{r.operator}</span> : "—"}
+                  </td>
                   <td className="px-3 py-2.5 font-mono text-xs text-foreground">{r.flightNo}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">{r.registration || "—"}</td>
                   <td className="px-3 py-2.5 whitespace-nowrap">
