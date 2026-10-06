@@ -483,6 +483,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const isEthiopianAirline = isEthiopianAirlineName(currentAirlineName);
   const flightTypeOptions = isEthiopianAirline ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
   const flightTypeLabel = isEthiopianAirline ? "Flight Type" : "Skd Type";
+  const displayedFlightType = isEthiopianAirline ? (sheet.flight_type || skdType || "—") : (skdType || sheet.flight_type || "—");
+  const dialogAirlineTitle = isNew
+    ? "New"
+    : /airlines/i.test(currentAirlineName)
+      ? currentAirlineName
+      : `${currentAirlineName} Airlines`;
   const supervisorTitle = isEthiopianAirline
     ? "Ethiopian Airlines (Duty Manager)"
     : `${currentAirlineName.toUpperCase()} — Security Supervisor on Duty`;
@@ -833,7 +839,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     // SSoT: flight_schedules.skd_type is authoritative. Prefer it over the
     // frozen task_sheet_data snapshot so Clearance amendments (Military → Schedule)
     // propagate to the printable task sheet and the readonly view.
-    const skdVal = pick(skdType, dbFlight?.skd_type, v.flight_type, (baseRow as any).skd_type) || "—";
+    const skdVal = printIsEthiopian
+      ? (pick(v.flight_type, skdType, dbFlight?.skd_type, (baseRow as any).skd_type) || "—")
+      : (pick(skdType, dbFlight?.skd_type, v.flight_type, (baseRow as any).skd_type) || "—");
 
     const ftChecks = printFlightTypeOptions.map(ft =>
       `<td class="ft-cell" style="border:2px solid #222;padding:7px 10px;">${ft === skdVal ? "☒" : "☐"} ${ft}</td>`
@@ -1001,7 +1009,7 @@ ${accompaniedHtml}
                 </div>
                 <div>
                   <DialogTitle className="text-base font-bold uppercase tracking-wide leading-tight">
-                    {isNew ? "New" : currentRow.airline} Airlines Security Task Sheet
+                    {dialogAirlineTitle} Security Task Sheet
                   </DialogTitle>
                   <p className="text-[11px] uppercase tracking-widest opacity-80 mt-0.5">
                     {isNew ? "Create new report" : "Edit report"} • {currentRow.station || "—"}
@@ -1173,7 +1181,7 @@ ${accompaniedHtml}
                     {flightTypeOptions.map(ft => <option key={ft} value={ft}>{ft}</option>)}
                   </select>
                 ) : (
-                  <input className={readOnlyCls} value={skdType || sheet.flight_type || "—"} readOnly disabled />
+                  <input className={readOnlyCls} value={displayedFlightType} readOnly disabled />
                 )}
               </div>
             </div>
