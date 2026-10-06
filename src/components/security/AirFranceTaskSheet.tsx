@@ -70,7 +70,6 @@ export default function AirFranceTaskSheet({ sheet, flight, update, updateFlight
   return <div className="space-y-4" data-testid="air-france-task-sheet">
     <div className="grid grid-cols-1 gap-3 border border-border p-3 sm:grid-cols-2 md:grid-cols-4">
       <div><label htmlFor="af-flight-no" className="mb-1 block text-xs font-bold">Flight Number</label><input id="af-flight-no" className={boxedField} value={flight.flight_no || ""} onChange={e => updateFlight("flight_no", e.target.value.toUpperCase())} /></div>
-      <div><label htmlFor="af-flight-date" className="mb-1 block text-xs font-bold">Arrival Date</label><input id="af-flight-date" className={boxedField} maxLength={10} value={dateDisplay(flight.flight_date || "")} onChange={e => updateFlight("flight_date", dateInput(e.target.value, flight.flight_date || ""))} /></div>
       {field("registration", "Registration")}{field("route", "Route")}
       {field("sta", "STA")}{field("ata", "ATA 00:00/00:00")}{field("std", "STD")}{field("atd", "ATD 00:00/00:00")}
       <div><label htmlFor="af-departure-date" className="mb-1 block text-xs font-bold">Departure Date</label><input id="af-departure-date" className={boxedField} maxLength={10} value={dateDisplay(flight.departure_date || "")} onChange={e => updateFlight("departure_date", dateInput(e.target.value, flight.departure_date || ""))} /></div>
