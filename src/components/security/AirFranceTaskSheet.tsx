@@ -48,6 +48,13 @@ interface Props {
   dualTimeInput: (value: string, previous: string) => string;
 }
 
+export function AirFranceHeader() {
+  return <div className="mb-4 flex items-start justify-between gap-4">
+    <img src={linkLogo.url} alt="Link Aero" className="h-24 w-auto object-contain" />
+    <img src={airFranceLogo.url} alt="Air France Security Services" className="mt-2 h-auto w-48 max-w-[50%] object-contain" />
+  </div>;
+}
+
 export default function AirFranceTaskSheet({ sheet, flight, update, updateFlight, dateDisplay, dateInput, timeInput, dualTimeInput }: Props) {
   const field = (key: "registration" | "route" | "sta" | "std" | "ata" | "atd" | "delay", label: string) => (
     <div className="min-w-0">
@@ -57,10 +64,6 @@ export default function AirFranceTaskSheet({ sheet, flight, update, updateFlight
     </div>
   );
   return <div className="space-y-4" data-testid="air-france-task-sheet">
-    <div className="flex items-start justify-between gap-4">
-      <img src={linkLogo.url} alt="Link Aero" className="h-24 w-auto object-contain" />
-      <img src={airFranceLogo.url} alt="Air France Security Services" className="mt-2 h-auto w-48 max-w-[50%] object-contain" />
-    </div>
     <h3 className="text-center text-xl font-bold text-foreground">AF Staff Distribution</h3>
     <div className="grid grid-cols-1 gap-3 border border-border p-3 sm:grid-cols-2 md:grid-cols-4">
       <div><label htmlFor="af-flight-no" className="mb-1 block text-xs font-bold">Flight Number</label><input id="af-flight-no" className={boxedField} value={flight.flight_no || ""} onChange={e => updateFlight("flight_no", e.target.value.toUpperCase())} /></div>
