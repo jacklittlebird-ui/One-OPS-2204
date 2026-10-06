@@ -923,9 +923,26 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       const styles = getComputedStyle(document.documentElement);
       const tokens = ["document-paper", "document-ink", "document-border", "document-heading", "document-briefing"]
         .map(key => `--${key}:${styles.getPropertyValue(`--${key}`)};`).join("");
-      const html = buildAirFrancePrintHtml({ ...v, flight_no: flightNoVal, date: flightDate, registration: reg, route: rt, sta: staVal, std: stdVal, ata: ataVal, atd: atdVal }, tokens, window.location.origin);
+      let html = buildAirFrancePrintHtml({ ...v, flight_no: flightNoVal, date: flightDate, registration: reg, route: rt, sta: staVal, std: stdVal, ata: ataVal, atd: atdVal }, tokens, window.location.origin);
       const printWindow = window.open("", "_blank");
       if (!printWindow) return;
+      // Embed logos in the print document so new-window restrictions and
+      // delayed asset requests cannot omit branding from the saved PDF.
+      const imageSources = Array.from(new DOMParser().parseFromString(html, "text/html").images).map(img => img.src);
+      await Promise.all(imageSources.map(async src => {
+        try {
+          const response = await fetch(src);
+          if (!response.ok) return;
+          const blob = await response.blob();
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          html = html.replace(src, dataUrl);
+        } catch { /* Leave the hosted URL as the fallback. */ }
+      }));
       printWindow.document.write(html);
       printWindow.document.close();
       await Promise.all(Array.from(printWindow.document.images).map(img => img.decode().catch(() => undefined)));
