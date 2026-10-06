@@ -595,9 +595,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
 
   useEffect(() => {
     if (!editableRow || !isEthiopianAirline) return;
+    // No default selection: only clear a value that is not an Ethiopian flight type.
     setSheet(prev => ETHIOPIAN_FLIGHT_TYPES.includes(prev.flight_type as any)
       ? prev
-      : { ...prev, flight_type: "PAX" });
+      : { ...prev, flight_type: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editableRow?.airline, isEthiopianAirline, row?.id]);
 
   const computedCharges = useMemo(() => {
@@ -958,7 +960,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   ${ethOuterRow(`<table class="main">
     <tr><th colspan="2">Flight Number</th><th colspan="2" class="center">DATE</th><th>Registration</th><th colspan="3" class="center">Route</th></tr>
     <tr><td colspan="2" class="field center">${flightNoVal}</td><td colspan="2" class="field center">${flightDate}</td><td class="field center">${reg}</td><td colspan="3" class="field center">${rt}</td></tr>
-    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => ft === "PAX" ? `<td class="check-cell">${ft.toUpperCase()}</td>` : `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
+    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
     <tr><td class="time-label">STD</td><td class="time-value">${stdVal}</td><td class="time-label">ATD</td><td class="time-value center">${atdVal || "/"}</td><td class="blue">Delay</td><td colspan="3" class="field">${v.delay || ""}</td></tr>
   </table>`, `<span class="side-check"></span>`)}
 
@@ -1253,14 +1255,10 @@ ${accompaniedHtml}
                       <th>Flight Type</th>
                       {flightTypeOptions.map(ft => (
                         <td key={ft} className="px-2 py-1.5 font-black text-foreground">
-                          {ft === "PAX" ? (
-                            <span className="flex items-center justify-center">{ft}</span>
-                          ) : (
-                            <label className="flex items-center justify-center gap-2">
-                              <span>{ft}</span>
-                              <input type="checkbox" checked={sheet.flight_type === ft} onChange={() => update("flight_type", ft)} className="h-4 w-4" />
-                            </label>
-                          )}
+                          <label className="flex items-center justify-center gap-2">
+                            <span>{ft}</span>
+                            <input type="checkbox" checked={sheet.flight_type === ft} onChange={() => update("flight_type", ft)} className="h-4 w-4" />
+                          </label>
                         </td>
                       ))}
                     </tr>
