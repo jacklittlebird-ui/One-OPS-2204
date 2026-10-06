@@ -32,5 +32,5 @@ export function airlineColor(name?: string | null): string {
 export function airlineBadgeStyle(name?: string | null): CSSProperties | undefined {
   const c = airlineColor(name);
   if (!c) return undefined;
-  return { backgroundColor: c, color: "#0F172A", borderColor: c };
+  return { backgroundColor: c, color: "#000000", borderColor: c };
 }
