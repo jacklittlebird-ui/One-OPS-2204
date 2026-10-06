@@ -57,6 +57,7 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [airlineFilter, setAirlineFilter] = useState<string>("all");
   const { station: userStation, isStationScoped } = useUserStation();
 
   const [loadedRows, setLoadedRows] = useState(0);
@@ -98,23 +99,34 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
     () => Array.from(new Set(scopedFlights.map(f => f.clearance_type).filter(Boolean))).sort(),
     [scopedFlights]
   );
+  const allAirlines = useMemo(() => {
+    const set = new Set<string>();
+    scopedFlights.forEach(f => {
+      const airline = f.airline_id ? airlineMap.get(f.airline_id)?.name : "";
+      const name = airline || f.handling_agent || "";
+      if (name) set.add(name);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [scopedFlights, airlineMap]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return scopedFlights.filter(f => {
+      const airline = f.airline_id ? airlineMap.get(f.airline_id)?.name || "" : "";
+      const airlineName = airline || f.handling_agent || "";
       if (statusFilter !== "all" && f.status !== statusFilter) return false;
       if (typeFilter !== "all" && f.clearance_type !== typeFilter) return false;
+      if (airlineFilter !== "all" && airlineName !== airlineFilter) return false;
       if (!q) return true;
-      const airline = f.airline_id ? airlineMap.get(f.airline_id)?.name || "" : "";
       return [
         f.flight_no, f.permit_no, f.registration, f.route, f.aircraft_type,
-        f.handling_agent, f.authority, f.purpose, airline,
+        f.handling_agent, f.authority, f.purpose, airlineName,
         f.arrival_flight, f.departure_flight,
       ].some(v => (v || "").toLowerCase().includes(q));
     });
-  }, [scopedFlights, search, statusFilter, typeFilter, airlineMap]);
+  }, [scopedFlights, search, statusFilter, typeFilter, airlineFilter, airlineMap]);
 
-  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, typeFilter] });
+  const { pageRows, ...pag } = usePagination(filtered, { resetKey: [search, statusFilter, typeFilter, airlineFilter] });
 
   return (
     <div className="space-y-4">
@@ -147,7 +159,7 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
 
       {/* Filters */}
       <Card className="p-3">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
           <div className="md:col-span-2 relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -166,6 +178,13 @@ export default function AllClearanceFlightsPage({ securityOnly = false }: AllCle
               <SelectItem value="Rejected">Rejected</SelectItem>
               <SelectItem value="Expired">Expired</SelectItem>
               <SelectItem value="Cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={airlineFilter} onValueChange={setAirlineFilter}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Airline" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All airlines</SelectItem>
+              {allAirlines.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
