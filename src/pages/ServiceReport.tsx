@@ -22,7 +22,7 @@ import PipelineStepper, { derivePipelineStage, derivePipelineCompletedStages, re
 import { useChannel } from "@/contexts/ChannelContext";
 import { useUserStation } from "@/contexts/UserStationContext";
 import { SECURITY_CLEARANCE_TYPES } from "@/components/clearances/ClearanceTypes";
-import { airlineColor } from "@/lib/airlineColors";
+import { airlineBadgeStyle } from "@/lib/airlineColors";
 import {
   ReportFormData, DelayEntry, emptyReport,
   CateringLineItem, HotacLineItem, FuelLineItem
