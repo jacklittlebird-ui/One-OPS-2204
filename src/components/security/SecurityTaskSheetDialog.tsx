@@ -430,14 +430,20 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     const hasSavedDepartureDate = !!saved && Object.prototype.hasOwnProperty.call(saved, "departure_date");
     const linkedScheduleArrivalDate = (row as any).fs_arrival_date ?? arrivalDate ?? "";
     const linkedScheduleDepartureDate = (row as any).fs_departure_date ?? departureDate ?? "";
+    const seededArrivalDate = hasSavedArrivalDate
+      ? String(saved.arrival_date || "")
+      : ((row as any).flight_schedule_id ? String(linkedScheduleArrivalDate || "") : (row.flight_date || (isNew ? (arrivalDate || "") : "")));
+    let seededDepartureDate = hasSavedDepartureDate
+      ? String(saved.departure_date || "")
+      : ((row as any).flight_schedule_id ? String(linkedScheduleDepartureDate || "") : ((row as any).departure_date || (isNew ? (departureDate || "") : "")));
+    // Ethiopian form: the DATE field is saved into DEP DATE (departure_date).
+    // When the schedule carries no departure date, keep the DATE field showing
+    // the arrival date instead of an empty box.
+    if (isEthiopianAirlineName(row.airline) && !seededDepartureDate) seededDepartureDate = seededArrivalDate;
     setEditableRow({
       ...row,
-      flight_date: hasSavedArrivalDate
-        ? String(saved.arrival_date || "")
-        : ((row as any).flight_schedule_id ? String(linkedScheduleArrivalDate || "") : (row.flight_date || (isNew ? (arrivalDate || "") : ""))),
-      departure_date: hasSavedDepartureDate
-        ? String(saved.departure_date || "")
-        : ((row as any).flight_schedule_id ? String(linkedScheduleDepartureDate || "") : ((row as any).departure_date || (isNew ? (departureDate || "") : ""))),
+      flight_date: seededArrivalDate,
+      departure_date: seededDepartureDate,
     } as DispatchRow);
     setReviewComment(row.review_comment || "");
     setContractId((row as any).contract_id || "");
@@ -854,7 +860,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     const airlineHeader = /airlines/i.test(airlineName) ? airlineName : `${airlineName} Airlines`;
     const printFlightTypeOptions = printIsEthiopian ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
     const flightNoVal = pick(v.flight_no, dbFlight?.flight_no, baseRow.flight_no) || "—";
-    const flightDate = formatDate(pick(baseRow.flight_date, dbFlight?.arrival_date, dbFlight?.departure_date));
+    // Ethiopian: the DATE field is persisted in DEP DATE (departure_date) —
+    // print it from there, falling back to the legacy arrival date for rows
+    // saved before the change.
+    const flightDate = printIsEthiopian
+      ? formatDate(pick(v.departure_date, dbFlight?.departure_date, baseRow.flight_date, dbFlight?.arrival_date))
+      : formatDate(pick(baseRow.flight_date, dbFlight?.arrival_date, dbFlight?.departure_date));
     const reg = pick(v.registration, dbFlight?.registration, (baseRow as any).registration);
     const rt = pick(v.route, dbFlight?.route, (baseRow as any).route);
     const staVal = pick(v.sta, dbFlight?.sta);
@@ -1308,7 +1319,7 @@ ${accompaniedHtml}
                     </tr>
                     <tr>
                       <td colSpan={2}><input className={`${ethInnerFieldCls} font-bold uppercase`} value={editableRow.flight_no || ""} onChange={e => updateRow("flight_no", e.target.value.toUpperCase())} /></td>
-                      <td colSpan={2}><input className={`${ethInnerFieldCls} font-mono`} value={isoToDmy(editableRow.flight_date || "")} onChange={e => { const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.flight_date || "")); const iso = dmyToIso(formatted); updateRow("flight_date", iso || formatted); }} maxLength={10} /></td>
+                      <td colSpan={2}><input className={`${ethInnerFieldCls} font-mono`} value={isoToDmy(editableRow.departure_date || "")} onChange={e => { const formatted = formatDateDmyInput(e.target.value, isoToDmy(editableRow.departure_date || "")); const iso = dmyToIso(formatted); updateRow("departure_date", iso || formatted); }} maxLength={10} /></td>
                       <td><input className={`${ethInnerFieldCls} font-mono uppercase`} value={sheet.registration} onChange={e => update("registration", e.target.value.toUpperCase())} /></td>
                       <td colSpan={3}><input className={`${ethInnerFieldCls} uppercase`} value={sheet.route} onChange={e => update("route", e.target.value.toUpperCase())} /></td>
                     </tr>
