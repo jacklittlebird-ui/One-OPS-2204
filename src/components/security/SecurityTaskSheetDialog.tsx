@@ -22,6 +22,7 @@ import {
 } from "@/lib/phase3WriteCycleVerifier";
 import linkAeroTaskLogo from "@/assets/link-aero-task-logo.png.asset.json";
 import ethiopianAirlinesLogo from "@/assets/ethiopian-airlines-logo.jpeg.asset.json";
+import AirFranceTaskSheet, { isAirFranceAirline, emptyAirFranceData, buildAirFrancePrintHtml, type AirFranceData } from "@/components/security/AirFranceTaskSheet";
 
 /** Auto-format & validate a 24-hour time input as HH:MM. Rejects invalid hours/minutes. */
 function formatTimeInput(value: string, prevValue: string): string {
@@ -137,7 +138,7 @@ function formatDateDmyInput(value: string, prevValue: string): string {
   return out;
 }
 
-interface TaskSheetData {
+interface TaskSheetData extends AirFranceData {
   flight_type: string;
   delay: string;
   shift_start_date: string;
@@ -171,6 +172,7 @@ interface TaskSheetData {
 }
 
 const emptyTaskSheet = (): TaskSheetData => ({
+  ...emptyAirFranceData(),
   flight_type: "",
   delay: "",
   shift_start_date: "",
@@ -503,6 +505,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const currentRow = isNew ? editableRow : (editableRow || row);
   const currentAirlineName = String((currentRow as any)?.airline || (currentRow as any)?.airline_name || "").trim();
   const isEthiopianAirline = isEthiopianAirlineName(currentAirlineName);
+  const isAirFrance = isAirFranceAirline(currentAirlineName);
   const flightTypeOptions = isEthiopianAirline ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
   const flightTypeLabel = isEthiopianAirline ? "Flight Type" : "Skd Type";
   const displayedFlightType = isEthiopianAirline ? (sheet.flight_type || skdType || "—") : (skdType || sheet.flight_type || "—");
@@ -708,7 +711,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       const isDepartureOnly = ft.includes("departure") && !ft.includes("arrival");
 
       const required: { key: keyof TaskSheetData; label: string }[] = [];
-      if (!isEthiopianAirline) {
+      if (!isEthiopianAirline && !isAirFrance) {
         required.push(
           { key: "shift_start", label: "Start Shift Time" },
           { key: "shift_end", label: "End Shift Time" },
@@ -846,6 +849,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     );
     const airlineName = pick(matchedAirline?.name, baseRow.airline, dbFlight?.handling_agent) || "—";
     const printIsEthiopian = isEthiopianAirlineName(airlineName);
+    const printIsAirFrance = isAirFranceAirline(airlineName);
     const airlineHeader = /airlines/i.test(airlineName) ? airlineName : `${airlineName} Airlines`;
     const printFlightTypeOptions = printIsEthiopian ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
     const flightNoVal = pick(v.flight_no, dbFlight?.flight_no, baseRow.flight_no) || "—";
@@ -914,6 +918,39 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         <tr><td colspan="2" class="obs-title">${title}</td></tr>
         ${rowsHtml}</table>`;
     };
+
+    if (printIsAirFrance) {
+      const styles = getComputedStyle(document.documentElement);
+      const tokens = ["document-paper", "document-ink", "document-border", "document-heading", "document-briefing"]
+        .map(key => `--${key}:${styles.getPropertyValue(`--${key}`)};`).join("");
+      let html = buildAirFrancePrintHtml({ ...v, flight_no: flightNoVal, date: flightDate, registration: reg, route: rt, sta: staVal, std: stdVal, ata: ataVal, atd: atdVal }, tokens, window.location.origin);
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return;
+      // Embed logos in the print document so new-window restrictions and
+      // delayed asset requests cannot omit branding from the saved PDF.
+      const imageSources = Array.from(new DOMParser().parseFromString(html, "text/html").images).map(img => img.src);
+      await Promise.all(imageSources.map(async src => {
+        try {
+          const response = await fetch(src);
+          if (!response.ok) return;
+          const blob = await response.blob();
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          html = html.replace(src, dataUrl);
+        } catch { /* Leave the hosted URL as the fallback. */ }
+      }));
+      printWindow.document.write(html);
+      printWindow.document.close();
+      await Promise.all(Array.from(printWindow.document.images).map(img => img.decode().catch(() => undefined)));
+      await printWindow.document.fonts.ready;
+      printWindow.print();
+      printWindow.close();
+      return;
+    }
 
     if (printIsEthiopian) {
       const linkLogoUrl = linkAeroTaskLogo.url.startsWith("/") ? `${window.location.origin}${linkAeroTaskLogo.url}` : linkAeroTaskLogo.url;
@@ -1237,7 +1274,21 @@ ${accompaniedHtml}
           </div>
         )}
         <fieldset disabled={reviewMode || isReceivablesView || stationLockedAfterApproval} className="contents">
-          {isEthiopianAirline ? (
+          {isAirFrance ? (
+            <>
+              <Section title="Assignment" icon={<Plane size={14} />}>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <div><label htmlFor="af-airline" className="mb-1 block text-xs font-bold">Airline</label><select id="af-airline" className={inputCls} value={editableRow.airline || ""} disabled={!isNew} onChange={e => updateRow("airline", e.target.value)}>{airlines.map((a: any) => <option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
+                  <div><label htmlFor="af-station" className="mb-1 block text-xs font-bold">Station</label><select id="af-station" className={inputCls} value={editableRow.station || ""} disabled={!isNew} onChange={e => updateRow("station", e.target.value)}>{airportsList.map((a: any) => <option key={a.id} value={a.iata_code || a.name}>{a.iata_code || a.name}</option>)}</select></div>
+                  <div><label htmlFor="af-service-type" className="mb-1 block text-xs font-bold">Service Type</label><select id="af-service-type" className={inputCls} value={editableRow.service_type || serviceType || ""} onChange={e => updateRow("service_type", e.target.value)}>{allowedServiceTypes.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                  <div><label htmlFor="af-skd-type" className="mb-1 block text-xs font-bold">Skd Type</label><select id="af-skd-type" className={inputCls} value={sheet.flight_type} onChange={e => update("flight_type", e.target.value)}><option value="">Select...</option>{FLIGHT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                </div>
+              </Section>
+              <AirFranceTaskSheet sheet={sheet as TaskSheetData & Record<string, string>} flight={editableRow} update={update} updateFlight={updateRow} dateDisplay={isoToDmy}
+                dateInput={(value, previous) => { const formatted = formatDateDmyInput(value, isoToDmy(previous)); return dmyToIso(formatted) || formatted; }}
+                timeInput={formatTimeInput} dualTimeInput={formatDualTimeInput} />
+            </>
+          ) : isEthiopianAirline ? (
             <div className="mx-4 mb-4 rounded-lg border bg-background p-4 shadow-sm md:mx-6">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <img src={linkAeroTaskLogo.url} alt="Link Aero" className="h-20 w-auto object-contain" />
@@ -1751,7 +1802,7 @@ ${accompaniedHtml}
           {/* Footer matching the PDF */}
           <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-3 border-t">
             <span className="flex items-center gap-1.5"><Shield size={12} /> {currentRow.airline} Security Task Sheet</span>
-            <span className="font-mono">{isEthiopianAirline ? "V.05" : "V.03"} 22Jan2023</span>
+            <span className="font-mono">{isAirFrance ? "V.06 07Aug2024" : `${isEthiopianAirline ? "V.05" : "V.03"} 22Jan2023`}</span>
           </div>
         </div>
 
