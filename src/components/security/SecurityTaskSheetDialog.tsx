@@ -960,7 +960,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   ${ethOuterRow(`<table class="main">
     <tr><th colspan="2">Flight Number</th><th colspan="2" class="center">DATE</th><th>Registration</th><th colspan="3" class="center">Route</th></tr>
     <tr><td colspan="2" class="field center">${flightNoVal}</td><td colspan="2" class="field center">${flightDate}</td><td class="field center">${reg}</td><td colspan="3" class="field center">${rt}</td></tr>
-    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => ft === "PAX" ? `<td class="check-cell">${ft.toUpperCase()}</td>` : `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
+    <tr><td class="time-label">STA</td><td class="time-value">${staVal}</td><td class="time-label">ATA</td><td class="time-value center">${ataVal || "/"}</td><td class="blue">Flight Type</td>${printFlightTypeOptions.map(ft => `<td class="check-cell">${ft.toUpperCase()} <span class="box ${ft === skdVal ? "checked" : ""}"></span></td>`).join("")}</tr>
     <tr><td class="time-label">STD</td><td class="time-value">${stdVal}</td><td class="time-label">ATD</td><td class="time-value center">${atdVal || "/"}</td><td class="blue">Delay</td><td colspan="3" class="field">${v.delay || ""}</td></tr>
   </table>`, `<span class="side-check"></span>`)}
 
