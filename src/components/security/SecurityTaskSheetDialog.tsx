@@ -1335,7 +1335,7 @@ ${accompaniedHtml}
                       <td><input className={`${ethInnerFieldCls} font-mono font-bold`} value={sheet.sta} onChange={e => update("sta", formatTimeInput(e.target.value, sheet.sta))} maxLength={5} /></td>
                       <th className="w-16">ATA</th>
                       <td><input className={`${ethInnerFieldCls} font-mono`} value={sheet.ata} onChange={e => update("ata", formatDualTimeInput(e.target.value, sheet.ata))} maxLength={11} /></td>
-                      <th>Flight Type</th>
+                      <th>Flight Type{ethiopianMissingFlightType && <span className="block text-[10px] font-bold text-destructive">Select one to enable Save</span>}</th>
                       {flightTypeOptions.map(ft => (
                         <td key={ft} className="px-2 py-1.5 font-black text-foreground">
                           <label className="flex items-center justify-center gap-2">
