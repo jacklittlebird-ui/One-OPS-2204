@@ -323,7 +323,7 @@ export default function ContractsPage() {
 const inputCls = "w-full px-3 py-1.5 text-sm border rounded bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const selectCls = "w-full px-3 py-1.5 text-sm border rounded bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 const RATE_SERVICE_TYPES = ["Arrival", "Departure", "Turnaround", "Night Stop", "ADHOC", "Overtime", "Staffing"];
-const SERVICE_SCOPES_LIST = ["Ad-Hoc", "Arrival Only", "Departure Only", "Full Service", "Maintenance", "Supervision Only", "Turnaround"];
+const SERVICE_SCOPES_LIST = ["All Security Types", "Ad-Hoc", "Arrival Only", "Departure Only", "Full Service", "Maintenance", "Supervision Only", "Turnaround"];
 
 const ContractFormModal = ({ data, onChange, onCancel, onSave, isSaving, title, serviceRates: serviceRatesProp, onServiceRatesChange }: any) => {
   const serviceRates: any[] = Array.isArray(serviceRatesProp) ? serviceRatesProp : [];
