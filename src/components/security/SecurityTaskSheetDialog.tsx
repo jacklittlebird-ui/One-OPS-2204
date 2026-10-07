@@ -1539,16 +1539,16 @@ ${accompaniedHtml}
                 <input className={inputCls + " font-mono"} value={sheet.sta} onChange={e => update("sta", formatTimeInput(e.target.value, sheet.sta))} placeholder="HH:MM" maxLength={5} />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">ATA 00:00/00:00</label>
-                <input className={inputCls + " font-mono"} value={sheet.ata} onChange={e => update("ata", formatDualTimeInput(e.target.value, sheet.ata))} maxLength={11} />
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">ATA {actualLabel}</label>
+                <input className={inputCls + " font-mono"} value={sheet.ata} onChange={e => update("ata", fmtActual(e.target.value, sheet.ata))} maxLength={singleActualTime ? 5 : 11} />
               </div>
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">STD</label>
                 <input className={inputCls + " font-mono"} value={sheet.std} onChange={e => update("std", formatTimeInput(e.target.value, sheet.std))} placeholder="HH:MM" maxLength={5} />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">ATD 00:00/00:00</label>
-                <input className={inputCls + " font-mono"} value={sheet.atd} onChange={e => update("atd", formatDualTimeInput(e.target.value, sheet.atd))} maxLength={11} />
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">ATD {actualLabel}</label>
+                <input className={inputCls + " font-mono"} value={sheet.atd} onChange={e => update("atd", fmtActual(e.target.value, sheet.atd))} maxLength={singleActualTime ? 5 : 11} />
               </div>
               <div className="col-span-2 md:col-span-4">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Delay</label>
