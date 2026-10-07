@@ -2073,7 +2073,7 @@ ${accompaniedHtml}
                   <Button
                     variant="secondary"
                     onClick={() => handleSave(false)}
-                    disabled={saving}
+                    disabled={saving || ethiopianMissingFlightType}
                     className="shadow-sm"
                     title="Persists all entered fields to the database and keeps the dialog open so you can continue editing."
                   >
@@ -2083,7 +2083,7 @@ ${accompaniedHtml}
                 {!stationLockedAfterApproval && (
                   <Button
                     onClick={() => handleSave(true)}
-                    disabled={saving || (isReceivablesView && receivablesLocked)}
+                    disabled={saving || (isReceivablesView && receivablesLocked) || (!isReceivablesView && ethiopianMissingFlightType)}
                     className="shadow-sm"
                     title="Persists all entered fields and closes the dialog."
                   >
