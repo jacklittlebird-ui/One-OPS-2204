@@ -71,6 +71,13 @@
       "when": 1791372762633,
       "tag": "0009_ethiopian_defaults_arrival_security",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791379917495,
+      "tag": "0010_ethiopian_defaults_maintenance_security",
+      "breakpoints": true
     }
   ]
 }
