@@ -518,6 +518,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const flightTypeOptions = isEthiopianAirline ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
   const flightTypeLabel = isEthiopianAirline ? "Flight Type" : "Skd Type";
   const displayedFlightType = isEthiopianAirline ? (sheet.flight_type || skdType || "—") : (skdType || sheet.flight_type || "—");
+  // Ethiopian: one of PAX / Cargo / UN must be selected before saving.
+  const ethiopianMissingFlightType = isEthiopianAirline && !ETHIOPIAN_FLIGHT_TYPES.includes(sheet.flight_type as any);
   const dialogAirlineTitle = isNew
     ? "New"
     : /airlines/i.test(currentAirlineName)
@@ -738,6 +740,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         // Air France form has no Skd Type field — skip its required check.
         if (!isAirFrance && !String(sheet.flight_type || "").trim()) missing.push(flightTypeLabel);
       }
+      // Ethiopian: PAX / Cargo / UN is mandatory on every save (new or existing).
+      if (!isNew && isEthiopianAirline && ethiopianMissingFlightType) missing.push("Flight Type (PAX / Cargo / UN)");
       if (missing.length > 0) {
         toast({
           title: "Missing required fields",
