@@ -228,12 +228,12 @@ export default function ContractsPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr>{["#","CONTRACT NO","TYPE","AIRLINE","STATIONS","VALUE","BILLING","PAYMENT","STATUS","RENEW","ACTIONS"].map(h => (
+            <thead><tr>{["#","CONTRACT NO","TYPE","AIRLINE","STATIONS","START DATE","END DATE","DURATION","VALUE","BILLING","PAYMENT","STATUS","RENEW","ACTIONS"].map(h => (
               <th key={h} className="data-table-header px-3 py-3 text-left whitespace-nowrap">{h}</th>
             ))}</tr></thead>
             <tbody>
               {pageData.length === 0 ? (
-                <tr><td colSpan={11} className="text-center py-16"><FileText size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Contracts Found</p></td></tr>
+                <tr><td colSpan={14} className="text-center py-16"><FileText size={40} className="mx-auto text-muted-foreground/30 mb-3" /><p className="font-semibold text-foreground">No Contracts Found</p></td></tr>
               ) : pageData.map((c, i) => {
                 const days = daysUntilExpiry(c.end_date);
                 const expiringSoon = c.status === "Active" && days <= 90 && days > 0;
@@ -250,6 +250,9 @@ export default function ContractsPage() {
                       {c.airline_iata && <div className="text-xs text-muted-foreground">{c.airline_iata}</div>}
                     </td>
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{c.stations || "—"}</td>
+                    <td className="px-3 py-2.5 text-xs whitespace-nowrap">{fmtDMY(c.start_date)}</td>
+                    <td className="px-3 py-2.5 text-xs whitespace-nowrap">{fmtDMY(c.end_date)}</td>
+                    <td className="px-3 py-2.5 text-xs whitespace-nowrap text-muted-foreground">{contractDuration(c.start_date, c.end_date)}</td>
                     <td className="px-3 py-2.5 font-semibold text-success">{c.currency} {c.annual_value.toLocaleString()}</td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{c.billing_frequency}</td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{c.payment_terms}</td>
@@ -497,4 +500,21 @@ const ContractFormModal = ({ data, onChange, onCancel, onSave, isSaving, title, 
       </div>
     </div>
   );
+}
+function fmtDMY(d?: string) {
+  if (!d) return "—";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
+}
+
+function contractDuration(start?: string, end?: string) {
+  if (!start || !end) return "—";
+  const s = new Date(start), e = new Date(end);
+  if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return "—";
+  const days = Math.round((e.getTime() - s.getTime()) / 86400000) + 1;
+  let months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
+  if (e.getDate() + 1 < s.getDate()) months--;
+  if (months < 1) return `${days} day${days === 1 ? "" : "s"}`;
+  const y = Math.floor(months / 12), mo = months % 12;
+  return [y ? `${y} yr${y > 1 ? "s" : ""}` : "", mo ? `${mo} mo` : ""].filter(Boolean).join(" ");
 }
