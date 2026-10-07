@@ -518,6 +518,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const flightTypeOptions = isEthiopianAirline ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
   const flightTypeLabel = isEthiopianAirline ? "Flight Type" : "Skd Type";
   const displayedFlightType = isEthiopianAirline ? (sheet.flight_type || skdType || "—") : (skdType || sheet.flight_type || "—");
+  // Ethiopian: one of PAX / Cargo / UN must be selected before saving.
+  const ethiopianMissingFlightType = isEthiopianAirline && !ETHIOPIAN_FLIGHT_TYPES.includes(sheet.flight_type as any);
   const dialogAirlineTitle = isNew
     ? "New"
     : /airlines/i.test(currentAirlineName)
@@ -738,6 +740,8 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
         // Air France form has no Skd Type field — skip its required check.
         if (!isAirFrance && !String(sheet.flight_type || "").trim()) missing.push(flightTypeLabel);
       }
+      // Ethiopian: PAX / Cargo / UN is mandatory on every save (new or existing).
+      if (!isNew && isEthiopianAirline && ethiopianMissingFlightType) missing.push("Flight Type (PAX / Cargo / UN)");
       if (missing.length > 0) {
         toast({
           title: "Missing required fields",
@@ -1331,7 +1335,7 @@ ${accompaniedHtml}
                       <td><input className={`${ethInnerFieldCls} font-mono font-bold`} value={sheet.sta} onChange={e => update("sta", formatTimeInput(e.target.value, sheet.sta))} maxLength={5} /></td>
                       <th className="w-16">ATA</th>
                       <td><input className={`${ethInnerFieldCls} font-mono`} value={sheet.ata} onChange={e => update("ata", formatDualTimeInput(e.target.value, sheet.ata))} maxLength={11} /></td>
-                      <th>Flight Type</th>
+                      <th>Flight Type{ethiopianMissingFlightType && <span className="block text-[10px] font-bold text-destructive">Select one to enable Save</span>}</th>
                       {flightTypeOptions.map(ft => (
                         <td key={ft} className="px-2 py-1.5 font-black text-foreground">
                           <label className="flex items-center justify-center gap-2">
@@ -2069,7 +2073,7 @@ ${accompaniedHtml}
                   <Button
                     variant="secondary"
                     onClick={() => handleSave(false)}
-                    disabled={saving}
+                    disabled={saving || ethiopianMissingFlightType}
                     className="shadow-sm"
                     title="Persists all entered fields to the database and keeps the dialog open so you can continue editing."
                   >
@@ -2079,7 +2083,7 @@ ${accompaniedHtml}
                 {!stationLockedAfterApproval && (
                   <Button
                     onClick={() => handleSave(true)}
-                    disabled={saving || (isReceivablesView && receivablesLocked)}
+                    disabled={saving || (isReceivablesView && receivablesLocked) || (!isReceivablesView && ethiopianMissingFlightType)}
                     className="shadow-sm"
                     title="Persists all entered fields and closes the dialog."
                   >
