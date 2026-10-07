@@ -474,7 +474,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       // read-only Operations Pending Approval view. Do not let old task-sheet
       // flight_type/skd_type values keep showing Military after Clearance moved
       // the flight back to Schedule.
-      if (m.skd_type) restored.flight_type = m.skd_type;
+      // Ethiopian uses PAX / Cargo / UN in flight_type, which is independent of
+      // the schedule SKD type — keep the operator's saved selection.
+      if (m.skd_type && !isEthiopianAirline) restored.flight_type = m.skd_type;
       // Master/clearance values always win for sta/std (they're owned upstream).
       if (m.sta) restored.sta = m.sta;
       if (m.std) restored.std = m.std;
