@@ -512,6 +512,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   const currentAirlineName = String((currentRow as any)?.airline || (currentRow as any)?.airline_name || "").trim();
   const isEthiopianAirline = isEthiopianAirlineName(currentAirlineName);
   const isAirFrance = isAirFranceAirline(currentAirlineName);
+  const singleActualTime = /air\s*cairo|nesma/i.test(String(currentAirlineName || ""));
+  const actualLabel = singleActualTime ? "00:00" : "00:00/00:00";
+  const fmtActual = (v: string, prev: string) => singleActualTime ? formatTimeInput(v, prev) : formatDualTimeInput(v, prev);
   const flightTypeOptions = isEthiopianAirline ? ETHIOPIAN_FLIGHT_TYPES : FLIGHT_TYPES;
   const flightTypeLabel = isEthiopianAirline ? "Flight Type" : "Skd Type";
   const displayedFlightType = isEthiopianAirline ? (sheet.flight_type || skdType || "—") : (skdType || sheet.flight_type || "—");
