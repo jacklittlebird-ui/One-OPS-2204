@@ -64,6 +64,13 @@
       "when": 1791372429907,
       "tag": "0008_ethiopian_default_flight_type",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791372762633,
+      "tag": "0009_ethiopian_defaults_arrival_security",
+      "breakpoints": true
     }
   ]
 }
