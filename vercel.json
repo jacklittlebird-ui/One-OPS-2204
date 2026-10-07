@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/__l5e/assets-v1/:path*", "destination": "https://linkaero.lovable.app/__l5e/assets-v1/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -1,3 +1,4 @@
 # Architecture rules
 - Airline-specific Air France staff fields and print rows share a single definition in the security task-sheet module; this prevents arrival/departure labels and saved keys drifting between the form and PDF.
 - Store airline-specific operational fields in existing task_sheet_data JSON, retaining flight_schedules as the flight identity source; this avoids schema changes and preserves the frozen SSoT architecture.
+- Keep the Vercel asset proxy rewrite before the SPA fallback so uploaded report logos and print-image requests resolve to images rather than index.html on self-hosted deployments.
