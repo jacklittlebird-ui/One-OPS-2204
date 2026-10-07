@@ -57,6 +57,13 @@
       "when": 1791295374284,
       "tag": "0007_air_france_default_flight_type",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791372429907,
+      "tag": "0008_ethiopian_default_flight_type",
+      "breakpoints": true
     }
   ]
 }
