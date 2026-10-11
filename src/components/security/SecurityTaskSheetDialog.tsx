@@ -587,13 +587,18 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   // Contract rates use SECURITY_FLIGHT_TYPES: Arrival Security,
   // Departure Security, Maintenance Security, Turnaround.
   const flightTypeForCharges = useMemo(() => {
+    if (isEthiopianAirline) {
+      const ft = String(sheet.flight_type || "").toUpperCase();
+      if (ft === "CARGO") return "Cargo";
+      if (ft === "UN") return "UN";
+    }
     const st = effectiveServiceType.toLowerCase();
     if (st.includes("turnaround")) return "Turnaround";
     if (st.includes("maintenance")) return "Maintenance Security";
     if (st.includes("departure")) return "Departure Security";
     if (st.includes("arrival")) return "Arrival Security";
     return sheet.flight_type || "Turnaround";
-  }, [effectiveServiceType, sheet.flight_type]);
+  }, [effectiveServiceType, sheet.flight_type, isEthiopianAirline]);
 
   const isAdhocFlight = useMemo(() => {
     const s = (skdType || (currentRow as any)?.skd_type || sheet.flight_type || "").toString().trim().toUpperCase();
