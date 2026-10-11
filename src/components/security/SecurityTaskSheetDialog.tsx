@@ -760,6 +760,13 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     // original input (e.g. Departure-only with only Departure Date filled
     // should not back-fill Arrival Date, and vice versa).
     const merged: any = isNew ? editableRow : { ...(row || {}), ...(editableRow || {}) };
+    if (isEthiopianAirline) {
+      // Ethiopian: one DATE is entered — store it as both ARR and DEP date,
+      // and always use Turnaround Security so the type never flips.
+      const oneDate = merged.departure_date || merged.flight_date || "";
+      if (oneDate) { merged.flight_date = oneDate; merged.departure_date = oneDate; merged.arrival_date = oneDate; }
+      merged.service_type = "Turnaround Security";
+    }
     const enrichedRow = {
       ...merged,
       contract_id: contractId || null,

@@ -121,7 +121,7 @@ export function ContractDetailModal({ contract: c, onClose }: Props) {
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Shield size={13} className="text-primary" /> Security Service Rates
               </h3>
-              <SecurityRatesEditor contractId={c.id} currency={c.currency} />
+              <SecurityRatesEditor contractId={c.id} currency={c.currency} airline={c.airline} />
             </div>
           )}
 

@@ -9,6 +9,7 @@ interface Props {
   contractId: string;
   currency?: string;
   readOnly?: boolean;
+  airline?: string;
 }
 
 const inputCls = "text-sm border rounded px-2 py-1 bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground w-full";
@@ -87,7 +88,10 @@ function exportCoverageCsv(rows: SecurityRateRow[], contractId: string) {
   URL.revokeObjectURL(url);
 }
 
-export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = false }: Props) {
+export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = false, airline = "" }: Props) {
+  const flightTypeOptions: string[] = /ethiopian/i.test(airline)
+    ? ["Turnaround Security", "PAX", "Cargo", "UN", ...SECURITY_FLIGHT_TYPES]
+    : [...SECURITY_FLIGHT_TYPES];
   const [rows, setRows] = useState<RowWithMeta[]>([]);
   const [originalRows, setOriginalRows] = useState<RowWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -330,7 +334,7 @@ export function SecurityRatesEditor({ contractId, currency = "USD", readOnly = f
                 <td className="px-2 py-1">
                   {readOnly ? r.flight_type : (
                     <select className={selectCls} value={r.flight_type} onChange={e => updateRow(r._localKey, { flight_type: e.target.value })}>
-                      {SECURITY_FLIGHT_TYPES.map(t => <option key={t}>{t}</option>)}
+                      {(flightTypeOptions.includes(r.flight_type) || !r.flight_type ? flightTypeOptions : [r.flight_type, ...flightTypeOptions]).map(t => <option key={t}>{t}</option>)}
                     </select>
                   )}
                 </td>
