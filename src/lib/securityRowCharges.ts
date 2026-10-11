@@ -39,6 +39,15 @@ export function mapServiceTypeToFlightType(st?: string | null): string {
   return st || "Turnaround";
 }
 
+/** Ethiopian Airlines: Cargo / UN flights use the contract Cargo / UN rate. */
+export function ethiopianCargoUn(row: any): string | null {
+  if (!/ethiopian/i.test(String(row?.airline || ""))) return null;
+  const ft = String(row?.task_sheet_data?.flight_type || row?.flight_type || "").trim().toUpperCase();
+  if (ft === "CARGO") return "Cargo";
+  if (ft === "UN") return "UN";
+  return null;
+}
+
 /** airline (lowercased) → contract id, only when exactly ONE active contract exists. */
 export function buildAirlineContractMap(contracts: any[]): Map<string, string> {
   const first = new Map<string, string>();
@@ -102,7 +111,7 @@ export function computeLiveSecurityCharge(
   const skd = (ctx.skdType || "").toString().trim().toUpperCase();
   const result = calculateSecurityCharges({
     airport: row?.station || "CAI",
-    flightType: mapServiceTypeToFlightType(row?.service_type),
+    flightType: ethiopianCargoUn(row) || mapServiceTypeToFlightType(row?.service_type),
     groundTimeHours: gt,
     isAdhoc: skd === "ADHOC",
     rates: rates as any,
