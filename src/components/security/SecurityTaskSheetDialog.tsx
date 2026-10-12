@@ -772,6 +772,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       if (oneDate) { merged.flight_date = oneDate; merged.departure_date = oneDate; merged.arrival_date = oneDate; }
       merged.service_type = "Turnaround Security";
     }
+    if (isAirFrance) {
+      // Air France: one date is entered — show it in both ARR DATE and DEP DATE.
+      const oneDate = merged.flight_date || merged.arrival_date || merged.departure_date || "";
+      if (oneDate) { merged.flight_date = oneDate; merged.arrival_date = oneDate; merged.departure_date = oneDate; }
+    }
     const enrichedRow = {
       ...merged,
       contract_id: contractId || null,
