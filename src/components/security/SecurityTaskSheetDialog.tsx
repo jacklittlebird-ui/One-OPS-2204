@@ -430,7 +430,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     const hasSavedDepartureDate = !!saved && Object.prototype.hasOwnProperty.call(saved, "departure_date");
     const linkedScheduleArrivalDate = (row as any).fs_arrival_date ?? arrivalDate ?? "";
     const linkedScheduleDepartureDate = (row as any).fs_departure_date ?? departureDate ?? "";
-    const seededArrivalDate = hasSavedArrivalDate
+    let seededArrivalDate = hasSavedArrivalDate
       ? String(saved.arrival_date || "")
       : ((row as any).flight_schedule_id ? String(linkedScheduleArrivalDate || "") : (row.flight_date || (isNew ? (arrivalDate || "") : "")));
     let seededDepartureDate = hasSavedDepartureDate
@@ -440,6 +440,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     // When the schedule carries no departure date, keep the DATE field showing
     // the arrival date instead of an empty box.
     if (isEthiopianAirlineName(row.airline) && !seededDepartureDate) seededDepartureDate = seededArrivalDate;
+    // Air France: one date is entered — mirror it into the other date field
+    // so the records show the same date in both ARR DATE and DEP DATE.
+    if (/air\s*france/i.test(String(row.airline || ""))) {
+      if (!seededDepartureDate) seededDepartureDate = seededArrivalDate;
+      if (!seededArrivalDate) seededArrivalDate = seededDepartureDate;
+    }
     setEditableRow({
       ...row,
       flight_date: seededArrivalDate,
@@ -771,6 +777,11 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       const oneDate = merged.departure_date || merged.flight_date || "";
       if (oneDate) { merged.flight_date = oneDate; merged.departure_date = oneDate; merged.arrival_date = oneDate; }
       merged.service_type = "Turnaround Security";
+    }
+    if (isAirFrance) {
+      // Air France: one date is entered — show it in both ARR DATE and DEP DATE.
+      const oneDate = merged.flight_date || merged.arrival_date || merged.departure_date || "";
+      if (oneDate) { merged.flight_date = oneDate; merged.arrival_date = oneDate; merged.departure_date = oneDate; }
     }
     const enrichedRow = {
       ...merged,
