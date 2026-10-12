@@ -440,6 +440,12 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     // When the schedule carries no departure date, keep the DATE field showing
     // the arrival date instead of an empty box.
     if (isEthiopianAirlineName(row.airline) && !seededDepartureDate) seededDepartureDate = seededArrivalDate;
+    // Air France: one date is entered — mirror it into the other date field
+    // so the records show the same date in both ARR DATE and DEP DATE.
+    if (/air\s*france/i.test(String(row.airline || ""))) {
+      if (!seededDepartureDate) seededDepartureDate = seededArrivalDate;
+      if (!seededArrivalDate) seededArrivalDate = seededDepartureDate;
+    }
     setEditableRow({
       ...row,
       flight_date: seededArrivalDate,
