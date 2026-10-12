@@ -430,7 +430,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
     const hasSavedDepartureDate = !!saved && Object.prototype.hasOwnProperty.call(saved, "departure_date");
     const linkedScheduleArrivalDate = (row as any).fs_arrival_date ?? arrivalDate ?? "";
     const linkedScheduleDepartureDate = (row as any).fs_departure_date ?? departureDate ?? "";
-    const seededArrivalDate = hasSavedArrivalDate
+    let seededArrivalDate = hasSavedArrivalDate
       ? String(saved.arrival_date || "")
       : ((row as any).flight_schedule_id ? String(linkedScheduleArrivalDate || "") : (row.flight_date || (isNew ? (arrivalDate || "") : "")));
     let seededDepartureDate = hasSavedDepartureDate
