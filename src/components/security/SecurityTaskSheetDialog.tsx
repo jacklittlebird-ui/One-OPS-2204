@@ -779,8 +779,9 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       merged.service_type = "Turnaround Security";
     }
     if (isAirFrance) {
-      // Air France: one date is entered — show it in both ARR DATE and DEP DATE.
-      const oneDate = merged.flight_date || merged.arrival_date || merged.departure_date || "";
+      // Air France: the user only edits Departure Date on the form, so prefer
+      // it over the seeded flight_date (which defaults to today for new rows).
+      const oneDate = merged.departure_date || merged.arrival_date || merged.flight_date || "";
       if (oneDate) { merged.flight_date = oneDate; merged.arrival_date = oneDate; merged.departure_date = oneDate; }
     }
     const enrichedRow = {
