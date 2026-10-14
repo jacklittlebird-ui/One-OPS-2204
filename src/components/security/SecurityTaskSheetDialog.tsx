@@ -621,11 +621,16 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
   // Auto-correct service_type when restriction changes (FS-sourced check).
   useEffect(() => {
     if (!editableRow) return;
+    if (isAirFrance) {
+      // Air France / Air France Cargo: always Turnaround Security, no choice.
+      if (editableRow.service_type !== "Turnaround Security") updateRow("service_type", "Turnaround Security");
+      return;
+    }
     if (allowedServiceTypes.length > 0 && !allowedServiceTypes.includes(effectiveServiceType)) {
       updateRow("service_type", allowedServiceTypes[0]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowedServiceTypes.join("|")]);
+  }, [allowedServiceTypes.join("|"), isAirFrance, !!editableRow]);
 
   // Auto-set SKD (flight_type) to "Maintenance" when effective service type is
   // Maintenance Security. Sourced from FS clearance_type (Phase 6.5).
@@ -779,6 +784,7 @@ export default function SecurityTaskSheetDialog({ row, onClose, onSave, registra
       merged.service_type = "Turnaround Security";
     }
     if (isAirFrance) {
+      merged.service_type = "Turnaround Security";
       // Air France: the user only edits Departure Date on the form, so prefer
       // it over the seeded flight_date (which defaults to today for new rows).
       const oneDate = merged.departure_date || merged.arrival_date || merged.flight_date || "";
@@ -1326,7 +1332,7 @@ ${accompaniedHtml}
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div><label htmlFor="af-airline" className="mb-1 block text-xs font-bold">Airline</label><select id="af-airline" className={inputCls} value={editableRow.airline || ""} disabled={!isNew} onChange={e => updateRow("airline", e.target.value)}>{airlines.map((a: any) => <option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
                   <div><label htmlFor="af-station" className="mb-1 block text-xs font-bold">Station</label><select id="af-station" className={inputCls} value={editableRow.station || ""} disabled={!isNew} onChange={e => updateRow("station", e.target.value)}>{airportsList.map((a: any) => <option key={a.id} value={a.iata_code || a.name}>{a.iata_code || a.name}</option>)}</select></div>
-                  <div><label htmlFor="af-service-type" className="mb-1 block text-xs font-bold">Service Type</label><select id="af-service-type" className={inputCls} value={editableRow.service_type || serviceType || ""} onChange={e => updateRow("service_type", e.target.value)}>{allowedServiceTypes.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                  <div><label htmlFor="af-service-type" className="mb-1 block text-xs font-bold">Service Type</label><input id="af-service-type" className={`${inputCls} bg-muted`} value="Turnaround Security" readOnly /></div>
                 </div>
               </Section>
               <AirFranceTaskSheet sheet={sheet as TaskSheetData & Record<string, string>} flight={editableRow} update={update} updateFlight={updateRow} dateDisplay={isoToDmy}
