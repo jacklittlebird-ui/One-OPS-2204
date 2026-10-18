@@ -380,7 +380,7 @@ export default function StationDispatchPage() {
 
     setFormData({
       flight_schedule_id: flight.id,
-      station: stationFilter || "CAI",
+      station: (isStationScoped && userStation) ? userStation : (stationFilter || userStation || "CAI"),
       airline: airlineName,
       flight_no: flight.flight_no,
       flight_date: dateFrom,
@@ -410,7 +410,7 @@ export default function StationDispatchPage() {
 
   const openNewManual = () => {
     setFormData({
-      station: stationFilter || "CAI",
+      station: (isStationScoped && userStation) ? userStation : (stationFilter || userStation || "CAI"),
       airline: "",
       flight_no: "",
       flight_date: dateFrom,
