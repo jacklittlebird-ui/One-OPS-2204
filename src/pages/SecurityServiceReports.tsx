@@ -1593,7 +1593,9 @@ export default function SecurityServiceReportsPage() {
           skd_type: isEthiopianAirline(row.airline) ? "" : (taskSheet.flight_type || ""),
           clearance_type: row.service_type || "Arrival Security",
           status: "Approved" as const,
-          authority: row.station || "CAI",
+          // Station-scoped users: always stamp the flight with their own station,
+          // never the form fallback — prevents flights created under the wrong station.
+          authority: (isStationScoped && userStation) ? userStation : (row.station || "CAI"),
           handling_agent: "",
           arrival_date: normalizedDates.arrivalDate || null,
           departure_date: normalizedDates.departureDate || null,
