@@ -1331,7 +1331,7 @@ ${accompaniedHtml}
               <Section title="Assignment" icon={<Plane size={14} />}>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div><label htmlFor="af-airline" className="mb-1 block text-xs font-bold">Airline</label><select id="af-airline" className={inputCls} value={editableRow.airline || ""} disabled={!isNew} onChange={e => updateRow("airline", e.target.value)}>{airlines.map((a: any) => <option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
-                  <div><label htmlFor="af-station" className="mb-1 block text-xs font-bold">Station</label><select id="af-station" className={inputCls} value={editableRow.station || ""} disabled={!isNew} onChange={e => updateRow("station", e.target.value)}>{airportsList.map((a: any) => <option key={a.id} value={a.iata_code || a.name}>{a.iata_code || a.name}</option>)}</select></div>
+                  <div><label htmlFor="af-station" className="mb-1 block text-xs font-bold">Station</label><select id="af-station" className={inputCls} value={(isStationScoped && userStation) ? userStation : (editableRow.station || "")} disabled={!isNew || isStationScoped} onChange={e => updateRow("station", e.target.value)}>{airportsList.map((a: any) => <option key={a.id} value={a.iata_code || a.name}>{a.iata_code || a.name}</option>)}</select></div>
                   <div><label htmlFor="af-service-type" className="mb-1 block text-xs font-bold">Service Type</label><input id="af-service-type" className={`${inputCls} bg-muted`} value="Turnaround Security" readOnly /></div>
                 </div>
               </Section>
@@ -1462,7 +1462,7 @@ ${accompaniedHtml}
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Station</label>
-                    <select className={inputCls} value={editableRow.station} onChange={e => updateRow("station", e.target.value)}>
+                    <select className={inputCls} value={(isStationScoped && userStation) ? userStation : editableRow.station} disabled={isStationScoped} onChange={e => updateRow("station", e.target.value)}>
                       <option value="">Select Station</option>
                       {airportsList.map((a: any) => (
                         <option key={a.id} value={a.iata_code || a.name}>
